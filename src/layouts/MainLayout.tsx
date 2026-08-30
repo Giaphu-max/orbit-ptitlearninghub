@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { OrbitSidebar, type OrbitTab } from '@/components/orbit-sidebar'
 import { OrbitUploadModal } from '@/components/orbit-upload-modal'
+import { OrbitAuthModal } from '@/components/orbit-auth-modal'
+import { useAuth } from '@/contexts/AuthContext'
 
 export function MainLayout() {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
+    const { user, signOut } = useAuth()
 
     // Determine active tab based on current path
     const getActiveTab = (): OrbitTab => {
@@ -29,6 +33,9 @@ export function MainLayout() {
                 activeTab={getActiveTab()}
                 onTabChange={handleTabChange}
                 onCreate={() => setIsUploadModalOpen(true)}
+                user={user}
+                onAuthClick={() => setIsAuthModalOpen(true)}
+                onLogout={signOut}
             />
             
             <main className="flex-1 flex flex-col overflow-hidden relative bg-[#f8f9fa]">
@@ -37,6 +44,10 @@ export function MainLayout() {
 
             {isUploadModalOpen && (
                 <OrbitUploadModal onClose={() => setIsUploadModalOpen(false)} />
+            )}
+
+            {isAuthModalOpen && (
+                <OrbitAuthModal onClose={() => setIsAuthModalOpen(false)} />
             )}
         </div>
     )

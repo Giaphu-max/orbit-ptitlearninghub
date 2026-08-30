@@ -2,6 +2,14 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js'
+import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
+import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js'
 import { Maximize, Minimize, MousePointerClick } from 'lucide-react'
 
 interface LightState {
@@ -14,10 +22,14 @@ interface LightState {
 
 interface VRViewportProps {
   focalLength: number
+  iso: number
+  shutter: string
+  aperture: string
   lights: LightState[]
   onLightsChange: (lights: LightState[]) => void
   onFocalLengthChange?: (value: number) => void
   onSnapshot?: (dataUrl: string, timestamp: string) => void
+  onSnapshotTriggerReady?: (fn: () => void) => void
 }
 
 interface PopupState {
@@ -158,12 +170,15 @@ function buildLightStand(
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthChange, onSnapshot }: VRViewportProps) {
+export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLightsChange, onFocalLengthChange, onSnapshot, onSnapshotTriggerReady }: VRViewportProps) {
   const mountRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
   const sceneRef = useRef<THREE.Scene | null>(null)
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
+  const composerRef = useRef<EffectComposer | null>(null)
+  const bokehPassRef = useRef<BokehPass | null>(null)
+  const filmPassRef = useRef<FilmPass | null>(null)
   const animFrameRef = useRef<number>(0)
   const keysRef = useRef<Set<string>>(new Set())
   const yawRef = useRef(0)
@@ -181,6 +196,9 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
   const [popup, setPopup] = useState<PopupState | null>(null)
   const [fps, setFps] = useState(60)
   const [isPointerLocked, setIsPointerLocked] = useState(false)
+  const afReticleRef = useRef<THREE.LineSegments | null>(null)
+  const afTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [focusDistance, setFocusDistance] = useState(5.0)
   const [hasEnteredOnce, setHasEnteredOnce] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [hoveredInteractable, setHoveredInteractable] = useState<'light' | 'ring' | null>(null)
@@ -254,33 +272,26 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
     buildMannequin(scene)
 
     // ── Studio light stands ─────────────────────────────────────────────────
-    // Key light (front-left, warm white)
+    // Key light
     const { spotLight: keySpot, interactMesh: keyMesh } = buildLightStand(
-      scene, 'key-ceil', [-3.5, 2.2, 3], [0, 1.2, 0], '#ffffff', 1.0
+      scene, 'key', [5, 5, 5], [0, 1.2, 0], '#ffffff', 1.0
     )
-    spotLightsRef.current.set('key-ceil', keySpot)
-    interactMeshesRef.current.set('key-ceil', keyMesh)
+    spotLightsRef.current.set('key', keySpot)
+    interactMeshesRef.current.set('key', keyMesh)
 
-    // Fill light (front-right, cooler)
-    const { spotLight: fillRSpot, interactMesh: fillRMesh } = buildLightStand(
-      scene, 'fill-right', [3.5, 2.2, 3], [0, 1.2, 0], '#ffffee', 0.7
+    // Fill light
+    const { spotLight: fillSpot, interactMesh: fillMesh } = buildLightStand(
+      scene, 'fill', [-5, 3, 5], [0, 1.2, 0], '#ffffee', 0.5
     )
-    spotLightsRef.current.set('fill-right', fillRSpot)
-    interactMeshesRef.current.set('fill-right', fillRMesh)
+    spotLightsRef.current.set('fill', fillSpot)
+    interactMeshesRef.current.set('fill', fillMesh)
 
-    // Fill left
-    const { spotLight: fillLSpot, interactMesh: fillLMesh } = buildLightStand(
-      scene, 'fill-left', [-3, 2.2, -2], [0, 1.2, 0], '#ffffee', 0.7
-    )
-    spotLightsRef.current.set('fill-left', fillLSpot)
-    interactMeshesRef.current.set('fill-left', fillLMesh)
-
-    // Rim (back, blue-ish)
+    // Rim light
     const { spotLight: rimSpot, interactMesh: rimMesh } = buildLightStand(
-      scene, 'rim-back', [0, 2.4, -6], [0, 1.4, 0], '#aaddff', 0.4
+      scene, 'rim', [0, 5, -5], [0, 1.4, 0], '#aaddff', 0.8
     )
-    spotLightsRef.current.set('rim-back', rimSpot)
-    interactMeshesRef.current.set('rim-back', rimMesh)
+    spotLightsRef.current.set('rim', rimSpot)
+    interactMeshesRef.current.set('rim', rimMesh)
 
     // Collect lens meshes for glow sync
     scene.traverse(obj => {
@@ -291,7 +302,7 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
     })
 
     // ── Ambient fill ────────────────────────────────────────────────────────
-    scene.add(new THREE.AmbientLight(0xffffff, 0.35))
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1))
 
     // ── Teleport rings ──────────────────────────────────────────────────────
     teleportPositions.forEach(pos => {
@@ -312,6 +323,21 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
       dot.position.y = 0.02
       scene.add(dot)
     })
+
+    // ── AF Reticle ──────────────────────────────────────────────────────────
+    const afGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-0.15, 0.15, 0), new THREE.Vector3(0.15, 0.15, 0),
+      new THREE.Vector3(0.15, 0.15, 0), new THREE.Vector3(0.15, -0.15, 0),
+      new THREE.Vector3(0.15, -0.15, 0), new THREE.Vector3(-0.15, -0.15, 0),
+      new THREE.Vector3(-0.15, -0.15, 0), new THREE.Vector3(-0.15, 0.15, 0)
+    ])
+    const afMat = new THREE.LineBasicMaterial({ color: 0x00FF00, depthTest: false })
+    const afMesh = new THREE.LineSegments(afGeo, afMat)
+    afMesh.renderOrder = 999
+    afMesh.visible = false
+    scene.add(afMesh)
+    afReticleRef.current = afMesh
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -321,13 +347,14 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
     if (!mount) return
     const w = mount.clientWidth, h = mount.clientHeight
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true })
+    const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(w, h)
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
+    renderer.outputColorSpace = THREE.SRGBColorSpace
     mount.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
@@ -337,6 +364,37 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
     const camera = new THREE.PerspectiveCamera(70, w / h, 0.1, 60)
     camera.position.set(0, 1.65, 5)
     cameraRef.current = camera
+
+    const composer = new EffectComposer(renderer)
+    const renderPass = new RenderPass(scene, camera)
+    composer.addPass(renderPass)
+
+    const bokehPass = new BokehPass(scene, camera, {
+      focus: 5.0,
+      aperture: 0.00001,
+      maxblur: 0.015,
+      width: w,
+      height: h
+    })
+    composer.addPass(bokehPass)
+    bokehPassRef.current = bokehPass
+
+    const filmPass = new FilmPass(0.0, 0, 0, false)
+    composer.addPass(filmPass)
+    filmPassRef.current = filmPass
+
+    const vignettePass = new ShaderPass(VignetteShader)
+    vignettePass.uniforms['offset'].value = 0.1
+    vignettePass.uniforms['darkness'].value = 1.1
+    composer.addPass(vignettePass)
+
+    const outputPass = new OutputPass()
+    composer.addPass(outputPass)
+
+    const smaaPass = new SMAAPass(w * renderer.getPixelRatio(), h * renderer.getPixelRatio())
+    composer.addPass(smaaPass)
+
+    composerRef.current = composer
 
     buildScene(scene)
 
@@ -383,13 +441,13 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
         if (hoveredObjectRef.current !== null) { hoveredObjectRef.current = null; setHoveredInteractable(null) }
       }
 
-      renderer.render(scene, camera)
+      composer.render()
     }
     animate()
 
     const onResize = () => {
       const nw = mount.clientWidth, nh = mount.clientHeight
-      renderer.setSize(nw, nh); camera.aspect = nw / nh; camera.updateProjectionMatrix()
+      renderer.setSize(nw, nh); composer.setSize(nw, nh); camera.aspect = nw / nh; camera.updateProjectionMatrix()
     }
     window.addEventListener('resize', onResize)
 
@@ -400,6 +458,33 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
       window.removeEventListener('resize', onResize)
     }
   }, [buildScene])
+
+  // Expose snapshot trigger to parent (for SHUTTER button)
+  useEffect(() => {
+    onSnapshotTriggerReady?.(() => {
+      const renderer = rendererRef.current
+      const composer = composerRef.current
+      if (!renderer || !sceneRef.current || !cameraRef.current || !composer) return
+      
+      requestAnimationFrame(() => {
+        const reticleVisible = afReticleRef.current ? afReticleRef.current.visible : false
+        if (afReticleRef.current) afReticleRef.current.visible = false
+        
+        composer.render()
+        const dataUrl = renderer.domElement.toDataURL('image/png')
+        
+        if (afReticleRef.current) afReticleRef.current.visible = reticleVisible
+        
+        const now = new Date()
+        const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`
+        setFlashActive(true)
+        setTimeout(() => setFlashActive(false), 350)
+        playShutter()
+        onSnapshot?.(dataUrl, ts)
+      })
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onSnapshotTriggerReady])
 
   // ── Sync lights from external state ───────────────────────────────────────
   useEffect(() => {
@@ -418,11 +503,58 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
     })
   }, [lights])
 
+  // ── Sync Exposure & DOF ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!rendererRef.current || !bokehPassRef.current || !filmPassRef.current) return
+
+    // 1. Calculate Exposure
+    const parseShutter = (s: string) => {
+      if (s.includes('"')) return parseFloat(s)
+      if (s.includes('/')) {
+        const [num, den] = s.split('/')
+        return parseFloat(num) / parseFloat(den)
+      }
+      return parseFloat(s)
+    }
+    
+    const isoMult = iso / 100
+    const cleanAperture = parseFloat(String(aperture).replace(/[^0-9.]/g, ''))
+    const fStop = isNaN(cleanAperture) ? 8.0 : cleanAperture
+    const apMult = Math.pow(8.0 / fStop, 2)
+    const shutterSec = parseShutter(shutter)
+    const baseShutterSec = 1 / 125
+    const shutterMult = shutterSec / baseShutterSec
+
+    const exposureMultiplier = isoMult * apMult * shutterMult
+    const clampedExposure = Math.max(0.1, Math.min(exposureMultiplier, 5.0))
+    rendererRef.current.toneMappingExposure = 1.05 * clampedExposure
+
+    // 2. Depth of Field (BokehPass)
+    const dynamicBokeh = isNaN(cleanAperture) ? 0 : Math.max(0, (8.0 - cleanAperture) * 2.5)
+    const safeBokeh = Math.min(dynamicBokeh, 4.5)
+    if (bokehPassRef.current && bokehPassRef.current.uniforms) {
+      if (bokehPassRef.current.uniforms['focus']) bokehPassRef.current.uniforms['focus'].value = focusDistance || 5.0
+      // Hardcode aperture to a medium slice for plane separation (equivalent to focalLength=0.015)
+      if (bokehPassRef.current.uniforms['aperture']) bokehPassRef.current.uniforms['aperture'].value = 0.015
+      // Map blur strictly so F8+ yields 0, F1.8 yields heavy blur
+      if (bokehPassRef.current.uniforms['maxblur']) bokehPassRef.current.uniforms['maxblur'].value = safeBokeh * 0.002
+    }
+
+    // 3. Image Noise (FilmPass)
+    let noiseIntensity = 0
+    if (iso > 400) {
+      noiseIntensity = ((iso - 400) / 6000) * 1.5
+    }
+    if (filmPassRef.current && filmPassRef.current.uniforms && filmPassRef.current.uniforms['nIntensity']) {
+      filmPassRef.current.uniforms['nIntensity'].value = noiseIntensity
+    }
+  }, [iso, shutter, aperture, focusDistance])
+
   // ── Focal length → FOV ────────────────────────────────────────────────────
   useEffect(() => {
     if (!cameraRef.current) return
-    const fov = Math.round(2 * Math.atan(18 / focalLength) * (180 / Math.PI))
-    cameraRef.current.fov = Math.max(10, Math.min(120, fov))
+    const fov = 2 * Math.atan(35 / (2 * focalLength)) * (180 / Math.PI)
+    cameraRef.current.fov = Math.max(10, Math.min(120, Math.round(fov)))
     cameraRef.current.updateProjectionMatrix()
   }, [focalLength])
 
@@ -508,32 +640,46 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
     if (e.button !== 2 || !rightMouseDownRef.current) return
     rightMouseDownRef.current = false
     const renderer = rendererRef.current
-    if (!renderer) return
-    // Capture frame
-    renderer.render(sceneRef.current!, cameraRef.current!)
-    const dataUrl = renderer.domElement.toDataURL('image/png')
-    const now = new Date()
-    const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`
-    // Flash
-    setFlashActive(true)
-    setTimeout(() => setFlashActive(false), 350)
-    // Sound
-    playShutter()
-    // Send to gallery
-    onSnapshot?.(dataUrl, ts)
+    const composer = composerRef.current
+    if (!renderer || !composer) return
+    // Capture frame safely
+    requestAnimationFrame(() => {
+      const reticleVisible = afReticleRef.current ? afReticleRef.current.visible : false
+      if (afReticleRef.current) afReticleRef.current.visible = false
+      
+      composer.render()
+      const dataUrl = renderer.domElement.toDataURL('image/png')
+      
+      if (afReticleRef.current) afReticleRef.current.visible = reticleVisible
+      
+      const now = new Date()
+      const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`
+      // Flash
+      setFlashActive(true)
+      setTimeout(() => setFlashActive(false), 350)
+      // Sound
+      playShutter()
+      // Send to gallery
+      onSnapshot?.(dataUrl, ts)
+    })
   }
   const onContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
   }
 
   const onClick = (e: React.MouseEvent) => {
-    if (!isPointerLocked) {
-      if (popup) return
-      requestPointerLock(); return
-    }
+    e.stopPropagation()
     if (!cameraRef.current || !mountRef.current) return
 
-    raycasterRef.current.setFromCamera(centerVec2.current, cameraRef.current)
+    let rayPointer = centerVec2.current
+    if (!isPointerLocked) {
+      if (popup) return
+      const rect = mountRef.current.getBoundingClientRect()
+      rayPointer = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1)
+      requestPointerLock()
+    }
+
+    raycasterRef.current.setFromCamera(rayPointer, cameraRef.current)
 
     const iMeshes = [...interactMeshesRef.current.values()]
     const lHits = raycasterRef.current.intersectObjects(iMeshes)
@@ -555,6 +701,36 @@ export function VRViewport({ focalLength, lights, onLightsChange, onFocalLengthC
       if (idx >= 0 && cameraRef.current) {
         const t = teleportPositions[idx]
         cameraRef.current.position.set(t.x, 1.65, t.z + 0.5)
+      }
+      return
+    }
+
+    // Touch AF fallback
+    if (sceneRef.current && cameraRef.current) {
+      const allHits = raycasterRef.current.intersectObjects(sceneRef.current.children, true)
+      const validHits = allHits.filter(h => h.object !== afReticleRef.current)
+      if (validHits.length > 0) {
+        const hit = validHits[0]
+        
+        // Exact flat plane distance (prevents edge blur)
+        const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraRef.current.quaternion)
+        const pointVector = hit.point.clone().sub(cameraRef.current.position)
+        const dist = pointVector.dot(cameraForward)
+        
+        setFocusDistance(Math.max(0.1, dist))
+
+        if (afReticleRef.current) {
+          afReticleRef.current.position.copy(hit.point)
+          const dir = cameraRef.current.position.clone().sub(hit.point).normalize()
+          afReticleRef.current.position.addScaledVector(dir, 0.05)
+          afReticleRef.current.lookAt(cameraRef.current.position)
+          afReticleRef.current.visible = true
+
+          if (afTimeoutRef.current) clearTimeout(afTimeoutRef.current)
+          afTimeoutRef.current = setTimeout(() => {
+            if (afReticleRef.current) afReticleRef.current.visible = false
+          }, 800)
+        }
       }
     }
   }

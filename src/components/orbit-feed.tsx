@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, MapPin, Search, X, Camera, Lightbulb, MonitorPlay, Settings2, SlidersHorizontal, Images, Clock, Download } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ChevronDown, MapPin, Search, X, Camera, Lightbulb, MonitorPlay, Settings2, SlidersHorizontal, Images, Clock, Download, Battery, Info, Play, Menu, Trash2 } from 'lucide-react'
 import { VRViewport } from './vr-viewport'
 
 type Studio = {
@@ -21,10 +21,9 @@ export interface LightState {
 }
 
 const defaultLights: LightState[] = [
-    { id: 'key-ceil', label: 'Key Light (Ceiling)', brightness: 1.0, color: '#ffffff', position: { x: 0, y: 3.9, z: -3 } },
-    { id: 'fill-left', label: 'Fill Light (Left Box)', brightness: 0.7, color: '#ffffee', position: { x: -3, y: 2.1, z: -2 } },
-    { id: 'fill-right', label: 'Fill Light (Right Box)', brightness: 0.7, color: '#ffffee', position: { x: 3, y: 2.1, z: -2 } },
-    { id: 'rim-back', label: 'Rim Light (Back Box)', brightness: 0.4, color: '#aaddff', position: { x: 0, y: 2.1, z: -8 } },
+    { id: 'key', label: 'Key Light', brightness: 1.0, color: '#ffffff', position: { x: 5, y: 5, z: 5 } },
+    { id: 'fill', label: 'Fill Light', brightness: 0.5, color: '#ffffee', position: { x: -5, y: 3, z: 5 } },
+    { id: 'rim', label: 'Rim Light', brightness: 0.8, color: '#aaddff', position: { x: 0, y: 5, z: -5 } },
 ]
 
 const studios: Studio[] = [
@@ -47,6 +46,22 @@ export function OrbitFeed() {
     const [lights, setLights] = useState<LightState[]>(defaultLights)
     const [mediaGallery, setMediaGallery] = useState<{ dataUrl: string; timestamp: string; label: string }[]>([])
     const [selectedImage, setSelectedImage] = useState<{ dataUrl: string; label: string } | null>(null)
+    const [showControlPanel, setShowControlPanel] = useState(false)
+    const [showHud, setShowHud] = useState(true)
+    const apertureList = ['1.8', '2.8', '4.0', '5.6', '8.0', '11', '16', '22']
+    const shutterList = ['1/4000', '1/1000', '1/250', '1/125', '1/60', '1/30', '1/15', '1/4', '1"', '2"']
+    const isoList = [100, 200, 400, 800, 1600, 3200, 6400]
+
+    const [cameraMode, setCameraMode] = useState<'M' | 'Av' | 'Tv'>('M')
+    const [apertureIndex, setApertureIndex] = useState(3) // 5.6
+    const [shutterIndex, setShutterIndex] = useState(3) // 1/125
+    const [isoIndex, setIsoIndex] = useState(3) // 800
+    const [activeSetting, setActiveSetting] = useState<'ISO' | null>(null)
+
+    const aperture = `F${apertureList[apertureIndex]}`
+    const shutter = shutterList[shutterIndex]
+    const iso = isoList[isoIndex]
+    const snapshotTriggerRef = useRef<(() => void) | null>(null)
 
     const handleSnapshot = (dataUrl: string, timestamp: string) => {
         const idx = mediaGallery.length + 1
@@ -155,126 +170,248 @@ export function OrbitFeed() {
                 </section>
             </div>
 
-            {/* VR Modal */}
+            {/* VR Modal — Canon EOS R50 Authentic Chassis */}
             {selectedStudio && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-7xl h-full max-h-[92vh] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col border border-white/10">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]/95 backdrop-blur-md p-4">
+                    
+                    {/* CAMERA CHASSIS CONTAINER */}
+                    <div className="relative w-[90vw] max-w-[1200px] aspect-[1.5/1] rounded-l-[40px] rounded-r-[120px] shadow-[0_30px_80px_rgba(0,0,0,0.95)] border border-[#333] select-none"
+                         style={{ 
+                             backgroundColor: '#1c1c1c',
+                             backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' opacity=\'0.15\'/%3E%3C/svg%3E"), radial-gradient(circle at 75% 50%, rgba(255,255,255,0.05) 0%, transparent 40%)'
+                         }}>
+                        
+                        {/* ── 1. EVF HUMP (Top center-left) ── */}
+                        <div className="absolute top-[-8%] left-[25%] w-[30%] h-[12%] bg-[#1c1c1c] rounded-t-[60px] shadow-[inset_0_4px_15px_rgba(255,255,255,0.1)] border border-[#333] z-0"></div>
+                        <div className="absolute top-[-5%] left-[27%] w-[26%] h-[14%] bg-[#0a0a0a] rounded-t-[50px] rounded-b-[20px] shadow-[0_10px_20px_rgba(0,0,0,0.8),_inset_0_2px_8px_rgba(255,255,255,0.15)] z-10 border border-[#222] flex items-center justify-center">
+                            {/* Viewfinder Glass */}
+                            <div className="w-[45%] h-[55%] bg-black rounded shadow-[inset_0_0_15px_rgba(0,0,0,1)] border border-[#111]"></div>
+                        </div>
 
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between px-6 py-3 bg-gray-950/80 border-b border-white/10 shrink-0">
-                            <div className="flex items-center gap-4">
-                                <h2 className="text-lg font-bold text-white">{selectedStudio.title}</h2>
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-medium text-emerald-400">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    Simulation Active
-                                </span>
-                            </div>
-                            <button
-                                onClick={handleExitStudio}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white transition-colors border border-red-600/20 text-sm"
-                            >
-                                <X size={16} />
-                                Thoát phòng ảo
+                        {/* ── 2. MENU Button (Top-left) ── */}
+                        <div className="absolute top-[8%] left-[4%] w-[6%] aspect-square rounded-full shadow-[inset_0_3px_8px_rgba(0,0,0,0.9)] flex items-center justify-center bg-[#111] border border-[#222]">
+                            <button onClick={() => setShowControlPanel(p => !p)} 
+                                className="w-[75%] h-[75%] rounded-full bg-[#2a2a2a] shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] active:translate-y-[2px] active:shadow-inner border border-[#444] text-white font-bold flex items-center justify-center"
+                                style={{ fontSize: 'clamp(8px, 0.7vw, 12px)' }}>
+                                MENU
                             </button>
                         </div>
 
-                        {/* Modal Body */}
-                        <div className="flex flex-1 overflow-hidden min-h-0">
-                            {/* Three.js VR Viewport */}
-                            <div className="flex-1 relative overflow-hidden">
+                        {/* ── 3. LCD SCREEN & HINGES ── */}
+                        {/* Hinges */}
+                        <div className="absolute left-[-2px] top-[25%] w-[2%] h-[12%] bg-[#111] rounded-r-md border-y border-r border-[#333] shadow-[4px_0_10px_rgba(0,0,0,0.5)] z-10"></div>
+                        <div className="absolute left-[-2px] top-[75%] w-[2%] h-[12%] bg-[#111] rounded-r-md border-y border-r border-[#333] shadow-[4px_0_10px_rgba(0,0,0,0.5)] z-10"></div>
+
+                        {/* LCD Bezel */}
+                        <div className="absolute top-[12%] left-[4%] w-[75%] h-[82%] bg-[#050505] rounded-xl shadow-[0_2px_15px_rgba(0,0,0,0.9),_inset_0_4px_12px_rgba(0,0,0,0.9)] border border-[#2a2a2a] p-[0.75%] flex flex-col justify-center items-center z-20">
+                            {/* Canvas Wrapper (Strict 3:2 Aspect Ratio) */}
+                            <div className="relative w-full aspect-[3/2] bg-[#111] shadow-[inset_0_0_30px_rgba(0,0,0,1)] overflow-hidden rounded-sm ring-2 ring-black">
                                 <VRViewport
                                     focalLength={focalLength}
+                                    iso={iso}
+                                    shutter={shutter}
+                                    aperture={aperture}
                                     lights={lights}
                                     onLightsChange={setLights}
                                     onFocalLengthChange={setFocalLength}
                                     onSnapshot={handleSnapshot}
+                                    onSnapshotTriggerReady={(fn) => { snapshotTriggerRef.current = fn }}
                                 />
-                            </div>
 
-                            {/* Right Control Panel */}
-                            <div className="w-[320px] shrink-0 bg-gray-950 border-l border-white/10 flex flex-col overflow-y-auto">
-                                <div className="p-5 border-b border-white/10">
-                                    <h3 className="text-white font-semibold flex items-center gap-2 text-sm">
-                                        <Settings2 size={15} className="text-gray-400" /> Global Control Panel
-                                    </h3>
-                                    <p className="text-gray-500 text-xs mt-1">Click lights in-scene for direct control</p>
-                                </div>
-
-                                <div className="p-5 space-y-7">
-                                    {/* Camera */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                            <Camera size={13} /> Camera
-                                        </h4>
-                                        <div className="flex justify-between items-center text-xs">
-                                            <span className="text-gray-300">Focal Length</span>
-                                            <span className="text-white font-mono">{focalLength}mm</span>
+                                {/* HUD Overlay */}
+                                {showHud && (
+                                    <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-3">
+                                        {/* Top HUD */}
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded px-2 py-1 pointer-events-auto cursor-pointer hover:bg-black/80 transition"
+                                                onClick={() => setCameraMode(m => m === 'M' ? 'Av' : m === 'Av' ? 'Tv' : 'M')}>
+                                                <span className="text-white text-sm font-bold font-mono tracking-widest">[{cameraMode}]</span>
+                                                <span className="text-zinc-400 text-[10px] font-mono">{cameraMode === 'M' ? 'MANUAL' : cameraMode === 'Av' ? 'APERTURE PRIORITY' : 'SHUTTER PRIORITY'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded px-2 py-1">
+                                                <Battery size={14} className="text-green-400" />
+                                                <span className="text-zinc-200 text-[11px] font-mono">█████</span>
+                                                <span className="text-zinc-400 text-[11px] font-mono ml-1">SD</span>
+                                                <span className="text-white text-[11px] font-mono">{9999 - mediaGallery.length}</span>
+                                            </div>
                                         </div>
-                                        <input
-                                            type="range" min="14" max="200"
-                                            value={focalLength}
-                                            onChange={(e) => setFocalLength(Number(e.target.value))}
-                                            className="w-full accent-red-500 cursor-pointer"
-                                        />
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button className="py-1.5 text-xs font-medium text-white bg-white/10 rounded border border-white/5 hover:bg-white/20 transition-colors">Cam 1 (Front)</button>
-                                            <button className="py-1.5 text-xs font-medium text-gray-400 bg-transparent rounded border border-white/5 hover:bg-white/10 transition-colors">Cam 2 (Top)</button>
+                                        
+                                        {/* Bottom HUD */}
+                                        <div className="flex items-end justify-between pointer-events-auto">
+                                            <div className="flex items-center gap-3 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2">
+                                                {[
+                                                    { label: 'SS', value: shutter, isAuto: cameraMode === 'Av', isEditing: false },
+                                                    { label: 'AV', value: aperture, isAuto: cameraMode === 'Tv', isEditing: false },
+                                                    { label: 'ISO', value: String(iso), isAuto: false, isEditing: activeSetting === 'ISO' },
+                                                    { label: 'FL', value: `${focalLength}mm`, isAuto: false, isEditing: false },
+                                                ].map(({ label, value, isAuto, isEditing }, i, arr) => (
+                                                    <span key={label} className={`flex items-center gap-3 ${isAuto ? 'opacity-50' : 'opacity-100'} transition-opacity`}>
+                                                        <span className="flex flex-col items-center">
+                                                            <span className="text-zinc-500 text-[8px] uppercase tracking-widest">{label}</span>
+                                                            <span className={`font-mono text-sm font-bold ${isEditing ? 'text-yellow-400' : 'text-white'}`}>{value}</span>
+                                                        </span>
+                                                        {i < arr.length - 1 && <span className="w-px h-5 bg-zinc-600/70" />}
+                                                    </span>
+                                                ))}
+                                                <span className="w-px h-5 bg-zinc-600/70" />
+                                                <span className="flex flex-col items-center">
+                                                    <span className="text-zinc-500 text-[8px] uppercase tracking-widest">EV</span>
+                                                    <span className="flex items-end gap-0.5 mt-0.5">
+                                                        {[-3,-2,-1,0,1,2,3].map(v => (
+                                                            <span key={v} className={`w-[3px] rounded-full ${v===0 ? 'h-3 bg-white' : Math.abs(v)===1 ? 'h-2 bg-zinc-400' : 'h-1.5 bg-zinc-600'}`} />
+                                                        ))}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                            <div className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                                                <Images size={11} className="text-zinc-400" />
+                                                <span className="text-white font-mono text-xs font-bold">{mediaGallery.length}</span>
+                                            </div>
                                         </div>
                                     </div>
+                                )}
+                            </div>
+                        </div>
 
-                                    {/* Lighting summary */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                            <Lightbulb size={13} /> Lighting — Global Override
-                                        </h4>
+                        {/* ── 4. CONTROL PANEL SLIDE-IN (Positioned over LCD) ── */}
+                        {showControlPanel && (
+                            <div className="absolute top-[12%] left-[4%] w-[75%] h-[82%] z-30 bg-[#1a1a1a]/95 backdrop-blur-md rounded-xl border border-[#333] shadow-2xl flex overflow-hidden">
+                                <div className="w-[300px] bg-[#111] border-r border-[#333] flex flex-col">
+                                    <div className="px-4 py-3 border-b border-zinc-700/50 flex items-center justify-between shrink-0">
+                                        <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                                            <Settings2 size={13} className="text-red-400" /> MENU
+                                        </h3>
+                                        <button onClick={() => setShowControlPanel(false)} className="text-zinc-500 hover:text-white transition"><X size={14} /></button>
+                                    </div>
+                                    <div className="p-4 space-y-5 overflow-y-auto flex-1">
                                         <div className="space-y-2">
-                                            {lights.map((light) => (
-                                                <div key={light.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-white/10 bg-white/[0.02]">
-                                                    <div
-                                                        className="w-3 h-3 rounded-full shrink-0 border border-white/20"
-                                                        style={{ backgroundColor: light.color }}
-                                                    />
-                                                    <span className="text-xs text-gray-300 flex-1 truncate">{light.label}</span>
-                                                    <input
-                                                        type="range" min="0" max="1" step="0.05"
-                                                        value={light.brightness}
-                                                        onChange={(e) => setLights(lights.map(l => l.id === light.id ? { ...l, brightness: parseFloat(e.target.value) } : l))}
-                                                        className="w-20 accent-red-500 cursor-pointer"
-                                                    />
-                                                    <span className="text-xs font-mono text-gray-500 w-6 text-right">{Math.round(light.brightness * 100)}%</span>
+                                            <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5"><Camera size={10} /> Camera</h4>
+                                            <div className="flex justify-between text-xs"><span className="text-zinc-300">Focal Length</span><span className="text-white font-mono">{focalLength}mm</span></div>
+                                            <input type="range" min="14" max="200" value={focalLength} onChange={e => setFocalLength(Number(e.target.value))} className="w-full accent-red-500" />
+                                            <div className="flex justify-between text-xs mt-1"><span className="text-zinc-300">ISO</span><span className="text-white font-mono">{iso}</span></div>
+                                            <input type="range" min="0" max={isoList.length - 1} step="1" value={isoIndex} onChange={e => setIsoIndex(Number(e.target.value))} className="w-full accent-red-500" />
+                                            <div className="grid grid-cols-3 gap-1 mt-1">
+                                                {shutterList.map((s, idx) => (
+                                                    <button key={s} onClick={() => setShutterIndex(idx)} className={`py-1 text-[10px] font-mono rounded border transition ${shutterIndex===idx ? 'bg-red-600/30 border-red-500/50 text-red-300' : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'}`}>{s}</button>
+                                                ))}
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-1">
+                                                {apertureList.map((av, idx) => (
+                                                    <button key={av} onClick={() => setApertureIndex(idx)} className={`py-1 text-[10px] font-mono rounded border transition ${apertureIndex===idx ? 'bg-red-600/30 border-red-500/50 text-red-300' : 'bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10'}`}>F{av}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5"><Lightbulb size={10} /> Lighting</h4>
+                                            {lights.map(l => (
+                                                <div key={l.id} className="flex items-center gap-2 p-2 rounded-lg border border-white/8 bg-white/[0.02]">
+                                                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: l.color }} />
+                                                    <span className="text-[10px] text-zinc-300 flex-1 truncate">{l.label}</span>
+                                                    <input type="range" min="0" max="1" step="0.05" value={l.brightness}
+                                                        onChange={e => setLights(lights.map(x => x.id === l.id ? { ...x, brightness: parseFloat(e.target.value) } : x))}
+                                                        className="w-16 accent-red-500" />
+                                                    <span className="text-[10px] font-mono text-zinc-500 w-6">{Math.round(l.brightness*100)}%</span>
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-
-                                    {/* Render */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                            <SlidersHorizontal size={13} /> Render Setup
-                                        </h4>
-                                        <div>
-                                            <label className="text-xs text-gray-500 mb-1 block">Render Engine</label>
-                                            <select className="w-full bg-gray-900 border border-white/10 rounded-lg p-2 text-xs text-white outline-none focus:border-red-500">
-                                                <option>Real-time (Eevee)</option>
-                                                <option>Path Tracing (Cycles)</option>
+                                        <div className="space-y-2">
+                                            <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5"><SlidersHorizontal size={10} /> Render</h4>
+                                            <select className="w-full bg-zinc-900 border border-white/10 rounded p-1.5 text-xs text-white outline-none focus:border-red-500">
+                                                <option>Real-time (Eevee)</option><option>Path Tracing (Cycles)</option>
                                             </select>
+                                            <button onClick={handleExitStudio}
+                                                className="w-full flex items-center justify-center gap-2 py-2 rounded bg-red-600/20 border border-red-600/30 text-red-400 text-xs font-bold hover:bg-red-600/30 transition mt-2">
+                                                <X size={12} /> THOÁT PHÒNG ẢO
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => setIsGalleryOpen(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-2.5 mt-2 rounded-lg bg-white text-black font-semibold hover:bg-gray-200 transition-colors text-sm"
-                                        >
-                                            <Images size={15} /> Xem kho đa phương tiện
-                                        </button>
-                                        <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-colors text-xs border border-white/10">
-                                            <MonitorPlay size={14} /> Record Session
-                                        </button>
                                     </div>
                                 </div>
+                                <div className="flex-1 cursor-pointer" onClick={() => setShowControlPanel(false)}></div>
                             </div>
+                        )}
+
+                        {/* ── 5. RIGHT HARDWARE CONTROLS (Absolute Positioning) ── */}
+                        
+                        {/* Top Edge Dial */}
+                        <div className="absolute top-[-3%] right-[12%] w-[8%] aspect-[2/1] bg-gradient-to-b from-[#666] to-[#222] rounded-t-[20px] shadow-[0_5px_15px_rgba(0,0,0,0.8)] border border-[#555] flex flex-col justify-evenly overflow-hidden z-0">
+                            <div className="w-full h-[2px] bg-[#111]"></div>
+                            <div className="w-full h-[2px] bg-[#111]"></div>
+                            <div className="w-full h-[2px] bg-[#111]"></div>
                         </div>
+
+                        {/* AF ON Button */}
+                        <div className="absolute top-[8%] right-[10%] w-[6%] aspect-square rounded-full shadow-[inset_0_3px_6px_rgba(0,0,0,0.8)] flex items-center justify-center bg-[#111] border border-[#222] z-10">
+                            <button onClick={() => snapshotTriggerRef.current?.()} 
+                                className="w-[85%] h-[85%] rounded-full bg-[#2a2a2a] shadow-[0_3px_5px_rgba(0,0,0,0.6),inset_0_1px_2px_rgba(255,255,255,0.15)] active:translate-y-[2px] active:shadow-inner border border-[#444] text-white flex flex-col items-center justify-center leading-none"
+                                style={{ fontSize: 'clamp(6px, 0.5vw, 10px)' }}>
+                                <span className="font-bold">AF</span>
+                                <span className="font-bold">ON</span>
+                            </button>
+                        </div>
+
+                        {/* * (AE Lock) Button */}
+                        <div className="absolute top-[22%] right-[4%] w-[5%] aspect-square rounded-full shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center bg-[#111] border border-[#222] z-10">
+                            <button className="w-[80%] h-[80%] rounded-full bg-[#2a2a2a] shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] active:translate-y-[2px] active:shadow-inner border border-[#444] text-white font-black flex items-center justify-center"
+                                style={{ fontSize: 'clamp(10px, 1vw, 16px)' }}>
+                                ✱
+                            </button>
+                        </div>
+
+                        {/* INFO Button */}
+                        <div className="absolute top-[40%] right-[14%] w-[5%] aspect-square rounded-full shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center bg-[#111] border border-[#222] z-10">
+                            <button onClick={() => setShowHud(p => !p)} 
+                                className="w-[80%] h-[80%] rounded-full bg-[#2a2a2a] shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] active:translate-y-[2px] active:shadow-inner border border-[#444] text-white font-bold flex items-center justify-center"
+                                style={{ fontSize: 'clamp(6px, 0.5vw, 10px)' }}>
+                                INFO
+                            </button>
+                        </div>
+
+                        {/* D-PAD (Directional Pad) */}
+                        <div className="absolute top-[52%] right-[3%] w-[14%] aspect-square rounded-full shadow-[inset_0_4px_12px_rgba(0,0,0,0.9),0_2px_5px_rgba(255,255,255,0.05)] flex items-center justify-center bg-[#181818] border border-[#2a2a2a] z-10">
+                            {/* Engraved symbols */}
+                            <span className="absolute top-[6%] left-1/2 -translate-x-1/2 text-zinc-500 font-bold tracking-widest pointer-events-none" style={{ fontSize: 'clamp(5px, 0.4vw, 8px)' }}>ISO</span>
+                            <span className="absolute bottom-[6%] left-1/2 -translate-x-1/2 text-zinc-500 font-bold tracking-widest pointer-events-none" style={{ fontSize: 'clamp(5px, 0.4vw, 8px)' }}>WB</span>
+                            <span className="absolute left-[8%] top-1/2 -translate-y-1/2 text-zinc-500 font-bold tracking-widest pointer-events-none" style={{ fontSize: 'clamp(5px, 0.4vw, 8px)' }}>{cameraMode === 'Av' ? 'AV-' : 'SS-'}</span>
+                            <span className="absolute right-[8%] top-1/2 -translate-y-1/2 text-zinc-500 font-bold tracking-widest pointer-events-none" style={{ fontSize: 'clamp(5px, 0.4vw, 8px)' }}>{cameraMode === 'Av' ? 'AV+' : 'SS+'}</span>
+                            
+                            {/* Invisible directional buttons over the ring */}
+                            <button onClick={() => {
+                                if (activeSetting === 'ISO') setIsoIndex(i => Math.min(isoList.length - 1, i + 1))
+                                else if (cameraMode === 'M') setApertureIndex(i => Math.min(apertureList.length - 1, i + 1))
+                            }} className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[30%] h-[25%] flex justify-center text-zinc-400 hover:text-white" style={{ fontSize: 'clamp(6px, 0.5vw, 10px)' }}>▲</button>
+                            <button onClick={() => {
+                                if (activeSetting === 'ISO') setIsoIndex(i => Math.max(0, i - 1))
+                                else if (cameraMode === 'M') setApertureIndex(i => Math.max(0, i - 1))
+                            }} className="absolute bottom-[15%] left-1/2 -translate-x-1/2 w-[30%] h-[25%] flex items-end justify-center text-zinc-400 hover:text-white" style={{ fontSize: 'clamp(6px, 0.5vw, 10px)' }}>▼</button>
+                            <button onClick={() => {
+                                if (cameraMode === 'Av') setApertureIndex(i => Math.max(0, i - 1))
+                                else setShutterIndex(i => Math.max(0, i - 1))
+                            }} className="absolute left-[15%] top-1/2 -translate-y-1/2 w-[25%] h-[30%] flex items-center justify-start text-zinc-400 hover:text-white" style={{ fontSize: 'clamp(6px, 0.5vw, 10px)' }}>◀</button>
+                            <button onClick={() => {
+                                if (cameraMode === 'Av') setApertureIndex(i => Math.min(apertureList.length - 1, i + 1))
+                                else setShutterIndex(i => Math.min(shutterList.length - 1, i + 1))
+                            }} className="absolute right-[15%] top-1/2 -translate-y-1/2 w-[25%] h-[30%] flex items-center justify-end text-zinc-400 hover:text-white" style={{ fontSize: 'clamp(6px, 0.5vw, 10px)' }}>▶</button>
+                            
+                            {/* Center SET button */}
+                            <button onClick={() => setActiveSetting(p => p === 'ISO' ? null : 'ISO')}
+                                className={`w-[35%] aspect-square rounded-full shadow-[0_2px_5px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] active:translate-y-[1px] active:shadow-inner border border-[#444] font-bold flex items-center justify-center z-20 transition ${activeSetting === 'ISO' ? 'bg-yellow-600/30 text-yellow-400' : 'bg-[#2a2a2a] text-white'}`}
+                                style={{ fontSize: 'clamp(7px, 0.6vw, 11px)' }}>
+                                SET
+                            </button>
+                        </div>
+
+                        {/* Playback Button */}
+                        <div className="absolute bottom-[10%] right-[14%] w-[5%] aspect-[1.1/1] shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center bg-[#111] border border-[#222] rounded z-10">
+                            <button onClick={() => setIsGalleryOpen(true)}
+                                className="w-[85%] h-[85%] rounded bg-[#2a2a2a] shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] active:translate-y-[2px] active:shadow-inner border border-[#444] text-white flex items-center justify-center">
+                                <Play size="50%" fill="currentColor" />
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             )}
+
 
             {/* Media Gallery Modal */}
             {isGalleryOpen && (
