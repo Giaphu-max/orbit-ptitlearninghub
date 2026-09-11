@@ -10,7 +10,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js'
-import { Maximize, Minimize, MousePointerClick } from 'lucide-react'
+import { Maximize, Minimize, MousePointerClick, X, Settings2 } from 'lucide-react'
 
 interface LightState {
   id: string
@@ -170,7 +170,19 @@ function buildLightStand(
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLightsChange, onFocalLengthChange, onSnapshot, onSnapshotTriggerReady }: VRViewportProps) {
+const SHUTTER_SPEEDS = ['1/10', '1/30', '1/60', '1/125', '1/250', '1/500', '1/1000'];
+const APERTURES = ['f/1.4', 'f/2.8', 'f/4', 'f/5.6', 'f/8', 'f/11', 'f/16', 'f/22'];
+
+export function VRViewport({ focalLength: initialFocalLength = 35, iso: initialIso = 100, shutter: initialShutter = '1/125', aperture: initialAperture = 'f/8', lights, onLightsChange, onFocalLengthChange, onSnapshot, onSnapshotTriggerReady }: VRViewportProps) {
+  const [focalLength, setFocalLengthState] = useState(initialFocalLength)
+  const [iso, setIso] = useState(initialIso)
+  const [shutterIdx, setShutterIdx] = useState(SHUTTER_SPEEDS.includes(initialShutter) ? SHUTTER_SPEEDS.indexOf(initialShutter) : 3)
+  const [apertureIdx, setApertureIdx] = useState(APERTURES.includes(initialAperture) ? APERTURES.indexOf(initialAperture) : 4)
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
+  const [gallery, setGallery] = useState<string[]>([])
+
+  const shutter = SHUTTER_SPEEDS[shutterIdx]
+  const aperture = APERTURES[apertureIdx]
   const mountRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
@@ -228,8 +240,8 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
     // Floor grid lines (subtle)
     const gridHelper = new THREE.GridHelper(22, 22, 0xbcbcbc, 0xbcbcbc)
     gridHelper.position.y = 0.001
-    ;(gridHelper.material as THREE.Material).transparent = true
-    ;(gridHelper.material as THREE.Material).opacity = 0.4
+      ; (gridHelper.material as THREE.Material).transparent = true
+      ; (gridHelper.material as THREE.Material).opacity = 0.4
     scene.add(gridHelper)
 
     // ── Walls ───────────────────────────────────────────────────────────────
@@ -338,7 +350,7 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
     scene.add(afMesh)
     afReticleRef.current = afMesh
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Main Three.js setup ───────────────────────────────────────────────────
@@ -465,25 +477,25 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
       const renderer = rendererRef.current
       const composer = composerRef.current
       if (!renderer || !sceneRef.current || !cameraRef.current || !composer) return
-      
+
       requestAnimationFrame(() => {
         const reticleVisible = afReticleRef.current ? afReticleRef.current.visible : false
         if (afReticleRef.current) afReticleRef.current.visible = false
-        
+
         composer.render()
         const dataUrl = renderer.domElement.toDataURL('image/png')
-        
+
         if (afReticleRef.current) afReticleRef.current.visible = reticleVisible
-        
+
         const now = new Date()
-        const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`
+        const ts = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
         setFlashActive(true)
         setTimeout(() => setFlashActive(false), 350)
         playShutter()
         onSnapshot?.(dataUrl, ts)
       })
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onSnapshotTriggerReady])
 
   // ── Sync lights from external state ───────────────────────────────────────
@@ -516,7 +528,7 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
       }
       return parseFloat(s)
     }
-    
+
     const isoMult = iso / 100
     const cleanAperture = parseFloat(String(aperture).replace(/[^0-9.]/g, ''))
     const fStop = isNaN(cleanAperture) ? 8.0 : cleanAperture
@@ -589,7 +601,7 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keysRef.current.add(e.key.toLowerCase())
-      if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase())) e.preventDefault()
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase())) e.preventDefault()
     }
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.key.toLowerCase())
     window.addEventListener('keydown', down)
@@ -629,6 +641,7 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
     e.preventDefault()
     const delta = e.deltaY > 0 ? 2 : -2
     const next = Math.min(200, Math.max(14, focalLength + delta))
+    setFocalLengthState(next)
     onFocalLengthChange?.(next)
   }
 
@@ -646,14 +659,14 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
     requestAnimationFrame(() => {
       const reticleVisible = afReticleRef.current ? afReticleRef.current.visible : false
       if (afReticleRef.current) afReticleRef.current.visible = false
-      
+
       composer.render()
       const dataUrl = renderer.domElement.toDataURL('image/png')
-      
+
       if (afReticleRef.current) afReticleRef.current.visible = reticleVisible
-      
+
       const now = new Date()
-      const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`
+      const ts = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
       // Flash
       setFlashActive(true)
       setTimeout(() => setFlashActive(false), 350)
@@ -711,12 +724,12 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
       const validHits = allHits.filter(h => h.object !== afReticleRef.current)
       if (validHits.length > 0) {
         const hit = validHits[0]
-        
+
         // Exact flat plane distance (prevents edge blur)
         const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraRef.current.quaternion)
         const pointVector = hit.point.clone().sub(cameraRef.current.position)
         const dist = pointVector.dot(cameraForward)
-        
+
         setFocusDistance(Math.max(0.1, dist))
 
         if (afReticleRef.current) {
@@ -750,6 +763,157 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
         onContextMenu={onContextMenu}
         style={{ cursor: isPointerLocked ? 'none' : 'crosshair' }}
       />
+
+      {/* Camera Overlay Wrapper */}
+      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6">
+        
+        {/* Slide-out Control Panel */}
+        <div className={`absolute top-0 right-0 h-full w-80 bg-black/80 backdrop-blur-xl border-l border-white/20 p-6 flex flex-col gap-6 text-white transition-transform duration-300 ease-in-out pointer-events-auto z-50 ${isPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg font-bold">Thông số Máy ảnh</h3>
+                <button onClick={(e) => { e.stopPropagation(); setIsPanelOpen(false); }} className="text-white/50 hover:text-white transition p-1">
+                    <X size={20} />
+                </button>
+            </div>
+            
+            <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-3">
+                    <div className="flex justify-between text-xs font-mono text-white/80"><span>ISO</span><span className="font-bold text-white">{iso}</span></div>
+                    <input type="range" min="100" max="6400" step="100" value={iso} onChange={e => setIso(Number(e.target.value))} className="w-full accent-red-500 cursor-pointer" />
+                </div>
+                <div className="flex flex-col gap-3">
+                    <div className="flex justify-between text-xs font-mono text-white/80"><span>Shutter Speed</span><span className="font-bold text-white">{shutter}s</span></div>
+                    <input type="range" min="0" max={SHUTTER_SPEEDS.length - 1} step="1" value={shutterIdx} onChange={e => setShutterIdx(Number(e.target.value))} className="w-full accent-red-500 cursor-pointer" />
+                </div>
+                <div className="flex flex-col gap-3">
+                    <div className="flex justify-between text-xs font-mono text-white/80"><span>Khẩu độ (Aperture)</span><span className="font-bold text-white">{aperture}</span></div>
+                    <input type="range" min="0" max={APERTURES.length - 1} step="1" value={apertureIdx} onChange={e => setApertureIdx(Number(e.target.value))} className="w-full accent-red-500 cursor-pointer" />
+                </div>
+                <div className="flex flex-col gap-3">
+                    <div className="flex justify-between text-xs font-mono text-white/80"><span>Tiêu cự (Focal Length)</span><span className="font-bold text-white">{focalLength}mm</span></div>
+                    <input type="range" min="14" max="200" step="1" value={focalLength} onChange={e => { setFocalLengthState(Number(e.target.value)); onFocalLengthChange?.(Number(e.target.value)); }} className="w-full accent-red-500 cursor-pointer" />
+                </div>
+            </div>
+
+            <h3 className="text-sm font-bold mt-2 border-t border-white/20 pt-5">Thư viện ảnh ({gallery.length})</h3>
+            <div className="grid grid-cols-2 gap-3 overflow-y-auto">
+                {gallery.map((src, i) => (
+                    <div key={i} className="aspect-video bg-black/40 rounded-md border border-white/20 flex items-center justify-center overflow-hidden">
+                        <img src={src} alt={`Shot ${i}`} className="w-full h-full object-cover" />
+                    </div>
+                ))}
+                {/* Pad out with empty placeholders if gallery has < 4 items */}
+                {Array.from({ length: Math.max(0, 4 - gallery.length) }).map((_, i) => (
+                    <div key={`empty-${i}`} className="aspect-video bg-white/5 rounded-md border border-white/10 flex items-center justify-center text-[10px] uppercase tracking-widest font-bold text-white/30">
+                        Trống
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        {/* Top Status Bar */}
+        <div className="flex justify-between items-start text-white text-sm font-mono font-bold drop-shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse border border-white/50 shadow-[0_0_8px_#ef4444]"></span>
+            <span>REC</span>
+            <span className="ml-4 text-white/80">{fps} FPS</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span>4K 60</span>
+            <div className="w-8 h-4 border-2 border-white rounded-sm p-0.5 flex">
+              <div className="h-full w-[80%] bg-white"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Viewfinder Graphics (Focus Brackets) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {/* Frame guides */}
+          <div className="w-[80%] h-[70%] border border-white/10 relative">
+            {/* Corners */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white/50"></div>
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white/50"></div>
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white/50"></div>
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white/50"></div>
+            {/* Center crosshair */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4">
+              <div className="absolute top-1/2 left-0 w-full h-px bg-white/40"></div>
+              <div className="absolute left-1/2 top-0 w-px h-full bg-white/40"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Camera Control Bar */}
+        <div className="bg-black/80 backdrop-blur-md rounded-2xl p-4 flex justify-between items-center text-white pointer-events-auto">
+          {/* Left side: Camera settings */}
+          <div className="flex items-center gap-4 text-xs font-mono text-white/80 w-1/3">
+            <div className="flex flex-col">
+              <span className="text-white/40 text-[9px] uppercase">ISO</span>
+              <span>{iso}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-white/40 text-[9px] uppercase">Shutter</span>
+              <span>{shutter}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-white/40 text-[9px] uppercase">Aperture</span>
+              <span>{aperture}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-white/40 text-[9px] uppercase">Focal</span>
+              <span>{focalLength}mm</span>
+            </div>
+          </div>
+
+          {/* Center: Capture Button */}
+          <div className="flex justify-center w-1/3">
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    const renderer = rendererRef.current;
+                    const composer = composerRef.current;
+                    if (!renderer || !composer) return;
+                    requestAnimationFrame(() => {
+                        const reticleVisible = afReticleRef.current ? afReticleRef.current.visible : false;
+                        if (afReticleRef.current) afReticleRef.current.visible = false;
+                        composer.render();
+                        const dataUrl = renderer.domElement.toDataURL('image/png');
+                        if (afReticleRef.current) afReticleRef.current.visible = reticleVisible;
+                        const now = new Date();
+                        const ts = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                        setFlashActive(true);
+                        setTimeout(() => setFlashActive(false), 350);
+                        playShutter();
+                        onSnapshot?.(dataUrl, ts);
+                        setGallery(prev => [dataUrl, ...prev]);
+                    });
+                }}
+                className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center hover:scale-105 transition-transform group"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-600 shadow-[0_0_15px_#dc2626] group-active:scale-90 transition-transform"></div>
+            </button>
+          </div>
+
+          {/* Right side: Reset lights */}
+          <div className="flex justify-end gap-3 w-1/3">
+            <button 
+                className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition text-xs font-bold"
+                onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onLightsChange(lights.map(l => ({ ...l, brightness: 1, color: '#ffffff' }))); 
+                }}
+            >
+              Reset Lights
+            </button>
+            <button 
+                className={`p-2 rounded-lg transition text-white ${isPanelOpen ? 'bg-red-500 hover:bg-red-600' : 'bg-white/10 hover:bg-white/20'}`}
+                onClick={(e) => { e.stopPropagation(); setIsPanelOpen(!isPanelOpen); }}
+            >
+                <Settings2 size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* White flash overlay on snapshot */}
       {flashActive && (
@@ -881,10 +1045,9 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="relative flex items-center justify-center">
             {/* Hover ring */}
-            <div className={`absolute rounded-full border-2 transition-all duration-150 ${
-              hoveredInteractable === 'light' ? 'w-11 h-11 border-yellow-400/80 scale-100' :
-              hoveredInteractable === 'ring'  ? 'w-11 h-11 border-red-400/80 scale-100' : 'w-4 h-4 border-transparent scale-0'
-            }`} />
+            <div className={`absolute rounded-full border-2 transition-all duration-150 ${hoveredInteractable === 'light' ? 'w-11 h-11 border-yellow-400/80 scale-100' :
+              hoveredInteractable === 'ring' ? 'w-11 h-11 border-red-400/80 scale-100' : 'w-4 h-4 border-transparent scale-0'
+              }`} />
             {/* Lines */}
             <div className={`w-5 h-5 relative transition-all duration-100 ${hoveredInteractable ? 'scale-75 opacity-70' : 'scale-100 opacity-100'}`}>
               <div className={`absolute top-1/2 left-0 w-full h-px ${hoveredInteractable === 'light' ? 'bg-yellow-400' : hoveredInteractable === 'ring' ? 'bg-red-400' : 'bg-white/70'}`} />
@@ -893,9 +1056,8 @@ export function VRViewport({ focalLength, iso, shutter, aperture, lights, onLigh
             </div>
             {/* Tooltip */}
             {hoveredInteractable && (
-              <div className={`absolute top-7 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border ${
-                hoveredInteractable === 'light' ? 'bg-yellow-500/20 border-yellow-400/40 text-yellow-200' : 'bg-red-500/20 border-red-400/40 text-red-200'
-              }`}>
+              <div className={`absolute top-7 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border ${hoveredInteractable === 'light' ? 'bg-yellow-500/20 border-yellow-400/40 text-yellow-200' : 'bg-red-500/20 border-red-400/40 text-red-200'
+                }`}>
                 {hoveredInteractable === 'light' ? '💡 Click to adjust light' : '⬤ Click to teleport'}
               </div>
             )}

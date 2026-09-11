@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ export interface UploadPostPayload {
 
 // ── Endpoints ─────────────────────────────────────────────────────────────────
 
-export async function getPosts(): Promise<Post[]> {
+export async function getPosts(currentUser?: User | null): Promise<Post[]> {
   const { data, error } = await supabase
     .from('posts')
     .select('*')
@@ -46,9 +47,13 @@ export async function getPosts(): Promise<Post[]> {
     videoUrl: post.video_url,
     thumbnailUrl: post.thumbnail_url,
     author: {
-      id: '1',
-      name: 'Gia Phú',
-      avatarUrl: undefined,
+      id: post.user_id || '1',
+      name: (currentUser && currentUser.id === post.user_id && currentUser.user_metadata?.username)
+        ? currentUser.user_metadata.username
+        : 'Người dùng Orbit',
+      avatarUrl: (currentUser && currentUser.id === post.user_id)
+        ? currentUser.user_metadata?.avatar_url
+        : undefined,
     },
     likesCount: post.likes_count || 0,
     commentsCount: post.comments_count || 0,
@@ -59,7 +64,7 @@ export async function getPosts(): Promise<Post[]> {
 export async function uploadPost(payload: UploadPostPayload): Promise<Post> {
   const fileExt = payload.file.name.split('.').pop()
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-  
+
   // 1. Get authenticated user
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -105,9 +110,9 @@ export async function uploadPost(payload: UploadPostPayload): Promise<Post> {
     videoUrl: postData.video_url,
     thumbnailUrl: postData.thumbnail_url,
     author: {
-      id: '1',
-      name: 'Gia Phú',
-      avatarUrl: undefined,
+      id: user.id,
+      name: user.user_metadata?.username || 'Người dùng Orbit',
+      avatarUrl: user.user_metadata?.avatar_url,
     },
     likesCount: postData.likes_count || 0,
     commentsCount: postData.comments_count || 0,
