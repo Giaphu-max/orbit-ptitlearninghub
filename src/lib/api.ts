@@ -1,4 +1,5 @@
 import type { ApiErrorBody, ChatRequest, ChatResponse } from './api-types'
+import type { ExplainRequest, ExplainResponse } from './quiz'
 
 // Gọi các hàm serverless trong api/. Trình duyệt không bao giờ gọi Gemini trực tiếp.
 
@@ -40,3 +41,4 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const askTutor = (req: ChatRequest) => postJson<ChatResponse>('/api/chat', req)
+export const explainAnswer = (req: ExplainRequest) => postJson<ExplainResponse>('/api/explain', req)

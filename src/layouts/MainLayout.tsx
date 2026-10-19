@@ -1,4 +1,6 @@
+import { Suspense } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { OrbitSidebar, type OrbitTab } from '@/components/orbit-sidebar'
 import { OrbitRoleSelect } from '@/components/orbit-role-select'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -36,7 +38,15 @@ export function MainLayout() {
             <OrbitSidebar activeTab={activeTab} onTabChange={(tab) => navigate(TAB_PATHS[tab])} />
 
             <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-transparent pl-[90px]">
-                <Outlet />
+                <Suspense
+                    fallback={
+                        <div className="flex h-full items-center justify-center text-gray-400">
+                            <Loader2 className="animate-spin" size={32} aria-label="Đang tải trang" />
+                        </div>
+                    }
+                >
+                    <Outlet />
+                </Suspense>
             </main>
         </div>
     )

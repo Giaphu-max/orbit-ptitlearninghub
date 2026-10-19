@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ChevronLeft, MessageSquare, PanelRightClose, RotateCcw } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { ChevronLeft, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
 import { getCourse, getLesson, getLessonsOfCourse, lessons } from '@/data'
 import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
+import { useLessonQuiz } from '@/hooks/useLessonQuiz'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
 import { ConceptTimeline } from '@/components/lesson/concept-timeline'
 import { TranscriptPanel } from '@/components/lesson/transcript-panel'
 import { TutorPanel } from '@/components/lesson/tutor-panel'
+import { QuizCard } from '@/components/lesson/quiz-card'
+import { QuizList } from '@/components/lesson/quiz-list'
+import { QuizRewardToast } from '@/components/lesson/quiz-reward-toast'
 
 /** /lesson/:lessonId – không có id thì mở bài đầu tiên. */
 export function OrbitLessonView() {
@@ -29,6 +34,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     const course = getCourse(lesson.courseId)
     const courseLessons = getLessonsOfCourse(lesson.courseId)
     const saveLessonPosition = useOrbitStore((s) => s.saveLessonPosition)
+    const xp = useOrbitStore((s) => s.xp)
 
     // Đọc vị trí cũ một lần lúc mở bài
     const [resumeFrom] = useState(() => {
@@ -40,6 +46,16 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
 
     const player = useYouTubePlayer(lesson.youtubeId, { startAt: resumeFrom })
     const { currentTime, seekTo } = player
+    const canPlay = player.status === 'ready'
+    const quiz = useLessonQuiz(lesson, { currentTime, isPlaying: player.isPlaying, canPlay, seekTo, pause: player.pause })
+    const { phase } = quiz
+    const quizOpen = phase.kind === 'asking' || phase.kind === 'answered'
+
+    // Mở quiz từ danh sách hay dải khái niệm ở dưới: cuộn lên để thấy thẻ câu hỏi
+    const playerAreaRef = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        if (quizOpen) playerAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }, [quizOpen])
 
     // Bản sao thời điểm đang xem cho các handler (trợ giảng, lưu khi rời trang)
     const timeRef = useRef(currentTime)
@@ -66,7 +82,8 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
 
     const handleSeek = (sec: number) => {
         setShowResume(false)
-        seekTo(sec)
+        // Đang làm quiz thì chỉ tua, không phát video dưới thẻ câu hỏi
+        seekTo(sec, { play: !quizOpen })
     }
 
     const lessonIndex = courseLessons.findIndex((l) => l.id === lesson.id)
@@ -83,6 +100,13 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         >
                             <ChevronLeft size={16} /> {course?.title ?? 'Khóa học'}
                         </Link>
+                        <span
+                            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-card"
+                            title="Tổng XP"
+                        >
+                            <Zap size={15} className="fill-brand-500 text-brand-500" />
+                            <span className="font-mono">{xp}</span> XP
+                        </span>
                         <button
                             type="button"
                             onClick={() => setIsTutorOpen((v) => !v)}
@@ -93,12 +117,56 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         </button>
                     </div>
 
-                    <LessonPlayer
-                        containerRef={player.containerRef}
-                        status={player.status}
-                        error={player.error}
-                        youtubeId={lesson.youtubeId}
-                    />
+                    <div ref={playerAreaRef} className="relative scroll-mt-6">
+                        <LessonPlayer
+                            containerRef={player.containerRef}
+                            status={player.status}
+                            error={player.error}
+                            youtubeId={lesson.youtubeId}
+                        />
+
+                        {/* Quiz: phủ lên video từ md trở lên, dưới video trên điện thoại */}
+                        <AnimatePresence>
+                            {quizOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="mt-4 flex justify-center md:absolute md:inset-x-0 md:top-0 md:mt-0 md:aspect-video md:items-center md:rounded-panel md:bg-gray-950/75 md:p-3 lg:p-5 md:backdrop-blur-sm"
+                                >
+                                    <QuizCard
+                                        lesson={lesson}
+                                        phase={phase}
+                                        canPlay={canPlay}
+                                        isRepeat={!!quiz.results[phase.root.id] && !(phase.kind === 'answered')}
+                                        onAnswer={quiz.answer}
+                                        onReview={quiz.review}
+                                        onNextVariant={quiz.nextVariant}
+                                        onResume={quiz.resume}
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {phase.kind === 'reviewing' && (
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-card bg-gray-900 px-4 py-3 text-sm text-white md:absolute md:left-4 md:right-4 md:top-4 md:mt-0 md:bg-gray-900/85 md:backdrop-blur">
+                                <span>
+                                    Đang xem lại đoạn{' '}
+                                    <span className="font-mono font-bold">
+                                        {formatTime(phase.review.start)}–{formatTime(phase.review.end)}
+                                    </span>
+                                    , hết đoạn sẽ có câu tương tự.
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={quiz.nextVariant}
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-semibold transition hover:bg-white/25"
+                                >
+                                    <SkipForward size={14} /> Hỏi luôn
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                     {showResume && (
                         <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-brand-100 bg-brand-50 px-4 py-3 text-sm">
@@ -115,7 +183,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         </div>
                     )}
 
-                    <ConceptTimeline lesson={lesson} currentTime={currentTime} onSeek={handleSeek} />
+                    <ConceptTimeline lesson={lesson} currentTime={currentTime} onSeek={handleSeek} onOpenQuiz={quiz.open} results={quiz.results} />
 
                     <header className="pt-2">
                         <p className="text-eyebrow uppercase text-brand-600">
@@ -135,6 +203,8 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         <TranscriptPanel transcript={lesson.transcript} currentTime={currentTime} onSeek={handleSeek} />
 
                         <div className="flex flex-col gap-5">
+                            <QuizList lesson={lesson} results={quiz.results} onOpen={quiz.open} />
+
                             <section className="rounded-card border border-border bg-card p-5 shadow-card">
                                 <h2 className="font-bold text-gray-900">Khái niệm chính</h2>
                                 <dl className="mt-3 space-y-4">
@@ -186,6 +256,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                     <TutorPanel lesson={lesson} getCurrentTime={() => timeRef.current} onSeek={handleSeek} />
                 </div>
             </div>
+            <QuizRewardToast reward={quiz.reward} />
         </div>
     )
 }

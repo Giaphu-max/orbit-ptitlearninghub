@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import type { ReviewStatus, Seconds } from '@/data/types'
+import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
 // Lưu localStorage; mọi thao tác storage bọc try/catch để chế độ ẩn danh
@@ -11,6 +12,26 @@ export type Role = 'student' | 'teacher'
 export interface LessonProgress {
     lastPositionSec: Seconds
     completed: boolean
+}
+
+export interface QuizResult {
+    lessonId: string
+    conceptId: string
+    outcome: QuizOutcome
+    /** Số câu đã trả lời (gốc + biến thể) tới khi xong */
+    attempts: number
+    answeredAt: string
+}
+
+export interface RecordQuizInput {
+    lessonId: string
+    conceptId: string
+    /** id câu gốc */
+    questionId: string
+    outcome: QuizOutcome
+    attempts: number
+    /** id mọi câu gốc trong bài, để biết đã làm hết chưa */
+    lessonQuestionIds: string[]
 }
 
 interface OrbitState {
@@ -27,6 +48,8 @@ interface OrbitState {
     /** Mức nắm vững từng khái niệm, 0–1 */
     conceptMastery: Record<string, number>
     earnedBadgeIds: string[]
+    /** Kết quả từng câu gốc; chỉ ghi lần đầu nên làm lại không được cộng XP thêm */
+    quizResults: Record<string, QuizResult>
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
     lessonReview: Record<string, ReviewStatus>
 
@@ -34,6 +57,8 @@ interface OrbitState {
     addXp: (amount: number) => void
     saveLessonPosition: (lessonId: string, positionSec: Seconds) => void
     setLessonReview: (lessonId: string, status: ReviewStatus) => void
+    /** Ghi kết quả một câu quiz, cập nhật mức nắm vững; trả về số XP được cộng */
+    recordQuizResult: (input: RecordQuizInput) => number
     resetDemo: () => void
 }
 
@@ -46,6 +71,7 @@ const initialData = {
     lessonProgress: {},
     conceptMastery: {},
     earnedBadgeIds: [],
+    quizResults: {},
     lessonReview: {},
 } satisfies Partial<OrbitState>
 
@@ -75,7 +101,7 @@ const safeLocalStorage: StateStorage = {
 
 export const useOrbitStore = create<OrbitState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             ...initialData,
 
             setRole: (role) => set({ role }),
@@ -95,6 +121,29 @@ export const useOrbitStore = create<OrbitState>()(
 
             setLessonReview: (lessonId, status) =>
                 set((s) => ({ lessonReview: { ...s.lessonReview, [lessonId]: status } })),
+
+            recordQuizResult: ({ lessonId, conceptId, questionId, outcome, attempts, lessonQuestionIds }) => {
+                if (get().quizResults[questionId]) return 0
+                const xp = QUIZ_XP[outcome]
+                set((s) => {
+                    const quizResults = {
+                        ...s.quizResults,
+                        [questionId]: { lessonId, conceptId, outcome, attempts, answeredAt: new Date().toISOString() },
+                    }
+                    // Mức nắm vững khái niệm = trung bình các câu đã làm của khái niệm đó
+                    const ofConcept = Object.values(quizResults).filter((r) => r.conceptId === conceptId)
+                    const mastery = ofConcept.reduce((sum, r) => sum + OUTCOME_MASTERY[r.outcome], 0) / ofConcept.length
+                    const done = lessonQuestionIds.every((id) => quizResults[id])
+                    const progress = s.lessonProgress[lessonId] ?? { lastPositionSec: 0, completed: false }
+                    return {
+                        quizResults,
+                        xp: s.xp + xp,
+                        conceptMastery: { ...s.conceptMastery, [conceptId]: mastery },
+                        lessonProgress: { ...s.lessonProgress, [lessonId]: { ...progress, completed: progress.completed || done } },
+                    }
+                })
+                return xp
+            },
 
             resetDemo: () => set({ ...initialData }),
         }),

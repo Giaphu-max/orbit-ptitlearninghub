@@ -31,7 +31,8 @@ export function getGemini(): GeminiSetup {
 }
 
 /**
- * Gọi model chính; nếu Gemini báo quá tải tạm thời (503, hay gặp giờ cao điểm)
+ * Gọi model chính; nếu Gemini báo quá tải tạm thời (503, hay gặp giờ cao điểm) hoặc
+ * hết hạn mức (429; gói miễn phí tính hạn mức riêng cho từng model, ví dụ 20 lượt/ngày)
  * thì thử lần lượt các model dự phòng để buổi demo không bị gián đoạn.
  */
 export async function withFallback<T>(setup: GeminiSetup, call: (model: string) => Promise<T>): Promise<T> {
@@ -40,9 +41,10 @@ export async function withFallback<T>(setup: GeminiSetup, call: (model: string) 
         try {
             return await call(models[i])
         } catch (err) {
-            const overloaded = err instanceof ApiError && err.status === 503
-            if (!overloaded || i === models.length - 1) throw err
-            console.warn(`[api] ${models[i]} quá tải, chuyển sang ${models[i + 1]}`)
+            const retryable = err instanceof ApiError && (err.status === 503 || err.status === 429)
+            if (!retryable || i === models.length - 1) throw err
+            const reason = err.status === 429 ? 'hết hạn mức' : 'quá tải'
+            console.warn(`[api] ${models[i]} ${reason}, chuyển sang ${models[i + 1]}`)
         }
     }
 }

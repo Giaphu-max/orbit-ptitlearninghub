@@ -1,17 +1,20 @@
-import type { Lesson } from '@/data/types'
+import type { Lesson, LessonQuizQuestion } from '@/data/types'
+import type { QuizResult } from '@/store/useOrbitStore'
 import { formatTime } from '@/lib/youtube'
 
 interface ConceptTimelineProps {
     lesson: Lesson
     currentTime: number
     onSeek: (sec: number) => void
+    onOpenQuiz: (q: LessonQuizQuestion) => void
+    results: Record<string, QuizResult>
 }
 
 /**
  * Dải "chương" dưới video: mỗi khái niệm là một đoạn bấm để tua tới,
- * chấm đỏ là điểm video sẽ dừng hỏi quiz.
+ * chấm đỏ là điểm video sẽ dừng hỏi quiz (xanh khi đã làm, bấm để làm hoặc ôn lại).
  */
-export function ConceptTimeline({ lesson, currentTime, onSeek }: ConceptTimelineProps) {
+export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, results }: ConceptTimelineProps) {
     const duration = Math.max(lesson.durationSec, 1)
     const pct = (sec: number) => `${Math.min(100, Math.max(0, (sec / duration) * 100))}%`
     const active = lesson.concepts.find((c) => currentTime >= c.segment.start && currentTime < c.segment.end)
@@ -43,11 +46,16 @@ export function ConceptTimeline({ lesson, currentTime, onSeek }: ConceptTimeline
                     )
                 })}
                 {lesson.quiz.map((q) => (
-                    <span
+                    <button
                         key={q.id}
-                        className="pointer-events-none absolute top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-brand-600 ring-2 ring-white"
+                        type="button"
+                        onClick={() => onOpenQuiz(q)}
+                        className={`absolute -top-0.5 z-10 h-3 w-3 -translate-x-1/2 rounded-full ring-2 ring-white transition duration-fast hover:scale-125 ${
+                            results[q.id] ? 'bg-success' : 'bg-brand-600'
+                        }`}
                         style={{ left: pct(q.pauseAt) }}
-                        title={`Câu hỏi ở ${formatTime(q.pauseAt)}`}
+                        title={`Câu hỏi ở ${formatTime(q.pauseAt)}${results[q.id] ? ' (đã làm)' : ''}`}
+                        aria-label={`Mở câu hỏi ở ${formatTime(q.pauseAt)}`}
                     />
                 ))}
                 <span
