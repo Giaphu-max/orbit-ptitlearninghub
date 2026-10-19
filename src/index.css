@@ -153,6 +153,8 @@
 /* Hero tối và màn nhận XP đỏ: nền dựng từ token để đổi ở một chỗ */
 @layer components {
   .bg-hero {
+    /* Chữ mặc định trắng: hero luôn nền tối nên không được thừa kế màu chữ theo giao diện */
+    color: hsl(var(--ink-foreground));
     background-color: hsl(var(--hero-base));
     background-image:
       radial-gradient(90% 80% at 85% 15%, hsl(var(--hero-glow)) 0%, transparent 60%),
@@ -160,6 +162,7 @@
       linear-gradient(160deg, hsl(var(--hero-top)) 0%, hsl(var(--hero-base)) 100%);
   }
   .bg-reward {
+    color: hsl(var(--ink-foreground));
     background-color: hsl(var(--reward-mid));
     background-image: radial-gradient(80% 70% at 50% 30%, hsl(var(--reward-from)) 0%, hsl(var(--reward-mid)) 45%, hsl(var(--reward-to)) 100%);
   }
