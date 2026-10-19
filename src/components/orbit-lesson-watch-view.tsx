@@ -4,6 +4,26 @@ import { useState, useRef, useEffect } from 'react'
 import { Play, Pause, Volume2, Maximize, Send, CheckCircle2, Settings, Sparkles, PanelRightClose, MessageSquare, ArrowDown, MoreHorizontal, ChevronLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate } from 'react-router-dom'
+import { getLesson } from '@/data'
+import { askTutor } from '@/lib/api'
+import { CHAT_LIMITS, type ChatCitation, type ChatTurn } from '@/lib/api-types'
+
+// Tạm dùng bài mẫu; P0.3 sẽ lấy bài theo route và nhúng YouTube player thật.
+const DEMO_LESSON_ID = 'bo-cuc-co-ban'
+
+interface ChatMessage {
+    role: 'ai' | 'user'
+    text: string
+    citations?: ChatCitation[]
+    /** Tin báo lỗi: hiện cho người dùng nhưng không gửi lại làm ngữ cảnh */
+    isError?: boolean
+}
+
+function formatTime(sec: number) {
+    const m = Math.floor(sec / 60)
+    const s = Math.floor(sec % 60)
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 interface OrbitLessonWatchViewProps {
     onBack?: () => void
@@ -11,14 +31,16 @@ interface OrbitLessonWatchViewProps {
 
 export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {}) {
     const navigate = useNavigate()
+    const lesson = getLesson(DEMO_LESSON_ID)!
+    const [currentTime, setCurrentTime] = useState(0)
 
     const handleBack = () => {
         if (onBack) onBack()
         else navigate('/learning')
     }
     const [isChatOpen, setIsChatOpen] = useState(true)
-    const [messages, setMessages] = useState([
-        { role: 'ai', text: 'Xin chào! Tôi là trợ lý học tập AI. Bạn đang xem bài "Thiết kế giao diện trong Figma". Bạn có câu hỏi nào cần giải đáp không?' }
+    const [messages, setMessages] = useState<ChatMessage[]>([
+        { role: 'ai', text: `Chào bạn! Mình là trợ giảng AI của bài **${lesson.title}**. Mình chỉ trả lời dựa trên nội dung bài giảng, kèm mốc thời gian để bạn xem lại đúng đoạn.` }
     ])
     const [inputValue, setInputValue] = useState('')
     const [isTyping, setIsTyping] = useState(false)
@@ -50,35 +72,30 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
     }
 
     const handleSendMessage = async () => {
-        if (!inputValue.trim()) return
-        
-        const userMessage = inputValue.trim()
-        setMessages(prev => [...prev, { role: 'user', text: userMessage }])
+        const question = inputValue.trim()
+        if (!question || isTyping) return
+
+        // Lượt chào đầu, tin lỗi và câu hỏi đã bị lỗi không gửi làm ngữ cảnh
+        const history: ChatTurn[] = messages
+            .slice(1)
+            .filter((m, i, arr) => !m.isError && !(m.role === 'user' && arr[i + 1]?.isError))
+            .map((m) => ({ role: m.role === 'ai' ? 'assistant' : 'user', text: m.text }))
+
+        setMessages(prev => [...prev, { role: 'user', text: question }])
         setInputValue('')
         setIsTyping(true)
-        
+
         setTimeout(() => {
             setIsScrolledUp(false)
             scrollToBottom()
         }, 50)
 
         try {
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] })
-            })
-            const data = await response.json()
-            if (!response.ok) {
-                console.error("Google API Details:", data)
-                throw new Error(data.error?.message || `HTTP Error ${response.status}`)
-            }
-            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Xin lỗi, tôi không thể xử lý câu hỏi này lúc này.'
-            setMessages(prev => [...prev, { role: 'ai', text: aiText }])
-        } catch (error: any) {
-            console.error('Gemini API Error:', error)
-            setMessages(prev => [...prev, { role: 'ai', text: `Lỗi API: ${error.message}` }])
+            const res = await askTutor({ lessonId: lesson.id, question, history })
+            setMessages(prev => [...prev, { role: 'ai', text: res.answer, citations: res.citations }])
+        } catch (error) {
+            const text = error instanceof Error ? error.message : 'Trợ giảng AI chưa trả lời được lúc này. Bạn thử lại nhé.'
+            setMessages(prev => [...prev, { role: 'ai', text, isError: true }])
         } finally {
             setIsTyping(false)
         }
@@ -128,7 +145,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                             {/* Controls Bar */}
                             <div className="relative z-20 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                 <div className="mb-4 relative w-full h-1.5 rounded-full bg-white/20 cursor-pointer">
-                                    <div className="absolute left-0 top-0 h-full w-[45%] rounded-full bg-brand-500 relative">
+                                    <div className="absolute left-0 top-0 h-full rounded-full bg-brand-500 relative" style={{ width: `${(currentTime / lesson.durationSec) * 100}%` }}>
                                         <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md" />
                                     </div>
                                 </div>
@@ -141,7 +158,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                                 <div className="w-2/3 h-full bg-white rounded-full" />
                                             </div>
                                         </div>
-                                        <span className="text-sm font-medium text-gray-200">12:34 / 28:50</span>
+                                        <span className="font-mono text-sm font-medium text-gray-200">{formatTime(currentTime)} / {formatTime(lesson.durationSec)}</span>
                                     </div>
                                     <div className="flex items-center gap-6">
                                         <Settings size={20} className="cursor-pointer hover:text-gray-300 transition" />
@@ -157,7 +174,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                             {/* Details & Description */}
                             <div className="space-y-8">
                                 <div>
-                                    <h1 className="text-3xl font-bold text-gray-900">Thiết kế giao diện trong Figma</h1>
+                                    <h1 className="text-3xl font-bold text-gray-900">{lesson.title}</h1>
                                     <div className="mt-4 flex items-center gap-6">
                                         <div className="flex items-center gap-3">
                                             <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=100&q=80" alt="Instructor" className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
@@ -258,10 +275,29 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                             GP
                                         </div>
                                     )}
-                                    <div className={`${msg.role === 'ai' ? 'bg-white border border-gray-100 text-gray-700 rounded-tl-sm' : 'bg-gray-900 text-white rounded-tr-sm'} p-4 rounded-2xl shadow-sm text-sm leading-relaxed prose prose-sm max-w-none break-words ${msg.role === 'user' ? 'prose-invert text-white' : 'text-gray-700'}`}>
-                                        <ReactMarkdown>
-                                            {msg.text}
-                                        </ReactMarkdown>
+                                    <div className="flex min-w-0 flex-col gap-2">
+                                        <div className={`${msg.role === 'ai' ? (msg.isError ? 'bg-brand-50 border border-brand-100 text-brand-800 rounded-tl-sm' : 'bg-white border border-gray-100 text-gray-700 rounded-tl-sm') : 'bg-gray-900 text-white rounded-tr-sm'} p-4 rounded-2xl shadow-sm text-sm leading-relaxed prose prose-sm max-w-none break-words ${msg.role === 'user' ? 'prose-invert text-white' : ''}`}>
+                                            <ReactMarkdown>
+                                                {msg.text}
+                                            </ReactMarkdown>
+                                        </div>
+                                        {msg.citations && msg.citations.length > 0 && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {msg.citations.map((c) => (
+                                                    <button
+                                                        key={c.start}
+                                                        type="button"
+                                                        onClick={() => setCurrentTime(c.start)}
+                                                        className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 transition duration-fast hover:bg-brand-100"
+                                                        title="Tua video tới đoạn này"
+                                                    >
+                                                        <Play size={10} className="fill-current" />
+                                                        <span className="font-mono">{formatTime(c.start)}</span>
+                                                        <span className="text-brand-600/80">{c.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -295,7 +331,8 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                     type="text" 
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                    onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && handleSendMessage()}
+                                    maxLength={CHAT_LIMITS.questionMaxChars}
                                     placeholder="Nhập câu hỏi của bạn..." 
                                     className="w-full bg-gray-50 border border-gray-200 rounded-full pl-5 pr-12 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 transition"
                                 />
@@ -308,9 +345,16 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                 </button>
                             </div>
                             <div className="mt-4 flex flex-wrap gap-2">
-                                <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-600 rounded-full cursor-pointer hover:bg-gray-200 transition">Figma</span>
-                                <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-600 rounded-full cursor-pointer hover:bg-gray-200 transition">UI/UX</span>
-                                <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-600 rounded-full cursor-pointer hover:bg-gray-200 transition">Design System</span>
+                                {lesson.concepts.map((c) => (
+                                    <button
+                                        key={c.id}
+                                        type="button"
+                                        onClick={() => setInputValue(`${c.name} là gì?`)}
+                                        className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-600 rounded-full cursor-pointer hover:bg-gray-200 transition"
+                                    >
+                                        {c.name}
+                                    </button>
+                                ))}
                             </div>
                             </div>
                         </div>
