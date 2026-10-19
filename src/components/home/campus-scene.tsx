@@ -77,7 +77,7 @@ function Gable({ len, h, depth, c, at, alongZ = false }: { len: number; h: numbe
 
 interface TextOpts { w?: number; h?: number; fg?: string; size?: number | number[]; weight?: number }
 
-function makeTextTexture(text: string, { w = 1024, h = 256, fg = '#C4161C', size = 150, weight = 800 }: TextOpts) {
+function makeTextTexture(text: string, { w = 1024, h = 256, fg = CAMPUS.ptitRed, size = 150, weight = 800 }: TextOpts) {
     const cv = document.createElement('canvas')
     cv.width = w
     cv.height = h
@@ -110,7 +110,7 @@ function TextPlane({ w, h, text, at, opts, doubleSide }: { w: number; h: number;
 }
 
 // Hằng số ngoài component để useMemo của TextPlane không tính lại mỗi lần render
-const T_SAMSUNG: TextOpts = { fg: '#1A3E8C', size: 64, weight: 800 }
+const T_SAMSUNG: TextOpts = { fg: CAMPUS.signBlue, size: 64, weight: 800 }
 const T_PTIT: TextOpts = { size: 200 }
 const T_HEART: TextOpts = { size: 170 }
 const T_GATE: TextOpts = { size: [96, 56], h: 300 }
@@ -153,13 +153,13 @@ function Building({ name, sub, anchorY, position, hovered, compact, registry, ch
                 >
                     <div
                         className={`whitespace-nowrap rounded-xl px-[11px] py-[7px] text-xs font-bold shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)] transition duration-200 ${
-                            hovered ? '-translate-y-1.5 bg-brand-600 text-white' : 'bg-card/95 text-foreground'
+                            hovered ? '-translate-y-1.5 bg-brand-600 text-ink-foreground' : 'bg-card/95 text-foreground'
                         }`}
                     >
                         {name}
-                        <small className={`block text-[11px] font-medium ${hovered ? 'text-white/85' : 'text-muted-foreground'}`}>{sub}</small>
+                        <small className={`block text-[11px] font-medium ${hovered ? 'text-ink-foreground/85' : 'text-muted-foreground'}`}>{sub}</small>
                     </div>
-                    <div className="h-4 w-0.5 bg-white/80" />
+                    <div className="h-4 w-0.5 bg-ink-foreground/80" />
                 </div>
             </Html>
         </group>
@@ -234,7 +234,7 @@ function A2Windows({ nightRef, reduce }: { nightRef: React.MutableRefObject<numb
             </instancedMesh>
             <instancedMesh ref={litRef} args={[undefined, undefined, WIN_SLOTS.length]}>
                 <boxGeometry args={[0.5, 0.62, 0.08]} />
-                <meshBasicMaterial color="#FFD27A" />
+                <meshBasicMaterial color={CAMPUS.windowLit} />
             </instancedMesh>
         </>
     )
@@ -262,7 +262,7 @@ function Flag({ color, x, index, reduce }: { color: string; x: number; index: nu
     })
     return (
         <>
-            <Cylinder r={0.05} h={5.5} c="#D6D2CF" at={[x, 2.75, 5.2]} seg={6} />
+            <Cylinder r={0.05} h={5.5} c={CAMPUS.pillar} at={[x, 2.75, 5.2]} seg={6} />
             <mesh geometry={geo} position={[x + 0.05, 5.15, 5.2]} castShadow>
                 <meshStandardMaterial color={color} side={THREE.DoubleSide} flatShading />
             </mesh>
@@ -288,7 +288,7 @@ function Cloud({ index, reduce }: { index: number; reduce: boolean }) {
             {CLOUD_PUFFS.map(([x, y, z, r], i) => (
                 <mesh key={i} position={[x, y, z]}>
                     <icosahedronGeometry args={[r, 0]} />
-                    <meshStandardMaterial color="#FFFFFF" flatShading transparent opacity={0.92} />
+                    <meshStandardMaterial color={CAMPUS.pureWhite} flatShading transparent opacity={0.92} />
                 </mesh>
             ))}
         </group>
@@ -301,7 +301,7 @@ type BuildingName = 'Tòa A2' | 'Tòa A3' | 'Hội trường A1' | 'Tòa A1' | '
 
 const TREE_SPOTS: [number, number][] = [[-20, 14], [-17, 14], [-13, 13.5], [8, 13.5], [11, 13.6], [14, 13.3], [17.5, 13.6], [20, 12], [-20, 8], [-20, -1], [-19.5, -12], [-16, -14], [-6, -14], [3, -14], [7, -14.5], [19.5, -14], [20, -1], [19.5, 5], [-6, 6], [-5, 0.5], [9, 4], [10, -2], [-7, -5]]
 const LAWNS: [number, number, number, number][] = [[-15, 11, 9, 6], [14, 9, 10, 8], [-16, -3, 8, 6], [15, -4, 8, 6], [-4, -3, 6, 5]]
-const CARS: [string, number, number][] = [['#C4161C', -1.8, 10.8], ['#FFFFFF', 0.9, 8.2], ['#2B2B33', 3.8, 10.8], ['#B9C4CC', 5.2, 8.2]]
+const CARS: [string, number, number][] = [[CAMPUS.ptitRed, -1.8, 10.8], [CAMPUS.pureWhite, 0.9, 8.2], [CAMPUS.carDark, 3.8, 10.8], [CAMPUS.carSilver, 5.2, 8.2]]
 
 interface WorldProps {
     hovered: BuildingName | null
@@ -326,7 +326,7 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
                 <Box key={i} s={[w, 0.08, d]} c={i % 2 ? C.grassDark : C.grass} at={[x, 0, z]} />
             ))}
             {Array.from({ length: 7 }, (_, i) => (
-                <Box key={i} s={[0.2, 0.03, 3.4]} c="#FFFFFF" at={[-2.5 + i * 1.4, 0, 9.5]} />
+                <Box key={i} s={[0.2, 0.03, 3.4]} c={CAMPUS.pureWhite} at={[-2.5 + i * 1.4, 0, 9.5]} />
             ))}
             {CARS.map(([c, x, z]) => (
                 <group key={c}>
@@ -343,7 +343,7 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
                 ))}
                 <Box s={[3.4, 0.35, 2.4]} c={C.granite} at={[4.2, 2.8, 4.4]} />
                 {[3.1, 5.3].map((x) => (
-                    <Cylinder key={x} r={0.24} h={2.8} c="#D6D2CF" at={[x, 1.4, 5.3]} />
+                    <Cylinder key={x} r={0.24} h={2.8} c={CAMPUS.pillar} at={[x, 1.4, 5.3]} />
                 ))}
                 {[0, 1, 2, 3].map((s) => (
                     <Box key={s} s={[3.2 - s * 0.2, 0.18, 0.5]} c={C.roofRed} at={[4.2, s * 0.18, 6 + (3 - s) * 0.45]} />
@@ -355,24 +355,24 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
                 <Box s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
                 <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.25, metalness: 0.35 }} />
                 <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.35 }} />
-                <Box s={[6.8, 0.5, 4.8]} c="#E8E0D4" at={[0, 13.8, -0.8]} />
+                <Box s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
                 <HipRoof w={5.2} h={1.6} d={3.6} c={C.roofRed} at={[0, 14.3, -1.2]} />
                 <Gable len={0.5} h={1.8} depth={5} c={C.cream} at={[0, 13.8, 1.35]} alongZ />
                 {/* Đồng hồ */}
-                <mesh position={[0, 14.55, 1.65]} rotation={[Math.PI / 2, 0, 0]} material={stdMat('#FFFFFF')} castShadow receiveShadow>
+                <mesh position={[0, 14.55, 1.65]} rotation={[Math.PI / 2, 0, 0]} material={stdMat(CAMPUS.pureWhite)} castShadow receiveShadow>
                     <cylinderGeometry args={[0.62, 0.62, 0.12, 24]} />
                 </mesh>
                 <mesh position={[0, 14.55, 1.7]} material={stdMat(C.glass)} castShadow receiveShadow>
                     <torusGeometry args={[0.62, 0.08, 6, 24]} />
                 </mesh>
-                <Box s={[0.06, 0.45, 0.04]} c="#1A1412" at={[0, 14.55, 1.74]} />
-                <Box s={[0.36, 0.06, 0.04]} c="#1A1412" at={[0.16, 14.55, 1.74]} />
+                <Box s={[0.06, 0.45, 0.04]} c={CAMPUS.ink} at={[0, 14.55, 1.74]} />
+                <Box s={[0.36, 0.06, 0.04]} c={CAMPUS.ink} at={[0.16, 14.55, 1.74]} />
                 <TextPlane w={2.4} h={0.6} text="PTIT" at={[0, 13.45, 1.62]} opts={T_PTIT} />
 
                 <A2Windows nightRef={nightRef} reduce={reduce} />
 
                 <TextPlane w={3.2} h={0.8} text="I ♥ PTIT" at={[2.8, 0.45, 6.6]} opts={T_HEART} doubleSide />
-                {([[-5.8, '#C4161C'], [-5, '#F2C230'], [-4.2, '#3E7BD6']] as const).map(([x, c], i) => (
+                {([[-5.8, CAMPUS.ptitRed], [-5, CAMPUS.flagYellow], [-4.2, CAMPUS.flagBlue]] as const).map(([x, c], i) => (
                     <Flag key={x} x={x} color={c} index={i} reduce={reduce} />
                 ))}
             </Building>
@@ -392,7 +392,7 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
             <Building {...b('Hội trường A1')} sub="Sự kiện · Seminar" anchorY={6.2} position={[-11, 0, -9]}>
                 <Box s={[12, 3.6, 5]} c={C.white} />
                 {Array.from({ length: 8 }, (_, i) => (
-                    <Box key={i} s={[0.8, 1.6, 0.1]} c="#9FB7C4" at={[-4.9 + i * 1.4, 1, 2.53]} />
+                    <Box key={i} s={[0.8, 1.6, 0.1]} c={CAMPUS.hallWindow} at={[-4.9 + i * 1.4, 1, 2.53]} />
                 ))}
                 <Gable len={12.6} h={2.2} depth={5.8} c={C.roofRed} at={[0, 3.6, 0]} />
                 <Box s={[3, 4.4, 1.2]} c={C.white} at={[0, 0, 3]} />
@@ -405,7 +405,7 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
                 {Array.from({ length: 5 }, (_, r) => (
                     <Box key={r} s={[7.6, 0.18, 6.1]} c={C.stripe} at={[0, 0.7 + r * 0.95, 0]} />
                 ))}
-                <Box s={[7.6, 0.9, 0.1]} c="#3C9E5B" at={[0, 0.2, 3.05]} />
+                <Box s={[7.6, 0.9, 0.1]} c={CAMPUS.bandGreen} at={[0, 0.2, 3.05]} />
             </Building>
 
             <Building {...b('Canteen')} sub="Góc nghỉ" anchorY={4.2} position={[-1.5, 0, -11]}>
@@ -415,15 +415,15 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
 
             <Building {...b('Cổng trường')} sub="Học viện Công nghệ BCVT" anchorY={5.6} position={[2, 0, 13.2]}>
                 {[-3.4, 3.4].map((x) => (
-                    <Box key={x} s={[0.8, 3.6, 0.8]} c="#D8C29C" at={[x, 0, 0]} />
+                    <Box key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
                 ))}
-                <Box s={[8, 0.5, 1]} c="#E4D7BF" at={[0, 3.6, 0]} />
-                <Box s={[7.4, 1.6, 0.2]} c="#F3EFEA" at={[0, 4.1, 0]} />
+                <Box s={[8, 0.5, 1]} c={CAMPUS.gateBeam} at={[0, 3.6, 0]} />
+                <Box s={[7.4, 1.6, 0.2]} c={CAMPUS.gateSign} at={[0, 4.1, 0]} />
                 <TextPlane w={7.2} h={1.5} text={'HỌC VIỆN\nCÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG'} at={[0, 4.9, 0.12]} opts={T_GATE} />
                 {Array.from({ length: 9 }, (_, i) => (
-                    <Box key={i} s={[0.08, 1.4, 0.08]} c="#C9C3BD" at={[4.6 + i * 0.55, 0, 0]} />
+                    <Box key={i} s={[0.08, 1.4, 0.08]} c={CAMPUS.fence} at={[4.6 + i * 0.55, 0, 0]} />
                 ))}
-                <Box s={[5, 0.08, 0.08]} c="#C9C3BD" at={[6.8, 1.3, 0]} />
+                <Box s={[5, 0.08, 0.08]} c={CAMPUS.fence} at={[6.8, 1.3, 0]} />
             </Building>
 
             {/* Cây */}
@@ -450,8 +450,8 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
 
 // ─── Cảnh: camera, đèn, xoay theo chuột, hover, ngày/đêm ───────────────────
 
-const SUN_DAY = new THREE.Color('#FFD9B8')
-const SUN_NIGHT = new THREE.Color('#7E8FD6')
+const SUN_DAY = new THREE.Color(CAMPUS.sunlight)
+const SUN_NIGHT = new THREE.Color(CAMPUS.moonlight)
 const TARGET = new THREE.Vector3(0, 3, 0)
 const START_POS = new THREE.Vector3(52, 40, 58)
 
@@ -634,10 +634,10 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
                     onEnd={onEnd}
                 />
             )}
-            <hemisphereLight ref={hemi} args={[0xffe9e0, 0x5a2a28, 0.75 * Math.PI]} />
+            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.75 * Math.PI]} />
             <directionalLight
                 ref={sun}
-                color="#FFD9B8"
+                color={CAMPUS.sunlight}
                 intensity={1.05 * Math.PI}
                 position={[-26, 38, 22]}
                 castShadow
@@ -650,7 +650,7 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
                 shadow-camera-far={120}
                 shadow-bias={-0.0006}
             />
-            <directionalLight ref={rim} color="#FF6B5E" intensity={0.35 * Math.PI} position={[30, 14, -30]} />
+            <directionalLight ref={rim} color={CAMPUS.rimLight} intensity={0.35 * Math.PI} position={[30, 14, -30]} />
             <group ref={world}>
                 <Campus hovered={hovered} compact={compact} registry={registry} nightRef={nightRef} reduce={reduce} />
             </group>

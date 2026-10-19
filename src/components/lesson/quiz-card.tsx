@@ -71,11 +71,11 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                 <span className="text-eyebrow uppercase text-brand-ink">
                     {attempt === 0 ? 'Câu hỏi nhanh' : `Câu tương tự ${attempt}/${root.variants.length}`}
                 </span>
-                {concept && <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">{concept.name}</span>}
-                <span className="ml-auto font-mono text-xs text-gray-400">{formatTime(root.pauseAt)}</span>
+                {concept && <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">{concept.name}</span>}
+                <span className="ml-auto font-mono text-xs text-muted-foreground">{formatTime(root.pauseAt)}</span>
             </div>
 
-            <h2 id={`quiz-${question.id}`} className="mt-3 text-lg font-bold leading-snug text-gray-900 md:text-title">
+            <h2 id={`quiz-${question.id}`} className="mt-3 text-lg font-bold leading-snug text-foreground md:text-title">
                 {question.prompt}
             </h2>
 
@@ -89,8 +89,8 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                     if (answered && !isChosen && !(revealCorrect && isCorrectOption)) return null
                     let tone = 'border-border bg-card hover:border-brand-300 hover:bg-brand-50/50'
                     if (answered) {
-                        if (isChosen && answered.correct) tone = 'border-success bg-success/10 text-gray-900'
-                        else if (isChosen) tone = 'border-brand-400 bg-brand-50 text-gray-900'
+                        if (isChosen && answered.correct) tone = 'border-success bg-success/10 text-foreground'
+                        else if (isChosen) tone = 'border-brand-400 bg-brand-50 text-foreground'
                         else if (revealCorrect && isCorrectOption) tone = 'border-success/60 bg-success/5'
                         else tone = 'border-border bg-card opacity-60'
                     }
@@ -106,17 +106,17 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                             transition={{ duration: 0.35 }}
                             className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-[15px] transition duration-fast disabled:cursor-default ${tone}`}
                         >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 font-mono text-xs font-bold text-gray-600">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold text-muted-foreground">
                                 {answered && isChosen ? answered.correct ? <Check size={14} className="text-success" /> : <X size={14} className="text-brand-ink" /> : LETTERS[i]}
                             </span>
-                            <span className="text-gray-800">{option}</span>
+                            <span className="text-foreground">{option}</span>
                         </motion.button>
                     )
                 })}
             </div>
 
             {!answered && (
-                <p className="mt-3 text-xs text-gray-500">
+                <p className="mt-3 text-xs text-muted-foreground">
                     Chọn một đáp án (phím 1–{question.options.length}).{' '}
                     {isRepeat ? 'Bạn đã làm câu này, lần này để ôn lại nên không cộng XP.' : `Đúng được +${xpIfCorrect} XP.`}
                 </p>
@@ -124,34 +124,34 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
 
             {answered?.correct && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-card bg-success/10 p-4">
-                    <p className="font-bold text-gray-900">
+                    <p className="font-bold text-foreground">
                         {attempt === 0 ? 'Chính xác!' : 'Sửa đúng rồi, bạn đã hiểu chỗ này!'}
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-gray-700">{question.explanation}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{question.explanation}</p>
                 </motion.div>
             )}
 
             {answered && !answered.correct && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-3">
                     <div className="rounded-card border border-brand-100 bg-brand-50 p-4">
-                        <p className="flex items-center gap-2 font-bold text-gray-900">
+                        <p className="flex items-center gap-2 font-bold text-foreground">
                             <Sparkles size={16} className="text-brand-ink" /> Chưa đúng, cùng xem lại nhé
                         </p>
                         {explain?.status === 'loading' ? (
-                            <p className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                            <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                                 <Loader2 size={14} className="animate-spin" /> Trợ giảng đang xem lại bài giảng để giải thích…
                             </p>
                         ) : (
-                            <div className="prose prose-sm mt-2 max-w-none dark:prose-invert text-gray-700">
+                            <div className="prose prose-sm mt-2 max-w-none dark:prose-invert text-muted-foreground">
                                 <ReactMarkdown>{explain?.text ?? question.explanation}</ReactMarkdown>
                             </div>
                         )}
                         {explain?.status === 'fallback' && (
-                            <p className="mt-2 text-xs text-gray-500">({explain.error} Đây là giải thích soạn sẵn của bài.)</p>
+                            <p className="mt-2 text-xs text-muted-foreground">({explain.error} Đây là giải thích soạn sẵn của bài.)</p>
                         )}
                     </div>
                     {reviewRange && reviewText && (
-                        <blockquote className="border-l-4 border-brand-200 pl-4 text-sm leading-relaxed text-gray-600">
+                        <blockquote className="border-l-4 border-brand-200 pl-4 text-sm leading-relaxed text-muted-foreground">
                             <span className="mr-2 font-mono text-xs text-brand-ink">
                                 {formatTime(reviewRange.start)}–{formatTime(reviewRange.end)}
                             </span>
@@ -159,7 +159,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                         </blockquote>
                     )}
                     {!hasNextVariant && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                             Đáp án đúng: <strong>{question.options[question.correctIndex]}</strong>. Khái niệm này sẽ được ưu tiên trong Orbit Daily để bạn ôn lại.
                         </p>
                     )}
@@ -174,7 +174,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                                 type="button"
                                 onClick={onNextVariant}
                                 disabled={explain?.status === 'loading'}
-                                className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2.5 text-sm font-bold text-gray-800 transition hover:bg-gray-200 disabled:opacity-50"
+                                className="inline-flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted-foreground/20 disabled:opacity-50"
                             >
                                 <RotateCcw size={15} /> Thử câu tương tự
                             </button>
@@ -183,7 +183,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                                     type="button"
                                     onClick={onReview}
                                     disabled={!reviewRange}
-                                    className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2.5 text-sm font-bold text-white shadow-brand transition hover:bg-brand-700 disabled:opacity-50"
+                                    className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:opacity-50"
                                 >
                                     <PlayCircle size={15} />
                                     {reviewRange ? `Xem lại đoạn ${formatTime(reviewRange.start)}` : 'Xem lại đoạn giảng'}
@@ -194,7 +194,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                         <button
                             type="button"
                             onClick={onResume}
-                            className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-brand transition hover:bg-brand-700"
+                            className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700"
                         >
                             {canPlay ? 'Xem tiếp' : 'Đóng'} <ArrowRight size={15} />
                         </button>

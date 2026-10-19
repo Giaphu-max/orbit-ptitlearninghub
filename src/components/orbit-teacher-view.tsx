@@ -9,8 +9,8 @@ import { useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 type Section = 'review' | 'stats'
 
 const fieldClass =
-    'w-full rounded-md border border-input bg-card px-3 py-2 text-[15px] text-gray-900 transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
-const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-500'
+    'w-full rounded-md border border-input bg-card px-3 py-2 text-[15px] text-foreground transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
+const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground'
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0)
 
@@ -28,8 +28,8 @@ export function OrbitTeacherView() {
             <div className="mx-auto flex max-w-5xl flex-col gap-8 px-5 py-8 lg:px-8 lg:py-12">
                 <header>
                     <p className="text-eyebrow uppercase text-brand-ink">Dành cho giảng viên</p>
-                    <h1 className="mt-3 text-headline text-gray-900">Duyệt nội dung và theo dõi lớp</h1>
-                    <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-gray-600">
+                    <h1 className="mt-3 text-headline text-foreground">Duyệt nội dung và theo dõi lớp</h1>
+                    <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
                         Nội dung do AI tạo từ video bài giảng. Sinh viên chỉ thấy bài sau khi bạn xem lại, chỉnh sửa và xuất bản.
                     </p>
                 </header>
@@ -45,8 +45,8 @@ export function OrbitTeacherView() {
                                 onClick={() => setLessonId(l.id)}
                                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition duration-fast ${
                                     l.id === lessonId
-                                        ? 'border-brand-600 bg-brand-600 text-white'
-                                        : 'border-border bg-card text-gray-700 hover:border-gray-300'
+                                        ? 'border-brand-600 bg-brand-600 text-ink-foreground'
+                                        : 'border-border bg-card text-muted-foreground hover:border-muted-foreground/40'
                                 }`}
                             >
                                 {l.title}
@@ -65,7 +65,7 @@ export function OrbitTeacherView() {
                 </div>
 
                 {!lesson ? (
-                    <p className="text-gray-500">Chưa có bài học nào.</p>
+                    <p className="text-muted-foreground">Chưa có bài học nào.</p>
                 ) : section === 'review' ? (
                     // key: đổi bài thì dựng lại form từ nội dung của bài đó
                     <ReviewPanel key={lesson.id} lesson={lesson} />
@@ -85,7 +85,7 @@ function SectionTab({ active, onClick, icon, children }: { active: boolean; onCl
             aria-selected={active}
             onClick={onClick}
             className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition duration-fast ${
-                active ? 'border-brand-600 text-brand-ink' : 'border-transparent text-gray-500 hover:text-gray-800'
+                active ? 'border-brand-600 text-brand-ink' : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
         >
             {icon}
@@ -155,13 +155,13 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
                     <div className="flex flex-wrap items-center gap-2">
                         <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-                                published ? 'bg-success/10 text-success' : 'bg-warning/20 text-gray-800'
+                                published ? 'bg-success/10 text-success' : 'bg-warning/20 text-foreground'
                             }`}
                         >
                             {published ? <Eye size={13} /> : <EyeOff size={13} />}
                             {published ? 'Đã xuất bản' : 'Bản nháp'}
                         </span>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-gray-600">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
                             <Sparkles size={13} />
                             {lesson.origin === 'gemini' ? 'Nội dung do Gemini tạo' : 'Dữ liệu mẫu'}
                         </span>
@@ -169,12 +169,12 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
                             <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-ink">Đã chỉnh bởi giảng viên</span>
                         )}
                     </div>
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-muted-foreground">
                         {published ? 'Sinh viên đang xem được bài này.' : 'Sinh viên chưa thấy bài này cho tới khi bạn xuất bản.'}
                     </p>
                 </div>
                 {hasEdits && (
-                    <button type="button" onClick={revert} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-muted">
+                    <button type="button" onClick={revert} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted">
                         <RotateCcw size={15} /> Về bản AI
                     </button>
                 )}
@@ -182,7 +182,7 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
                     type="button"
                     onClick={save}
                     disabled={!dirty || problems.length > 0}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold text-gray-800 transition hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground transition hover:border-muted-foreground/40 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <Save size={15} /> Lưu chỉnh sửa
                 </button>
@@ -191,7 +191,7 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
                     onClick={togglePublish}
                     disabled={!published && problems.length > 0}
                     className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                        published ? 'border border-border bg-card text-gray-800 hover:border-gray-300' : 'bg-brand-600 text-white shadow-brand hover:bg-brand-700'
+                        published ? 'border border-border bg-card text-foreground hover:border-muted-foreground/40' : 'bg-brand-600 text-ink-foreground shadow-brand hover:bg-brand-700'
                     }`}
                 >
                     {published ? <EyeOff size={15} /> : <CheckCircle2 size={15} />}
@@ -214,7 +214,7 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
 
             {/* Tóm tắt */}
             <section>
-                <h2 className="text-title text-gray-900">Tóm tắt bài giảng</h2>
+                <h2 className="text-title text-foreground">Tóm tắt bài giảng</h2>
                 <textarea
                     aria-label="Tóm tắt bài giảng"
                     value={draft.summary}
@@ -229,14 +229,14 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
 
             {/* Khái niệm */}
             <section>
-                <h2 className="text-title text-gray-900">Khái niệm ({draft.concepts.length})</h2>
+                <h2 className="text-title text-foreground">Khái niệm ({draft.concepts.length})</h2>
                 <div className="mt-4 flex flex-col gap-4">
                     {draft.concepts.map((c, i) => {
                         const stat = classStats.concepts[c.id]
                         return (
                             <div key={c.id} className="rounded-card border border-border bg-card p-5 shadow-card">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <span className="font-mono text-xs text-gray-500">
+                                    <span className="font-mono text-xs text-muted-foreground">
                                         {fmt(c.segment.start)}–{fmt(c.segment.end)}
                                     </span>
                                     {stat && <ErrorRateTag rate={pct(stat.wrongFirstTry, stat.answered)} />}
@@ -253,19 +253,19 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
 
             {/* Câu hỏi */}
             <section>
-                <h2 className="text-title text-gray-900">Câu hỏi trong video ({draft.quiz.length})</h2>
+                <h2 className="text-title text-foreground">Câu hỏi trong video ({draft.quiz.length})</h2>
                 <div className="mt-4 flex flex-col gap-4">
                     {draft.quiz.map((q, i) => (
                         <div key={q.id} className="rounded-card border border-border bg-card p-5 shadow-card">
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="font-mono text-xs text-gray-500">Dừng video tại {fmt(q.pauseAt)}</span>
+                                <span className="font-mono text-xs text-muted-foreground">Dừng video tại {fmt(q.pauseAt)}</span>
                                 {classStats.concepts[q.conceptId] && (
                                     <ErrorRateTag rate={pct(classStats.concepts[q.conceptId].wrongFirstTry, classStats.concepts[q.conceptId].answered)} />
                                 )}
                             </div>
                             <QuestionEditor question={q} onChange={(next) => patchQuestion(i, { ...q, ...next })} />
                             <div className="mt-6 flex flex-col gap-4 border-l-2 border-brand-100 pl-4">
-                                <p className="text-sm font-bold text-gray-700">Câu biến thể cho vòng củng cố ({q.variants.length})</p>
+                                <p className="text-sm font-bold text-muted-foreground">Câu biến thể cho vòng củng cố ({q.variants.length})</p>
                                 {q.variants.map((v, vi) => (
                                     <div key={v.id} className="rounded-card bg-surface p-4">
                                         <QuestionEditor
@@ -318,7 +318,7 @@ function QuestionEditor({ question, onChange }: { question: QuizChoiceQuestion; 
 function ErrorRateTag({ rate }: { rate: number }) {
     const high = rate >= 50
     return (
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${high ? 'bg-brand-soft text-brand-ink' : 'bg-muted text-gray-600'}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-bold ${high ? 'bg-brand-soft text-brand-ink' : 'bg-muted text-muted-foreground'}`}>
             {rate}% lớp sai lần đầu
         </span>
     )
@@ -337,37 +337,37 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
 
     return (
         <div className="flex flex-col gap-8">
-            <p className="rounded-card bg-muted px-4 py-3 text-sm text-gray-600">
-                {classStats.note} Lớp mẫu có <span className="font-mono font-bold text-gray-800">{classStats.classSize}</span> sinh viên.
+            <p className="rounded-card bg-muted px-4 py-3 text-sm text-muted-foreground">
+                {classStats.note} Lớp mẫu có <span className="font-mono font-bold text-foreground">{classStats.classSize}</span> sinh viên.
             </p>
 
             {worst && (
-                <div className="flex flex-wrap items-center gap-4 rounded-panel bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-white shadow-brand">
+                <div className="flex flex-wrap items-center gap-4 rounded-panel bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-ink-foreground shadow-brand">
                     <TriangleAlert size={28} className="shrink-0" />
                     <div className="min-w-0 flex-1">
-                        <p className="text-eyebrow uppercase text-white/70">Cần chú ý nhất</p>
+                        <p className="text-eyebrow uppercase text-ink-foreground/70">Cần chú ý nhất</p>
                         <p className="mt-1 text-xl font-bold">
                             {worst.concept.name}: {worst.rate}% sinh viên sai ngay lần đầu
                         </p>
-                        <p className="mt-1 text-sm text-white/80">Nên xem lại cách giảng hoặc câu hỏi ở khái niệm này trên lớp.</p>
+                        <p className="mt-1 text-sm text-ink-foreground/80">Nên xem lại cách giảng hoặc câu hỏi ở khái niệm này trên lớp.</p>
                     </div>
-                    <button type="button" onClick={onEdit} className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-white/90">
+                    <button type="button" onClick={onEdit} className="rounded-full bg-ink-foreground px-5 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-ink-foreground/90">
                         Xem nội dung
                     </button>
                 </div>
             )}
 
             <section>
-                <h2 className="text-title text-gray-900">Tỉ lệ sai lần đầu theo khái niệm</h2>
+                <h2 className="text-title text-foreground">Tỉ lệ sai lần đầu theo khái niệm</h2>
                 <ul className="mt-4 flex flex-col gap-3">
                     {rows.map(({ concept, stat, rate }) => (
                         <li key={concept.id} className="rounded-card border border-border bg-card p-5 shadow-card">
                             <div className="flex flex-wrap items-baseline justify-between gap-2">
-                                <span className="font-bold text-gray-900">{concept.name}</span>
+                                <span className="font-bold text-foreground">{concept.name}</span>
                                 {stat ? (
-                                    <span className="font-mono text-2xl font-bold text-gray-900">{rate}%</span>
+                                    <span className="font-mono text-2xl font-bold text-foreground">{rate}%</span>
                                 ) : (
-                                    <span className="text-sm text-gray-500">Chưa có dữ liệu</span>
+                                    <span className="text-sm text-muted-foreground">Chưa có dữ liệu</span>
                                 )}
                             </div>
                             {stat && (
@@ -377,9 +377,9 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
                                         role="img"
                                         aria-label={`${rate}% sai lần đầu`}
                                     >
-                                        <div className={`h-full rounded-full ${(rate ?? 0) >= 50 ? 'bg-brand-600' : 'bg-gray-400'}`} style={{ width: `${rate}%` }} />
+                                        <div className={`h-full rounded-full ${(rate ?? 0) >= 50 ? 'bg-brand-600' : 'bg-muted-foreground/50'}`} style={{ width: `${rate}%` }} />
                                     </div>
-                                    <p className="mt-2 text-sm text-gray-600">
+                                    <p className="mt-2 text-sm text-muted-foreground">
                                         <span className="font-mono">{stat.wrongFirstTry}</span>/<span className="font-mono">{stat.answered}</span> sinh viên sai lần đầu,{' '}
                                         <span className="font-mono">{stat.corrected}</span> trong số đó sửa đúng sau khi xem lại đoạn video
                                         {' '}({pct(stat.corrected, stat.wrongFirstTry)}%).
@@ -392,16 +392,16 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
             </section>
 
             <section>
-                <h2 className="text-title text-gray-900">Sinh viên chọn đáp án nào</h2>
+                <h2 className="text-title text-foreground">Sinh viên chọn đáp án nào</h2>
                 <div className="mt-4 flex flex-col gap-4">
                     {lesson.quiz.map((q) => {
                         const picks = classStats.questions[q.id]?.picks
                         const total = picks?.reduce((a, b) => a + b, 0) ?? 0
                         return (
                             <div key={q.id} className="rounded-card border border-border bg-card p-5 shadow-card">
-                                <p className="font-bold text-gray-900">{q.prompt}</p>
+                                <p className="font-bold text-foreground">{q.prompt}</p>
                                 {!picks || total === 0 ? (
-                                    <p className="mt-2 text-sm text-gray-500">Chưa có dữ liệu.</p>
+                                    <p className="mt-2 text-sm text-muted-foreground">Chưa có dữ liệu.</p>
                                 ) : (
                                     <ul className="mt-4 flex flex-col gap-2.5">
                                         {q.options.map((opt, i) => {
@@ -410,14 +410,14 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
                                             return (
                                                 <li key={i}>
                                                     <div className="flex items-center justify-between gap-3 text-sm">
-                                                        <span className={correct ? 'font-bold text-success' : 'text-gray-700'}>
+                                                        <span className={correct ? 'font-bold text-success' : 'text-muted-foreground'}>
                                                             {opt}
                                                             {correct && ' (đúng)'}
                                                         </span>
-                                                        <span className="font-mono text-gray-600">{pct(n, total)}%</span>
+                                                        <span className="font-mono text-muted-foreground">{pct(n, total)}%</span>
                                                     </div>
                                                     <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
-                                                        <div className={`h-full rounded-full ${correct ? 'bg-success' : 'bg-gray-400'}`} style={{ width: `${pct(n, total)}%` }} />
+                                                        <div className={`h-full rounded-full ${correct ? 'bg-success' : 'bg-muted-foreground/50'}`} style={{ width: `${pct(n, total)}%` }} />
                                                     </div>
                                                 </li>
                                             )

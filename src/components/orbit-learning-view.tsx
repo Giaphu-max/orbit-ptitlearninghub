@@ -237,46 +237,46 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-ink/60 backdrop-blur-sm" onClick={onClose} />
             
             <div className="relative w-full max-w-5xl bg-card rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
                 <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
                     
                     {/* Left Column: Detailed Course Info */}
-                    <div className="flex flex-col border-r border-gray-100 bg-gray-50/50 overflow-y-auto">
+                    <div className="flex flex-col border-r border-border bg-muted overflow-y-auto">
                         <div className="h-72 relative shrink-0">
                             <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent" />
                             
                             <button 
                                 onClick={() => setIsSaved(!isSaved)}
-                                className={`absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all ${isSaved ? 'bg-brand-500/90 text-white shadow-lg' : 'bg-black/30 border border-white/20 text-white hover:bg-black/50'}`}
+                                className={`absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all ${isSaved ? 'bg-brand-500/90 text-ink-foreground shadow-lg' : 'bg-ink/30 border border-ink-foreground/20 text-ink-foreground hover:bg-ink/50'}`}
                                 title={isSaved ? "Bỏ lưu khóa học" : "Lưu khóa học"}
                             >
-                                <Bookmark size={18} className={isSaved ? "fill-white" : ""} />
+                                <Bookmark size={18} className={isSaved ? "fill-ink-foreground" : ""} />
                             </button>
 
                             <div className="absolute bottom-8 left-8 right-8">
-                                <span className="inline-block px-3 py-1 mb-3 bg-white/20 backdrop-blur border border-white/20 text-white text-[11px] font-bold uppercase tracking-widest rounded-full">
+                                <span className="inline-block px-3 py-1 mb-3 bg-ink-foreground/20 backdrop-blur border border-ink-foreground/20 text-ink-foreground text-[11px] font-bold uppercase tracking-widest rounded-full">
                                     {course.category}
                                 </span>
-                                <h2 className="text-2xl font-bold text-white leading-tight mb-2">{course.title}</h2>
-                                <p className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                                    Giảng viên: <span className="text-white font-semibold">{course.instructor}</span>
-                                    <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                                <h2 className="text-2xl font-bold text-ink-foreground leading-tight mb-2">{course.title}</h2>
+                                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                    Giảng viên: <span className="text-ink-foreground font-semibold">{course.instructor}</span>
+                                    <span className="w-1 h-1 bg-muted-foreground/50 rounded-full"></span>
                                     <span className="text-warning font-bold">{course.socialProof}</span>
                                 </p>
                             </div>
                         </div>
                         
                         <div className="p-8">
-                            <h3 className="text-base font-bold text-gray-900 mb-3">Về khóa học này</h3>
-                            <p className="text-sm text-gray-600 leading-relaxed mb-8">
+                            <h3 className="text-base font-bold text-foreground mb-3">Về khóa học này</h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed mb-8">
                                 Khóa học được thiết kế chuyên sâu giúp bạn nắm vững toàn bộ kiến thức từ cơ bản đến nâng cao. 
                                 Hoàn thành khóa học, bạn sẽ có khả năng làm việc độc lập và xử lý các dự án thực tế với sự tự tin tuyệt đối.
                             </p>
                             
-                            <h3 className="text-base font-bold text-gray-900 mb-4">Bạn sẽ học được gì?</h3>
+                            <h3 className="text-base font-bold text-foreground mb-4">Bạn sẽ học được gì?</h3>
                             <div className="space-y-4">
                                 {[
                                     'Nắm vững nền tảng và nguyên lý cốt lõi',
@@ -286,7 +286,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                 ].map((item, idx) => (
                                     <div key={idx} className="flex items-start gap-3">
                                         <CheckCircle2 size={18} className="text-success shrink-0 mt-0.5" />
-                                        <span className="text-sm text-gray-700 font-medium">{item}</span>
+                                        <span className="text-sm text-muted-foreground font-medium">{item}</span>
                                     </div>
                                 ))}
                             </div>
@@ -297,18 +297,18 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                     <div className="flex flex-col relative bg-card">
                         <button 
                             onClick={onClose} 
-                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors z-10"
+                            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-muted hover:bg-muted-foreground/20 rounded-full text-muted-foreground transition-colors z-10"
                         >
                             <X size={18} />
                         </button>
                         
                         <div className="p-8 flex-1 overflow-y-auto">
-                            <h3 className="text-xl font-bold text-gray-900 tracking-tight mb-8">Lộ trình học tập</h3>
+                            <h3 className="text-xl font-bold text-foreground tracking-tight mb-8">Lộ trình học tập</h3>
                             
                             <div className="space-y-6">
                                 {/* Free Lessons */}
                                 <div className="space-y-3">
-                                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Nội dung cơ bản (Miễn phí)</h4>
+                                    <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Nội dung cơ bản (Miễn phí)</h4>
                                     {[
                                         'Giới thiệu tổng quan & Cài đặt môi trường',
                                         'Nguyên lý cơ bản cần nắm vững',
@@ -321,36 +321,36 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                                 checked={true}
                                                 readOnly 
                                             />
-                                            <span className="text-sm font-bold text-gray-900 flex-1">{title}</span>
+                                            <span className="text-sm font-bold text-foreground flex-1">{title}</span>
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Premium Lessons */}
                                 <div className="space-y-3 pt-2">
-                                    <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Nội dung chuyên sâu (Nâng cao)</h4>
+                                    <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Nội dung chuyên sâu (Nâng cao)</h4>
                                     {premiumLessons.map((lesson) => (
                                         <div 
                                             key={lesson.id} 
                                             className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
                                                 selectedPremiums.includes(lesson.id) 
                                                 ? 'border-brand-400 bg-brand-50' 
-                                                : 'border-gray-200 bg-card hover:border-gray-300 shadow-sm hover:shadow-md'
+                                                : 'border-border bg-card hover:border-muted-foreground/40 shadow-sm hover:shadow-md'
                                             }`}
                                             onClick={() => togglePremium(lesson.id)}
                                         >
                                             <input 
                                                 type="checkbox" 
-                                                className="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 pointer-events-none" 
+                                                className="w-5 h-5 rounded border-border text-brand-500 focus:ring-brand-500 pointer-events-none" 
                                                 checked={selectedPremiums.includes(lesson.id)}
                                                 readOnly
                                             />
                                             <div className="flex-1 min-w-0">
-                                                <span className={`text-sm font-semibold block ${selectedPremiums.includes(lesson.id) ? 'text-gray-900' : 'text-gray-600'}`}>
+                                                <span className={`text-sm font-semibold block ${selectedPremiums.includes(lesson.id) ? 'text-foreground' : 'text-muted-foreground'}`}>
                                                     {lesson.title}
                                                 </span>
                                             </div>
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md shrink-0 transition-colors ${selectedPremiums.includes(lesson.id) ? 'bg-brand-100 text-brand-ink' : 'bg-gray-100 text-gray-600'}`}>
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md shrink-0 transition-colors ${selectedPremiums.includes(lesson.id) ? 'bg-brand-100 text-brand-ink' : 'bg-muted text-muted-foreground'}`}>
                                                 <Lock size={12} className="opacity-70" />
                                                 <span className="text-xs font-bold">{lesson.price.toLocaleString()}đ</span>
                                             </div>
@@ -361,23 +361,23 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                         </div>
 
                         {/* CTA Footer */}
-                        <div className="p-6 border-t border-gray-100 bg-card shrink-0">
+                        <div className="p-6 border-t border-border bg-card shrink-0">
                             <div className="flex items-center gap-3">
                                 <button 
                                     onClick={onClose}
-                                    className="px-6 py-4 rounded-xl font-bold text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                    className="px-6 py-4 rounded-xl font-bold text-sm text-muted-foreground bg-muted hover:bg-muted-foreground/20 transition-colors"
                                 >
                                     Hủy
                                 </button>
                                 <button 
                                     onClick={() => setIsSaved(!isSaved)}
-                                    className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm transition-colors ${isSaved ? 'text-brand-ink bg-brand-100' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
+                                    className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm transition-colors ${isSaved ? 'text-brand-ink bg-brand-100' : 'text-muted-foreground bg-muted hover:bg-muted-foreground/20'}`}
                                 >
                                     <Bookmark size={18} className={isSaved ? "fill-current" : ""} />
                                     <span className="hidden sm:inline">{isSaved ? 'Đã lưu' : 'Lưu để sau'}</span>
                                 </button>
                                 <button 
-                                    className={`flex-1 py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-300 flex justify-center items-center gap-2 ${
+                                    className={`flex-1 py-4 rounded-xl font-bold text-sm text-ink-foreground shadow-lg transition-all duration-300 flex justify-center items-center gap-2 ${
                                         hasPremium 
                                         ? 'bg-brand-600 hover:bg-brand-700 shadow-brand-500/30 scale-[1.02]' 
                                         : 'bg-ink hover:bg-ink/90 shadow-ink/20 hover:-translate-y-0.5'
@@ -412,28 +412,28 @@ function CourseCard3D({ course, onClick }: { course: Course; onClick: () => void
             <div className="relative w-full h-full transition-transform duration-base ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
                 
                 {/* ── Front Face ── */}
-                <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 [backface-visibility:hidden]">
+                <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden shadow-sm border border-border/50 [backface-visibility:hidden]">
                     <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/30 to-transparent" />
                     
                     {/* Salience Badge (Brand Red) */}
                     {course.badge && (
-                        <div className="absolute top-3 left-3 bg-gradient-to-r from-brand-500 to-brand-500 text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-brand-500 to-brand-500 text-ink-foreground text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
                             {course.badge.label}
                         </div>
                     )}
                     
                     <div className="absolute bottom-4 left-4 right-4">
-                        <span className="text-[9px] font-bold text-brand-400 uppercase tracking-widest mb-1.5 block">{course.category}</span>
-                        <h3 className="text-[15px] font-bold text-white leading-snug line-clamp-2">{course.title}</h3>
+                        <span className="text-[9px] font-bold text-brand-ink uppercase tracking-widest mb-1.5 block">{course.category}</span>
+                        <h3 className="text-[15px] font-bold text-ink-foreground leading-snug line-clamp-2">{course.title}</h3>
                     </div>
                 </div>
 
                 {/* ── Back Face ── */}
-                <div className="absolute inset-0 w-full h-full rounded-2xl bg-card border border-gray-100 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] p-4 flex flex-col justify-between">
+                <div className="absolute inset-0 w-full h-full rounded-2xl bg-card border border-border shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] p-4 flex flex-col justify-between">
                     <div>
-                        <h3 className="font-bold text-gray-900 text-[13px] leading-snug line-clamp-2">{course.title}</h3>
-                        <p className="text-[10px] text-gray-500 mt-1">bởi {course.instructor}</p>
+                        <h3 className="font-bold text-foreground text-[13px] leading-snug line-clamp-2">{course.title}</h3>
+                        <p className="text-[10px] text-muted-foreground mt-1">bởi {course.instructor}</p>
                         
                         <div className="mt-3 p-2 bg-brand-50/80 rounded-lg border border-brand-100/50">
                             <p className="text-[10px] font-semibold text-brand-ink text-center">{course.socialProof}</p>
@@ -442,17 +442,17 @@ function CourseCard3D({ course, onClick }: { course: Course; onClick: () => void
 
                     <div>
                         <div className="grid grid-cols-2 gap-2 mb-3">
-                            <div className="flex flex-col items-center justify-center py-2 bg-gray-50 rounded-lg">
-                                <Clock size={12} className="text-gray-400 mb-1" />
-                                <span className="text-[9px] font-bold text-gray-700">{course.duration}</span>
+                            <div className="flex flex-col items-center justify-center py-2 bg-muted rounded-lg">
+                                <Clock size={12} className="text-muted-foreground mb-1" />
+                                <span className="text-[9px] font-bold text-muted-foreground">{course.duration}</span>
                             </div>
-                            <div className="flex flex-col items-center justify-center py-2 bg-gray-50 rounded-lg">
-                                <BookOpen size={12} className="text-gray-400 mb-1" />
-                                <span className="text-[9px] font-bold text-gray-700">{course.exercises} bài</span>
+                            <div className="flex flex-col items-center justify-center py-2 bg-muted rounded-lg">
+                                <BookOpen size={12} className="text-muted-foreground mb-1" />
+                                <span className="text-[9px] font-bold text-muted-foreground">{course.exercises} bài</span>
                             </div>
                         </div>
 
-                        <button className="w-full py-2 bg-brand-600 text-white text-[11px] font-bold rounded-lg hover:bg-brand-700 transition-colors">
+                        <button className="w-full py-2 bg-brand-600 text-ink-foreground text-[11px] font-bold rounded-lg hover:bg-brand-700 transition-colors">
                             Xem chi tiết
                         </button>
                     </div>
@@ -472,7 +472,7 @@ function EnrolledSidebar() {
                 <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
                     <TrendingUp size={16} className="text-brand-ink" />
                 </div>
-                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 delay-100">
+                <h2 className="text-sm font-bold text-foreground uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 delay-100">
                     Lộ trình đang học
                 </h2>
             </div>
@@ -481,7 +481,7 @@ function EnrolledSidebar() {
                 {enrolledCourses.map(course => (
                     <div 
                         key={course.id} 
-                        className="hover:bg-gray-50/50 rounded-lg p-2 transition-colors flex gap-4 items-center cursor-pointer group/item"
+                        className="hover:bg-muted rounded-lg p-2 transition-colors flex gap-4 items-center cursor-pointer group/item"
                         onClick={() => navigate('/lesson')}
                     >
                         {/* Sleek Minimalist Dot */}
@@ -491,15 +491,15 @@ function EnrolledSidebar() {
 
                         {/* Expanded Content (Only visible on sidebar hover) */}
                         <div className="flex-1 min-w-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 delay-100 py-1">
-                            <h3 className="text-sm font-semibold text-gray-800 line-clamp-1">{course.title}</h3>
+                            <h3 className="text-sm font-semibold text-foreground line-clamp-1">{course.title}</h3>
                             <div className="flex items-center gap-3 mt-2">
-                                <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+                                <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                                     <div 
                                         className="h-full rounded-full transition-all duration-1000 bg-brand-500"
                                         style={{ width: `${course.progress}%` }}
                                     />
                                 </div>
-                                <span className="text-xs text-gray-500 shrink-0 font-medium">{course.progress}%</span>
+                                <span className="text-xs text-muted-foreground shrink-0 font-medium">{course.progress}%</span>
                             </div>
                         </div>
                     </div>
@@ -529,8 +529,8 @@ export function OrbitLearningView() {
                     
                     {/* Header */}
                     <div className="mb-10">
-                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Khám phá khóa học</h1>
-                        <p className="mt-2 text-gray-500">Nâng cao kỹ năng với các lộ trình chuyên sâu được thiết kế bài bản.</p>
+                        <h1 className="text-3xl font-bold text-foreground tracking-tight">Khám phá khóa học</h1>
+                        <p className="mt-2 text-muted-foreground">Nâng cao kỹ năng với các lộ trình chuyên sâu được thiết kế bài bản.</p>
                     </div>
 
                     {/* Section: Personalized Recommendations */}
@@ -538,7 +538,7 @@ export function OrbitLearningView() {
                         <section className="mb-14">
                             <div className="flex items-center gap-3 mb-6">
                                 <span className="text-2xl drop-shadow-md">🔥</span>
-                                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Đề xuất riêng cho bạn</h2>
+                                <h2 className="text-xl font-bold text-foreground tracking-tight">Đề xuất riêng cho bạn</h2>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
                                 {recommendedCourses.map(course => (
@@ -557,7 +557,7 @@ export function OrbitLearningView() {
                             return (
                                 <div key={group.id} className="w-full flex flex-col mb-14">
                                     {/* Prominent Category Header */}
-                                    <h2 className="text-xl font-bold text-gray-900 mb-6 block relative z-10">
+                                    <h2 className="text-xl font-bold text-foreground mb-6 block relative z-10">
                                         {group.title}
                                     </h2>
                                     

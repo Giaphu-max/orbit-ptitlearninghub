@@ -21,10 +21,10 @@ export function OrbitHomeView() {
     return (
         <div className="h-full w-full overflow-y-auto bg-surface">
             {/* ── Tầng 1: hero ── */}
-            <section className="relative isolate overflow-hidden bg-hero text-white">
+            <section className="relative isolate overflow-hidden bg-hero text-ink-foreground">
                 <div
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots [mask-image:linear-gradient(180deg,#000,transparent_80%)]"
+                    className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots mask-fade-b"
                 />
                 {/* Canvas 3D phủ cả hero, nằm sau chữ */}
                 <div className="absolute inset-0 z-0">
@@ -36,33 +36,33 @@ export function OrbitHomeView() {
                         <h1 className="text-[clamp(2.5rem,5vw,4.25rem)] font-black leading-[0.98] tracking-[-0.045em] [text-wrap:balance]">
                             Học tập trung, có điểm dừng.
                         </h1>
-                        <p className="text-base leading-relaxed text-white/75">
+                        <p className="text-base leading-relaxed text-ink-foreground/75">
                             Mỗi tòa nhà là một khu khóa học. Học đến đâu hiểu đến đó, điểm thưởng chỉ đến khi bạn thật sự nắm bài.
                         </p>
 
                         {resume ? (
                             <Link
                                 to={`/lesson/${resume.id}`}
-                                className="group pointer-events-auto mt-2 flex items-center gap-4 rounded-card bg-card p-4 text-gray-900 shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                                className="group pointer-events-auto mt-2 flex items-center gap-4 rounded-card bg-card p-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
                             >
-                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition duration-base group-hover:scale-105">
+                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground transition duration-base group-hover:scale-105">
                                     <Play size={20} className="fill-current" />
                                 </span>
                                 <span className="min-w-0 flex-1">
                                     <span className="block text-eyebrow uppercase text-brand-ink">{resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu học'}</span>
                                     <span className="mt-1 block truncate font-bold">{resume.title}</span>
                                     {resumeAt > 0 && (
-                                        <span className="block font-mono text-xs text-gray-500">
+                                        <span className="block font-mono text-xs text-muted-foreground">
                                             Dừng ở {formatTime(resumeAt)} / {formatTime(resume.durationSec)}
                                         </span>
                                     )}
                                 </span>
-                                <ArrowRight size={18} className="shrink-0 text-gray-400 transition duration-base group-hover:translate-x-1 group-hover:text-brand-ink" />
+                                <ArrowRight size={18} className="shrink-0 text-muted-foreground transition duration-base group-hover:translate-x-1 group-hover:text-brand-ink" />
                             </Link>
                         ) : (
-                            <p className="rounded-card bg-white/10 p-4 text-sm text-white/80">Chưa có bài nào được giảng viên xuất bản.</p>
+                            <p className="rounded-card bg-ink-foreground/10 p-4 text-sm text-ink-foreground/80">Chưa có bài nào được giảng viên xuất bản.</p>
                         )}
-                        <span className="hidden text-sm text-white/60 lg:block">Kéo để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
+                        <span className="hidden text-sm text-ink-foreground/60 lg:block">Kéo để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
                     </div>
                 </div>
             </section>
@@ -73,9 +73,9 @@ export function OrbitHomeView() {
                     <div className="flex flex-wrap items-end justify-between gap-3">
                         <div>
                             <p className="text-eyebrow uppercase text-brand-ink">Orbit Daily</p>
-                            <h2 id="daily-title" className="mt-2 text-headline text-gray-900">Hôm nay đọc gì?</h2>
+                            <h2 id="daily-title" className="mt-2 text-headline text-foreground">Hôm nay đọc gì?</h2>
                         </div>
-                        <p className="text-sm text-gray-600">Tối đa 3 bài mỗi ngày, ưu tiên phần bạn còn yếu.</p>
+                        <p className="text-sm text-muted-foreground">Tối đa 3 bài mỗi ngày, ưu tiên phần bạn còn yếu.</p>
                     </div>
 
                     <div className="mt-6 grid gap-5 md:grid-cols-4">
@@ -95,10 +95,10 @@ export function OrbitHomeView() {
                                         <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand-ink">
                                             <Sparkles size={13} /> {big ? 'Ưu tiên hôm nay' : 'Gợi ý'} · {a.readingMinutes} phút
                                         </span>
-                                        <h3 className={`mt-4 text-gray-900 ${big ? 'text-title md:text-[1.75rem] md:leading-tight' : 'text-lg font-bold leading-snug'}`}>{a.title}</h3>
-                                        {big && <p className="mt-3 line-clamp-3 text-[15px] leading-relaxed text-gray-600">{a.paragraphs[0]?.text}</p>}
+                                        <h3 className={`mt-4 text-foreground ${big ? 'text-title md:text-[1.75rem] md:leading-tight' : 'text-lg font-bold leading-snug'}`}>{a.title}</h3>
+                                        {big && <p className="mt-3 line-clamp-3 text-[15px] leading-relaxed text-muted-foreground">{a.paragraphs[0]?.text}</p>}
                                     </div>
-                                    <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                                    <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                         {a.conceptIds.slice(0, 2).map((id) => (
                                             <span key={id} className="rounded-full bg-muted px-2.5 py-1 font-semibold">{getConcept(id)?.name ?? id}</span>
                                         ))}
@@ -110,8 +110,8 @@ export function OrbitHomeView() {
                             )
                         })}
                         {dailyArticles.length < 3 && (
-                            <div className="flex flex-col justify-center rounded-panel border border-dashed border-border bg-card/60 p-6 text-sm text-gray-600 md:col-span-2">
-                                <span className="font-bold text-gray-800">Còn {3 - dailyArticles.length} lượt hôm nay</span>
+                            <div className="flex flex-col justify-center rounded-panel border border-dashed border-border bg-card/60 p-6 text-sm text-muted-foreground md:col-span-2">
+                                <span className="font-bold text-foreground">Còn {3 - dailyArticles.length} lượt hôm nay</span>
                                 Hoàn thành thêm bài học để mở thêm bài đọc mới.
                             </div>
                         )}
@@ -147,8 +147,8 @@ function ProgressStrip({ total }: { total: number }) {
                 <div key={it.label} className="flex items-center gap-3 bg-card px-5 py-4">
                     {it.icon}
                     <div className="min-w-0">
-                        <p className="text-xs font-semibold text-gray-500">{it.label}</p>
-                        <p className="truncate font-mono text-lg font-bold text-gray-900">{it.value}</p>
+                        <p className="text-xs font-semibold text-muted-foreground">{it.label}</p>
+                        <p className="truncate font-mono text-lg font-bold text-foreground">{it.value}</p>
                     </div>
                 </div>
             ))}

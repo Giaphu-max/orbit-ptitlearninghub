@@ -32,7 +32,7 @@ export function ThemeToggle() {
             </button>
             <span
                 role="tooltip"
-                className="pointer-events-none absolute right-0 top-full mt-2 whitespace-nowrap rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-white opacity-0 shadow-raised transition duration-fast group-hover:opacity-100 group-focus-within:opacity-100"
+                className="pointer-events-none absolute right-0 top-full mt-2 whitespace-nowrap rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-ink-foreground opacity-0 shadow-raised transition duration-fast group-hover:opacity-100 group-focus-within:opacity-100"
             >
                 {label}
             </span>

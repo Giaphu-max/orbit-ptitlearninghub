@@ -30,7 +30,7 @@ export function MainLayout() {
     if (!role) return <OrbitRoleSelect />
 
     return (
-        <div className="flex h-screen w-full relative z-0 bg-surface font-sans text-gray-900 overflow-hidden">
+        <div className="flex h-screen w-full relative z-0 bg-surface font-sans text-foreground overflow-hidden">
             {/* ── Global Premium Ambient Glow Background ── */}
             <div className="absolute inset-0 z-[-1] overflow-hidden pointer-events-none">
                 {/* Soft Rose glow on top right */}
@@ -48,7 +48,7 @@ export function MainLayout() {
             <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-transparent pl-[90px]">
                 <Suspense
                     fallback={
-                        <div className="flex h-full items-center justify-center text-gray-400">
+                        <div className="flex h-full items-center justify-center text-muted-foreground">
                             <Loader2 className="animate-spin" size={32} aria-label="Đang tải trang" />
                         </div>
                     }

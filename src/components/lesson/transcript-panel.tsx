@@ -28,10 +28,10 @@ export function TranscriptPanel({ transcript, currentTime, onSeek }: TranscriptP
     return (
         <section aria-label="Transcript bài giảng" className="flex flex-col rounded-card border border-border bg-card shadow-card">
             <header className="flex items-center justify-between gap-4 border-b border-border px-5 py-3">
-                <h2 className="flex items-center gap-2 font-bold text-gray-900">
+                <h2 className="flex items-center gap-2 font-bold text-foreground">
                     <ListVideo size={18} className="text-brand-ink" /> Transcript
                 </h2>
-                <label className="flex cursor-pointer select-none items-center gap-2 text-xs font-semibold text-gray-500">
+                <label className="flex cursor-pointer select-none items-center gap-2 text-xs font-semibold text-muted-foreground">
                     <input
                         type="checkbox"
                         checked={follow}
@@ -51,13 +51,13 @@ export function TranscriptPanel({ transcript, currentTime, onSeek }: TranscriptP
                                 onClick={() => onSeek(seg.start)}
                                 aria-current={isActive ? 'true' : undefined}
                                 className={`flex w-full gap-4 rounded-xl px-3 py-2.5 text-left transition duration-fast ${
-                                    isActive ? 'bg-brand-50' : 'hover:bg-gray-50'
+                                    isActive ? 'bg-brand-50' : 'hover:bg-muted'
                                 }`}
                             >
-                                <span className={`shrink-0 pt-0.5 font-mono text-xs ${isActive ? 'font-bold text-brand-ink' : 'text-gray-400'}`}>
+                                <span className={`shrink-0 pt-0.5 font-mono text-xs ${isActive ? 'font-bold text-brand-ink' : 'text-muted-foreground'}`}>
                                     {formatTime(seg.start)}
                                 </span>
-                                <span className={`text-[15px] leading-relaxed ${isActive ? 'text-gray-900' : 'text-gray-600'}`}>{seg.text}</span>
+                                <span className={`text-[15px] leading-relaxed ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{seg.text}</span>
                             </button>
                         </li>
                     )

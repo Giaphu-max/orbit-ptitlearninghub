@@ -23,8 +23,8 @@ export function QuizList({ lesson, results, onOpen }: QuizListProps) {
     return (
         <section className="rounded-card border border-border bg-card p-5 shadow-card">
             <div className="flex items-baseline justify-between gap-2">
-                <h2 className="font-bold text-gray-900">Câu hỏi trong bài</h2>
-                <span className="font-mono text-xs text-gray-500">
+                <h2 className="font-bold text-foreground">Câu hỏi trong bài</h2>
+                <span className="font-mono text-xs text-muted-foreground">
                     {done}/{lesson.quiz.length}
                 </span>
             </div>
@@ -38,12 +38,12 @@ export function QuizList({ lesson, results, onOpen }: QuizListProps) {
                             <button
                                 type="button"
                                 onClick={() => onOpen(q)}
-                                className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm transition hover:bg-gray-50"
+                                className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm transition hover:bg-muted"
                             >
-                                <Icon size={16} className={`mt-0.5 shrink-0 ${status?.className ?? 'text-gray-300'}`} />
+                                <Icon size={16} className={`mt-0.5 shrink-0 ${status?.className ?? 'text-muted-foreground'}`} />
                                 <span className="min-w-0 flex-1">
-                                    <span className="line-clamp-2 text-gray-800">{q.prompt}</span>
-                                    <span className="mt-0.5 block text-xs text-gray-500">
+                                    <span className="line-clamp-2 text-foreground">{q.prompt}</span>
+                                    <span className="mt-0.5 block text-xs text-muted-foreground">
                                         <span className="font-mono">{formatTime(q.pauseAt)}</span> · {status?.label ?? 'Chưa làm'}
                                     </span>
                                 </span>

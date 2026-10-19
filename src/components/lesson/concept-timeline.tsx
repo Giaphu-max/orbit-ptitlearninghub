@@ -22,14 +22,14 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
     return (
         <section aria-label="Các khái niệm trong bài" className="rounded-card border border-border bg-card p-4 shadow-card">
             <div className="mb-3 flex items-baseline justify-between gap-4">
-                <p className="text-eyebrow uppercase text-gray-500">Khái niệm trong bài</p>
-                <p className="font-mono text-xs text-gray-500">
+                <p className="text-eyebrow uppercase text-muted-foreground">Khái niệm trong bài</p>
+                <p className="font-mono text-xs text-muted-foreground">
                     {formatTime(currentTime)} / {formatTime(lesson.durationSec)}
                 </p>
             </div>
 
             <div className="relative h-9">
-                <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-100" />
+                <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-muted" />
                 <div className="absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand-200" style={{ width: pct(currentTime) }} />
                 {lesson.concepts.map((c) => {
                     const isActive = active?.id === c.id
@@ -40,7 +40,7 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
                             onClick={() => onSeek(c.segment.start)}
                             title={`${c.name} · ${formatTime(c.segment.start)}`}
                             aria-label={`Tua tới khái niệm ${c.name}, ${formatTime(c.segment.start)}`}
-                            className={`absolute top-1/2 h-3 -translate-y-1/2 rounded-full border-2 border-card transition duration-fast hover:h-4 ${isActive ? 'bg-brand-600' : 'bg-gray-400 hover:bg-brand-400'}`}
+                            className={`absolute top-1/2 h-3 -translate-y-1/2 rounded-full border-2 border-card transition duration-fast hover:h-4 ${isActive ? 'bg-brand-600' : 'bg-muted-foreground/50 hover:bg-brand-400'}`}
                             style={{ left: pct(c.segment.start), width: `calc(${pct(c.segment.end - c.segment.start)} - 2px)` }}
                         />
                     )
@@ -59,7 +59,7 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
                     />
                 ))}
                 <span
-                    className="pointer-events-none absolute top-1/2 h-5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-900"
+                    className="pointer-events-none absolute top-1/2 h-5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground"
                     style={{ left: pct(currentTime) }}
                 />
             </div>
@@ -73,10 +73,10 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
                         className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition duration-fast ${
                             active?.id === c.id
                                 ? 'border-brand-200 bg-brand-50 text-brand-ink'
-                                : 'border-border bg-card text-gray-700 hover:border-gray-300'
+                                : 'border-border bg-card text-muted-foreground hover:border-muted-foreground/40'
                         }`}
                     >
-                        <span className="font-mono text-[11px] text-gray-500">{formatTime(c.segment.start)}</span>
+                        <span className="font-mono text-[11px] text-muted-foreground">{formatTime(c.segment.start)}</span>
                         {c.name}
                     </button>
                 ))}

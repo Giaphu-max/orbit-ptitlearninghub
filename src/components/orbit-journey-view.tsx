@@ -24,8 +24,8 @@ export function OrbitJourneyView() {
             <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 py-8 lg:px-8 lg:py-12">
                 <header>
                     <p className="text-eyebrow uppercase text-brand-ink">Hành trình của bạn</p>
-                    <h1 className="mt-3 text-headline text-gray-900">Điểm thưởng đến từ việc hiểu bài</h1>
-                    <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-gray-600">
+                    <h1 className="mt-3 text-headline text-foreground">Điểm thưởng đến từ việc hiểu bài</h1>
+                    <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
                         XP chỉ tính khi bạn trả lời đúng, sửa được lỗi sai hoặc hoàn thành bài. Xem video lâu hay bấm nhiều không làm tăng điểm.
                     </p>
                 </header>
@@ -49,29 +49,29 @@ function StatusRow() {
 
     return (
         <section aria-label="Cấp độ và chuỗi ngày học" className="grid gap-5 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <div className="rounded-panel bg-gradient-to-br from-brand-600 to-brand-900 p-7 text-white shadow-brand">
+            <div className="rounded-panel bg-gradient-to-br from-brand-600 to-brand-900 p-7 text-ink-foreground shadow-brand">
                 <div className="flex items-end justify-between gap-4">
                     <div>
-                        <p className="text-eyebrow uppercase text-white/80">Cấp độ</p>
+                        <p className="text-eyebrow uppercase text-ink-foreground/80">Cấp độ</p>
                         <p className="mt-2 font-mono text-6xl font-bold leading-none">{lp.level}</p>
                         <p className="mt-2 text-lg font-bold">{levelTitle(lp.level)}</p>
                     </div>
-                    <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 font-mono text-sm font-bold">
+                    <p className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/15 px-4 py-2 font-mono text-sm font-bold">
                         <Zap size={15} className="fill-current" /> {xp} XP
                     </p>
                 </div>
                 <div className="mt-7">
                     <div
-                        className="h-3 overflow-hidden rounded-full bg-black/25"
+                        className="h-3 overflow-hidden rounded-full bg-ink/25"
                         role="progressbar"
                         aria-valuemin={0}
                         aria-valuemax={lp.span}
                         aria-valuenow={lp.into}
                         aria-label={`Tiến độ lên cấp ${lp.level + 1}`}
                     >
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(lp.ratio * 100)}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} className="h-full rounded-full bg-white" />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(lp.ratio * 100)}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} className="h-full rounded-full bg-ink-foreground" />
                     </div>
-                    <p className="mt-2 flex justify-between font-mono text-xs text-white/80">
+                    <p className="mt-2 flex justify-between font-mono text-xs text-ink-foreground/80">
                         <span>{lp.into}/{lp.span} XP</span>
                         <span>Còn {lp.toNext} XP lên cấp {lp.level + 1}</span>
                     </p>
@@ -80,22 +80,22 @@ function StatusRow() {
 
             <div className="flex flex-col justify-between rounded-panel border border-border bg-card p-7 shadow-card">
                 <div className="flex items-center gap-4">
-                    <span className={`flex h-16 w-16 items-center justify-center rounded-full ${streak.count > 0 ? 'bg-brand-soft text-brand-ink' : 'bg-muted text-gray-400'}`}>
+                    <span className={`flex h-16 w-16 items-center justify-center rounded-full ${streak.count > 0 ? 'bg-brand-soft text-brand-ink' : 'bg-muted text-muted-foreground'}`}>
                         <Flame size={32} className={streak.count > 0 ? 'fill-current' : ''} />
                     </span>
                     <div>
-                        <p className="font-mono text-4xl font-bold leading-none text-gray-900">{streak.count}</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-600">ngày liên tiếp</p>
+                        <p className="font-mono text-4xl font-bold leading-none text-foreground">{streak.count}</p>
+                        <p className="mt-1 text-sm font-semibold text-muted-foreground">ngày liên tiếp</p>
                     </div>
                 </div>
-                <p className="mt-5 text-sm text-gray-600">
+                <p className="mt-5 text-sm text-muted-foreground">
                     {streak.studiedToday
                         ? 'Hôm nay bạn đã học, chuỗi được giữ.'
                         : streak.count > 0
                           ? 'Trả lời một câu quiz hôm nay để giữ chuỗi.'
                           : 'Trả lời một câu quiz để bắt đầu chuỗi mới.'}
                 </p>
-                <p className={`mt-3 inline-flex items-center gap-2 text-xs font-semibold ${canFreeze ? 'text-info' : 'text-gray-500'}`}>
+                <p className={`mt-3 inline-flex items-center gap-2 text-xs font-semibold ${canFreeze ? 'text-info' : 'text-muted-foreground'}`}>
                     <Snowflake size={14} />
                     {canFreeze ? 'Còn 1 lần đóng băng tuần này, tự dùng khi bạn lỡ một ngày' : 'Đã dùng lần đóng băng của tuần này'}
                 </p>
@@ -125,8 +125,8 @@ function Missions() {
     return (
         <section aria-labelledby="missions-title">
             <div className="flex items-end justify-between gap-3">
-                <h2 id="missions-title" className="text-title text-gray-900">Nhiệm vụ hôm nay</h2>
-                <p className="text-sm text-gray-500">Làm mới mỗi ngày</p>
+                <h2 id="missions-title" className="text-title text-foreground">Nhiệm vụ hôm nay</h2>
+                <p className="text-sm text-muted-foreground">Làm mới mỗi ngày</p>
             </div>
             <ul className="mt-4 flex flex-col gap-3">
                 {MISSIONS.map((m) => {
@@ -135,17 +135,17 @@ function Missions() {
                     const claimed = daily.claimed.includes(m.id)
                     return (
                         <li key={m.id} className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-card p-5 shadow-card">
-                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${claimed ? 'bg-success/10 text-success' : done ? 'bg-brand-600 text-white' : 'bg-muted text-gray-500'}`}>
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${claimed ? 'bg-success/10 text-success' : done ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-muted-foreground'}`}>
                                 {claimed ? <Check size={20} /> : <Gift size={18} />}
                             </span>
                             <div className="min-w-0 flex-1">
-                                <p className={`font-bold ${claimed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{m.title}</p>
-                                <p className="text-sm text-gray-500">{m.hint}</p>
+                                <p className={`font-bold ${claimed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{m.title}</p>
+                                <p className="text-sm text-muted-foreground">{m.hint}</p>
                                 <div className="mt-2 flex items-center gap-3">
                                     <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
                                         <div className="h-full rounded-full bg-brand-600 transition-all duration-slow" style={{ width: `${(value / m.target) * 100}%` }} />
                                     </div>
-                                    <span className="font-mono text-xs text-gray-500">{value}/{m.target}</span>
+                                    <span className="font-mono text-xs text-muted-foreground">{value}/{m.target}</span>
                                 </div>
                             </div>
                             {claimed ? (
@@ -155,7 +155,7 @@ function Missions() {
                                     type="button"
                                     disabled={!done}
                                     onClick={() => claim(m.id, m.title)}
-                                    className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-brand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-gray-500 disabled:shadow-none"
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                                 >
                                     <Zap size={14} className="fill-current" /> {done ? 'Nhận' : 'Thưởng'} +{m.rewardXp} XP
                                 </button>
@@ -177,8 +177,8 @@ function SkillTree() {
 
     return (
         <section aria-labelledby="skills-title">
-            <h2 id="skills-title" className="text-title text-gray-900">Cây kỹ năng</h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <h2 id="skills-title" className="text-title text-foreground">Cây kỹ năng</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
                 Khái niệm sáng dần theo mức nắm vững. Khái niệm nâng cao mở khi khái niệm nền đạt {Math.round(UNLOCK_THRESHOLD * 100)}%.
             </p>
             <div className="mt-5 flex flex-col gap-5">
@@ -187,11 +187,11 @@ function SkillTree() {
                     const maxDepth = Math.max(...lessonNodes.map((n) => n.depth))
                     return (
                         <div key={lid} className="overflow-x-auto rounded-panel border border-border bg-card p-6 shadow-card">
-                            <p className="mb-5 text-sm font-bold text-gray-700">{getLesson(lid)?.title}</p>
+                            <p className="mb-5 text-sm font-bold text-muted-foreground">{getLesson(lid)?.title}</p>
                             <div className="flex items-stretch gap-2">
                                 {Array.from({ length: maxDepth + 1 }, (_, d) => (
                                     <Fragment key={d}>
-                                        {d > 0 && <ChevronRight className="mt-9 shrink-0 self-start text-gray-300" size={28} aria-hidden />}
+                                        {d > 0 && <ChevronRight className="mt-9 shrink-0 self-start text-muted-foreground" size={28} aria-hidden />}
                                         <div className="flex min-w-[200px] flex-1 flex-col gap-4">
                                             {lessonNodes.filter((n) => n.depth === d).map((n) => (
                                                 <SkillNodeCard key={n.concept.id} node={n} />
@@ -224,13 +224,13 @@ function SkillNodeCard({ node }: { node: ReturnType<typeof buildSkillTree>[numbe
                 className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                 style={{ background: node.unlocked ? `conic-gradient(hsl(var(--brand)) ${pct * 3.6}deg, hsl(var(--muted)) 0)` : 'hsl(var(--muted))' }}
             >
-                <span className={`flex h-[46px] w-[46px] items-center justify-center rounded-full font-mono text-sm font-bold ${mastered ? 'bg-brand-600 text-white shadow-brand' : 'bg-card text-gray-800'}`}>
-                    {node.unlocked ? (mastered ? <Check size={20} /> : `${pct}%`) : <Lock size={16} className="text-gray-400" />}
+                <span className={`flex h-[46px] w-[46px] items-center justify-center rounded-full font-mono text-sm font-bold ${mastered ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-foreground'}`}>
+                    {node.unlocked ? (mastered ? <Check size={20} /> : `${pct}%`) : <Lock size={16} className="text-muted-foreground" />}
                 </span>
             </span>
             <span className="min-w-0">
-                <span className={`block font-bold leading-snug ${node.unlocked ? 'text-gray-900' : 'text-gray-500'}`}>{node.concept.name}</span>
-                <span className="mt-0.5 block text-xs text-gray-500">
+                <span className={`block font-bold leading-snug ${node.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>{node.concept.name}</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
                     {node.unlocked
                         ? mastered
                             ? 'Đã nắm vững'
@@ -255,8 +255,8 @@ function Badges() {
     return (
         <section aria-labelledby="badges-title">
             <div className="flex items-end justify-between gap-3">
-                <h2 id="badges-title" className="text-title text-gray-900">Huy hiệu</h2>
-                <p className="font-mono text-sm text-gray-500">{earned.length}/{badges.length}</p>
+                <h2 id="badges-title" className="text-title text-foreground">Huy hiệu</h2>
+                <p className="font-mono text-sm text-muted-foreground">{earned.length}/{badges.length}</p>
             </div>
             <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {badges.map((b) => {
@@ -264,18 +264,18 @@ function Badges() {
                     const { current, target } = badgeProgress(b, { conceptMastery, quizResults, streak })
                     return (
                         <li key={b.id} className={`flex flex-col gap-4 rounded-card border p-5 ${has ? 'border-brand-200 bg-card shadow-card' : 'border-border bg-muted/50'}`}>
-                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-white shadow-brand' : 'bg-card text-gray-400'}`}>
+                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-muted-foreground'}`}>
                                 {has ? <Award size={28} /> : <Lock size={22} />}
                             </span>
                             <div>
-                                <p className={`font-bold ${has ? 'text-gray-900' : 'text-gray-600'}`}>{b.name}</p>
-                                <p className="mt-1 text-sm leading-relaxed text-gray-500">{b.description}</p>
+                                <p className={`font-bold ${has ? 'text-foreground' : 'text-muted-foreground'}`}>{b.name}</p>
+                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{b.description}</p>
                             </div>
                             <div className="mt-auto">
                                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                                    <div className={`h-full rounded-full ${has ? 'bg-brand-600' : 'bg-gray-400'}`} style={{ width: `${(has ? 1 : current / target) * 100}%` }} />
+                                    <div className={`h-full rounded-full ${has ? 'bg-brand-600' : 'bg-muted-foreground/50'}`} style={{ width: `${(has ? 1 : current / target) * 100}%` }} />
                                 </div>
-                                <p className="mt-1.5 font-mono text-xs text-gray-500">{has ? 'Đã đạt' : `${current}/${target}`}</p>
+                                <p className="mt-1.5 font-mono text-xs text-muted-foreground">{has ? 'Đã đạt' : `${current}/${target}`}</p>
                             </div>
                         </li>
                     )

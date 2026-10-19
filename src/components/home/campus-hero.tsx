@@ -49,7 +49,7 @@ export function CampusHero() {
         <div className="relative h-full w-full">
             <div className="absolute inset-0">
                 {enabled ? (
-                    <Suspense fallback={<div className="h-full w-full animate-pulse rounded-panel bg-white/5" aria-hidden />}>
+                    <Suspense fallback={<div className="h-full w-full animate-pulse rounded-panel bg-ink-foreground/5" aria-hidden />}>
                         <CampusScene night={night} reduce={reduce} />
                     </Suspense>
                 ) : (

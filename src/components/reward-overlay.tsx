@@ -65,9 +65,9 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-reward px-6 text-white"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-reward px-6 text-ink-foreground"
         >
-            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70 bg-dots [mask-image:radial-gradient(circle_at_50%_40%,#000,transparent_70%)]" />
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70 bg-dots mask-fade-r" />
             {[0, 1, 2].map((i) => (
                 <motion.span
                     key={i}
@@ -75,7 +75,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     initial={{ scale: 0.3, opacity: 0.5 }}
                     animate={{ scale: 2.4, opacity: 0 }}
                     transition={{ duration: 2.4, delay: i * 0.55, repeat: Infinity, ease: 'easeOut' }}
-                    className="pointer-events-none absolute h-[420px] w-[420px] rounded-full border border-white/40"
+                    className="pointer-events-none absolute h-[420px] w-[420px] rounded-full border border-ink-foreground/40"
                 />
             ))}
 
@@ -84,7 +84,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     initial={{ scale: 0.4, rotate: -12, opacity: 0 }}
                     animate={{ scale: 1, rotate: 0, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.1 }}
-                    className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-brand-600 shadow-raised"
+                    className="flex h-24 w-24 items-center justify-center rounded-full bg-ink-foreground text-brand-600 shadow-raised"
                 >
                     <Icon size={44} className={event.kind === 'xp' ? 'fill-current' : ''} />
                 </motion.span>
@@ -103,18 +103,18 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                 <motion.h2 initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="mt-4 text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold leading-tight tracking-tight">
                     {title}
                 </motion.h2>
-                <motion.p initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="mt-3 max-w-md text-base leading-relaxed text-white/80">
+                <motion.p initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="mt-3 max-w-md text-base leading-relaxed text-ink-foreground/80">
                     {subtitle}
                 </motion.p>
 
                 {event.kind !== 'badge' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-8 w-full max-w-sm">
-                        <div className="flex justify-between font-mono text-xs text-white/80">
+                        <div className="flex justify-between font-mono text-xs text-ink-foreground/80">
                             <span>Cấp {lp.level}</span>
                             <span>{lp.toNext} XP nữa lên cấp {lp.level + 1}</span>
                         </div>
-                        <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-black/25">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(lp.ratio * 100)}%` }} transition={{ delay: 0.7, duration: 0.8, ease: 'easeOut' }} className="h-full rounded-full bg-white" />
+                        <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-ink/25">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(lp.ratio * 100)}%` }} transition={{ delay: 0.7, duration: 0.8, ease: 'easeOut' }} className="h-full rounded-full bg-ink-foreground" />
                         </div>
                     </motion.div>
                 )}
@@ -126,7 +126,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     initial={{ y: 16, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.7 }}
-                    className="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-brand-700 shadow-raised transition duration-fast hover:bg-white/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+                    className="mt-10 inline-flex items-center gap-2 rounded-full bg-ink-foreground px-8 py-3.5 text-sm font-bold text-brand-700 shadow-raised transition duration-fast hover:bg-ink-foreground/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/40"
                 >
                     <Sparkles size={16} /> Tiếp tục
                 </motion.button>

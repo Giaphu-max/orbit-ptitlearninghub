@@ -84,15 +84,15 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                     <Sparkles size={18} />
                 </span>
                 <div>
-                    <h2 className="font-bold text-gray-900">Trợ giảng AI</h2>
-                    <p className="text-xs text-gray-500">Trả lời theo bài giảng, có mốc để xem lại</p>
+                    <h2 className="font-bold text-foreground">Trợ giảng AI</h2>
+                    <p className="text-xs text-muted-foreground">Trả lời theo bài giảng, có mốc để xem lại</p>
                 </div>
             </header>
 
             <div
                 ref={listRef}
                 onScroll={handleScroll}
-                className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain bg-gray-50/60 p-5"
+                className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain bg-muted p-5"
                 aria-live="polite"
             >
                 {messages.map((msg, idx) => (
@@ -106,10 +106,10 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                             <div
                                 className={`prose prose-sm max-w-none break-words dark:prose-invert rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm ${
                                     msg.role === 'user'
-                                        ? 'prose-invert rounded-tr-sm bg-ink text-white dark:border dark:border-border'
+                                        ? 'prose-invert rounded-tr-sm bg-ink text-ink-foreground dark:border dark:border-border'
                                         : msg.isError
                                           ? 'rounded-tl-sm border border-brand-100 bg-brand-50 text-brand-ink'
-                                          : 'rounded-tl-sm border border-gray-100 bg-card text-gray-700'
+                                          : 'rounded-tl-sm border border-border bg-card text-muted-foreground'
                                 }`}
                             >
                                 <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -139,7 +139,7 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100">
                             <Sparkles size={14} className="text-brand-ink" />
                         </span>
-                        <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-card p-3.5 text-sm text-gray-500 shadow-sm">
+                        <div className="rounded-2xl rounded-tl-sm border border-border bg-card p-3.5 text-sm text-muted-foreground shadow-sm">
                             <span className="animate-pulse">Đang xem lại bài giảng…</span>
                         </div>
                     </div>
@@ -154,7 +154,7 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                         setIsScrolledUp(false)
                         scrollToBottom()
                     }}
-                    className="absolute bottom-36 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-gray-200 bg-card/90 text-gray-700 shadow-md backdrop-blur transition hover:bg-gray-100"
+                    className="absolute bottom-36 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-md backdrop-blur transition hover:bg-muted"
                     aria-label="Xuống tin mới nhất"
                 >
                     {isTyping ? <MoreHorizontal size={16} className="animate-pulse text-brand-500" /> : <ArrowDown size={16} />}
@@ -177,12 +177,12 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                         maxLength={CHAT_LIMITS.questionMaxChars}
                         placeholder="Hỏi về bài giảng…"
                         aria-label="Câu hỏi cho trợ giảng AI"
-                        className="w-full rounded-full border border-gray-200 bg-gray-50 py-3 pl-5 pr-12 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        className="w-full rounded-full border border-border bg-muted py-3 pl-5 pr-12 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
                     />
                     <button
                         type="submit"
                         disabled={isTyping || !inputValue.trim()}
-                        className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-brand-600 text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-brand-600 text-ink-foreground transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-muted"
                         aria-label="Gửi câu hỏi"
                     >
                         <Send size={14} />
@@ -205,7 +205,7 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                                 setInputValue(`${c.name} là gì?`)
                                 inputRef.current?.focus()
                             }}
-                            className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 transition hover:bg-gray-200"
+                            className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground transition hover:bg-muted-foreground/20"
                         >
                             {c.name}
                         </button>

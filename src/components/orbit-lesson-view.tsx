@@ -36,9 +36,9 @@ function UnpublishedNotice() {
     return (
         <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="text-eyebrow uppercase text-brand-ink">Chưa xuất bản</p>
-            <h1 className="text-headline text-gray-900">Bài này đang chờ giảng viên duyệt</h1>
-            <p className="max-w-md text-gray-600">Nội dung do AI tạo cần được giảng viên xem lại trước khi đến tay sinh viên.</p>
-            <Link to="/learning" className="rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-brand transition hover:bg-brand-700">
+            <h1 className="text-headline text-foreground">Bài này đang chờ giảng viên duyệt</h1>
+            <p className="max-w-md text-muted-foreground">Nội dung do AI tạo cần được giảng viên xem lại trước khi đến tay sinh viên.</p>
+            <Link to="/learning" className="rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700">
                 Về danh sách khóa học
             </Link>
         </div>
@@ -115,12 +115,12 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                     <div className="flex items-center justify-between gap-3 pr-14 lg:pr-12">
                         <Link
                             to="/learning"
-                            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-gray-600 transition hover:bg-card hover:text-gray-900"
+                            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground"
                         >
                             <ChevronLeft size={16} /> {course?.title ?? 'Khóa học'}
                         </Link>
                         <span
-                            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-2 text-sm font-semibold text-gray-700 shadow-card"
+                            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-2 text-sm font-semibold text-muted-foreground shadow-card"
                             title="Tổng XP"
                         >
                             <Zap size={15} className="fill-brand-500 text-brand-500" />
@@ -129,7 +129,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         <button
                             type="button"
                             onClick={() => setIsTutorOpen((v) => !v)}
-                            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-gray-700 shadow-card transition hover:border-gray-300"
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-muted-foreground shadow-card transition hover:border-muted-foreground/40"
                         >
                             {isTutorOpen ? <PanelRightClose size={16} /> : <MessageSquare size={16} />}
                             {isTutorOpen ? 'Tập trung xem' : 'Mở trợ giảng AI'}
@@ -168,7 +168,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         </AnimatePresence>
 
                         {phase.kind === 'reviewing' && (
-                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-card bg-ink px-4 py-3 text-sm text-white md:absolute md:left-4 md:right-4 md:top-4 md:mt-0 md:bg-gray-900/85 md:backdrop-blur">
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-card bg-ink px-4 py-3 text-sm text-ink-foreground md:absolute md:left-4 md:right-4 md:top-4 md:mt-0 md:bg-ink/85 md:backdrop-blur">
                                 <span>
                                     Đang xem lại đoạn{' '}
                                     <span className="font-mono font-bold">
@@ -179,7 +179,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 <button
                                     type="button"
                                     onClick={quiz.nextVariant}
-                                    className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-semibold transition hover:bg-white/25"
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/15 px-3 py-1.5 font-semibold transition hover:bg-ink-foreground/25"
                                 >
                                     <SkipForward size={14} /> Hỏi luôn
                                 </button>
@@ -209,10 +209,10 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                             {course?.subject ?? 'Bài giảng'}
                             {lessonIndex >= 0 && ` · Bài ${lessonIndex + 1}/${courseLessons.length}`}
                         </p>
-                        <h1 className="mt-2 text-title text-gray-900 md:text-headline">{lesson.title}</h1>
-                        <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-gray-600">{lesson.summary}</p>
+                        <h1 className="mt-2 text-title text-foreground md:text-headline">{lesson.title}</h1>
+                        <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted-foreground">{lesson.summary}</p>
                         {lesson.origin === 'sample' && (
-                            <p className="mt-3 inline-block rounded-full bg-warning/15 px-3 py-1 text-xs font-semibold text-gray-700">
+                            <p className="mt-3 inline-block rounded-full bg-warning/15 px-3 py-1 text-xs font-semibold text-muted-foreground">
                                 Dữ liệu mẫu để dựng giao diện
                             </p>
                         )}
@@ -225,11 +225,11 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                             <QuizList lesson={lesson} results={quiz.results} onOpen={quiz.open} />
 
                             <section className="rounded-card border border-border bg-card p-5 shadow-card">
-                                <h2 className="font-bold text-gray-900">Khái niệm chính</h2>
+                                <h2 className="font-bold text-foreground">Khái niệm chính</h2>
                                 <dl className="mt-3 space-y-4">
                                     {lesson.concepts.map((c) => (
                                         <div key={c.id}>
-                                            <dt className="flex items-center justify-between gap-2 text-sm font-semibold text-gray-900">
+                                            <dt className="flex items-center justify-between gap-2 text-sm font-semibold text-foreground">
                                                 {c.name}
                                                 <button
                                                     type="button"
@@ -239,7 +239,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                                     {formatTime(c.segment.start)}
                                                 </button>
                                             </dt>
-                                            <dd className="mt-1 text-sm leading-relaxed text-gray-600">{c.definition}</dd>
+                                            <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">{c.definition}</dd>
                                         </div>
                                     ))}
                                 </dl>
@@ -247,7 +247,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
 
                             {courseLessons.length > 1 && (
                                 <section className="rounded-card border border-border bg-card p-5 shadow-card">
-                                    <h2 className="font-bold text-gray-900">Bài trong khóa</h2>
+                                    <h2 className="font-bold text-foreground">Bài trong khóa</h2>
                                     <ol className="mt-3 space-y-1">
                                         {courseLessons.map((l, i) => (
                                             <li key={l.id}>
@@ -255,10 +255,10 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                                     to={`/lesson/${l.id}`}
                                                     aria-current={l.id === lesson.id ? 'page' : undefined}
                                                     className={`flex gap-3 rounded-lg px-2 py-2 text-sm transition ${
-                                                        l.id === lesson.id ? 'bg-brand-50 font-semibold text-brand-ink' : 'text-gray-700 hover:bg-gray-50'
+                                                        l.id === lesson.id ? 'bg-brand-50 font-semibold text-brand-ink' : 'text-muted-foreground hover:bg-muted'
                                                     }`}
                                                 >
-                                                    <span className="font-mono text-xs text-gray-400">{String(i + 1).padStart(2, '0')}</span>
+                                                    <span className="font-mono text-xs text-muted-foreground">{String(i + 1).padStart(2, '0')}</span>
                                                     {l.title}
                                                 </Link>
                                             </li>
