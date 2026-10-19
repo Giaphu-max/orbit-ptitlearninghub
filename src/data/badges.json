@@ -1,0 +1,20 @@
+[
+  {
+    "id": "nha-bo-cuc",
+    "name": "Nhà bố cục",
+    "description": "Nắm vững quy tắc một phần ba và đường dẫn (từ 80% trở lên).",
+    "criterion": { "type": "concept-mastery", "conceptIds": ["quy-tac-mot-phan-ba", "duong-dan"], "threshold": 0.8 }
+  },
+  {
+    "id": "hoc-tu-loi-sai",
+    "name": "Học từ lỗi sai",
+    "description": "Sửa đúng 5 câu hỏi sau khi đã trả lời sai.",
+    "criterion": { "type": "corrected-mistakes", "count": 5 }
+  },
+  {
+    "id": "chuoi-7-ngay",
+    "name": "Bền bỉ 7 ngày",
+    "description": "Học đều 7 ngày liên tiếp.",
+    "criterion": { "type": "streak", "days": 7 }
+  }
+]

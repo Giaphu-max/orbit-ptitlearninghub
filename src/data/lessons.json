@@ -1,0 +1,55 @@
+[
+  {
+    "id": "bo-cuc-co-ban",
+    "courseId": "nhiep-anh-co-ban",
+    "title": "Bố cục cơ bản: quy tắc một phần ba và đường dẫn",
+    "youtubeId": "",
+    "durationSec": 240,
+    "summary": "Dữ liệu mẫu để dựng giao diện. Bài thật sẽ do scripts/generate-content.ts tạo từ video YouTube.",
+    "origin": "sample",
+    "status": "draft",
+    "concepts": [
+      {
+        "id": "quy-tac-mot-phan-ba",
+        "name": "Quy tắc một phần ba",
+        "definition": "Chia khung hình bằng hai đường ngang và hai đường dọc thành 9 ô bằng nhau; đặt chủ thể ở đường chia hoặc giao điểm để ảnh cân bằng mà không cứng nhắc.",
+        "segment": { "start": 20, "end": 95 },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "duong-dan",
+        "name": "Đường dẫn",
+        "definition": "Các đường có sẵn trong cảnh (con đường, hàng rào, bờ sông) dẫn mắt người xem từ tiền cảnh về phía chủ thể.",
+        "segment": { "start": 95, "end": 180 },
+        "prerequisiteIds": ["quy-tac-mot-phan-ba"]
+      }
+    ],
+    "transcript": [
+      { "start": 0, "end": 20, "text": "Chào các bạn, hôm nay chúng ta học hai công cụ bố cục dùng nhiều nhất." },
+      { "start": 20, "end": 95, "text": "Đầu tiên là quy tắc một phần ba: chia khung hình thành 9 ô bằng nhau và đặt chủ thể ở một trong bốn giao điểm." },
+      { "start": 95, "end": 180, "text": "Tiếp theo là đường dẫn: tận dụng con đường, hàng cây hay bờ sông để kéo mắt người xem về chủ thể." },
+      { "start": 180, "end": 240, "text": "Bài tập: chụp ba ảnh, mỗi ảnh dùng ít nhất một trong hai kỹ thuật vừa học." }
+    ],
+    "quiz": [
+      {
+        "id": "q-mot-phan-ba-1",
+        "conceptId": "quy-tac-mot-phan-ba",
+        "pauseAt": 95,
+        "prompt": "Theo quy tắc một phần ba, nên đặt chủ thể ở đâu?",
+        "options": ["Chính giữa khung hình", "Tại giao điểm của các đường chia", "Sát mép khung hình", "Ở góc trên bên trái"],
+        "correctIndex": 1,
+        "explanation": "Bốn giao điểm của các đường chia là nơi mắt người xem dễ dừng lại nhất.",
+        "variants": [
+          {
+            "id": "q-mot-phan-ba-1b",
+            "conceptId": "quy-tac-mot-phan-ba",
+            "prompt": "Khi chụp phong cảnh, đặt đường chân trời ở đâu là đúng quy tắc một phần ba?",
+            "options": ["Cắt ngang chính giữa ảnh", "Trùng với đường chia ngang trên hoặc dưới", "Sát mép trên khung hình", "Chéo qua khung hình"],
+            "correctIndex": 1,
+            "explanation": "Đặt chân trời ở đường chia ngang để ưu tiên bầu trời hoặc mặt đất, tránh chia ảnh làm đôi."
+          }
+        ]
+      }
+    ]
+  }
+]

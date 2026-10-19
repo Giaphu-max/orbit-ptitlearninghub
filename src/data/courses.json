@@ -1,0 +1,10 @@
+[
+  {
+    "id": "nhiep-anh-co-ban",
+    "title": "Nhiếp ảnh cơ bản",
+    "subject": "Nhiếp ảnh",
+    "instructor": "Giảng viên khoa Đa phương tiện",
+    "description": "Bố cục, ánh sáng và cách đọc một khung hình trước khi bấm máy.",
+    "lessonIds": ["bo-cuc-co-ban"]
+  }
+]

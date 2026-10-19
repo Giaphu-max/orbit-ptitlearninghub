@@ -1,0 +1,29 @@
+[
+  {
+    "id": "daily-bo-cuc-1",
+    "title": "Vì sao chủ thể lệch tâm lại dễ nhìn hơn?",
+    "readingMinutes": 2,
+    "conceptIds": ["quy-tac-mot-phan-ba", "duong-dan"],
+    "origin": "sample",
+    "paragraphs": [
+      {
+        "text": "Đặt chủ thể ở giao điểm của các đường một phần ba tạo khoảng trống cho mắt di chuyển, nên ảnh có cảm giác chuyển động hơn so với đặt chính giữa.",
+        "sources": [{ "lessonId": "bo-cuc-co-ban", "start": 20 }]
+      },
+      {
+        "text": "Kết hợp với một đường dẫn đi từ tiền cảnh, người xem sẽ được dẫn thẳng tới đúng điểm bạn muốn nhấn.",
+        "sources": [{ "lessonId": "bo-cuc-co-ban", "start": 95 }]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-bo-cuc-1-c1",
+        "conceptId": "duong-dan",
+        "prompt": "Đường dẫn trong ảnh có tác dụng chính là gì?",
+        "options": ["Làm ảnh sáng hơn", "Dẫn mắt người xem tới chủ thể", "Giảm nhiễu ảnh", "Làm mờ hậu cảnh"],
+        "correctIndex": 1,
+        "explanation": "Đường dẫn kéo ánh nhìn từ tiền cảnh về phía chủ thể."
+      }
+    ]
+  }
+]

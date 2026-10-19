@@ -1,5 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { OrbitSidebar, type OrbitTab } from '@/components/orbit-sidebar'
+import { OrbitRoleSelect } from '@/components/orbit-role-select'
+import { useOrbitStore } from '@/store/useOrbitStore'
 
 const TAB_PATHS: Record<OrbitTab, string> = {
     home: '/',
@@ -10,8 +12,12 @@ export function MainLayout() {
     const navigate = useNavigate()
     const location = useLocation()
 
+    const role = useOrbitStore((s) => s.role)
+
     const activeTab: OrbitTab =
         location.pathname === '/learning' || location.pathname === '/lesson' ? 'learning' : 'home'
+
+    if (!role) return <OrbitRoleSelect />
 
     return (
         <div className="flex min-h-screen w-full relative z-0 bg-surface font-sans text-gray-900 overflow-hidden">
