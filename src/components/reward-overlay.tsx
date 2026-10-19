@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Award, Lock, TrendingUp } from 'lucide-react'
+import { Award, Flame, TrendingUp } from 'lucide-react'
 import { levelProgress, levelTitle } from '@/lib/gamification'
 import { useRewardStore, type RewardEvent } from '@/store/useRewardStore'
 
@@ -69,7 +69,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
             <div className="relative mx-auto flex min-h-full w-full max-w-[1440px] flex-col items-stretch gap-10 px-6 py-10 lg:flex-row lg:items-center lg:gap-[72px] lg:px-24 lg:py-16">
                 {/* ── Cột trái: ngữ cảnh, số XP, câu chốt, chi tiết ── */}
                 <div className="flex min-w-0 flex-1 flex-col gap-6 lg:gap-7">
-                    <span className="self-start rounded-full bg-ink-foreground/15 px-3.5 py-2 text-sm font-bold">{event.context}</span>
+                    <span className="rw-chip self-start rounded-full px-3.5 py-2 text-sm font-bold">{event.context}</span>
 
                     {event.xp > 0 && (
                         <div className="flex animate-pop items-baseline gap-3 lg:gap-4">
@@ -86,7 +86,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                                 <li
                                     key={r.label}
                                     style={stagger(i)}
-                                    className={`flex animate-rise-quiz items-center justify-between gap-4 rounded-xl px-4 py-3 text-[15px] ${r.highlight ? 'bg-ink-foreground text-brand-700' : 'bg-ink-foreground/15'}`}
+                                    className={`flex animate-rise-quiz items-center justify-between gap-4 rounded-xl px-4 py-3 text-[15px] ${r.highlight ? 'rw-row-hl' : 'rw-row'}`}
                                 >
                                     <span className={r.highlight ? 'font-bold' : ''}>{r.label}</span>
                                     <strong className="shrink-0 font-mono">{r.xp > 0 ? `+${r.xp}` : '·'}</strong>
@@ -98,7 +98,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
 
                 {/* ── Cột phải: cấp độ, huy hiệu / mức nắm vững, mở khóa, nút ── */}
                 <div className="flex w-full shrink-0 animate-rise-r2 flex-col gap-5 lg:w-[480px]">
-                    <div className="relative rounded-3xl bg-ink-foreground p-7 text-ink">
+                    <div className="rw-card relative rounded-3xl p-7">
                         <div className="flex items-baseline justify-between gap-3">
                             <strong className="text-lg">
                                 Cấp {lp.level} · {levelTitle(lp.level)}
@@ -107,7 +107,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                                 {event.xpAfter.toLocaleString('vi-VN')} / {(event.xpAfter + lp.toNext).toLocaleString('vi-VN')}
                             </span>
                         </div>
-                        <Bar className="mt-4 h-3" trackClass="bg-ink/10" fillClass="bg-brand-600" from={levelUp ? 0 : lpBefore.ratio} to={lp.ratio} />
+                        <Bar className="mt-4 h-3" trackClass="rw-track-light" fillClass="rw-fill-red" from={levelUp ? 0 : lpBefore.ratio} to={lp.ratio} />
                         <p className="mt-4 text-[13px] text-ink/70">
                             Còn {lp.toNext.toLocaleString('vi-VN')} XP để lên Cấp {lp.level + 1} · {levelTitle(lp.level + 1) ?? 'Cấp mới'}
                         </p>
@@ -120,7 +120,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     </div>
 
                     {event.badge ? (
-                        <div className="flex items-center gap-5 rounded-3xl bg-ink p-7 text-ink-foreground">
+                        <div className="flex items-center gap-5 rw-dark rounded-3xl p-7">
                             <span className="relative flex h-[88px] w-[88px] shrink-0 items-center justify-center">
                                 <span aria-hidden className="absolute inset-0 animate-glow-ring rounded-[22px] bg-brand-600" />
                                 <span className="relative flex h-full w-full items-center justify-center rounded-[22px] bg-brand-600 text-ink-foreground">
@@ -135,21 +135,23 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                         </div>
                     ) : (
                         event.mastery && (
-                            <div className="rounded-3xl bg-ink p-7 text-ink-foreground">
+                            <div className="rw-dark rounded-3xl p-7">
                                 <span className="text-xs font-extrabold uppercase tracking-[0.12em] text-warning">Mức nắm vững</span>
                                 <div className="mt-2 flex items-baseline justify-between gap-3">
                                     <strong className="text-[22px] leading-tight tracking-tight">{event.mastery.name}</strong>
                                     <span className="shrink-0 font-mono text-[15px] font-bold">
-                                        {Math.round(event.mastery.from * 100)}% → {Math.round(event.mastery.to * 100)}%
+                                        {event.mastery.from === event.mastery.to
+                                            ? `${Math.round(event.mastery.to * 100)}% · giữ nguyên`
+                                            : `${Math.round(event.mastery.from * 100)}% → ${Math.round(event.mastery.to * 100)}%`}
                                     </span>
                                 </div>
-                                <Bar className="mt-4 h-2.5" trackClass="bg-ink-foreground/20" fillClass="bg-brand-light" from={event.mastery.from} to={event.mastery.to} />
+                                <Bar className="mt-4 h-2.5" trackClass="rw-track-dark" fillClass="rw-fill-pink" from={event.mastery.from} to={event.mastery.to} />
                             </div>
                         )
                     )}
 
-                    <div className="flex items-center gap-3.5 rounded-[20px] bg-ink-foreground/15 px-6 py-5">
-                        <Lock size={22} className="shrink-0" aria-hidden />
+                    <div className="rw-note flex items-center gap-3.5 rounded-[20px] px-6 py-5">
+                        <Flame size={22} className="shrink-0 fill-current" aria-hidden />
                         <span className="text-[15px] leading-snug">
                             {event.unlocked.length > 0 && (
                                 <>
@@ -165,14 +167,14 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                             ref={btnRef}
                             type="button"
                             onClick={() => go(event.next.to)}
-                            className="flex-1 rounded-[14px] bg-ink-foreground p-4 text-base font-extrabold text-brand-700 transition duration-fast hover:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/50"
+                            className="rw-btn-solid flex-1 rounded-[14px] p-4 text-base font-extrabold transition duration-fast hover:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/50"
                         >
                             {event.next.label}
                         </button>
                         <button
                             type="button"
                             onClick={() => go('/')}
-                            className="flex-1 rounded-[14px] border-[1.5px] border-ink-foreground p-4 text-base font-bold text-ink-foreground transition duration-fast hover:bg-ink-foreground/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/50"
+                            className="rw-btn-ghost flex-1 rounded-[14px] p-4 text-base font-bold transition duration-fast focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/50"
                         >
                             Về trang chủ
                         </button>

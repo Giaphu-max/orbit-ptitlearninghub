@@ -88,7 +88,7 @@ export function OrbitDailyView() {
                                                     disabled={read !== undefined || (answered && pick === c.correctIndex)}
                                                     onClick={() => setChosen((m) => ({ ...m, [c.id]: i }))}
                                                     className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-[15px] transition duration-fast ${
-                                                        correct ? 'border-success bg-success/10 text-foreground' : wrong ? 'border-brand-400 bg-brand-50 text-foreground' : 'border-border bg-card text-foreground hover:border-brand-300'
+                                                        correct ? 'border-success bg-success/10 text-foreground' : wrong ? 'answer-wrong' : 'border-border bg-card text-foreground hover:border-brand-300'
                                                     }`}
                                                 >
                                                     {opt}

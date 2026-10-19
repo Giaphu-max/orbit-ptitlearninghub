@@ -33,8 +33,22 @@ export function levelProgress(xp: number): LevelProgress {
     return { level, into, span, ratio: span > 0 ? into / span : 0, toNext: span - into }
 }
 
-const LEVEL_TITLES = ['Người mới', 'Học việc', 'Có nền tảng', 'Vững vàng', 'Thành thạo', 'Bậc thầy']
-export const levelTitle = (level: number) => LEVEL_TITLES[Math.min(level, LEVEL_TITLES.length) - 1]
+const LEVEL_TITLES = [
+    'Người mới',
+    'Học việc',
+    'Có nền tảng',
+    'Vững vàng',
+    'Thành thạo',
+    'Người quan sát',
+    'Bậc thầy',
+    'Nhà bố cục',
+    'Người kể chuyện',
+    'Đạo diễn hình ảnh',
+    'Bậc thầy ánh sáng',
+    'Huyền thoại PTIT',
+]
+/** Mỗi cấp một tên riêng; vượt quá danh sách thì dùng tên cuối kèm số cấp. */
+export const levelTitle = (level: number) => LEVEL_TITLES[level - 1] ?? `${LEVEL_TITLES[LEVEL_TITLES.length - 1]} ${level - LEVEL_TITLES.length + 1}`
 
 // ─── Ngày và tuần (giờ máy) ────────────────────────────────────────────────
 
@@ -245,7 +259,7 @@ export function announceRewards(before: Snapshot, after: Snapshot, screen?: Rewa
         const from = before.conceptMastery[screen.masteryConceptId] ?? 0
         const to = after.conceptMastery[screen.masteryConceptId] ?? 0
         const name = lessons.flatMap((l) => l.concepts).find((c) => c.id === screen.masteryConceptId)?.name
-        if (name && to !== from) mastery = { name, from, to }
+        if (name) mastery = { name, from, to }
     }
 
     useRewardStore.getState().push({

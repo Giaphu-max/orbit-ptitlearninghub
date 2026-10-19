@@ -42,7 +42,7 @@ const TONE = {
         active: 'bg-ink-foreground/15 text-ink-foreground',
         sub: 'text-ink-foreground/70',
         chip: 'border-ink-foreground/20 bg-ink-foreground/10 text-ink-foreground hover:bg-ink-foreground/20',
-        logo: 'bg-ink-foreground text-brand-700 ring-1 ring-ink/10',
+        logo: 'logo-mark',
         avatar: 'bg-ink-foreground text-ink',
         burger: 'border-ink-foreground/20 bg-ink-foreground/10 text-ink-foreground',
     },
@@ -52,7 +52,7 @@ const TONE = {
         active: 'bg-muted text-foreground',
         sub: 'text-muted-foreground',
         chip: 'border-border bg-card text-foreground hover:border-brand-300',
-        logo: 'bg-ink-foreground text-brand-700 ring-1 ring-border',
+        logo: 'logo-mark',
         avatar: 'bg-foreground text-background',
         burger: 'border-border bg-card text-foreground',
     },
@@ -91,7 +91,7 @@ export function TopNav({ tone }: { tone: NavTone }) {
             <div className="container-page flex items-center gap-4 py-5 lg:gap-6">
                 <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="Orbit, trang chủ">
                     {LOGO_URL ? (
-                        <img src={LOGO_URL} alt="PTIT" className="h-10 w-10 shrink-0 rounded-xl bg-ink-foreground object-contain p-1" />
+                        <img src={LOGO_URL} alt="PTIT" className="logo-mark h-10 w-10 shrink-0 rounded-xl object-contain p-1" />
                     ) : (
                         // Khối vuông trắng bo góc, chữ PTIT đỏ: nổi trên nền tối của hero
                         <span className={`flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${t.logo}`}>PTIT</span>

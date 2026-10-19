@@ -188,6 +188,59 @@
   .on-red-muted {
     color: hsl(var(--ink-foreground) / 0.8);
   }
+  /* Bề mặt cố định của màn nhận XP và logo: viết bằng CSS thuần từ token, không phụ thuộc việc Tailwind quét/nạp class
+     (đã có lần dev server chưa nạp lại cấu hình làm các nền này biến mất). */
+  .logo-mark {
+    background-color: hsl(var(--ink-foreground));
+    color: rgb(var(--brand-700));
+    box-shadow: inset 0 0 0 1px hsl(var(--ink) / 0.12);
+  }
+  .rw-chip,
+  .rw-row,
+  .rw-note {
+    background-color: hsl(var(--ink-foreground) / 0.15);
+  }
+  .rw-row-hl {
+    background-color: hsl(var(--ink-foreground));
+    color: rgb(var(--brand-700));
+  }
+  .rw-card {
+    background-color: hsl(var(--ink-foreground));
+    color: hsl(var(--ink));
+  }
+  .rw-dark {
+    background-color: hsl(var(--ink));
+    color: hsl(var(--ink-foreground));
+  }
+  .rw-track-light {
+    background-color: hsl(var(--ink) / 0.12);
+  }
+  .rw-track-dark {
+    background-color: hsl(var(--ink-foreground) / 0.22);
+  }
+  .rw-fill-red {
+    background-color: rgb(var(--brand-600));
+  }
+  .rw-fill-pink {
+    background-color: hsl(var(--brand-light));
+  }
+  .rw-btn-solid {
+    background-color: hsl(var(--ink-foreground));
+    color: rgb(var(--brand-700));
+  }
+  .rw-btn-ghost {
+    border: 1.5px solid hsl(var(--ink-foreground));
+    color: hsl(var(--ink-foreground));
+  }
+  .rw-btn-ghost:hover {
+    background-color: hsl(var(--ink-foreground) / 0.12);
+  }
+  /* Đáp án sai ở bài đọc Daily: nền đỏ nhạt theo giao diện (sáng: hồng nhạt, tối: đỏ sẫm), chữ theo giao diện */
+  .answer-wrong {
+    border-color: rgb(var(--brand-400));
+    background-color: hsl(var(--brand-soft));
+    color: hsl(var(--foreground));
+  }
   .mask-fade-b {
     mask-image: linear-gradient(180deg, hsl(0 0% 0%), transparent 80%);
   }
