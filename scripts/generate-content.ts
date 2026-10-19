@@ -15,11 +15,11 @@ import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
-import { MediaResolution } from '@google/genai'
+import { ApiError, MediaResolution } from '@google/genai'
 import { z } from 'zod'
 import type { Badge, Course, DailyArticle, Lesson } from '../src/data/types.js'
 import { getGemini, withFallback } from '../api/_lib/gemini.js'
-import { DailyDraft, LessonDraft, toGeminiSchema } from './lib/schemas.js'
+import { DailyDraft, LessonDraft, LessonDraftWire, fromWireDraft, toGeminiSchema } from './lib/schemas.js'
 import { normalizeDaily, normalizeLesson, type Report } from './lib/postprocess.js'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
@@ -75,6 +75,13 @@ function fail(message: string): never {
     process.exit(1)
 }
 
+function stopQuota(err: Error, at: string): never {
+    console.error(`\n⛔ DỪNG: hết lượt/quá tải ở ${at}. ${err.message}`)
+    console.error('Các bài đã tạo xong được lưu ở scripts/.cache (chạy lại sẽ bỏ qua). src/data chưa bị ghi đè.')
+    console.error('Hãy chờ hạn mức được cấp lại (thường 0h giờ Thái Bình Dương) hoặc đổi GEMINI_API_KEY, rồi chạy lại.')
+    process.exit(2)
+}
+
 function printReport(label: string, report: Report) {
     for (const w of report.warnings) console.log(`   ⚠ ${w}`)
     for (const e of report.errors) console.log(`   ✖ ${e}`)
@@ -125,16 +132,16 @@ async function fetchVideoMeta(youtubeId: string) {
 
 // ── Gemini ───────────────────────────────────────────────────────────────────
 
-const LESSON_PROMPT = `Bạn là trợ lý soạn học liệu cho giảng viên khoa Đa phương tiện, Học viện Công nghệ Bưu chính Viễn thông (PTIT).
-Xem toàn bộ video bài giảng đính kèm và tạo học liệu theo schema JSON.
+const lessonPrompt = (durationSec: number | null) => `Bạn là trợ lý soạn học liệu cho giảng viên khoa Đa phương tiện, Học viện Công nghệ Bưu chính Viễn thông (PTIT).
+Xem toàn bộ video bài giảng đính kèm và tạo học liệu theo schema JSON.${durationSec === null ? '' : ` Video dài ${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}.`}
 
 Yêu cầu:
 - Mọi nội dung phải bám sát những gì giảng viên nói và trình chiếu trong video. Không thêm kiến thức ngoài video; chỗ nào không chắc thì bỏ qua.
-- Viết bằng tiếng Việt. Nếu video không nói tiếng Việt, transcript dịch sang tiếng Việt tự nhiên, giữ nguyên thuật ngữ chuyên ngành quen dùng (ví dụ: khẩu độ, ISO, rule of thirds → quy tắc một phần ba).
-- Mốc thời gian là số giây nguyên tính từ đầu video, khớp đúng thời điểm trong video.
+- Viết bằng tiếng Việt. Nếu video không nói tiếng Việt, transcript dịch sang tiếng Việt tự nhiên, giữ nguyên thuật ngữ chuyên ngành quen dùng (ví dụ: timeline, clip, transition).
+- Mọi mốc thời gian viết dạng MM:SS đúng như đồng hồ của trình phát video (ví dụ 03:47), tính từ đầu video, khớp thời điểm thực tế câu đó được nói/hiện ra. Không vượt quá độ dài video.
 - transcript: phủ từ đầu tới cuối video, mỗi đoạn 15–45 giây, cắt ở ranh giới câu; bỏ tiếng ậm ừ, lặp từ.
 - concepts: 3–6 khái niệm cốt lõi theo thứ tự xuất hiện; segment là đoạn giảng chính khái niệm đó; prerequisiteIds chỉ chứa khái niệm xuất hiện trước trong cùng bài mà khái niệm này thực sự dựa vào.
-- quiz: mỗi khái niệm quan trọng một câu, pauseAt ngay sau khi giảng xong khái niệm đó. Câu hỏi kiểm tra hiểu và vận dụng (tình huống chụp ảnh, chọn bố cục…), không hỏi chi tiết vụn vặt. 4 phương án, phương án sai là những hiểu lầm sinh viên hay mắc. Mỗi câu kèm 2 câu biến thể cùng khái niệm, cùng độ khó, khác tình huống.`
+- quiz: 4–6 câu, mỗi khái niệm quan trọng một câu, pauseAt ngay sau khi giảng xong khái niệm đó; answerSegment là đoạn video giảng viên nói ra đáp án (thường trùng đoạn giảng khái niệm, 10–60 giây). Câu hỏi kiểm tra hiểu và vận dụng (tình huống dựng phim thực tế, chọn thao tác phù hợp…), không hỏi chi tiết vụn vặt. 4 phương án, phương án sai là những hiểu lầm sinh viên hay mắc. Mỗi câu kèm đúng 1 câu biến thể cùng khái niệm, cùng độ khó, khác tình huống.`
 
 function dailyPrompt(lessons: Lesson[], count: number) {
     const context = lessons
@@ -148,7 +155,7 @@ function dailyPrompt(lessons: Lesson[], count: number) {
 
 Viết ${count} bài đọc. Yêu cầu:
 - Mỗi bài tập trung 1–3 khái niệm, ưu tiên nối kiến thức giữa các bài giảng khác nhau.
-- Tổng 350–500 chữ (đọc 2–3 phút): 4–5 đoạn, mỗi đoạn 80–110 chữ, giọng gần gũi, có ví dụ tình huống chụp ảnh thực tế.
+- Tổng 350–500 chữ (đọc 2–3 phút): 4–5 đoạn, mỗi đoạn 80–110 chữ, giọng gần gũi, có ví dụ tình huống thực tế trong chủ đề của video.
 - Chỉ dùng kiến thức có trong transcript. Mỗi đoạn có ít nhất một nguồn {lessonId, start} lấy ĐÚNG các giá trị lessonId và start trong ngoặc vuông của đoạn transcript chứa ý đó.
 - conceptIds lấy đúng id trong danh sách khái niệm.
 - checks: 1–2 câu kiểm tra nhanh 4 phương án, trả lời được nếu đọc kỹ bài.
@@ -157,10 +164,16 @@ Viết ${count} bài đọc. Yêu cầu:
 ${context}`
 }
 
+/** Mọi model trong danh sách dự phòng đều hết lượt/quá tải: dừng cả lượt chạy, không thử tiếp. */
+class QuotaExhausted extends Error {}
+
+let usedModel = ''
+
 async function generateJson<T>(schema: z.ZodType<T>, parts: object[], extraConfig: object = {}): Promise<T> {
     const gemini = getGemini()
     const res = await withFallback(gemini, (model) => {
         console.log(`   … gọi ${model}`)
+        usedModel = model
         return gemini.ai.models.generateContent({
             model,
             contents: [{ role: 'user', parts }],
@@ -171,6 +184,12 @@ async function generateJson<T>(schema: z.ZodType<T>, parts: object[], extraConfi
                 ...extraConfig,
             },
         })
+    }).catch((err) => {
+        if (err instanceof ApiError && (err.status === 429 || err.status === 503)) {
+            const models = [...new Set([gemini.model, ...gemini.fallbackModels])].join(', ')
+            throw new QuotaExhausted(`Gemini trả ${err.status} ở tất cả model (${models}).`)
+        }
+        throw err
     })
     let raw: unknown
     try {
@@ -193,6 +212,8 @@ interface LessonCache {
     model: string
     generatedAt: string
     draft: LessonDraft
+    /** Phiên bản mốc thời gian MM:SS; cache cũ (số giây) bị bỏ qua */
+    format: 'clock-v1'
 }
 
 async function main() {
@@ -224,28 +245,30 @@ async function main() {
 
                 const cacheFile = path.join(CACHE_DIR, 'lessons', `${item.id}.json`)
                 let cache = readJson<LessonCache>(cacheFile)
-                if (cache && cache.url === item.url && !args.force) {
+                if (cache && cache.url === item.url && cache.format === 'clock-v1' && !args.force) {
                     console.log(`   ↺ dùng cache (${cache.model}, ${cache.generatedAt})`)
                 } else {
                     const meta = await fetchVideoMeta(youtubeId)
                     console.log(`   video: "${meta.title}" – ${meta.author}, ${meta.durationSec ?? '?'}s`)
-                    const draft = await generateJson(
-                        LessonDraft,
+                    const wire = await generateJson(
+                        LessonDraftWire,
                         [
                             { fileData: { fileUri: `https://www.youtube.com/watch?v=${youtubeId}`, mimeType: 'video/*' } },
-                            { text: LESSON_PROMPT },
+                            { text: lessonPrompt(meta.durationSec) },
                         ],
                         // Độ phân giải thấp đủ để đọc slide, tiết kiệm token cho video dài
                         { mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW },
                     )
+                    const draft = fromWireDraft(wire)
                     cache = {
                         url: item.url,
                         youtubeId,
                         durationSec: meta.durationSec,
                         videoTitle: meta.title,
-                        model: process.env.GEMINI_MODEL ?? 'mặc định',
+                        model: usedModel,
                         generatedAt: new Date().toISOString(),
                         draft,
+                        format: 'clock-v1',
                     }
                     writeJson(cacheFile, cache)
                     regenerated = true
@@ -263,6 +286,7 @@ async function main() {
                 lessonsOut.push(lesson)
                 lessonIds.push(lesson.id)
             } catch (err) {
+                if (err instanceof QuotaExhausted) stopQuota(err, `bài ${label}`)
                 console.error(`   ✖ ${label}: ${err instanceof Error ? err.message : err}`)
                 failed.push(label)
             }
@@ -290,6 +314,7 @@ async function main() {
                 cache = { lessonsHash, count: config.dailyCount, draft }
                 writeJson(cacheFile, cache)
             } catch (err) {
+                if (err instanceof QuotaExhausted) stopQuota(err, 'bài đọc Daily')
                 console.error(`   ✖ Daily: ${err instanceof Error ? err.message : err}`)
                 failed.push('daily')
                 cache = null

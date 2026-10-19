@@ -49,6 +49,8 @@ export interface QuizChoiceQuestion {
 /** Câu hỏi dừng video tại một mốc, kèm câu biến thể cùng cấp độ cho vòng củng cố. */
 export interface LessonQuizQuestion extends QuizChoiceQuestion {
     pauseAt: Seconds
+    /** Đoạn video chứa kiến thức giải đáp câu hỏi; tua lại đây khi sinh viên trả lời sai */
+    answerSegment: { start: Seconds; end: Seconds }
     variants: QuizChoiceQuestion[]
 }
 

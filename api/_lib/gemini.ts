@@ -5,7 +5,7 @@ import { ApiError, GoogleGenAI } from '@google/genai'
 // GEMINI_API_KEY chỉ đọc ở server; không bao giờ đặt tiền tố VITE_.
 
 const DEFAULT_MODEL = 'gemini-3.8-flash'
-const DEFAULT_FALLBACK_MODELS = 'gemini-3.5-flash,gemini-3.5-flash-lite'
+const DEFAULT_FALLBACK_MODELS = 'gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite'
 
 let client: GoogleGenAI | null = null
 

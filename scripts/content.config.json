@@ -1,15 +1,26 @@
 {
   "$comment": "Danh sách video để scripts/generate-content.ts tạo nội dung. Mỗi video thành một bài học; id dùng làm đường dẫn nên viết không dấu, nối gạch ngang.",
-  "dailyCount": 6,
+  "dailyCount": 3,
   "courses": [
     {
-      "id": "nhiep-anh-co-ban",
-      "title": "Nhiếp ảnh cơ bản",
-      "subject": "Nhiếp ảnh",
-      "instructor": "Giảng viên khoa Đa phương tiện",
-      "description": "Bố cục, ánh sáng và cách đọc một khung hình trước khi bấm máy.",
+      "id": "dung-audio-video-phi-tuyen",
+      "title": "Dựng audio và video phi tuyến",
+      "subject": "Dựng phim",
+      "instructor": "Khoa Đa phương tiện, PTIT",
+      "description": "Bản chất của dựng phi tuyến, tư duy dựng và điều hướng tiếp nhận, nhịp điệu và tổ chức thời gian.",
       "lessons": [
-        { "id": "bai-1", "url": "https://www.youtube.com/watch?v=THAY_LINK_VIDEO_1" }
+        {
+          "id": "ban-chat-dung-phi-tuyen",
+          "url": "https://www.youtube.com/watch?v=sF6dUF6JWy0"
+        },
+        {
+          "id": "tu-duy-dung-dieu-huong-tiep-nhan",
+          "url": "https://www.youtube.com/watch?v=1fiBJcP0AFM"
+        },
+        {
+          "id": "nhip-dieu-to-chuc-thoi-gian",
+          "url": "https://www.youtube.com/watch?v=x0KOqBHDJ98"
+        }
       ]
     }
   ]

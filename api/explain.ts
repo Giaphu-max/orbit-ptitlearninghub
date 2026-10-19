@@ -50,7 +50,7 @@ export async function POST(request: Request): Promise<Response> {
         if (chosenIndex >= question.options.length) throw new HttpError(400, 'Lựa chọn không hợp lệ.')
 
         const concept = lesson.concepts.find((c) => c.id === question.conceptId)
-        const segment = concept?.segment ?? { start: root.pauseAt - 60, end: root.pauseAt }
+        const segment = root.answerSegment ?? concept?.segment ?? { start: root.pauseAt - 60, end: root.pauseAt }
         // Đoạn giảng khái niệm, nới thêm một đoạn trước để AI có ngữ cảnh
         const related = lesson.transcript.filter((s) => s.end > segment.start - 30 && s.start < segment.end)
         const fallbackReview = { start: segment.start, end: segment.end }

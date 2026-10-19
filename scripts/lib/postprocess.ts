@@ -14,6 +14,8 @@ import type { DailyDraft, LessonDraft } from './schemas.js'
 // id có dấu, khái niệm nền vòng tròn, đáp án đúng dồn về một vị trí, dẫn nguồn sai mốc.
 // Các hàm ở đây sửa được thì sửa và ghi cảnh báo, không sửa được thì báo lỗi.
 
+type ChoiceDraft = LessonDraft['quiz'][number]['variants'][number]
+
 export interface Report {
     warnings: string[]
     errors: string[]
@@ -149,10 +151,19 @@ export function normalizeLesson(draft: LessonDraft, meta: LessonMeta): { lesson:
         const n = (perConcept.get(conceptId) ?? 0) + 1
         perConcept.set(conceptId, n)
         const id = `q-${conceptId}-${n}`
-        const pauseAt = Math.min(snapToSegmentEnd(Math.max(q.pauseAt, concept.segment.end), transcript), durationSec - 1)
+        // Đoạn chứa đáp án: khớp ranh giới transcript; hỏng thì lấy đoạn giảng khái niệm
+        const aStart = Math.min(q.answerSegment.start, q.answerSegment.end)
+        const aEnd = Math.max(q.answerSegment.start, q.answerSegment.end)
+        let answerSegment = { start: snapToSegmentStart(aStart, transcript), end: snapToSegmentEnd(aEnd, transcript) }
+        if (answerSegment.end <= answerSegment.start || answerSegment.start >= durationSec) {
+            report.warnings.push(`Câu ${id}: đoạn chứa đáp án không hợp lệ, dùng đoạn giảng khái niệm`)
+            answerSegment = { ...concept.segment }
+        }
+        // Dừng sau khi giảng xong khái niệm và sau khi đã nói ra đáp án
+        const pauseAt = Math.min(snapToSegmentEnd(Math.max(q.pauseAt, concept.segment.end, answerSegment.end), transcript), durationSec - 1)
         if (pauseAt !== q.pauseAt) report.warnings.push(`Câu ${id}: dời điểm dừng ${q.pauseAt}s → ${pauseAt}s (sau đoạn giảng khái niệm)`)
 
-        const toChoice = (c: typeof q, qid: string): QuizChoiceQuestion => ({
+        const toChoice = (c: ChoiceDraft, qid: string): QuizChoiceQuestion => ({
             id: qid,
             conceptId,
             prompt: c.prompt.trim(),
@@ -167,7 +178,8 @@ export function normalizeLesson(draft: LessonDraft, meta: LessonMeta): { lesson:
         quiz.push({
             ...toChoice(q, id),
             pauseAt,
-            variants: q.variants.map((v, i) => toChoice({ ...v, pauseAt: q.pauseAt, variants: [] }, `${id}-v${i + 1}`)),
+            answerSegment,
+            variants: q.variants.map((v, i) => toChoice(v, `${id}-v${i + 1}`)),
         })
     }
     quiz.sort((a, b) => a.pauseAt - b.pauseAt)

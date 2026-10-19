@@ -128,7 +128,7 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
             if (isLast) finish(root, 'missed', attempt + 1)
 
             const concept = lesson.concepts.find((c) => c.id === question.conceptId)
-            const fallbackReview = concept ? { ...concept.segment } : { start: Math.max(0, root.pauseAt - 60), end: root.pauseAt }
+            const fallbackReview = root.answerSegment ?? (concept ? { ...concept.segment } : { start: Math.max(0, root.pauseAt - 60), end: root.pauseAt })
             setPhase({ kind: 'answered', root, attempt, chosen, correct, explain: { status: 'loading' } })
 
             const requestId = ++requestRef.current
