@@ -46,8 +46,8 @@ const enrolledCourses: EnrolledCourse[] = [
         completedLessons: 12,
         currentLesson: 'Thiết kế giao diện trong Figma',
         thumbnail: 'https://picsum.photos/seed/enrolled1/600/400',
-        gradientFrom: '#ef4444', // red-500
-        gradientTo: '#e11d48', // rose-600
+        gradientFrom: '#ef4444', // brand-500
+        gradientTo: '#e11d48', // brand-600
     },
     {
         id: 2,
@@ -58,8 +58,8 @@ const enrolledCourses: EnrolledCourse[] = [
         completedLessons: 8,
         currentLesson: 'Texturing & Material cơ bản',
         thumbnail: 'https://picsum.photos/seed/enrolled2/600/400',
-        gradientFrom: '#f43f5e', // rose-500
-        gradientTo: '#be123c', // rose-700
+        gradientFrom: '#f43f5e', // brand-500
+        gradientTo: '#be123c', // brand-700
     },
 ]
 
@@ -256,7 +256,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                             
                             <button 
                                 onClick={() => setIsSaved(!isSaved)}
-                                className={`absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all ${isSaved ? 'bg-red-500/90 text-white shadow-lg' : 'bg-black/30 border border-white/20 text-white hover:bg-black/50'}`}
+                                className={`absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all ${isSaved ? 'bg-brand-500/90 text-white shadow-lg' : 'bg-black/30 border border-white/20 text-white hover:bg-black/50'}`}
                                 title={isSaved ? "Bỏ lưu khóa học" : "Lưu khóa học"}
                             >
                                 <Bookmark size={18} className={isSaved ? "fill-white" : ""} />
@@ -320,10 +320,10 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                         'Nguyên lý cơ bản cần nắm vững',
                                         'Thực hành dự án nhỏ đầu tay'
                                     ].map((title, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 p-4 rounded-xl border border-red-100 bg-red-50/40">
+                                        <div key={idx} className="flex items-center gap-3 p-4 rounded-xl border border-brand-100 bg-brand-50/40">
                                             <input 
                                                 type="checkbox" 
-                                                className="w-5 h-5 rounded border-red-200 text-red-500 focus:ring-red-500 bg-white" 
+                                                className="w-5 h-5 rounded border-brand-200 text-brand-500 focus:ring-brand-500 bg-white" 
                                                 checked={true}
                                                 readOnly 
                                             />
@@ -340,14 +340,14 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                             key={lesson.id} 
                                             className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
                                                 selectedPremiums.includes(lesson.id) 
-                                                ? 'border-red-400 bg-red-50' 
+                                                ? 'border-brand-400 bg-brand-50' 
                                                 : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'
                                             }`}
                                             onClick={() => togglePremium(lesson.id)}
                                         >
                                             <input 
                                                 type="checkbox" 
-                                                className="w-5 h-5 rounded border-gray-300 text-red-500 focus:ring-red-500 pointer-events-none" 
+                                                className="w-5 h-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 pointer-events-none" 
                                                 checked={selectedPremiums.includes(lesson.id)}
                                                 readOnly
                                             />
@@ -356,7 +356,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                                     {lesson.title}
                                                 </span>
                                             </div>
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md shrink-0 transition-colors ${selectedPremiums.includes(lesson.id) ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md shrink-0 transition-colors ${selectedPremiums.includes(lesson.id) ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-600'}`}>
                                                 <Lock size={12} className="opacity-70" />
                                                 <span className="text-xs font-bold">{lesson.price.toLocaleString()}đ</span>
                                             </div>
@@ -377,7 +377,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                 </button>
                                 <button 
                                     onClick={() => setIsSaved(!isSaved)}
-                                    className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm transition-colors ${isSaved ? 'text-red-700 bg-red-100' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
+                                    className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm transition-colors ${isSaved ? 'text-brand-700 bg-brand-100' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
                                 >
                                     <Bookmark size={18} className={isSaved ? "fill-current" : ""} />
                                     <span className="hidden sm:inline">{isSaved ? 'Đã lưu' : 'Lưu để sau'}</span>
@@ -385,7 +385,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                 <button 
                                     className={`flex-1 py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-300 flex justify-center items-center gap-2 ${
                                         hasPremium 
-                                        ? 'bg-red-600 hover:bg-red-700 shadow-red-500/30 scale-[1.02]' 
+                                        ? 'bg-brand-600 hover:bg-brand-700 shadow-brand-500/30 scale-[1.02]' 
                                         : 'bg-gray-900 hover:bg-gray-800 shadow-gray-900/20 hover:-translate-y-0.5'
                                     }`}
                                     onClick={() => {
@@ -424,13 +424,13 @@ function CourseCard3D({ course, onClick }: { course: Course; onClick: () => void
                     
                     {/* Salience Badge (Brand Red) */}
                     {course.badge && (
-                        <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-rose-500 text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-brand-500 to-brand-500 text-white text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg">
                             {course.badge.label}
                         </div>
                     )}
                     
                     <div className="absolute bottom-4 left-4 right-4">
-                        <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest mb-1.5 block">{course.category}</span>
+                        <span className="text-[9px] font-bold text-brand-400 uppercase tracking-widest mb-1.5 block">{course.category}</span>
                         <h3 className="text-[15px] font-bold text-white leading-snug line-clamp-2">{course.title}</h3>
                     </div>
                 </div>
@@ -441,8 +441,8 @@ function CourseCard3D({ course, onClick }: { course: Course; onClick: () => void
                         <h3 className="font-bold text-gray-900 text-[13px] leading-snug line-clamp-2">{course.title}</h3>
                         <p className="text-[10px] text-gray-500 mt-1">bởi {course.instructor}</p>
                         
-                        <div className="mt-3 p-2 bg-red-50/80 rounded-lg border border-red-100/50">
-                            <p className="text-[10px] font-semibold text-red-600 text-center">{course.socialProof}</p>
+                        <div className="mt-3 p-2 bg-brand-50/80 rounded-lg border border-brand-100/50">
+                            <p className="text-[10px] font-semibold text-brand-600 text-center">{course.socialProof}</p>
                         </div>
                     </div>
 
@@ -458,7 +458,7 @@ function CourseCard3D({ course, onClick }: { course: Course; onClick: () => void
                             </div>
                         </div>
 
-                        <button className="w-full py-2 bg-red-600 text-white text-[11px] font-bold rounded-lg hover:bg-red-700 transition-colors">
+                        <button className="w-full py-2 bg-brand-600 text-white text-[11px] font-bold rounded-lg hover:bg-brand-700 transition-colors">
                             Xem chi tiết
                         </button>
                     </div>
@@ -475,8 +475,8 @@ function EnrolledSidebar() {
         // Seamless Blended Sidebar
         <aside className="group/sidebar relative w-20 hover:w-[380px] transition-all duration-300 ease-in-out bg-transparent border-r-0 h-full overflow-hidden shrink-0 hidden md:flex flex-col z-20">
             <div className="p-6 flex items-center gap-4 w-[380px]">
-                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                    <TrendingUp size={16} className="text-red-600" />
+                <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
+                    <TrendingUp size={16} className="text-brand-600" />
                 </div>
                 <h2 className="text-sm font-bold text-gray-900 uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 delay-100">
                     Lộ trình đang học
@@ -492,7 +492,7 @@ function EnrolledSidebar() {
                     >
                         {/* Sleek Minimalist Dot */}
                         <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm"></div>
+                            <div className="w-2 h-2 rounded-full bg-brand-500 shadow-sm"></div>
                         </div>
 
                         {/* Expanded Content (Only visible on sidebar hover) */}
@@ -501,7 +501,7 @@ function EnrolledSidebar() {
                             <div className="flex items-center gap-3 mt-2">
                                 <div className="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
                                     <div 
-                                        className="h-full rounded-full transition-all duration-1000 bg-red-500"
+                                        className="h-full rounded-full transition-all duration-1000 bg-brand-500"
                                         style={{ width: `${course.progress}%` }}
                                     />
                                 </div>
@@ -535,7 +535,7 @@ export function OrbitLearningView() {
                     
                     {/* Header */}
                     <div className="mb-10">
-                        <h1 className="text-3xl font-bold text-[#1a1d23] tracking-tight">Khám phá khóa học</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Khám phá khóa học</h1>
                         <p className="mt-2 text-gray-500">Nâng cao kỹ năng với các lộ trình chuyên sâu được thiết kế bài bản.</p>
                     </div>
 

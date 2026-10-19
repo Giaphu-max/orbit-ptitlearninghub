@@ -85,7 +85,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
     }
 
     return (
-        <main className="relative flex-1 h-full w-full overflow-y-auto bg-[#f8f9fa] p-4 lg:p-6">
+        <main className="relative flex-1 h-full w-full overflow-y-auto bg-surface p-4 lg:p-6">
             <div className="w-full">
                 
                 <div className="flex flex-col xl:flex-row items-start">
@@ -115,8 +115,8 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                             </button>
                             
                             {/* Abstract glow */}
-                            <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-red-500/10 rounded-full blur-[100px] pointer-events-none" />
-                            <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none" />
+                            <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
+                            <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-brand-900/20 rounded-full blur-[80px] pointer-events-none" />
 
                             {/* Central Play Button */}
                             <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -128,7 +128,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                             {/* Controls Bar */}
                             <div className="relative z-20 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                 <div className="mb-4 relative w-full h-1.5 rounded-full bg-white/20 cursor-pointer">
-                                    <div className="absolute left-0 top-0 h-full w-[45%] rounded-full bg-red-500 relative">
+                                    <div className="absolute left-0 top-0 h-full w-[45%] rounded-full bg-brand-500 relative">
                                         <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md" />
                                     </div>
                                 </div>
@@ -191,7 +191,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                                     <h3 className="font-bold text-gray-900 text-lg mb-6 flex items-center justify-between">
                                         Bài học trong lộ trình
-                                        <span className="text-xs font-semibold bg-red-100 text-red-600 px-3 py-1 rounded-full">3 / 18</span>
+                                        <span className="text-xs font-semibold bg-brand-100 text-brand-600 px-3 py-1 rounded-full">3 / 18</span>
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {[
@@ -202,13 +202,13 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                             { title: 'Bàn giao thiết kế cho Developer', duration: '15:20', status: 'locked' },
                                             { title: 'Thực hành dự án thực tế', duration: '45:00', status: 'locked' }
                                         ].map((item, i) => (
-                                            <div key={i} className={`flex gap-4 p-4 rounded-xl transition border ${item.status === 'playing' ? 'bg-red-50 border-red-200 shadow-sm' : 'border-gray-100 hover:bg-gray-50 cursor-pointer'}`}>
+                                            <div key={i} className={`flex gap-4 p-4 rounded-xl transition border ${item.status === 'playing' ? 'bg-brand-50 border-brand-200 shadow-sm' : 'border-gray-100 hover:bg-gray-50 cursor-pointer'}`}>
                                                 <div className="mt-0.5 shrink-0">
                                                     {item.status === 'completed' ? (
                                                         <CheckCircle2 size={20} className="text-emerald-500" />
                                                     ) : item.status === 'playing' ? (
-                                                        <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
-                                                            <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+                                                        <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center">
+                                                            <div className="w-2.5 h-2.5 rounded-full bg-brand-600 animate-pulse" />
                                                         </div>
                                                     ) : (
                                                         <div className="w-5 h-5 rounded-full border-2 border-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-400">
@@ -217,7 +217,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <h4 className={`text-sm font-semibold ${item.status === 'playing' ? 'text-red-700' : 'text-gray-800'}`}>{item.title}</h4>
+                                                    <h4 className={`text-sm font-semibold ${item.status === 'playing' ? 'text-brand-700' : 'text-gray-800'}`}>{item.title}</h4>
                                                     <p className="text-xs text-gray-500 mt-1">{item.duration}</p>
                                                 </div>
                                             </div>
@@ -232,8 +232,8 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                     {/* Right Column (AI Chatbox) */}
                     <aside className={`relative shrink-0 xl:sticky xl:top-6 h-[60vh] xl:h-[calc(100vh-48px)] min-h-[500px] bg-white rounded-[24px] shadow-sm flex flex-col overflow-hidden transition-all duration-300 ${isChatOpen ? 'w-full xl:w-[400px] opacity-100 border border-gray-100 xl:ml-8 mt-8 xl:mt-0' : 'w-0 opacity-0 border-0 m-0'}`}>
                         <div className="w-full xl:w-[400px] flex flex-col h-full min-h-0 overflow-hidden">
-                            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-red-50 to-white shrink-0">
-                            <div className="p-2 bg-red-100 text-red-600 rounded-lg">
+                            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3 bg-gradient-to-r from-brand-50 to-white shrink-0">
+                            <div className="p-2 bg-brand-100 text-brand-600 rounded-lg">
                                 <Sparkles size={20} />
                             </div>
                             <div>
@@ -250,8 +250,8 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                                     {msg.role === 'ai' ? (
-                                        <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                                            <Sparkles size={14} className="text-red-600" />
+                                        <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
+                                            <Sparkles size={14} className="text-brand-600" />
                                         </div>
                                     ) : (
                                         <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center shrink-0 text-white text-xs font-bold">
@@ -267,8 +267,8 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                             ))}
                             {isTyping && (
                                 <div className="flex gap-4">
-                                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                                        <Sparkles size={14} className="text-red-600" />
+                                    <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
+                                        <Sparkles size={14} className="text-brand-600" />
                                     </div>
                                     <div className="bg-white p-4 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm text-sm text-gray-500">
                                         <span className="animate-pulse">Đang suy nghĩ...</span>
@@ -285,7 +285,7 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                 }}
                                 className="absolute bottom-32 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur shadow-md rounded-full w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-100 transition border border-gray-200 z-10"
                             >
-                                {isTyping ? <MoreHorizontal size={16} className="animate-pulse text-red-500" /> : <ArrowDown size={16} />}
+                                {isTyping ? <MoreHorizontal size={16} className="animate-pulse text-brand-500" /> : <ArrowDown size={16} />}
                             </button>
                         )}
 
@@ -297,12 +297,12 @@ export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {})
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                     placeholder="Nhập câu hỏi của bạn..." 
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-full pl-5 pr-12 py-3 text-sm outline-none focus:border-red-300 focus:ring-2 focus:ring-red-100 transition"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-full pl-5 pr-12 py-3 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100 transition"
                                 />
                                 <button 
                                     onClick={handleSendMessage}
                                     disabled={isTyping}
-                                    className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full ${isTyping ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white transition`}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full ${isTyping ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-600 hover:bg-brand-700'} text-white transition`}
                                 >
                                     <Send size={14} />
                                 </button>

@@ -14,16 +14,16 @@ const navigation: { label: string; tab: OrbitTab; icon: LucideIcon }[] = [
 
 export function OrbitSidebar({ activeTab, onTabChange }: OrbitSidebarProps) {
     return (
-        <aside className="group fixed top-0 left-0 h-full flex w-[90px] hover:w-64 shrink-0 flex-col py-8 z-50 transition-all duration-100 group-hover:duration-300 ease-in-out overflow-hidden bg-[#f8f9fa]">
+        <aside className="group fixed top-0 left-0 h-full flex w-[90px] hover:w-64 shrink-0 flex-col py-8 z-50 transition-all duration-100 group-hover:duration-300 ease-in-out overflow-hidden bg-surface">
             <div className="flex h-8 w-[90px] items-center justify-center shrink-0">
-                <span className="text-[21px] font-bold tracking-[-0.06em] text-[#1f232b]">Orbit</span>
+                <span className="text-[21px] font-bold tracking-[-0.06em] text-gray-900">Orbit</span>
             </div>
 
             <nav className="flex-1 flex flex-col justify-center w-full gap-8 px-5" aria-label="Điều hướng chính">
                 {navigation.map(({ label, tab, icon: Icon }) => {
                     const active = activeTab === tab;
                     return (
-                        <button key={label} type="button" aria-label={label} aria-current={active ? 'page' : undefined} onClick={() => onTabChange(tab)} className={`flex items-center p-3 w-full cursor-pointer transition-colors duration-200 ${active ? 'text-[#b7131e]' : 'text-[#70747c] hover:text-[#252932]'}`}>
+                        <button key={label} type="button" aria-label={label} aria-current={active ? 'page' : undefined} onClick={() => onTabChange(tab)} className={`flex items-center p-3 w-full cursor-pointer transition-colors duration-200 ${active ? 'text-brand-700' : 'text-gray-500 hover:text-gray-800'}`}>
                             <div className="w-7 flex-shrink-0 flex justify-center">
                                 <Icon size={28} strokeWidth={active ? 2.5 : 2} />
                             </div>
