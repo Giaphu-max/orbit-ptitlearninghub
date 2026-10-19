@@ -17,9 +17,9 @@ export function MainLayout() {
     if (!role) return <OrbitRoleSelect />
 
     return (
-        <div className="flex h-screen w-full relative z-0 bg-surface font-sans text-foreground overflow-hidden">
+        <div className="relative isolate flex min-h-[100svh] w-full flex-col bg-surface font-sans text-foreground">
             {/* ── Global Premium Ambient Glow Background ── */}
-            <div className="absolute inset-0 z-[-1] overflow-hidden pointer-events-none">
+            <div aria-hidden className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
                 {/* Soft Rose glow on top right */}
                 <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-brand-200/40 blur-[120px]"></div>
 
@@ -30,12 +30,12 @@ export function MainLayout() {
                 <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] rounded-full bg-brand-100/40 blur-[100px]"></div>
             </div>
 
-            <div className="flex h-full min-w-0 flex-1 flex-col">
+            <div className="flex min-w-0 flex-1 flex-col">
                 {!isHome && <TopNav tone="plain" />}
-                <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-transparent">
+                <main className="relative flex min-w-0 flex-1 flex-col">
                 <Suspense
                     fallback={
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                        <div className="flex flex-1 items-center justify-center py-32 text-muted-foreground">
                             <Loader2 className="animate-spin" size={32} aria-label="Đang tải trang" />
                         </div>
                     }

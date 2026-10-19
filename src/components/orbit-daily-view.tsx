@@ -30,7 +30,7 @@ export function OrbitDailyView() {
     }
 
     return (
-        <div className="h-full w-full overflow-y-auto">
+        <div className="w-full">
             <article className="mx-auto max-w-2xl px-5 py-8 lg:py-12">
                 <Link to="/#daily" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
                     <ChevronLeft size={16} /> Orbit Daily

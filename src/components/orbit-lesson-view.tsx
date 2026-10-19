@@ -34,7 +34,7 @@ export function OrbitLessonView() {
 
 function UnpublishedNotice() {
     return (
-        <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
             <p className="text-eyebrow uppercase text-brand-ink">Chưa xuất bản</p>
             <h1 className="text-headline text-foreground">Bài này đang chờ giảng viên duyệt</h1>
             <p className="max-w-md text-muted-foreground">Nội dung do AI tạo cần được giảng viên xem lại trước khi đến tay sinh viên.</p>
@@ -108,7 +108,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     const lessonIndex = courseLessons.findIndex((l) => l.id === lesson.id)
 
     return (
-        <div className="h-full w-full overflow-y-auto bg-surface">
+        <div className="w-full">
             <div className={`mx-auto grid max-w-[1600px] gap-6 p-4 lg:p-6 ${isTutorOpen ? 'xl:grid-cols-[minmax(0,1fr)_400px]' : ''}`}>
                 {/* ── Cột chính ── */}
                 <div className="flex min-w-0 flex-col gap-5">
@@ -271,7 +271,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                 </div>
 
                 {/* ── Trợ giảng AI: ẩn bằng CSS để giữ lịch sử hỏi đáp khi bật/tắt ── */}
-                <div className={`h-[70vh] min-h-[480px] xl:sticky xl:top-6 xl:self-start xl:h-[calc(100vh-48px)] ${isTutorOpen ? '' : 'hidden'}`}>
+                <div className={`h-[70vh] min-h-[480px] xl:sticky xl:top-6 xl:self-start xl:h-[calc(100svh-48px)] ${isTutorOpen ? '' : 'hidden'}`}>
                     <TutorPanel lesson={lesson} getCurrentTime={() => timeRef.current} onSeek={handleSeek} />
                 </div>
             </div>

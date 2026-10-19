@@ -20,7 +20,7 @@ import { useOrbitStore } from '@/store/useOrbitStore'
 /** /journey – cấp độ, chuỗi ngày học, nhiệm vụ hằng ngày, cây kỹ năng và huy hiệu. */
 export function OrbitJourneyView() {
     return (
-        <div className="h-full w-full overflow-y-auto bg-surface">
+        <div className="w-full">
             <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 py-8 lg:px-8 lg:py-12">
                 <header>
                     <p className="text-eyebrow uppercase text-brand-ink">Hành trình của bạn</p>

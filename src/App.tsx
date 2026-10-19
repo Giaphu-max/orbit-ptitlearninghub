@@ -1,5 +1,5 @@
-import { lazy } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 import { MainLayout } from '@/layouts/MainLayout'
 
@@ -13,11 +13,37 @@ const OrbitJourneyView = lazy(() => import('@/components/orbit-journey-view').th
 const OrbitDailyView = lazy(() => import('@/components/orbit-daily-view').then((m) => ({ default: m.OrbitDailyView })))
 const OrbitStudioView = lazy(() => import('@/components/orbit-studio-view').then((m) => ({ default: m.OrbitStudioView })))
 
+/**
+ * Cửa sổ trình duyệt là vùng cuộn duy nhất. Đổi trang thì cuộn về đầu; có #hash thì cuộn tới phần tử đó
+ * (trang tải lười nên chờ phần tử xuất hiện tối đa ~1,5 giây).
+ */
+function ScrollManager() {
+  const { pathname, hash } = useLocation()
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo(0, 0)
+      return
+    }
+    const id = decodeURIComponent(hash.slice(1))
+    let tries = 0
+    let raf = 0
+    const seek = () => {
+      const el = document.getElementById(id)
+      if (el) el.scrollIntoView({ block: 'start' })
+      else if (tries++ < 90) raf = requestAnimationFrame(seek)
+    }
+    seek()
+    return () => cancelAnimationFrame(raf)
+  }, [pathname, hash])
+  return null
+}
+
 function App() {
   return (
     // Tôn trọng prefers-reduced-motion cho mọi animation của thư viện motion
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
+        <ScrollManager />
         <Routes>
           <Route element={<MainLayout />}>
             <Route path="/" element={<OrbitHomeView />} />

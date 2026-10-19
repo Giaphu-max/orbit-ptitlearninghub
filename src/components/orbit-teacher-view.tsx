@@ -24,7 +24,7 @@ export function OrbitTeacherView() {
     if (role !== 'teacher') return <Navigate to="/" replace />
 
     return (
-        <div className="h-full w-full overflow-y-auto bg-surface">
+        <div className="w-full">
             <div className="mx-auto flex max-w-5xl flex-col gap-8 px-5 py-8 lg:px-8 lg:py-12">
                 <header>
                     <p className="text-eyebrow uppercase text-brand-ink">Dành cho giảng viên</p>

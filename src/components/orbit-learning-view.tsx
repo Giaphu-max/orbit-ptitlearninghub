@@ -467,7 +467,7 @@ function EnrolledSidebar() {
     
     return (
         // Seamless Blended Sidebar
-        <aside className="group/sidebar relative w-20 hover:w-[380px] transition-all duration-300 ease-in-out bg-transparent border-r-0 h-full overflow-hidden shrink-0 hidden md:flex flex-col z-20">
+        <aside className="group/sidebar relative w-20 hover:w-[380px] transition-all duration-300 ease-in-out bg-transparent border-r-0 sticky top-4 self-start max-h-[calc(100svh-2rem)] overflow-hidden shrink-0 hidden md:flex flex-col z-20">
             <div className="p-6 flex items-center gap-4 w-[380px]">
                 <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
                     <TrendingUp size={16} className="text-brand-ink" />
@@ -518,13 +518,13 @@ export function OrbitLearningView() {
     const recommendedCourses = mockCourses.filter(c => c.badge?.label === 'Đề xuất')
 
     return (
-        <div className="relative flex h-full w-full bg-transparent overflow-hidden z-0">
+        <div className="relative z-0 flex w-full bg-transparent">
             
             {/* ── Collapsible Hover Sidebar (My Learning) ── */}
             <EnrolledSidebar />
             
             {/* ── Main Content Area (Explore) ── */}
-            <main className="relative z-10 flex-1 h-full overflow-y-auto px-6 py-10 lg:px-10">
+            <main className="relative z-10 min-w-0 flex-1 px-6 py-10 lg:px-10">
                 <div className="max-w-[1400px] mx-auto">
                     
                     {/* Header */}

@@ -4,7 +4,7 @@ import { Box } from 'lucide-react'
 /** Studio 3D (Virtual Director) chưa dựng: trang giữ chỗ để mục điều hướng không dẫn tới ngõ cụt. */
 export function OrbitStudioView() {
     return (
-        <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-24 text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-soft text-brand-ink">
                 <Box size={30} />
             </span>

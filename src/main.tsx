@@ -9,6 +9,9 @@ import '@fontsource-variable/jetbrains-mono'
 import './index.css'
 import App from './App.tsx'
 
+// Tự quản lý vị trí cuộn (xem ScrollManager): tải lại trang (F5) luôn bắt đầu từ đầu trang, không nhảy xuống
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

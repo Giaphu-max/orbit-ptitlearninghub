@@ -1,5 +1,4 @@
-import { useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ArrowRight, Check, Play } from 'lucide-react'
 import { dailyArticles, getConcept, getCourse, getLesson, lessons } from '@/data'
 import type { DailyArticle } from '@/data/types'
@@ -13,15 +12,8 @@ const DAILY_LIMIT = 3
 
 /** Trang chủ 3 tầng theo mockup: hero tối (nav trong suốt, lời chào, thẻ Học tiếp, mô hình 3D) → Orbit Daily → Tiến độ của bạn. */
 export function OrbitHomeView() {
-    const { hash } = useLocation()
-
-    // Nút "Orbit Daily" trên thanh điều hướng trỏ tới #daily
-    useEffect(() => {
-        if (hash === '#daily') document.getElementById('daily')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, [hash])
-
     return (
-        <div className="h-full w-full overflow-y-auto bg-surface">
+        <div className="w-full bg-surface">
             <Hero />
             <div className="mx-auto flex max-w-[1320px] flex-col gap-16 px-5 pb-16 pt-6 lg:px-10">
                 <DailySection />
@@ -64,7 +56,7 @@ function Hero() {
 
             <TopNav tone="hero" />
 
-            <div className="pointer-events-none relative z-10 mx-auto flex min-h-[clamp(840px,104vh,940px)] max-w-[1320px] items-start px-5 pb-28 pt-8 lg:min-h-[clamp(560px,78vh,720px)] lg:items-center lg:px-10 lg:pb-24 lg:pt-4">
+            <div className="pointer-events-none relative z-10 mx-auto flex min-h-[clamp(840px,104svh,940px)] max-w-[1320px] items-start px-5 pb-28 pt-8 lg:min-h-[clamp(560px,78svh,720px)] lg:items-center lg:px-10 lg:pb-24 lg:pt-4">
                 <div className="flex min-w-0 max-w-[620px] flex-col gap-6">
                     <h1 className="text-[clamp(2.75rem,6.2vw,5rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
                         Chào {name}.
