@@ -1,18 +1,31 @@
 [
   {
     "id": "daily-bo-cuc-1",
-    "title": "Vì sao chủ thể lệch tâm lại dễ nhìn hơn?",
-    "readingMinutes": 2,
-    "conceptIds": ["quy-tac-mot-phan-ba", "duong-dan"],
+    "title": "Vì sao ảnh đặt chủ thể ở chính giữa thường “đứng im”?",
+    "readingMinutes": 3,
+    "conceptIds": [
+      "quy-tac-mot-phan-ba",
+      "duong-dan"
+    ],
     "origin": "sample",
     "paragraphs": [
       {
         "text": "Đặt chủ thể ở giao điểm của các đường một phần ba tạo khoảng trống cho mắt di chuyển, nên ảnh có cảm giác chuyển động hơn so với đặt chính giữa.",
-        "sources": [{ "lessonId": "bo-cuc-co-ban", "start": 20 }]
+        "sources": [
+          {
+            "lessonId": "bo-cuc-co-ban",
+            "start": 20
+          }
+        ]
       },
       {
         "text": "Kết hợp với một đường dẫn đi từ tiền cảnh, người xem sẽ được dẫn thẳng tới đúng điểm bạn muốn nhấn.",
-        "sources": [{ "lessonId": "bo-cuc-co-ban", "start": 95 }]
+        "sources": [
+          {
+            "lessonId": "bo-cuc-co-ban",
+            "start": 95
+          }
+        ]
       }
     ],
     "checks": [
@@ -20,9 +33,107 @@
         "id": "daily-bo-cuc-1-c1",
         "conceptId": "duong-dan",
         "prompt": "Đường dẫn trong ảnh có tác dụng chính là gì?",
-        "options": ["Làm ảnh sáng hơn", "Dẫn mắt người xem tới chủ thể", "Giảm nhiễu ảnh", "Làm mờ hậu cảnh"],
+        "options": [
+          "Làm ảnh sáng hơn",
+          "Dẫn mắt người xem tới chủ thể",
+          "Giảm nhiễu ảnh",
+          "Làm mờ hậu cảnh"
+        ],
         "correctIndex": 1,
         "explanation": "Đường dẫn kéo ánh nhìn từ tiền cảnh về phía chủ thể."
+      }
+    ]
+  },
+  {
+    "id": "daily-bo-cuc-2",
+    "title": "Đường dẫn hướng: kéo mắt người xem đi đâu trước?",
+    "readingMinutes": 3,
+    "conceptIds": [
+      "duong-dan",
+      "quy-tac-mot-phan-ba"
+    ],
+    "origin": "sample",
+    "paragraphs": [
+      {
+        "text": "Mắt người xem không nhìn cả khung hình cùng lúc: nó đi theo những đường nét rõ nhất. Con đường, hàng rào hay bờ sông chính là những đường như vậy, nên người chụp có thể chủ động chọn nơi mắt sẽ dừng.",
+        "sources": [
+          {
+            "lessonId": "bo-cuc-co-ban",
+            "start": 95
+          }
+        ]
+      },
+      {
+        "text": "Cách dùng gọn nhất là để đường dẫn bắt đầu từ mép khung hình rồi kết thúc đúng ở chủ thể. Khi chủ thể lại nằm ở một giao điểm của lưới một phần ba, ảnh vừa có hướng đi vừa cân bằng.",
+        "sources": [
+          {
+            "lessonId": "bo-cuc-co-ban",
+            "start": 20
+          },
+          {
+            "lessonId": "bo-cuc-co-ban",
+            "start": 95
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-bo-cuc-2-c1",
+        "conceptId": "duong-dan",
+        "prompt": "Đường dẫn hiệu quả nhất khi nó bắt đầu và kết thúc ở đâu?",
+        "options": [
+          "Bắt đầu ở giữa ảnh, kết thúc ở mép khung",
+          "Bắt đầu từ mép khung, kết thúc ở chủ thể",
+          "Nằm hoàn toàn ngoài chủ thể",
+          "Cắt ngang chủ thể"
+        ],
+        "correctIndex": 1,
+        "explanation": "Đường dẫn kéo ánh nhìn từ tiền cảnh về chủ thể, nên nó nên chạy từ mép khung tới chủ thể."
+      }
+    ]
+  },
+  {
+    "id": "daily-bo-cuc-3",
+    "title": "Một phần ba ngang hay dọc: chọn thế nào?",
+    "readingMinutes": 3,
+    "conceptIds": [
+      "quy-tac-mot-phan-ba"
+    ],
+    "origin": "sample",
+    "paragraphs": [
+      {
+        "text": "Lưới một phần ba có hai đường ngang và hai đường dọc, nên bạn có hai cách đặt trọng tâm: theo đường ngang (ví dụ đường chân trời) hoặc theo đường dọc (ví dụ người đứng cạnh cửa sổ).",
+        "sources": [
+          {
+            "lessonId": "bo-cuc-co-ban",
+            "start": 20
+          }
+        ]
+      },
+      {
+        "text": "Một mẹo nhỏ: phần nào của cảnh kể chuyện nhiều hơn thì chiếm hai phần ba khung hình. Bầu trời nhiều mây thì để chân trời thấp, mặt đất nhiều chi tiết thì để chân trời cao.",
+        "sources": [
+          {
+            "lessonId": "bo-cuc-co-ban",
+            "start": 20
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-bo-cuc-3-c1",
+        "conceptId": "quy-tac-mot-phan-ba",
+        "prompt": "Bầu trời có nhiều mây đẹp, đường chân trời nên đặt ở đâu?",
+        "options": [
+          "Chính giữa khung hình",
+          "Ở đường chia ngang phía dưới để bầu trời chiếm hai phần ba",
+          "Sát mép trên",
+          "Chéo qua khung hình"
+        ],
+        "correctIndex": 1,
+        "explanation": "Phần nào kể chuyện nhiều hơn thì chiếm hai phần ba khung hình; ở đây là bầu trời."
       }
     ]
   }

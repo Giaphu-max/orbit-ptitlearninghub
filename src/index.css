@@ -172,6 +172,9 @@
   .mask-fade-r {
     mask-image: radial-gradient(circle at 50% 40%, hsl(0 0% 0%), transparent 70%);
   }
+  .bg-stripes {
+    background-image: repeating-linear-gradient(135deg, hsl(0 0% 100% / 0.035) 0 1px, transparent 1px 14px);
+  }
   .bg-dots {
     background-image: radial-gradient(hsl(0 0% 100% / 0.16) 1px, transparent 1.4px);
     background-size: 28px 28px;

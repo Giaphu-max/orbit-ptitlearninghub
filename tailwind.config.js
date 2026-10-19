@@ -82,8 +82,14 @@ export default {
       },
       animation: {
         flash: 'flash 350ms ease-out forwards',
+        // Vệt sáng quét qua thẻ "Học tiếp": quét nhanh rồi nghỉ
+        sheen: 'sheen 5s ease-in-out infinite',
       },
       keyframes: {
+        sheen: {
+          '0%, 55%': { transform: 'translateX(-120%) skewX(-18deg)' },
+          '100%': { transform: 'translateX(520%) skewX(-18deg)' },
+        },
         flash: {
           '0%': { opacity: '0.9' },
           '100%': { opacity: '0' },

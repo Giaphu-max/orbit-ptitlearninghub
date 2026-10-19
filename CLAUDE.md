@@ -47,7 +47,7 @@ Sản phẩm chưa đưa vào sử dụng thực tế, nên **không làm backen
 ## Ngôn ngữ thiết kế: PTIT
 UI là điểm mạnh nhất của sản phẩm (nhóm học khoa thiết kế), nhưng không được làm chậm hay phá vỡ UX.
 - **Nhận diện PTIT**: đỏ PTIT (tạm dùng `#C4161C`) làm màu chủ đạo, kết hợp trắng và trung tính ấm. Không cần đúng tuyệt đối mã màu; tông tham khảo từ sản phẩm số của trường (Slink, Quản lý đào tạo).
-- **Mockup đã duyệt** (bám theo khi dựng màn hình): trang chủ 3 tầng (hero tối gradient đỏ + thẻ "Học tiếp" → Orbit Daily với bài ưu tiên to gấp đôi → dải tiến độ thu gọn), trang học bài (video + quiz củng cố + trợ giảng AI bên phải), màn hình nhận XP phủ đỏ.
+- **Mockup đã duyệt** (`docs/mockup-trang-chu.pdf`, bám theo khi dựng màn hình): thanh điều hướng ngang trong suốt đè lên hero (logo PTIT + Orbit, Trang chủ / Khóa học / Orbit Daily / Studio 3D, chip streak, chip cấp + XP, nút sáng/tối, avatar; mobile thu thành menu; các trang khác dùng thanh nền thường, không còn sidebar) → hero tối gradient đỏ (lời chào theo tên, "Hôm nay chỉ cần 25 phút.", thẻ "Học tiếp" có ảnh lưới 1/3, thanh tiến độ, vệt sáng; mô hình 3D bên phải; đáy cong mềm) → Orbit Daily ("3 bài đọc. Rồi nghỉ.", thẻ ưu tiên đỏ to gấp đôi + 2 thẻ nhỏ, thẻ đã đọc nhạt đi) → "Tiến độ của bạn" (cây kỹ năng thu gọn + nhiệm vụ hôm nay); trang học bài (video + quiz củng cố + trợ giảng AI bên phải); màn hình nhận XP phủ đỏ.
 - **Font**: Be Vietnam Pro cho chữ, JetBrains Mono cho số XP và mốc thời gian.
 - **Đỏ là điểm nhấn, không phủ kín màn hình**: nền sáng (mặc định) hoặc tối, khoảng trắng rộng, đỏ dùng cho hành động chính, trạng thái tiến bộ, khoảnh khắc thưởng.
 - **Typography kiểu editorial**: tiêu đề lớn, đậm, tương phản mạnh với chữ thân.

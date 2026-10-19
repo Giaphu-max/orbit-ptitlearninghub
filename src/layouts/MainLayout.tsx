@@ -1,31 +1,18 @@
 import { Suspense } from 'react'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import { OrbitSidebar, type OrbitTab } from '@/components/orbit-sidebar'
+import { TopNav } from '@/components/top-nav'
 import { OrbitRoleSelect } from '@/components/orbit-role-select'
 import { RewardOverlay } from '@/components/reward-overlay'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
-const TAB_PATHS: Record<OrbitTab, string> = {
-    home: '/',
-    learning: '/learning',
-    journey: '/journey',
-    teacher: '/teacher',
-}
-
 export function MainLayout() {
-    const navigate = useNavigate()
     const location = useLocation()
 
     const role = useOrbitStore((s) => s.role)
 
-    const activeTab: OrbitTab = location.pathname.startsWith('/teacher')
-        ? 'teacher'
-        : location.pathname.startsWith('/journey')
-          ? 'journey'
-          : location.pathname === '/learning' || location.pathname.startsWith('/lesson')
-          ? 'learning'
-          : 'home'
+    // Trang chủ tự vẽ thanh điều hướng đè lên hero; các trang khác dùng thanh nền thường phía trên
+    const isHome = location.pathname === '/'
 
     if (!role) return <OrbitRoleSelect />
 
@@ -43,9 +30,9 @@ export function MainLayout() {
                 <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] rounded-full bg-brand-100/40 blur-[100px]"></div>
             </div>
 
-            <OrbitSidebar activeTab={activeTab} onTabChange={(tab) => navigate(TAB_PATHS[tab])} />
-
-            <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-transparent pl-[90px]">
+            <div className="flex h-full min-w-0 flex-1 flex-col">
+                {!isHome && <TopNav tone="plain" />}
+                <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-transparent">
                 <Suspense
                     fallback={
                         <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -55,7 +42,8 @@ export function MainLayout() {
                 >
                     <Outlet />
                 </Suspense>
-            </main>
+                </main>
+            </div>
             <RewardOverlay />
         </div>
     )

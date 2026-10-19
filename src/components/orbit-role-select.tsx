@@ -1,4 +1,5 @@
 import { GraduationCap, Presentation, ArrowRight, type LucideIcon } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
 const ROLES: { role: Role; title: string; description: string; icon: LucideIcon }[] = [
@@ -22,6 +23,7 @@ export function OrbitRoleSelect() {
 
     return (
         <div className="min-h-screen w-full bg-surface px-6 py-16 lg:px-12">
+            <ThemeToggle className="fixed right-4 top-4 z-40 lg:right-6 lg:top-5" />
             <div className="mx-auto flex max-w-5xl flex-col">
                 <p className="text-eyebrow uppercase text-brand-ink">Orbit · PTIT Learning Hub</p>
                 <h1 className="mt-4 max-w-3xl text-display text-foreground">Bạn vào Orbit với vai trò nào?</h1>

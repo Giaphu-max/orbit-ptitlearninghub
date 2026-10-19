@@ -93,6 +93,9 @@ export function visibleStreak(s: StreakState, now = new Date()) {
 
 export const freezeAvailable = (s: StreakState, now = new Date()) => s.freezeUsedWeek !== weekId(now)
 
+/** XP khi đọc xong một bài Orbit Daily (trả lời đúng câu kiểm tra). */
+export const DAILY_ARTICLE_XP = 20
+
 // ─── Nhiệm vụ hằng ngày ────────────────────────────────────────────────────
 
 export interface DailyState {
@@ -102,14 +105,17 @@ export interface DailyState {
     /** Số câu sửa đúng sau khi sai trong ngày */
     corrected: number
     completedLessons: number
+    /** Số bài Orbit Daily đã đọc xong trong ngày */
+    readArticles: number
     /** id nhiệm vụ đã nhận thưởng */
     claimed: string[]
 }
 
-export const emptyDaily = (date = localDate()): DailyState => ({ date, answered: 0, corrected: 0, completedLessons: 0, claimed: [] })
+export const emptyDaily = (date = localDate()): DailyState => ({ date, answered: 0, corrected: 0, completedLessons: 0, readArticles: 0, claimed: [] })
 
 /** Trạng thái hôm nay; sang ngày mới thì bắt đầu lại từ 0. */
-export const dailyFor = (d: DailyState | undefined, today = localDate()) => (d && d.date === today ? d : emptyDaily(today))
+export const dailyFor = (d: DailyState | undefined, today = localDate()): DailyState =>
+    d && d.date === today ? { ...emptyDaily(today), ...d } : emptyDaily(today)
 
 export interface Mission {
     id: string
@@ -121,6 +127,7 @@ export interface Mission {
 }
 
 export const MISSIONS: Mission[] = [
+    { id: 'daily', title: 'Đọc một bài Orbit Daily', hint: 'Đọc xong và trả lời đúng câu kiểm tra nhanh', target: 1, rewardXp: 15, progress: (d) => d.readArticles },
     { id: 'answer', title: 'Trả lời đúng một câu hỏi trong video', hint: 'Dừng ở mốc quiz và chọn đáp án đúng', target: 1, rewardXp: 10, progress: (d) => d.answered },
     { id: 'fix', title: 'Sửa đúng một câu sau khi sai', hint: 'Xem lại đoạn video rồi làm câu biến thể', target: 1, rewardXp: 15, progress: (d) => d.corrected },
     { id: 'finish', title: 'Hoàn thành một bài giảng', hint: 'Làm hết các câu hỏi trong bài', target: 1, rewardXp: 20, progress: (d) => d.completedLessons },

@@ -1,14 +1,47 @@
-import { Link } from 'react-router-dom'
-import { ArrowRight, BookOpen, Flame, Play, Sparkles, Zap } from 'lucide-react'
-import { dailyArticles, getConcept, getLesson, lessons } from '@/data'
-import { levelFromXp, visibleStreak } from '@/lib/gamification'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { ArrowRight, Check, Play } from 'lucide-react'
+import { dailyArticles, getConcept, getCourse, getLesson, lessons } from '@/data'
+import type { DailyArticle } from '@/data/types'
+import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, MISSIONS, UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusHero } from '@/components/home/campus-hero'
+import { TopNav } from '@/components/top-nav'
 
-/** Trang chủ 3 tầng: hero tối + "Học tiếp" → Orbit Daily → dải tiến độ thu gọn. */
+const DAILY_LIMIT = 3
+
+/** Trang chủ 3 tầng theo mockup: hero tối (nav trong suốt, lời chào, thẻ Học tiếp, mô hình 3D) → Orbit Daily → Tiến độ của bạn. */
 export function OrbitHomeView() {
+    const { hash } = useLocation()
+
+    // Nút "Orbit Daily" trên thanh điều hướng trỏ tới #daily
+    useEffect(() => {
+        if (hash === '#daily') document.getElementById('daily')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, [hash])
+
+    return (
+        <div className="h-full w-full overflow-y-auto bg-surface">
+            <Hero />
+            <div className="mx-auto flex max-w-[1320px] flex-col gap-16 px-5 pb-16 pt-6 lg:px-10">
+                <DailySection />
+                <ProgressSection />
+            </div>
+            <footer className="border-t border-border bg-card">
+                <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-2 px-5 py-5 text-sm text-muted-foreground lg:px-10">
+                    <span>Orbit · Nền tảng học tập ứng dụng AI cho sinh viên PTIT</span>
+                    <span>Nội dung AI được giảng viên duyệt trước khi hiển thị</span>
+                </div>
+            </footer>
+        </div>
+    )
+}
+
+// ─── Tầng 1: hero ──────────────────────────────────────────────────────────
+
+function Hero() {
     const role = useOrbitStore((s) => s.role)
+    const name = useOrbitStore((s) => s.learnerName)
     const review = useOrbitStore((s) => s.lessonReview)
     const progress = useOrbitStore((s) => s.lessonProgress)
 
@@ -17,141 +50,311 @@ export function OrbitHomeView() {
     const inProgress = visible.find((l) => progress[l.id] && !progress[l.id].completed && progress[l.id].lastPositionSec > 0)
     const resume = inProgress ?? visible.find((l) => !progress[l.id]?.completed) ?? visible[0]
     const resumeAt = resume ? progress[resume.id]?.lastPositionSec ?? 0 : 0
+    const pct = resume ? Math.min(100, Math.round((resumeAt / resume.durationSec) * 100)) : 0
 
     return (
-        <div className="h-full w-full overflow-y-auto bg-surface">
-            {/* ── Tầng 1: hero ── */}
-            <section className="relative isolate overflow-hidden bg-hero text-ink-foreground">
-                <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots mask-fade-b"
-                />
-                {/* Canvas 3D phủ cả hero, nằm sau chữ */}
-                <div className="absolute inset-0 z-0">
-                    <CampusHero />
-                </div>
-                <div className="pointer-events-none relative z-10 mx-auto flex min-h-[clamp(880px,110vh,960px)] max-w-[1320px] items-start px-5 py-10 lg:min-h-[clamp(600px,88vh,780px)] lg:items-center lg:px-10">
-                    <div className="flex min-w-0 max-w-[440px] flex-col gap-5">
-                        <span className="text-eyebrow uppercase text-brand-light">Orbit · PTIT Learning Hub</span>
-                        <h1 className="text-[clamp(2.5rem,5vw,4.25rem)] font-black leading-[0.98] tracking-[-0.045em] [text-wrap:balance]">
-                            Học tập trung, có điểm dừng.
-                        </h1>
-                        <p className="text-base leading-relaxed text-ink-foreground/75">
-                            Mỗi tòa nhà là một khu khóa học. Học đến đâu hiểu đến đó, điểm thưởng chỉ đến khi bạn thật sự nắm bài.
-                        </p>
+        <section className="relative isolate overflow-hidden bg-hero text-ink-foreground">
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-stripes" />
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots mask-fade-b" />
 
-                        {resume ? (
-                            <Link
-                                to={`/lesson/${resume.id}`}
-                                className="group pointer-events-auto mt-2 flex items-center gap-4 rounded-card bg-card p-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
-                            >
-                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground transition duration-base group-hover:scale-105">
-                                    <Play size={20} className="fill-current" />
+            {/* Canvas 3D phủ cả hero, nằm sau chữ */}
+            <div className="absolute inset-0 z-0">
+                <CampusHero />
+            </div>
+
+            <TopNav tone="hero" />
+
+            <div className="pointer-events-none relative z-10 mx-auto flex min-h-[clamp(840px,104vh,940px)] max-w-[1320px] items-start px-5 pb-28 pt-8 lg:min-h-[clamp(560px,78vh,720px)] lg:items-center lg:px-10 lg:pb-24 lg:pt-4">
+                <div className="flex min-w-0 max-w-[620px] flex-col gap-6">
+                    <h1 className="text-[clamp(2.75rem,6.2vw,5rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
+                        Chào {name}.
+                        <br />
+                        Hôm nay chỉ cần
+                        <br />
+                        <span className="text-brand-light">25 phút.</span>
+                    </h1>
+                    <p className="max-w-md text-lg leading-relaxed text-ink-foreground/75">
+                        Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.
+                    </p>
+
+                    {resume ? (
+                        <Link
+                            to={`/lesson/${resume.id}`}
+                            className="group pointer-events-auto relative mt-1 flex items-center gap-4 overflow-hidden rounded-[22px] bg-card p-3 pr-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
+                        >
+                            <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-1/5 animate-sheen bg-gradient-to-r from-transparent via-brand-500/15 to-transparent" />
+                            <GridThumb />
+                            <span className="min-w-0 flex-1">
+                                <span className="block truncate text-eyebrow uppercase text-brand-ink">
+                                    {resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu'} · {getCourse(resume.courseId)?.title ?? 'Khóa học'}
                                 </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block text-eyebrow uppercase text-brand-ink">{resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu học'}</span>
-                                    <span className="mt-1 block truncate font-bold">{resume.title}</span>
-                                    {resumeAt > 0 && (
-                                        <span className="block font-mono text-xs text-muted-foreground">
-                                            Dừng ở {formatTime(resumeAt)} / {formatTime(resume.durationSec)}
-                                        </span>
-                                    )}
+                                <span className="mt-1.5 line-clamp-2 text-lg font-bold leading-snug">{resume.title}</span>
+                                <span className="mt-3 flex items-center gap-3">
+                                    <span
+                                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+                                        role="progressbar"
+                                        aria-valuenow={pct}
+                                        aria-valuemin={0}
+                                        aria-valuemax={100}
+                                        aria-label="Tiến độ bài đang học"
+                                    >
+                                        <span className="block h-full rounded-full bg-brand-600" style={{ width: `${pct}%` }} />
+                                    </span>
+                                    <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
                                 </span>
-                                <ArrowRight size={18} className="shrink-0 text-muted-foreground transition duration-base group-hover:translate-x-1 group-hover:text-brand-ink" />
-                            </Link>
-                        ) : (
-                            <p className="rounded-card bg-ink-foreground/10 p-4 text-sm text-ink-foreground/80">Chưa có bài nào được giảng viên xuất bản.</p>
-                        )}
-                        <span className="hidden text-sm text-ink-foreground/60 lg:block">Kéo để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
-                    </div>
+                            </span>
+                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground shadow-brand transition duration-base group-hover:scale-105">
+                                <Play size={20} className="ml-0.5 fill-current" />
+                            </span>
+                        </Link>
+                    ) : (
+                        <p className="max-w-md rounded-card bg-ink-foreground/10 p-4 text-sm text-ink-foreground/80">Chưa có bài nào được giảng viên xuất bản.</p>
+                    )}
+                    <span className="hidden text-sm text-ink-foreground/60 lg:block">Kéo để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
                 </div>
-            </section>
+            </div>
 
-            <div className="mx-auto flex max-w-[1320px] flex-col gap-12 px-5 py-12 lg:px-10">
-                {/* ── Tầng 2: Orbit Daily ── */}
-                <section aria-labelledby="daily-title">
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                        <div>
-                            <p className="text-eyebrow uppercase text-brand-ink">Orbit Daily</p>
-                            <h2 id="daily-title" className="mt-2 text-headline text-foreground">Hôm nay đọc gì?</h2>
-                        </div>
-                        <p className="text-sm text-muted-foreground">Tối đa 3 bài mỗi ngày, ưu tiên phần bạn còn yếu.</p>
+            {/* Đáy hero là đường cong mềm */}
+            <svg aria-hidden viewBox="0 0 1440 90" preserveAspectRatio="none" className="pointer-events-none absolute -bottom-px left-0 z-20 h-12 w-full fill-surface lg:h-20">
+                <path d="M0,58 C220,8 470,6 720,42 C980,80 1220,78 1440,26 L1440,90 L0,90 Z" />
+            </svg>
+        </section>
+    )
+}
+
+/** Ảnh thu nhỏ có lưới 1/3 và điểm nhấn ở một giao điểm. */
+function GridThumb() {
+    return (
+        <span className="relative block h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-brand-300" aria-hidden>
+            <svg viewBox="0 0 92 92" className="absolute inset-0 h-full w-full stroke-ink-foreground/55" strokeWidth="1">
+                <line x1="30.67" y1="0" x2="30.67" y2="92" />
+                <line x1="61.33" y1="0" x2="61.33" y2="92" />
+                <line x1="0" y1="30.67" x2="92" y2="30.67" />
+                <line x1="0" y1="61.33" x2="92" y2="61.33" />
+                <circle cx="61.33" cy="30.67" r="4.5" className="fill-ink-foreground stroke-none" />
+            </svg>
+        </span>
+    )
+}
+
+// ─── Tầng 2: Orbit Daily ───────────────────────────────────────────────────
+
+/** Bài ưu tiên = bài có khái niệm bạn còn yếu nhất (chưa làm quiz thì coi như 50%). */
+function gapScore(a: DailyArticle, mastery: Record<string, number>) {
+    return a.conceptIds.reduce((sum, id) => sum + (1 - (mastery[id] ?? 0.5)), 0) / Math.max(1, a.conceptIds.length)
+}
+
+function DailySection() {
+    const read = useOrbitStore((s) => s.dailyRead)
+    const mastery = useOrbitStore((s) => s.conceptMastery)
+    const today = new Date()
+    const dateLabel = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}`
+
+    const articles = dailyArticles.slice(0, DAILY_LIMIT)
+    const readCount = articles.filter((a) => read[a.id]).length
+    const unread = articles.filter((a) => !read[a.id])
+    const priority = [...unread].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
+    const side = (priority ? articles.filter((a) => a.id !== priority.id) : articles).slice(0, 2)
+
+    return (
+        <section id="daily" aria-labelledby="daily-title" className="scroll-mt-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p className="text-eyebrow uppercase text-brand-ink">Orbit Daily · {dateLabel}</p>
+                    <h2 id="daily-title" className="mt-2 text-[clamp(2rem,4.6vw,3.25rem)] font-black leading-none tracking-[-0.04em] text-foreground">
+                        3 bài đọc. Rồi nghỉ.
+                    </h2>
+                </div>
+                <div className="flex items-center gap-3" role="img" aria-label={`Đã đọc ${readCount} trên ${DAILY_LIMIT} bài hôm nay`}>
+                    <div className="flex gap-1.5">
+                        {Array.from({ length: DAILY_LIMIT }, (_, i) => (
+                            <span key={i} className={`h-1.5 w-11 rounded-full transition-colors duration-slow ${i < readCount ? 'bg-brand-600' : 'bg-border'}`} />
+                        ))}
                     </div>
+                    <span className="font-mono text-sm font-semibold text-muted-foreground">
+                        {readCount}/{DAILY_LIMIT}
+                    </span>
+                </div>
+            </div>
 
-                    <div className="mt-6 grid gap-5 md:grid-cols-4">
-                        {dailyArticles.slice(0, 3).map((a, i) => {
-                            const first = a.paragraphs[0]?.sources[0]
-                            const source = first ? getLesson(first.lessonId) : undefined
-                            const big = i === 0
-                            return (
-                                <Link
-                                    key={a.id}
-                                    to={source ? `/lesson/${source.id}` : '/learning'}
-                                    className={`group flex flex-col justify-between rounded-panel border border-border bg-card p-6 shadow-card transition duration-base ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
-                                        big ? 'md:col-span-2 md:row-span-1 md:p-8' : 'md:col-span-1'
-                                    }`}
-                                >
-                                    <div>
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand-ink">
-                                            <Sparkles size={13} /> {big ? 'Ưu tiên hôm nay' : 'Gợi ý'} · {a.readingMinutes} phút
-                                        </span>
-                                        <h3 className={`mt-4 text-foreground ${big ? 'text-title md:text-[1.75rem] md:leading-tight' : 'text-lg font-bold leading-snug'}`}>{a.title}</h3>
-                                        {big && <p className="mt-3 line-clamp-3 text-[15px] leading-relaxed text-muted-foreground">{a.paragraphs[0]?.text}</p>}
-                                    </div>
-                                    <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                        {a.conceptIds.slice(0, 2).map((id) => (
-                                            <span key={id} className="rounded-full bg-muted px-2.5 py-1 font-semibold">{getConcept(id)?.name ?? id}</span>
-                                        ))}
-                                        <span className="ml-auto inline-flex items-center gap-1 font-bold text-brand-ink">
-                                            Xem bài nguồn <ArrowRight size={14} className="transition duration-base group-hover:translate-x-1" />
-                                        </span>
-                                    </div>
-                                </Link>
-                            )
-                        })}
-                        {dailyArticles.length < 3 && (
-                            <div className="flex flex-col justify-center rounded-panel border border-dashed border-border bg-card/60 p-6 text-sm text-muted-foreground md:col-span-2">
-                                <span className="font-bold text-foreground">Còn {3 - dailyArticles.length} lượt hôm nay</span>
-                                Hoàn thành thêm bài học để mở thêm bài đọc mới.
-                            </div>
-                        )}
-                    </div>
-                </section>
+            <div className="mt-7 grid gap-5 lg:grid-cols-3 lg:grid-rows-2">
+                {priority ? <PriorityCard article={priority} /> : <DoneCard articles={articles} />}
+                {side.map((a) => (
+                    <SmallCard key={a.id} article={a} index={articles.indexOf(a)} done={Boolean(read[a.id])} />
+                ))}
+            </div>
+        </section>
+    )
+}
 
-                {/* ── Tầng 3: dải tiến độ ── */}
-                <ProgressStrip total={visible.length} />
+function PriorityCard({ article }: { article: DailyArticle }) {
+    const mastery = useOrbitStore((s) => s.conceptMastery)
+    const weakest = [...article.conceptIds].sort((a, b) => (mastery[a] ?? 0.5) - (mastery[b] ?? 0.5))[0]
+    const concept = getConcept(weakest)
+    const m = mastery[weakest]
+    const reason = concept ? (m === undefined ? `Ưu tiên · bạn chưa làm quiz “${concept.name}”` : `Ưu tiên · “${concept.name}” mới nắm ${Math.round(m * 100)}%`) : 'Ưu tiên cho bạn hôm nay'
+    const src = article.paragraphs[0]?.sources[0]
+    const lesson = src ? getLesson(src.lessonId) : undefined
+
+    return (
+        <Link
+            to={`/daily/${article.id}`}
+            className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-600 to-brand-800 p-7 text-ink-foreground shadow-brand transition duration-base ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:col-span-2 lg:row-span-2 lg:p-9"
+        >
+            <span aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[440px] w-[440px] rounded-full border border-ink-foreground/25" />
+            <span aria-hidden className="pointer-events-none absolute -bottom-24 -right-8 h-[300px] w-[300px] rounded-full border border-ink-foreground/25" />
+            <span aria-hidden className="pointer-events-none absolute bottom-24 right-40 h-2.5 w-2.5 rounded-full bg-ink-foreground" />
+            <div className="relative">
+                <span className="inline-flex rounded-full bg-ink-foreground px-3.5 py-1.5 text-xs font-extrabold text-brand-700">{reason}</span>
+                <h3 className="mt-6 max-w-xl text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight">{article.title}</h3>
+                {lesson && src && (
+                    <p className="mt-4 text-[15px] text-ink-foreground/80">
+                        Tổng hợp từ {lesson.title} (<span className="font-mono">{formatTime(src.start)}</span>).
+                    </p>
+                )}
+            </div>
+            <div className="relative mt-10 flex flex-wrap items-center gap-4">
+                <span className="inline-flex items-center gap-2 rounded-2xl bg-ink-foreground px-6 py-3.5 text-[15px] font-extrabold text-brand-700 shadow-raised transition duration-base group-hover:gap-3">
+                    Đọc ngay <ArrowRight size={16} />
+                </span>
+                <span className="text-sm text-ink-foreground/80">
+                    {article.readingMinutes} phút · +{DAILY_ARTICLE_XP} XP
+                </span>
+            </div>
+        </Link>
+    )
+}
+
+/** Đã đọc cả 3 bài: màn "Hôm nay đủ rồi" kèm tóm tắt những gì đã học. */
+function DoneCard({ articles }: { articles: DailyArticle[] }) {
+    return (
+        <div className="relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-600 to-brand-800 p-7 text-ink-foreground shadow-brand lg:col-span-2 lg:row-span-2 lg:p-9">
+            <div>
+                <span className="inline-flex rounded-full bg-ink-foreground px-3.5 py-1.5 text-xs font-extrabold text-brand-700">Xong 3/3</span>
+                <h3 className="mt-6 text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight">Hôm nay đủ rồi. Hẹn bạn ngày mai.</h3>
+                <p className="mt-4 text-[15px] text-ink-foreground/80">Hôm nay bạn đã học:</p>
+                <ul className="mt-2 flex flex-col gap-1.5 text-[15px]">
+                    {articles.map((a) => (
+                        <li key={a.id} className="flex items-start gap-2">
+                            <Check size={16} className="mt-1 shrink-0" /> {a.title}
+                        </li>
+                    ))}
+                </ul>
             </div>
         </div>
     )
 }
 
-function ProgressStrip({ total }: { total: number }) {
-    const xp = useOrbitStore((s) => s.xp)
-    const streakState = useOrbitStore((s) => s.streak)
-    const progress = useOrbitStore((s) => s.lessonProgress)
-    const mastery = useOrbitStore((s) => s.conceptMastery)
-
-    const done = Object.values(progress).filter((p) => p.completed).length
-    const tracked = Object.values(mastery)
-    const avg = tracked.length ? Math.round((tracked.reduce((a, b) => a + b, 0) / tracked.length) * 100) : 0
-
-    const items = [
-        { icon: <Zap size={18} className="fill-brand-500 text-brand-500" />, label: `Cấp ${levelFromXp(xp)}`, value: `${xp} XP` },
-        { icon: <Flame size={18} className="text-brand-500" />, label: 'Chuỗi ngày học', value: `${visibleStreak(streakState).count} ngày` },
-        { icon: <BookOpen size={18} className="text-brand-500" />, label: 'Bài đã hoàn thành', value: `${done}/${total}` },
-        { icon: <Sparkles size={18} className="text-brand-500" />, label: 'Mức nắm vững', value: tracked.length ? `${avg}%` : 'Chưa có' },
-    ]
+function SmallCard({ article, index, done }: { article: DailyArticle; index: number; done: boolean }) {
     return (
-        <Link to="/journey" aria-label="Xem hành trình" className="group block"><section aria-label="Tiến độ của bạn" className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border shadow-card md:grid-cols-4">
-            {items.map((it) => (
-                <div key={it.label} className="flex items-center gap-3 bg-card px-5 py-4">
-                    {it.icon}
-                    <div className="min-w-0">
-                        <p className="text-xs font-semibold text-muted-foreground">{it.label}</p>
-                        <p className="truncate font-mono text-lg font-bold text-foreground">{it.value}</p>
+        <Link
+            to={`/daily/${article.id}`}
+            className={`group flex min-h-[140px] flex-col justify-between rounded-3xl border p-6 transition duration-base ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
+                done ? 'border-transparent bg-muted' : 'border-border bg-card shadow-card hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised'
+            }`}
+        >
+            <div>
+                <p className="flex items-center justify-between font-mono text-xs text-muted-foreground">
+                    <span>
+                        {String(index + 1).padStart(2, '0')} · {done ? 'Đã đọc' : 'Mở rộng'}
+                    </span>
+                    {done && <Check size={16} className="text-success" />}
+                </p>
+                <h3 className={`mt-3 text-xl font-extrabold leading-snug tracking-tight ${done ? 'text-muted-foreground' : 'text-foreground'}`}>{article.title}</h3>
+            </div>
+            <p className={`mt-5 text-sm ${done ? 'font-semibold text-success' : 'text-muted-foreground'}`}>
+                {done ? `+${DAILY_ARTICLE_XP} XP đã nhận` : `${article.readingMinutes} phút · +${DAILY_ARTICLE_XP} XP`}
+            </p>
+        </Link>
+    )
+}
+
+// ─── Tầng 3: Tiến độ của bạn ───────────────────────────────────────────────
+
+function ProgressSection() {
+    const mastery = useOrbitStore((s) => s.conceptMastery)
+    const dailyRaw = useOrbitStore((s) => s.daily)
+    const daily = dailyFor(dailyRaw)
+
+    const nodes = buildSkillTree(mastery).sort((a, b) => a.depth - b.depth)
+    const first = nodes[0]
+    const course = first ? getCourse(getLesson(first.lessonId)?.courseId ?? '') : undefined
+    const current = nodes.find((n) => n.unlocked && n.mastery < UNLOCK_THRESHOLD)
+    const locked = nodes.find((n) => !n.unlocked)
+    const missionsDone = MISSIONS.filter((m) => m.progress(daily) >= m.target).length
+
+    return (
+        <section aria-labelledby="progress-title">
+            <h2 id="progress-title" className="text-2xl font-extrabold tracking-tight text-foreground">
+                Tiến độ của bạn
+            </h2>
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1.9fr_1fr]">
+                <div className="rounded-[26px] border border-border bg-card p-6 shadow-card">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-bold text-foreground">Cây kỹ năng · {course?.title ?? 'Chưa có khóa học'}</h3>
+                        <Link to="/journey" className="text-sm font-bold text-brand-ink underline underline-offset-4">
+                            Mở cây kỹ năng
+                        </Link>
                     </div>
+                    <ol className="mt-6 flex items-center" aria-label="Các khái niệm trong cây kỹ năng">
+                        {nodes.map((n, i) => {
+                            const mastered = n.mastery >= UNLOCK_THRESHOLD
+                            return (
+                                <li key={n.concept.id} className="flex items-center" style={{ flex: i < nodes.length - 1 ? '1 1 0' : '0 0 auto' }}>
+                                    <span
+                                        title={`${n.concept.name}: ${Math.round(n.mastery * 100)}%`}
+                                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                            mastered
+                                                ? 'bg-brand-600 text-ink-foreground'
+                                                : n.unlocked
+                                                  ? 'border-[3px] border-brand-600 bg-brand-soft font-mono text-brand-ink'
+                                                  : 'border-2 border-dashed border-border text-muted-foreground'
+                                        }`}
+                                    >
+                                        {mastered ? <Check size={18} /> : n.unlocked ? `${Math.round(n.mastery * 100)}` : ''}
+                                        <span className="sr-only">{n.concept.name}</span>
+                                    </span>
+                                    {i < nodes.length - 1 && <span className={`mx-1 h-0.5 flex-1 rounded-full ${mastered ? 'bg-brand-600' : 'bg-border'}`} aria-hidden />}
+                                </li>
+                            )
+                        })}
+                    </ol>
+                    <p className="mt-5 text-[15px] text-muted-foreground">
+                        {current ? (
+                            <>
+                                <b className="text-brand-ink">
+                                    {current.concept.name} · {Math.round(current.mastery * 100)}%.
+                                </b>{' '}
+                                {locked ? <>Đạt {Math.round(UNLOCK_THRESHOLD * 100)}% để mở “{locked.concept.name}”.</> : 'Làm thêm quiz để nắm vững khái niệm này.'}
+                            </>
+                        ) : nodes.length ? (
+                            'Bạn đã nắm vững mọi khái niệm hiện có.'
+                        ) : (
+                            'Chưa có khái niệm nào.'
+                        )}
+                    </p>
                 </div>
-            ))}
-        </section></Link>
+
+                <div className="rounded-[26px] border border-border bg-card p-6 shadow-card">
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-foreground">Nhiệm vụ hôm nay</h3>
+                        <span className="font-mono text-sm text-muted-foreground">
+                            {missionsDone}/{MISSIONS.length}
+                        </span>
+                    </div>
+                    <ul className="mt-4 flex flex-col gap-2.5">
+                        {MISSIONS.map((m) => {
+                            const done = m.progress(daily) >= m.target
+                            return (
+                                <li key={m.id} className="flex items-baseline justify-between gap-3 text-sm">
+                                    <span className={done ? 'text-muted-foreground line-through' : 'font-semibold text-foreground'}>{m.title}</span>
+                                    <span className={`shrink-0 font-mono font-semibold ${done ? 'text-muted-foreground' : 'text-brand-ink'}`}>+{m.rewardXp}</span>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </div>
+            </div>
+        </section>
     )
 }

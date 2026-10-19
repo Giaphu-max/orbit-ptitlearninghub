@@ -112,7 +112,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
             <div className={`mx-auto grid max-w-[1600px] gap-6 p-4 lg:p-6 ${isTutorOpen ? 'xl:grid-cols-[minmax(0,1fr)_400px]' : ''}`}>
                 {/* ── Cột chính ── */}
                 <div className="flex min-w-0 flex-col gap-5">
-                    <div className="flex items-center justify-between gap-3 pr-14 lg:pr-12">
+                    <div className="flex items-center justify-between gap-3">
                         <Link
                             to="/learning"
                             className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground"

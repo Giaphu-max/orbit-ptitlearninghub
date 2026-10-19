@@ -40,6 +40,10 @@ export type LessonEdits = Pick<Lesson, 'summary' | 'concepts' | 'quiz'>
 
 interface OrbitState {
     role: Role | null
+    /** Tên hiển thị trong lời chào và avatar (demo không có tài khoản) */
+    learnerName: string
+    /** Bài Orbit Daily đã đọc xong: id → ngày (YYYY-MM-DD) */
+    dailyRead: Record<string, string>
     xp: number
     streak: {
         count: number
@@ -62,6 +66,9 @@ interface OrbitState {
     lessonEdits: Record<string, LessonEdits>
 
     setRole: (role: Role | null) => void
+    setLearnerName: (name: string) => void
+    /** Hoàn thành một bài Orbit Daily; trả về XP được cộng (0 nếu đã đọc rồi) */
+    completeDailyArticle: (articleId: string, xp: number) => number
     addXp: (amount: number) => void
     saveLessonPosition: (lessonId: string, positionSec: Seconds) => void
     setLessonReview: (lessonId: string, status: ReviewStatus) => void
@@ -76,8 +83,12 @@ interface OrbitState {
 
 const STORAGE_KEY = 'orbit-demo-state'
 
+export const DEFAULT_LEARNER_NAME = 'Phú'
+
 const initialData = {
     role: null,
+    learnerName: DEFAULT_LEARNER_NAME,
+    dailyRead: {},
     xp: 0,
     streak: { count: 0, lastStudyDate: null, freezeUsedWeek: null },
     lessonProgress: {},
@@ -119,6 +130,21 @@ export const useOrbitStore = create<OrbitState>()(
             ...initialData,
 
             setRole: (role) => set({ role }),
+
+            setLearnerName: (name) => set({ learnerName: name.trim().slice(0, 24) || DEFAULT_LEARNER_NAME }),
+
+            completeDailyArticle: (articleId, xp) => {
+                if (get().dailyRead[articleId]) return 0
+                set((s) => {
+                    const today = dailyFor(s.daily)
+                    return {
+                        xp: s.xp + xp,
+                        dailyRead: { ...s.dailyRead, [articleId]: today.date },
+                        daily: { ...today, readArticles: today.readArticles + 1 },
+                    }
+                })
+                return xp
+            },
 
             addXp: (amount) => set((s) => ({ xp: Math.max(0, s.xp + amount) })),
 
