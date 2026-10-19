@@ -524,8 +524,8 @@ export function OrbitLearningView() {
             <EnrolledSidebar />
             
             {/* ── Main Content Area (Explore) ── */}
-            <main className="relative z-10 min-w-0 flex-1 px-6 py-10 lg:px-10">
-                <div className="max-w-[1400px] mx-auto">
+            <main className="relative z-10 min-w-0 flex-1 px-6 py-10 lg:px-[var(--gutter)]">
+                <div className="max-w-[1440px] mx-auto">
                     
                     {/* Header */}
                     <div className="mb-10">

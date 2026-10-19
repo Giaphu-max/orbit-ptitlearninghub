@@ -68,6 +68,13 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
             className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-reward px-6 text-ink-foreground"
         >
             <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70 bg-dots mask-fade-r" />
+            {/* Hình trang trí trôi (mockup Reward) */}
+            <Drift className="left-[8%] top-[10%] h-[18px] w-[18px] rotate-45 bg-ink-foreground opacity-90 animate-drift-30" />
+            <Drift className="left-[18%] top-[71%] h-3 w-3 rounded-full bg-ink animate-drift-40" />
+            <Drift className="left-[82%] top-[13%] h-[22px] w-[22px] rotate-[20deg] border-[3px] border-ink-foreground animate-drift-36" />
+            <Drift className="left-[90%] top-[62%] h-3.5 w-3.5 rotate-45 bg-warning animate-drift-28" />
+            <Drift className="left-[68%] top-[86%] h-2.5 w-2.5 rounded-full bg-ink-foreground animate-drift-32" />
+            <Drift className="left-[29%] top-[7%] h-2.5 w-2.5 bg-warning animate-drift-34" />
             {[0, 1, 2].map((i) => (
                 <motion.span
                     key={i}
@@ -80,24 +87,23 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
             ))}
 
             <div className="relative flex max-w-xl flex-col items-center text-center">
-                <motion.span
-                    initial={{ scale: 0.4, rotate: -12, opacity: 0 }}
-                    animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.1 }}
-                    className="flex h-24 w-24 items-center justify-center on-red-btn rounded-full shadow-raised"
-                >
-                    <Icon size={44} className={event.kind === 'xp' ? 'fill-current' : ''} />
-                </motion.span>
+                <span className="relative animate-pop">
+                    {/* Huy hiệu phát sáng: vòng mở rộng và mờ dần */}
+                    <span aria-hidden className="absolute inset-0 animate-glow-ring rounded-full bg-ink-foreground" />
+                    <span className="relative flex h-24 w-24 items-center justify-center on-red-btn rounded-full shadow-raised">
+                        <Icon size={44} className={event.kind === 'xp' ? 'fill-current' : ''} />
+                    </span>
+                </span>
 
                 <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.25 }} className="mt-8 text-eyebrow uppercase text-brand-light">
                     {eyebrow}
                 </motion.p>
 
                 {event.kind === 'xp' && (
-                    <motion.p initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 18 }} className="mt-2 font-mono text-[clamp(4rem,12vw,7rem)] font-bold leading-none">
+                    <p className="mt-2 animate-pop font-mono text-[clamp(4rem,12vw,7rem)] font-bold leading-none">
                         +{shown}
                         <span className="ml-2 text-3xl">XP</span>
-                    </motion.p>
+                    </p>
                 )}
 
                 <motion.h2 initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="mt-4 text-[clamp(1.75rem,4vw,2.75rem)] font-extrabold leading-tight tracking-tight">
@@ -108,15 +114,19 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                 </motion.p>
 
                 {event.kind !== 'badge' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="mt-8 w-full max-w-sm">
+                    <div className="mt-8 w-full max-w-sm animate-rise-r2">
                         <div className="flex justify-between font-mono text-xs text-ink-foreground/80">
                             <span>Cấp {lp.level}</span>
                             <span>{lp.toNext} XP nữa lên cấp {lp.level + 1}</span>
                         </div>
                         <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-ink/25">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(lp.ratio * 100)}%` }} transition={{ delay: 0.7, duration: 0.8, ease: 'easeOut' }} className="h-full rounded-full bg-ink-foreground" />
+                            {/* Thanh cấp chạy bằng scaleX từ gốc trái (chỉ transform) */}
+                            <div
+                                className="h-full origin-left animate-fill-bar rounded-full bg-ink-foreground"
+                                style={{ width: `${Math.round(lp.ratio * 100)}%`, ['--fill-from' as string]: 0 }}
+                            />
                         </div>
-                    </motion.div>
+                    </div>
                 )}
 
                 <motion.button
@@ -133,4 +143,9 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
             </div>
         </motion.div>
     )
+}
+
+/** Hình trang trí trôi lên xuống chậm ở nền màn thưởng (chỉ transform). */
+function Drift({ className }: { className: string }) {
+    return <span aria-hidden className={`pointer-events-none absolute ${className}`} />
 }

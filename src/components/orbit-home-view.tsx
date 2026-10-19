@@ -15,12 +15,12 @@ export function OrbitHomeView() {
     return (
         <div className="w-full bg-surface">
             <Hero />
-            <div className="mx-auto flex max-w-[1320px] flex-col gap-16 px-5 pb-16 pt-6 lg:px-10">
+            <div className="container-page flex flex-col gap-16 pb-16 pt-6">
                 <DailySection />
                 <ProgressSection />
             </div>
             <footer className="border-t border-border bg-card">
-                <div className="mx-auto flex max-w-[1320px] flex-wrap items-center justify-between gap-2 px-5 py-5 text-sm text-muted-foreground lg:px-10">
+                <div className="container-page flex flex-wrap items-center justify-between gap-2 py-5 text-sm text-muted-foreground">
                     <span>Orbit · Nền tảng học tập ứng dụng AI cho sinh viên PTIT</span>
                     <span>Nội dung AI được giảng viên duyệt trước khi hiển thị</span>
                 </div>
@@ -48,33 +48,41 @@ function Hero() {
         <section className="relative isolate overflow-hidden bg-hero text-ink-foreground">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-stripes" />
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots mask-fade-b" />
+            {/* Đốm sáng trôi + sao lấp lánh (mockup Main): chỉ transform và opacity */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+                <div className="absolute -left-[10%] top-[30%] h-[520px] w-[520px] animate-blob-a rounded-full bg-[hsl(var(--hero-glow))] opacity-45 blur-[110px]" />
+                <div className="absolute -right-[6%] -top-[18%] h-[600px] w-[600px] animate-blob-b rounded-full bg-[hsl(var(--reward-from))] opacity-35 blur-[130px]" />
+                <span className="absolute left-[14%] top-[22%] h-1 w-1 animate-twinkle-a rounded-full bg-ink-foreground" />
+                <span className="absolute left-[46%] top-[12%] h-[3px] w-[3px] animate-twinkle-b rounded-full bg-ink-foreground" />
+                <span className="absolute left-[38%] top-[78%] h-1 w-1 animate-twinkle-c rounded-full bg-warning" />
+            </div>
 
             {/* Canvas 3D phủ hero từ dưới thanh điều hướng (cao 80px) trở xuống, nằm sau chữ: mây/nhãn không bao giờ bay vào vùng nav */}
-            <div className="absolute inset-x-0 bottom-0 top-20 z-0 overflow-hidden">
+            <div className="hero-3d absolute inset-x-0 bottom-0 top-20 z-0 overflow-hidden lg:right-0">
                 <CampusHero />
             </div>
 
             <TopNav tone="hero" />
 
-            <div className="pointer-events-none relative z-10 mx-auto flex min-h-[clamp(840px,104svh,940px)] max-w-[1320px] items-start px-5 pb-28 pt-8 lg:min-h-[clamp(560px,78svh,720px)] lg:items-center lg:px-10 lg:pb-24 lg:pt-4">
-                <div className="flex min-w-0 max-w-[620px] flex-col gap-6">
-                    <h1 className="text-[clamp(2.75rem,6.2vw,5rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
+            <div className="pointer-events-none container-page relative z-10 flex min-h-[clamp(840px,104svh,940px)] items-start pb-28 pt-8 lg:min-h-[clamp(560px,78svh,720px)] lg:items-center lg:pb-24 lg:pt-4">
+                <div className="flex min-w-0 max-w-[620px] flex-col gap-6 lg:w-5/12 lg:max-w-none">
+                    <h1 className="animate-rise-1 text-[clamp(2.5rem,5vw,4.75rem)] lg:text-[clamp(2.25rem,3.6vw,4rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
                         Chào {name}.
                         <br />
                         Hôm nay chỉ cần
                         <br />
                         <span className="text-brand-light">25 phút.</span>
                     </h1>
-                    <p className="max-w-md text-lg leading-relaxed text-ink-foreground/75">
+                    <p className="max-w-md animate-rise-2 text-lg leading-relaxed text-ink-foreground/75">
                         Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.
                     </p>
 
                     {resume ? (
                         <Link
                             to={`/lesson/${resume.id}`}
-                            className="group pointer-events-auto relative mt-1 flex items-center gap-4 overflow-hidden rounded-[22px] bg-card p-3 pr-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
+                            className="group pointer-events-auto relative mt-1 flex animate-rise-3 items-center gap-4 overflow-hidden rounded-[22px] bg-card p-3 pr-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
                         >
-                            <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-1/5 animate-sheen bg-gradient-to-r from-transparent via-brand-500/15 to-transparent" />
+                            <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-[40%] animate-sheen bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
                             <GridThumb />
                             <span className="min-w-0 flex-1">
                                 <span className="block truncate text-eyebrow uppercase text-brand-ink">
@@ -194,8 +202,9 @@ function PriorityCard({ article }: { article: DailyArticle }) {
             className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] surface-red p-7 shadow-brand transition duration-base ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:col-span-2 lg:row-span-2 lg:p-9"
         >
             <span aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[440px] w-[440px] rounded-full border border-ink-foreground/25" />
-            <span aria-hidden className="pointer-events-none absolute -bottom-24 -right-8 h-[300px] w-[300px] rounded-full border border-ink-foreground/25" />
-            <span aria-hidden className="pointer-events-none absolute bottom-24 right-40 h-2.5 w-2.5 rounded-full bg-ink-foreground" />
+            <span aria-hidden className="pointer-events-none absolute -bottom-5 -right-5 h-[200px] w-[200px] animate-spin-24 rounded-full border border-ink-foreground/20">
+                <span className="absolute -top-[5px] left-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-ink-foreground" />
+            </span>
             <div className="relative">
                 <span className="on-red-chip inline-flex rounded-full px-3.5 py-1.5 text-xs font-extrabold">{reason}</span>
                 <h3 className="mt-6 max-w-xl text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight">{article.title}</h3>

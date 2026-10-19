@@ -42,7 +42,7 @@ const TONE = {
         active: 'bg-ink-foreground/15 text-ink-foreground',
         sub: 'text-ink-foreground/70',
         chip: 'border-ink-foreground/20 bg-ink-foreground/10 text-ink-foreground hover:bg-ink-foreground/20',
-        logo: 'bg-ink-foreground text-brand-700',
+        logo: 'bg-ink-foreground text-brand-ink',
         avatar: 'bg-ink-foreground text-ink',
         burger: 'border-ink-foreground/20 bg-ink-foreground/10 text-ink-foreground',
     },
@@ -88,13 +88,13 @@ export function TopNav({ tone }: { tone: NavTone }) {
 
     return (
         <header className={`relative z-50 ${t.text}`}>
-            <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-5 py-5 lg:gap-6 lg:px-10">
+            <div className="container-page flex items-center gap-4 py-5 lg:gap-6">
                 <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="Orbit, trang chủ">
                     {LOGO_URL ? (
-                        <img src={LOGO_URL} alt="PTIT" className="h-10 w-10 rounded-xl bg-ink-foreground object-contain p-1" />
+                        <img src={LOGO_URL} alt="PTIT" className="h-10 w-10 shrink-0 rounded-xl bg-ink-foreground object-contain p-1" />
                     ) : (
                         // Khối vuông trắng bo góc, chữ PTIT đỏ: nổi trên nền tối của hero
-                        <span className={`flex h-10 w-10 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${t.logo}`}>PTIT</span>
+                        <span className={`flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${t.logo}`}>PTIT</span>
                     )}
                     <span className="leading-tight">
                         <span className="block text-[17px] font-extrabold tracking-tight">Orbit</span>
@@ -185,7 +185,7 @@ function AccountMenu({ tone }: { tone: NavTone }) {
                 aria-label={`Tài khoản của ${name}`}
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
-                className={`flex h-10 w-10 items-center justify-center rounded-full text-xs font-extrabold shadow-card transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${t.avatar}`}
+                className={`flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-extrabold shadow-card transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${t.avatar}`}
             >
                 {initials(name)}
             </button>

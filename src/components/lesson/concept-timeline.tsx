@@ -17,6 +17,8 @@ interface ConceptTimelineProps {
 export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, results }: ConceptTimelineProps) {
     const duration = Math.max(lesson.durationSec, 1)
     const pct = (sec: number) => `${Math.min(100, Math.max(0, (sec / duration) * 100))}%`
+    // Điểm quiz sắp tới (chưa làm) nhấp nháy để dẫn mắt người học
+    const nextQuiz = [...lesson.quiz].filter((q) => !results[q.id] && q.pauseAt >= currentTime).sort((a, b) => a.pauseAt - b.pauseAt)[0]
     const active = lesson.concepts.find((c) => currentTime >= c.segment.start && currentTime < c.segment.end)
 
     return (
@@ -56,7 +58,9 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
                         style={{ left: pct(q.pauseAt) }}
                         title={`Câu hỏi ở ${formatTime(q.pauseAt)}${results[q.id] ? ' (đã làm)' : ''}`}
                         aria-label={`Mở câu hỏi ở ${formatTime(q.pauseAt)}`}
-                    />
+                    >
+                        {nextQuiz?.id === q.id && <span aria-hidden className="pointer-events-none absolute inset-0 animate-pulse-ring rounded-full bg-brand-600" />}
+                    </button>
                 ))}
                 <span
                     className="pointer-events-none absolute top-1/2 h-5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground"

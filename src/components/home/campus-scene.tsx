@@ -150,17 +150,17 @@ function Building({ name, sub, anchorY, position, hovered, labelVisible, registr
             {children}
             <Html position={[0, anchorY, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
                 <div
-                    className="flex -translate-x-1/2 -translate-y-full flex-col items-center gap-1 transition-opacity duration-200"
+                    className="flex w-max -translate-x-1/2 -translate-y-full flex-col items-center gap-1 transition-opacity duration-200"
                     style={{ opacity: hidden ? 0 : 1, visibility: hidden ? 'hidden' : 'visible' }}
                 >
                     <div
-                        className={`whitespace-nowrap rounded-xl px-[11px] py-[7px] text-xs font-bold shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)] transition duration-200 ${
+                        className={`w-max max-w-[220px] whitespace-nowrap rounded-xl px-[11px] py-[7px] text-xs font-bold shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)] transition duration-200 ${
                             hovered ? '-translate-y-1.5 bg-brand-600 text-ink-foreground' : 'bg-card/95 text-foreground'
                         }`}
                     >
                         {name}
-                        {/* Mặc định chỉ hiện tên; dòng phụ chỉ hiện khi rê chuột vào tòa */}
-                        <small className={`block overflow-hidden text-[11px] font-medium text-ink-foreground/85 transition-all duration-200 ${hovered ? 'max-h-6 opacity-100' : 'max-h-0 opacity-0'}`}>{sub}</small>
+                        {/* Mặc định chỉ hiện tên (chip co theo chữ); dòng phụ chỉ có mặt khi rê chuột vào tòa */}
+                        {hovered && <small className="mt-0.5 block text-[11px] font-medium text-ink-foreground/85">{sub}</small>}
                     </div>
                     <div className="h-4 w-0.5 bg-ink-foreground/80" />
                 </div>
@@ -484,9 +484,10 @@ function useFitCamera(controls: React.RefObject<OrbitControlsImpl | null>) {
 
     useEffect(() => {
         const { width: w, height: h } = size
-        const wide = w >= 900
-        // Vùng trống (px): nửa phải khi có cột chữ bên trái, nửa dưới khi chữ xếp trên
-        const region = wide ? { w: w * 0.56, h, cx: w * 0.72, cy: h / 2 } : { w, h: h * 0.46, cx: w / 2, cy: h * 0.77 }
+        // Màn rộng: canvas chỉ nằm bên phải cột chữ nên cả khung là vùng trống (mô hình hơi lệch phải, tràn ra mép);
+        // màn hẹp: canvas phủ hero, mô hình nằm ở nửa dưới
+        const wide = window.innerWidth >= 1024
+        const region = wide ? { w: w * 1.12, h, cx: w * 0.6, cy: h / 2 } : { w, h: h * 0.46, cx: w / 2, cy: h * 0.77 }
         const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
         // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang, vùng trống chiếm một phần của nó
         const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * (region.w / h))

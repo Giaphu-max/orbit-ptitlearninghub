@@ -82,13 +82,80 @@ export default {
       },
       animation: {
         flash: 'flash 350ms ease-out forwards',
-        // Vệt sáng quét qua thẻ "Học tiếp": quét nhanh rồi nghỉ
-        sheen: 'sheen 5s ease-in-out infinite',
+        // Các keyframes chép từ docs/mockup (Main, Lesson, Reward). Chỉ transform + opacity.
+        sheen: 'sweep 3.5s 1.2s ease-in-out infinite',
+        'blob-a': 'blobA 14s ease-in-out infinite',
+        'blob-b': 'blobB 18s ease-in-out infinite',
+        'spin-24': 'spin 24s linear infinite',
+        floaty: 'floaty 6s ease-in-out infinite',
+        'twinkle-a': 'twinkle 2.4s ease-in-out infinite',
+        'twinkle-b': 'twinkle 3.1s .6s ease-in-out infinite',
+        'twinkle-c': 'twinkle 2.8s 1s ease-in-out infinite',
+        'rise-0': 'rise .6s ease-out both',
+        'rise-1': 'rise .7s .1s ease-out both',
+        'rise-2': 'rise .7s .2s ease-out both',
+        'rise-3': 'rise .7s .3s ease-out both',
+        'rise-quiz': 'rise .4s ease-out both',
+        'pulse-ring': 'pulseRing 1.6s ease-in-out infinite',
+        pop: 'pop .7s cubic-bezier(.2,.9,.3,1.3) both',
+        'rise-r1': 'rise .5s .3s ease-out both',
+        'rise-r2': 'rise .6s .45s ease-out both',
+        'fill-bar': 'fillBar 1.2s .6s ease-out both',
+        'glow-ring': 'glowRing 2s ease-in-out infinite',
+        'drift-28': 'drift 2.8s ease-in-out infinite alternate',
+        'drift-30': 'drift 3s ease-in-out infinite alternate',
+        'drift-32': 'drift 3.2s ease-in-out infinite alternate',
+        'drift-34': 'drift 3.4s ease-in-out infinite alternate',
+        'drift-36': 'drift 3.6s ease-in-out infinite alternate',
+        'drift-40': 'drift 4s ease-in-out infinite alternate',
       },
       keyframes: {
-        sheen: {
-          '0%, 55%': { transform: 'translateX(-120%) skewX(-18deg)' },
-          '100%': { transform: 'translateX(520%) skewX(-18deg)' },
+        sweep: {
+          from: { transform: 'translateX(-120%)' },
+          to: { transform: 'translateX(220%)' },
+        },
+        blobA: {
+          '0%, 100%': { transform: 'translate(0,0) scale(1)' },
+          '50%': { transform: 'translate(80px,40px) scale(1.15)' },
+        },
+        blobB: {
+          '0%, 100%': { transform: 'translate(0,0) scale(1)' },
+          '50%': { transform: 'translate(-90px,-50px) scale(.9)' },
+        },
+        floaty: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-12px)' },
+        },
+        twinkle: {
+          '0%, 100%': { opacity: '.25' },
+          '50%': { opacity: '1' },
+        },
+        rise: {
+          from: { opacity: '0', transform: 'translateY(24px)' },
+          to: { opacity: '1', transform: 'none' },
+        },
+        // Mockup dùng box-shadow; ở đây là vòng mở rộng + mờ dần để chỉ cần transform/opacity
+        pulseRing: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '.5' },
+          '50%': { transform: 'scale(2.2)', opacity: '0' },
+        },
+        pop: {
+          '0%': { opacity: '0', transform: 'scale(.6)' },
+          '60%': { opacity: '1', transform: 'scale(1.08)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        // Mockup đổi width 58% -> 86%; ở đây scaleX từ gốc bên trái
+        fillBar: {
+          from: { transform: 'scaleX(var(--fill-from, .674))' },
+          to: { transform: 'scaleX(1)' },
+        },
+        glowRing: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '.55' },
+          '50%': { transform: 'scale(1.35)', opacity: '0' },
+        },
+        drift: {
+          '0%': { transform: 'translateY(0) rotate(0)' },
+          '100%': { transform: 'translateY(40px) rotate(180deg)' },
         },
         flash: {
           '0%': { opacity: '0.9' },
