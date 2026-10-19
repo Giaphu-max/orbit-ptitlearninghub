@@ -52,28 +52,23 @@ function Hero() {
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
                 <div className="absolute -left-[10%] top-[30%] h-[520px] w-[520px] animate-blob-a rounded-full bg-[hsl(var(--hero-glow))] opacity-45 blur-[110px]" />
                 <div className="absolute -right-[6%] -top-[18%] h-[600px] w-[600px] animate-blob-b rounded-full bg-[hsl(var(--reward-from))] opacity-35 blur-[130px]" />
-                <span className="absolute left-[14%] top-[22%] h-1 w-1 animate-twinkle-a rounded-full bg-ink-foreground" />
-                <span className="absolute left-[46%] top-[12%] h-[3px] w-[3px] animate-twinkle-b rounded-full bg-ink-foreground" />
-                <span className="absolute left-[38%] top-[78%] h-1 w-1 animate-twinkle-c rounded-full bg-warning" />
-            </div>
-
-            {/* Canvas 3D phủ hero từ dưới thanh điều hướng (cao 80px) trở xuống, nằm sau chữ: mây/nhãn không bao giờ bay vào vùng nav */}
-            <div className="hero-3d absolute inset-x-0 bottom-0 top-20 z-0 overflow-hidden lg:right-0">
-                <CampusHero />
+                <span className="absolute left-[56%] top-[20%] h-1 w-1 animate-twinkle-a rounded-full bg-ink-foreground" />
+                <span className="absolute left-[80%] top-[12%] h-[3px] w-[3px] animate-twinkle-b rounded-full bg-ink-foreground" />
+                <span className="absolute left-[62%] top-[78%] h-1 w-1 animate-twinkle-c rounded-full bg-warning" />
             </div>
 
             <TopNav tone="hero" />
 
-            <div className="pointer-events-none container-page relative z-10 flex min-h-[clamp(840px,104svh,940px)] items-start pb-28 pt-8 lg:min-h-[clamp(560px,78svh,720px)] lg:items-center lg:pb-24 lg:pt-4">
-                <div className="flex min-w-0 max-w-[620px] flex-col gap-6 lg:w-5/12 lg:max-w-none">
-                    <h1 className="animate-rise-1 text-[clamp(2.5rem,5vw,4.75rem)] lg:text-[clamp(2.25rem,3.6vw,4rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
+            <div className="container-page relative z-10 grid items-center gap-8 pb-24 pt-4 lg:min-h-[clamp(560px,78svh,740px)] lg:grid-cols-2 lg:gap-12 lg:pb-24">
+                <div className="flex min-w-0 flex-col gap-6">
+                    <h1 className="animate-rise-1 text-[clamp(2.75rem,8vw,4.5rem)] lg:text-[clamp(2.75rem,5.2vw,6rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
                         Chào {name}.
                         <br />
                         Hôm nay chỉ cần
                         <br />
                         <span className="text-brand-light">25 phút.</span>
                     </h1>
-                    <p className="max-w-md animate-rise-2 text-lg leading-relaxed text-ink-foreground/75">
+                    <p className="max-w-xl animate-rise-2 text-lg leading-relaxed text-ink-foreground/75">
                         Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.
                     </p>
 
@@ -112,6 +107,11 @@ function Hero() {
                     )}
                     <span className="hidden text-sm text-ink-foreground/60 lg:block">Kéo để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
                 </div>
+
+                {/* Cột mô hình: cạnh phải trùng lề phải trang, cạnh trái chữ trùng lề trái; canvas nằm gọn trong cột */}
+                <div className="relative h-[400px] min-w-0 sm:h-[460px] lg:h-[clamp(460px,62svh,640px)]">
+                    <CampusHero />
+                </div>
             </div>
 
             {/* Đáy hero là đường cong mềm */}
@@ -122,17 +122,18 @@ function Hero() {
     )
 }
 
-/** Ảnh thu nhỏ có lưới 1/3 và điểm nhấn ở một giao điểm. */
+/** Ảnh thu nhỏ có lưới 1/3 (2 đường dọc, 2 đường ngang mờ) và chấm chủ thể ở một giao điểm, như mockup. */
 function GridThumb() {
     return (
         <span className="relative block h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-brand-300" aria-hidden>
-            <svg viewBox="0 0 92 92" className="absolute inset-0 h-full w-full stroke-ink-foreground/55" strokeWidth="1">
-                <line x1="30.67" y1="0" x2="30.67" y2="92" />
-                <line x1="61.33" y1="0" x2="61.33" y2="92" />
-                <line x1="0" y1="30.67" x2="92" y2="30.67" />
-                <line x1="0" y1="61.33" x2="92" y2="61.33" />
-                <circle cx="61.33" cy="30.67" r="4.5" className="fill-ink-foreground stroke-none" />
-            </svg>
+            <span
+                className="absolute inset-0 bg-[length:33.333%_33.333%] opacity-100"
+                style={{
+                    backgroundImage:
+                        'linear-gradient(hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px)',
+                }}
+            />
+            <span className="absolute left-[66.66%] top-[33.33%] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink-foreground shadow-card" />
         </span>
     )
 }

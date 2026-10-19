@@ -85,7 +85,7 @@
     --shadow-brand: 0 8px 24px hsl(358 80% 43% / 0.28);
 
     /* Motion */
-    --gutter: clamp(24px, 4vw, 80px);
+    --gutter: clamp(24px, 4vw, 96px);
     --duration-fast: 150ms;
     --duration-base: 250ms;
     --duration-slow: 450ms;
@@ -266,29 +266,10 @@
   opacity: 0;
 }
 
-/* Khung nội dung chung: rộng tối đa 1440px, lề co giãn 24px (điện thoại) đến 80px (màn rộng) */
+/* Khung nội dung chung: lề co giãn 24px (điện thoại) đến 96px (màn rộng), không đặt max-width để hero, nav và các section thẳng hàng mép trái */
 @layer components {
   .container-page {
     width: 100%;
-    max-width: 1440px;
-    margin-inline: auto;
     padding-inline: var(--gutter);
-  }
-}
-
-/* Vùng 3D của hero (màn rộng): bắt đầu sau cột chữ 5/12, tràn ra mép phải màn hình */
-  @media (min-width: 1024px) {
-    .hero-3d {
-      left: calc((100vw - min(100vw, 1440px)) / 2 + var(--gutter) + (min(100vw, 1440px) - 2 * var(--gutter)) * 5 / 12);
-      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 72px);
-      mask-image: linear-gradient(90deg, transparent 0, #000 72px);
-    }
-  }
-
-/* Màn hẹp: chữ nằm trên mô hình, phần canvas phía trên (vùng chữ) được ẩn dần để mây không bay vào chữ */
-@media (max-width: 1023.98px) {
-  .hero-3d {
-    -webkit-mask-image: linear-gradient(180deg, transparent 0, transparent 40%, #000 52%);
-    mask-image: linear-gradient(180deg, transparent 0, transparent 40%, #000 52%);
   }
 }

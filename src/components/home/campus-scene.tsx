@@ -484,10 +484,8 @@ function useFitCamera(controls: React.RefObject<OrbitControlsImpl | null>) {
 
     useEffect(() => {
         const { width: w, height: h } = size
-        // Màn rộng: canvas chỉ nằm bên phải cột chữ nên cả khung là vùng trống (mô hình hơi lệch phải, tràn ra mép);
-        // màn hẹp: canvas phủ hero, mô hình nằm ở nửa dưới
-        const wide = window.innerWidth >= 1024
-        const region = wide ? { w: w * 1.12, h, cx: w * 0.6, cy: h / 2 } : { w, h: h * 0.46, cx: w / 2, cy: h * 0.77 }
+        // Canvas nằm trọn trong cột mô hình của hero (cạnh phải = lề phải trang), cả khung là vùng trống
+        const region = { w, h, cx: w / 2, cy: h / 2 }
         const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
         // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang, vùng trống chiếm một phần của nó
         const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * (region.w / h))
