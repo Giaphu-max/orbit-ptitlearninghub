@@ -229,3 +229,22 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* View Transitions cho đổi giao diện: ảnh mới lộ ra bằng clip-path (do theme-transition.ts điều khiển) */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(orbit-logo) {
+  display: none;
+}
+::view-transition-new(orbit-logo) {
+  animation: none;
+}
+::view-transition-group(orbit-logo) {
+  animation: none;
+}
