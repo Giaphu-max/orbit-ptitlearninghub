@@ -415,7 +415,7 @@ function CourseCard3D({ course, onClick }: { course: Course; onClick: () => void
             className="group relative w-full aspect-[3/4] min-h-[260px] perspective-[1500px] cursor-pointer"
             onClick={onClick}
         >
-            <div className="relative w-full h-full transition-transform duration-[250ms] ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
+            <div className="relative w-full h-full transition-transform duration-base ease-out [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
                 
                 {/* ── Front Face ── */}
                 <div className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden shadow-sm border border-gray-100/50 [backface-visibility:hidden]">
