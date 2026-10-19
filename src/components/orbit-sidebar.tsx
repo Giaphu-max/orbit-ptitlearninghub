@@ -1,7 +1,7 @@
-import { Home, Brain, GraduationCap, Presentation, ClipboardCheck, Repeat, RotateCcw, type LucideIcon } from 'lucide-react'
+import { Home, Brain, Trophy, GraduationCap, Presentation, ClipboardCheck, Repeat, RotateCcw, type LucideIcon } from 'lucide-react'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
-export type OrbitTab = 'home' | 'learning' | 'teacher'
+export type OrbitTab = 'home' | 'learning' | 'journey' | 'teacher'
 
 interface OrbitSidebarProps {
     activeTab: OrbitTab;
@@ -11,6 +11,7 @@ interface OrbitSidebarProps {
 const navigation: { label: string; tab: OrbitTab; icon: LucideIcon }[] = [
     { label: 'Trang chủ', tab: 'home', icon: Home },
     { label: 'Khóa học', tab: 'learning', icon: Brain },
+    { label: 'Hành trình', tab: 'journey', icon: Trophy },
 ]
 
 const teacherNavigation: { label: string; tab: OrbitTab; icon: LucideIcon }[] = [

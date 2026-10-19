@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, Flame, Play, Sparkles, Zap } from 'lucide-react'
 import { dailyArticles, getConcept, getLesson, lessons } from '@/data'
+import { levelFromXp, visibleStreak } from '@/lib/gamification'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusHero } from '@/components/home/campus-hero'
@@ -126,7 +127,7 @@ export function OrbitHomeView() {
 
 function ProgressStrip({ total }: { total: number }) {
     const xp = useOrbitStore((s) => s.xp)
-    const streak = useOrbitStore((s) => s.streak.count)
+    const streakState = useOrbitStore((s) => s.streak)
     const progress = useOrbitStore((s) => s.lessonProgress)
     const mastery = useOrbitStore((s) => s.conceptMastery)
 
@@ -135,13 +136,13 @@ function ProgressStrip({ total }: { total: number }) {
     const avg = tracked.length ? Math.round((tracked.reduce((a, b) => a + b, 0) / tracked.length) * 100) : 0
 
     const items = [
-        { icon: <Zap size={18} className="fill-brand-500 text-brand-500" />, label: 'Tổng XP', value: String(xp) },
-        { icon: <Flame size={18} className="text-brand-500" />, label: 'Chuỗi ngày học', value: `${streak} ngày` },
+        { icon: <Zap size={18} className="fill-brand-500 text-brand-500" />, label: `Cấp ${levelFromXp(xp)}`, value: `${xp} XP` },
+        { icon: <Flame size={18} className="text-brand-500" />, label: 'Chuỗi ngày học', value: `${visibleStreak(streakState).count} ngày` },
         { icon: <BookOpen size={18} className="text-brand-500" />, label: 'Bài đã hoàn thành', value: `${done}/${total}` },
         { icon: <Sparkles size={18} className="text-brand-500" />, label: 'Mức nắm vững', value: tracked.length ? `${avg}%` : 'Chưa có' },
     ]
     return (
-        <section aria-label="Tiến độ của bạn" className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border shadow-card md:grid-cols-4">
+        <Link to="/journey" aria-label="Xem hành trình" className="group block"><section aria-label="Tiến độ của bạn" className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border shadow-card md:grid-cols-4">
             {items.map((it) => (
                 <div key={it.label} className="flex items-center gap-3 bg-card px-5 py-4">
                     {it.icon}
@@ -151,6 +152,6 @@ function ProgressStrip({ total }: { total: number }) {
                     </div>
                 </div>
             ))}
-        </section>
+        </section></Link>
     )
 }

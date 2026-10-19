@@ -3,11 +3,13 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { OrbitSidebar, type OrbitTab } from '@/components/orbit-sidebar'
 import { OrbitRoleSelect } from '@/components/orbit-role-select'
+import { RewardOverlay } from '@/components/reward-overlay'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 const TAB_PATHS: Record<OrbitTab, string> = {
     home: '/',
     learning: '/learning',
+    journey: '/journey',
     teacher: '/teacher',
 }
 
@@ -19,7 +21,9 @@ export function MainLayout() {
 
     const activeTab: OrbitTab = location.pathname.startsWith('/teacher')
         ? 'teacher'
-        : location.pathname === '/learning' || location.pathname.startsWith('/lesson')
+        : location.pathname.startsWith('/journey')
+          ? 'journey'
+          : location.pathname === '/learning' || location.pathname.startsWith('/lesson')
           ? 'learning'
           : 'home'
 
@@ -52,6 +56,7 @@ export function MainLayout() {
                     <Outlet />
                 </Suspense>
             </main>
+            <RewardOverlay />
         </div>
     )
 }

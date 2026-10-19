@@ -9,6 +9,7 @@ const OrbitHomeView = lazy(() => import('@/components/orbit-home-view').then((m)
 const OrbitLearningView = lazy(() => import('@/components/orbit-learning-view').then((m) => ({ default: m.OrbitLearningView })))
 const OrbitLessonView = lazy(() => import('@/components/orbit-lesson-view').then((m) => ({ default: m.OrbitLessonView })))
 const OrbitTeacherView = lazy(() => import('@/components/orbit-teacher-view').then((m) => ({ default: m.OrbitTeacherView })))
+const OrbitJourneyView = lazy(() => import('@/components/orbit-journey-view').then((m) => ({ default: m.OrbitJourneyView })))
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/learning" element={<OrbitLearningView />} />
             <Route path="/lesson" element={<OrbitLessonView />} />
             <Route path="/lesson/:lessonId" element={<OrbitLessonView />} />
+            <Route path="/journey" element={<OrbitJourneyView />} />
             <Route path="/teacher" element={<OrbitTeacherView />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

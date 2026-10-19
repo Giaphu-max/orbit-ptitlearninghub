@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
+import { advanceStreak, dailyFor, emptyDaily, evaluateBadges, MISSIONS, type DailyState } from '@/lib/gamification'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
 // Lưu localStorage; mọi thao tác storage bọc try/catch để chế độ ẩn danh
@@ -53,6 +54,8 @@ interface OrbitState {
     earnedBadgeIds: string[]
     /** Kết quả từng câu gốc; chỉ ghi lần đầu nên làm lại không được cộng XP thêm */
     quizResults: Record<string, QuizResult>
+    /** Tiến độ nhiệm vụ trong ngày; sang ngày mới thì tự bắt đầu lại */
+    daily: DailyState
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
     lessonReview: Record<string, ReviewStatus>
     /** Bản chỉnh sửa của giảng viên theo bài; chưa có thì dùng nội dung AI trong JSON */
@@ -66,6 +69,8 @@ interface OrbitState {
     setLessonEdits: (lessonId: string, edits: LessonEdits | null) => void
     /** Ghi kết quả một câu quiz, cập nhật mức nắm vững; trả về số XP được cộng */
     recordQuizResult: (input: RecordQuizInput) => number
+    /** Nhận thưởng một nhiệm vụ đã xong; trả về XP được cộng (0 nếu chưa đủ hoặc đã nhận) */
+    claimMission: (missionId: string) => number
     resetDemo: () => void
 }
 
@@ -79,6 +84,7 @@ const initialData = {
     conceptMastery: {},
     earnedBadgeIds: [],
     quizResults: {},
+    daily: emptyDaily(),
     lessonReview: {},
     lessonEdits: {},
 } satisfies Partial<OrbitState>
@@ -149,17 +155,39 @@ export const useOrbitStore = create<OrbitState>()(
                     const mastery = ofConcept.reduce((sum, r) => sum + OUTCOME_MASTERY[r.outcome], 0) / ofConcept.length
                     const done = lessonQuestionIds.every((id) => quizResults[id])
                     const progress = s.lessonProgress[lessonId] ?? { lastPositionSec: 0, completed: false }
+                    const justCompleted = done && !progress.completed
+                    const conceptMastery = { ...s.conceptMastery, [conceptId]: mastery }
+                    // Chuỗi ngày học chỉ tính khi có trả lời quiz, không tính thời gian mở app
+                    const { froze: _froze, ...streak } = advanceStreak(s.streak)
+                    const today = dailyFor(s.daily)
+                    const daily: DailyState = {
+                        ...today,
+                        answered: today.answered + (outcome === 'missed' ? 0 : 1),
+                        corrected: today.corrected + (outcome === 'corrected' ? 1 : 0),
+                        completedLessons: today.completedLessons + (justCompleted ? 1 : 0),
+                    }
                     return {
                         quizResults,
                         xp: s.xp + xp,
-                        conceptMastery: { ...s.conceptMastery, [conceptId]: mastery },
+                        conceptMastery,
+                        streak,
+                        daily,
+                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults, streak }, s.earnedBadgeIds),
                         lessonProgress: { ...s.lessonProgress, [lessonId]: { ...progress, completed: progress.completed || done } },
                     }
                 })
                 return xp
             },
 
-            resetDemo: () => set({ ...initialData }),
+            claimMission: (missionId) => {
+                const mission = MISSIONS.find((m) => m.id === missionId)
+                const today = dailyFor(get().daily)
+                if (!mission || today.claimed.includes(missionId) || mission.progress(today) < mission.target) return 0
+                set((s) => ({ xp: s.xp + mission.rewardXp, daily: { ...today, claimed: [...today.claimed, missionId] } }))
+                return mission.rewardXp
+            },
+
+            resetDemo: () => set({ ...initialData, daily: emptyDaily() }),
         }),
         {
             name: STORAGE_KEY,

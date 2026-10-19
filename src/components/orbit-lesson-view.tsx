@@ -7,6 +7,7 @@ import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { useLessonQuiz } from '@/hooks/useLessonQuiz'
 import { formatTime } from '@/lib/youtube'
+import { levelFromXp } from '@/lib/gamification'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
@@ -123,7 +124,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                             title="Tổng XP"
                         >
                             <Zap size={15} className="fill-brand-500 text-brand-500" />
-                            <span className="font-mono">{xp}</span> XP
+                            <span className="font-mono">{xp}</span> XP · Cấp <span className="font-mono">{levelFromXp(xp)}</span>
                         </span>
                         <button
                             type="button"
