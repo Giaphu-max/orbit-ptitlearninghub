@@ -41,10 +41,10 @@ const LEVEL_TITLES = [
     'Thành thạo',
     'Người quan sát',
     'Bậc thầy',
-    'Nhà bố cục',
+    'Nhà dựng phim',
     'Người kể chuyện',
     'Đạo diễn hình ảnh',
-    'Bậc thầy ánh sáng',
+    'Bậc thầy nhịp điệu',
     'Huyền thoại PTIT',
 ]
 /** Mỗi cấp một tên riêng; vượt quá danh sách thì dùng tên cuối kèm số cấp. */

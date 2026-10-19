@@ -2,10 +2,48 @@
   "note": "Dữ liệu mẫu cho bản demo: lớp 32 sinh viên. Bản triển khai thật tổng hợp từ kết quả quiz trên server.",
   "classSize": 32,
   "concepts": {
-    "quy-tac-mot-phan-ba": { "answered": 31, "wrongFirstTry": 19, "corrected": 16 },
-    "duong-dan": { "answered": 27, "wrongFirstTry": 8, "corrected": 7 }
+    "dung-tuyen-tinh": {
+      "answered": 32,
+      "wrongFirstTry": 5,
+      "corrected": 5
+    },
+    "dung-phi-tuyen": {
+      "answered": 31,
+      "wrongFirstTry": 8,
+      "corrected": 7
+    },
+    "tinh-phi-huy-hoai": {
+      "answered": 29,
+      "wrongFirstTry": 17,
+      "corrected": 12
+    },
+    "quy-trinh-dung-bon-giai-doan": {
+      "answered": 24,
+      "wrongFirstTry": 11,
+      "corrected": 9
+    },
+    "tai-tri-tue": {
+      "answered": 18,
+      "wrongFirstTry": 10,
+      "corrected": 6
+    }
   },
   "questions": {
-    "q-mot-phan-ba-1": { "picks": [14, 12, 3, 2] }
+    "q-tinh-phi-huy-hoai-1": {
+      "picks": [
+        9,
+        5,
+        3,
+        15
+      ]
+    },
+    "q-quy-trinh-dung-bon-giai-doan-1": {
+      "picks": [
+        6,
+        5,
+        17,
+        2
+      ]
+    }
   }
 }

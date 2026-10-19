@@ -13,7 +13,7 @@ export interface RewardRow {
 /** Một màn nhận thưởng đầy đủ: XP + chi tiết + cấp độ + huy hiệu hoặc mức nắm vững + mở khóa. */
 export interface RewardEvent {
     id: number
-    /** Chip ngữ cảnh, ví dụ "Hoàn thành · Bố cục cơ bản" */
+    /** Chip ngữ cảnh, ví dụ "Hoàn thành · Bản chất dựng phi tuyến" */
     context: string
     /** Câu chốt lớn theo tình huống */
     headline: string

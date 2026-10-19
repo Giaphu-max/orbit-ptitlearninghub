@@ -1,6 +1,7 @@
 {
   "$comment": "Danh sách video để scripts/generate-content.ts tạo nội dung. Mỗi video thành một bài học; id dùng làm đường dẫn nên viết không dấu, nối gạch ngang.",
   "dailyCount": 3,
+  "status": "published",
   "courses": [
     {
       "id": "dung-audio-video-phi-tuyen",

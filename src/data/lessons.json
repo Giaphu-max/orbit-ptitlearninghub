@@ -1,189 +1,798 @@
 [
   {
-    "id": "bo-cuc-co-ban",
-    "courseId": "nhiep-anh-co-ban",
-    "title": "Bố cục cơ bản: quy tắc một phần ba và đường dẫn",
-    "youtubeId": "",
-    "durationSec": 240,
-    "summary": "Dữ liệu mẫu để dựng giao diện. Bài thật sẽ do scripts/generate-content.ts tạo từ video YouTube.",
-    "origin": "sample",
-    "status": "published",
+    "id": "ban-chat-dung-phi-tuyen",
+    "courseId": "dung-audio-video-phi-tuyen",
+    "title": "Bản chất của dựng audio và video phi tuyến trong hậu kỳ",
+    "youtubeId": "sF6dUF6JWy0",
+    "durationSec": 439,
+    "summary": "Bài giảng giới thiệu bản chất của dựng phi tuyến trong hậu kỳ so với dựng tuyến tính truyền thống. Học viên được tìm hiểu về khái niệm Non-Linear Editing (NLE), nguyên tắc phi hủy hoại và bốn giai đoạn của quy trình dựng phim chuyên nghiệp. Bài học cũng điểm qua các phần mềm dựng phổ biến và nhấn mạnh dựng phim là một chu trình ra quyết định.",
     "concepts": [
       {
-        "id": "quy-tac-mot-phan-ba",
-        "name": "Quy tắc một phần ba",
-        "definition": "Chia khung hình bằng hai đường ngang và hai đường dọc thành 9 ô bằng nhau; đặt chủ thể ở đường chia hoặc giao điểm để ảnh cân bằng mà không cứng nhắc.",
+        "id": "dung-tuyen-tinh",
+        "name": "Dựng tuyến tính",
+        "definition": "Phương pháp dựng phim truyền thống cắt nối các clip theo trình tự lần lượt trên một lớp duy nhất và thao tác trực tiếp trên file gốc.",
         "segment": {
-          "start": 20,
+          "start": 37,
+          "end": 70
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "dung-phi-tuyen",
+        "name": "Dựng phi tuyến (NLE)",
+        "definition": "Phương pháp dựng kỹ thuật số cho phép truy cập ngẫu nhiên tới bất kỳ khung hình nào, hỗ trợ nhiều lớp video và âm thanh.",
+        "segment": {
+          "start": 70,
+          "end": 97
+        },
+        "prerequisiteIds": [
+          "dung-tuyen-tinh"
+        ]
+      },
+      {
+        "id": "tinh-phi-huy-hoai",
+        "name": "Tính phi hủy hoại (Non-destructive)",
+        "definition": "Nguyên tắc mọi thao tác chỉnh sửa không làm thay đổi hoặc mất dữ liệu của file gốc.",
+        "segment": {
+          "start": 70,
+          "end": 113
+        },
+        "prerequisiteIds": [
+          "dung-phi-tuyen"
+        ]
+      },
+      {
+        "id": "quy-trinh-dung-bon-giai-doan",
+        "name": "Quy trình dựng 4 giai đoạn",
+        "definition": "Quá trình dựng phim chuyên nghiệp gồm 4 giai đoạn: Assembly, Rough cut, Fine cut và Time lock.",
+        "segment": {
+          "start": 202,
+          "end": 272
+        },
+        "prerequisiteIds": [
+          "dung-phi-tuyen"
+        ]
+      }
+    ],
+    "transcript": [
+      {
+        "start": 0,
+        "end": 16,
+        "text": "Cách đây 60 năm, để cắt một bộ phim, người ta phải cầm cuộn phim nhựa, đặt lên bàn, dùng dao dọc đúng khung hình cần cắt rồi dán hai mảnh phim lại với nhau bằng băng dính. Cắt sang một phát là bạn sẽ làm hỏng cả cuộn phim gốc hoặc nếu bạn muốn thử bằng cách khác thì bạn phải làm lại từ đầu."
+      },
+      {
+        "start": 16,
+        "end": 37,
+        "text": "Bây giờ thì sao? Bạn chỉ cần kéo một cái clip trên màn hình, thả vào đúng chỗ, không thích thì kéo ngược lại, file gốc không hề di chuyển. Nghe thì giống như một sự thuận lợi thôi đúng không? Nhưng mà thực chất, sự thay đổi này đã làm một việc lớn hơn nhiều, nó thay đổi những gì người dựng được phép tưởng tượng."
+      },
+      {
+        "start": 37,
+        "end": 53,
+        "text": "Phần 1: Dựng tuyến tính khác dựng phi tuyến ở đâu? Cái cách dùng dao dọc phim ngày xưa và kể cả cách cắt đơn giản mà các bạn thường nghe thấy đều được gọi là dựng tuyến tính. Bản chất của nó là bạn cắt, nối các clip theo trình tự, từng cái một, lần lượt, lần lượt và lần lượt."
+      },
+      {
+        "start": 53,
+        "end": 70,
+        "text": "Bạn chỉ thao tác cơ bản trên một lớp duy nhất, không có hiệu ứng chuyển cảnh và quan trọng nhất, bạn thay đổi trực tiếp trên file gốc. Vì vậy khả năng thử nghiệm sẽ gần như là bằng không. Sai là mất."
+      },
+      {
+        "start": 70,
+        "end": 97,
+        "text": "Còn dựng phi tuyến hay tiếng Anh gọi là NLE (Non-linear editing) là một thế giới khác hẳn. Với dựng phi tuyến, bạn có nhiều lớp video và nhiều lớp âm thanh chồng lên nhau, bạn thêm hiệu ứng và chuyển cảnh ngay trong thời gian thực, bạn chỉnh màu, phân loại màu, trộn âm thanh hay thiết kế âm thanh."
+      },
+      {
+        "start": 97,
+        "end": 113,
+        "text": "Và đây là chữ quan trọng nhất mà bạn phải nhớ trong video ngày hôm nay: Phi hủy hoại (Non-destructive). Nghĩa là mọi thao tác bạn làm không hề đụng tới file gốc, bạn có thể thử nghiệm sáng tạo thoải mái mà không bao giờ mất nội dung gốc."
+      },
+      {
+        "start": 113,
+        "end": 143,
+        "text": "Phần 2: Định nghĩa NLE cho gọn. Vậy nói gọn lại, dựng phi tuyến hay là Non-linear editing là phương pháp dựng kỹ thuật số cho phép bạn truy cập ngẫu nhiên tới bất kỳ khung hình nào. Hai chữ truy cập ngẫu nhiên hay là random access nghe tuy hơi kỹ thuật nhưng mà thực chất nó rất đơn giản thôi."
+      },
+      {
+        "start": 143,
+        "end": 171,
+        "text": "Phần 3: Vai trò của dựng phi tuyến trong hậu kỳ. Giờ ta đang nói đến chuyện lớn hơn, dựng phi tuyến đứng ở đâu trong toàn bộ khâu hậu kỳ? Câu trả lời là nó nằm ở trung tâm. Dựng phi tuyến là nơi tất cả mọi thứ gặp nhau: hình ảnh, âm thanh, đồ họa, hiệu ứng, tất cả được tích hợp lại thành một sản phẩm hoàn chỉnh ngay trong phần mềm dựng."
+      },
+      {
+        "start": 171,
+        "end": 202,
+        "text": "Thứ hai, đó là nơi hợp tác. Biên tập viên, đạo diễn, nhà sản xuất, tất cả cùng nhìn vào một bản dựng để bàn bạc, góp ý và chỉnh sửa. Thứ ba, đây là phần nghệ thuật. Phi tuyến tính là nơi bạn tạo ra câu chuyện qua nhịp độ và tiết tấu."
+      },
+      {
+        "start": 202,
+        "end": 239,
+        "text": "Phần 4: Quy trình dựng. Đây là phần xương sống của video ngày hôm nay. Một bản dựng chuyên nghiệp không làm một phát là nó xong. Nó đi qua bốn giai đoạn rõ ràng, và mình sẽ ví nó như một nhà điêu khắc đập một bức tượng vì cách nghĩ đó cũng sẽ giúp bạn nhớ rất nhanh."
+      },
+      {
+        "start": 239,
+        "end": 272,
+        "text": "Giai đoạn 1: Assembly. Đây là lúc bạn nhập và tổ chức toàn bộ tư liệu thô từ buổi quay. Bạn xem qua, chọn ra những cảnh quay tốt nhất của mỗi buổi quay, chọn ra những take tốt nhất của mỗi cảnh và xếp chúng thành một chuỗi sơ bộ theo trình tự câu chuyện."
+      },
+      {
+        "start": 272,
+        "end": 315,
+        "text": "Giai đoạn 2: Rough cut. Bạn tinh chỉnh cái chuỗi sơ bộ đó thành một câu chuyện mạch lạc. Bạn bắt đầu thiết lập nhịp độ và thời gian cho cả dự án, thêm vài chuyển cảnh cơ bản. Lúc này bản dựng thường còn dài hơn cả bản cuối cùng và đó là chuyện bình thường."
+      },
+      {
+        "start": 315,
+        "end": 364,
+        "text": "Giai đoạn 3: Fine cut. Bây giờ mới tới độ chính xác cao. Bạn hoàn thiện từng điểm cắt, siết chặt nhịp độ và thời gian để tạo ra dòng chảy mượt mà, mang thêm nhạc nền, hiệu ứng âm thanh, chỉnh thoại chi tiết, và bắt đầu chỉnh màu, thêm đồ họa, tiêu đề."
+      },
+      {
+        "start": 364,
+        "end": 438,
+        "text": "Giai đoạn 4: Time lock. Timeline được khóa lại. Không còn thay đổi gì về thời gian hay thứ tự video nữa. Mọi quyết định về hình ảnh đã được chốt và từ đây đội âm thanh bắt đầu phối khí cuối cùng, đội chỉnh màu và hiệu ứng đặc biệt vào làm phần việc của họ."
+      }
+    ],
+    "quiz": [
+      {
+        "id": "q-dung-tuyen-tinh-1",
+        "conceptId": "dung-tuyen-tinh",
+        "prompt": "Đặc điểm nào sau đây là của phương pháp dựng tuyến tính?",
+        "options": [
+          "Cho phép sử dụng nhiều lớp video và âm thanh chồng lên nhau",
+          "Có thể truy cập ngẫu nhiên đến bất kỳ khung hình nào mà không cần theo thứ tự",
+          "Giúp người dựng thử nghiệm vô số cách cắt khác nhau mà không sợ hỏng file",
+          "Thao tác trực tiếp trên file gốc và cắt nối tuần tự từng clip"
+        ],
+        "correctIndex": 3,
+        "explanation": "Dựng tuyến tính thao tác trực tiếp trên file gốc, cắt nối theo trình tự từng cái một và khả năng thử nghiệm bằng không.",
+        "pauseAt": 70,
+        "answerSegment": {
+          "start": 37,
+          "end": 70
+        },
+        "variants": [
+          {
+            "id": "q-dung-tuyen-tinh-1-v1",
+            "conceptId": "dung-tuyen-tinh",
+            "prompt": "Khi làm việc với phương pháp dựng tuyến tính ngày xưa, điều gì sẽ xảy ra nếu bạn cắt nhầm một đoạn phim?",
+            "options": [
+              "Phần mềm sẽ tự động khôi phục lại đoạn phim bị cắt",
+              "Bạn sẽ làm hỏng cả cuộn phim gốc hoặc phải làm lại từ đầu",
+              "Bạn có thể dùng tính năng Undo để quay lại bước trước",
+              "Bạn chỉ cần kéo thả lại clip trên timeline mà không ảnh hưởng file gốc"
+            ],
+            "correctIndex": 1,
+            "explanation": "Dựng tuyến tính thao tác trực tiếp trên file gốc nên cắt sai là hỏng phim gốc hoặc phải làm lại từ đầu."
+          }
+        ]
+      },
+      {
+        "id": "q-dung-phi-tuyen-1",
+        "conceptId": "dung-phi-tuyen",
+        "prompt": "Dựng phi tuyến (NLE) mang lại lợi ích nổi bật nào trong quá trình biên tập video?",
+        "options": [
+          "Bắt buộc người dựng phải hoàn thành file gốc trước khi thêm hiệu ứng chuyển cảnh",
+          "Cho phép truy cập ngẫu nhiên tới bất kỳ khung hình nào và sử dụng nhiều lớp video, âm thanh",
+          "Chỉ cho phép cắt nối các clip theo đúng một trình tự thời gian từ đầu đến cuối",
+          "Giới hạn người dựng chỉ làm việc trên một lớp duy nhất để đảm bảo an toàn"
+        ],
+        "correctIndex": 1,
+        "explanation": "Dựng phi tuyến cho phép truy cập ngẫu nhiên và kết hợp nhiều lớp video, âm thanh cùng lúc trong thời gian thực.",
+        "pauseAt": 97,
+        "answerSegment": {
+          "start": 70,
+          "end": 97
+        },
+        "variants": [
+          {
+            "id": "q-dung-phi-tuyen-1-v1",
+            "conceptId": "dung-phi-tuyen",
+            "prompt": "Khái niệm \"truy cập ngẫu nhiên\" (random access) trong dựng phi tuyến có ý nghĩa gì?",
+            "options": [
+              "Bạn chỉ có thể truy cập vào các file hình ảnh xuất hiện ở cuối video",
+              "Bạn có thể nhảy thẳng tới bất kỳ khung hình nào trong dự án mà không cần tua qua các phút trước",
+              "Bạn phải sắp xếp các clip theo đúng thứ tự thời gian quay hình",
+              "Bạn bắt buộc phải tua qua lần lượt từng phút trước để xem đến phút thứ mười"
+            ],
+            "correctIndex": 1,
+            "explanation": "Truy cập ngẫu nhiên giúp bạn click một phát là nhảy thẳng tới khung hình mình muốn ở bất cứ đâu trong dự án."
+          }
+        ]
+      },
+      {
+        "id": "q-tinh-phi-huy-hoai-1",
+        "conceptId": "tinh-phi-huy-hoai",
+        "prompt": "Tính phi hủy hoại (non-destructive) trong dựng phi tuyến được hiểu như thế nào?",
+        "options": [
+          "Bạn không được phép cắt bỏ bất kỳ đoạn video nào trong suốt quá trình dựng",
+          "Mọi thay đổi trên timeline sẽ trực tiếp làm biến đổi file gốc trên ổ cứng",
+          "Sau khi đã xuất file, bạn sẽ không thể chỉnh sửa lại bất kỳ chi tiết nào nữa",
+          "Mọi thao tác cắt ghép không làm đụng tới file gốc, giúp thử nghiệm sáng tạo thoải mái"
+        ],
+        "correctIndex": 3,
+        "explanation": "Phi hủy hoại nghĩa là mọi thao tác không đụng tới file gốc, giúp thoải mái thử nghiệm sáng tạo mà không sợ mất nội dung.",
+        "pauseAt": 113,
+        "answerSegment": {
+          "start": 70,
+          "end": 113
+        },
+        "variants": [
+          {
+            "id": "q-tinh-phi-huy-hoai-1-v1",
+            "conceptId": "tinh-phi-huy-hoai",
+            "prompt": "Tại sao tính phi hủy hoại lại cho phép người dựng thử nghiệm sáng tạo thoải mái?",
+            "options": [
+              "Vì bạn chỉ làm việc với file hình ảnh tĩnh thay vì video chuyển động",
+              "Vì phần mềm tự động xóa những đoạn video thừa không sử dụng đến",
+              "Vì quy trình dựng không bao giờ có sai sót xảy ra",
+              "Vì file gốc không hề bị dịch chuyển hay thay đổi nên không sợ mất nội dung gốc"
+            ],
+            "correctIndex": 3,
+            "explanation": "Tính phi hủy hoại giữ nguyên file gốc không dịch chuyển, cho phép thử nghiệm thoải mái mà không sợ mất gốc."
+          }
+        ]
+      },
+      {
+        "id": "q-quy-trinh-dung-bon-giai-doan-1",
+        "conceptId": "quy-trinh-dung-bon-giai-doan",
+        "prompt": "Trong quy trình dựng phim chuyên nghiệp gồm bốn giai đoạn, giai đoạn nào ứng với việc khóa timeline và không thay đổi thời gian nữa?",
+        "options": [
+          "Rough cut",
+          "Fine cut",
+          "Time lock",
+          "Assembly"
+        ],
+        "correctIndex": 2,
+        "explanation": "Giai đoạn Time lock là lúc timeline được khóa lại, không còn thay đổi về thời gian hay thứ tự video để chuyển sang phối khí, chỉnh màu cuối cùng.",
+        "pauseAt": 315,
+        "answerSegment": {
+          "start": 272,
+          "end": 315
+        },
+        "variants": [
+          {
+            "id": "q-quy-trinh-dung-bon-giai-doan-1-v1",
+            "conceptId": "quy-trinh-dung-bon-giai-doan",
+            "prompt": "Giai đoạn nào trong quy trình dựng chuyên nghiệp tập trung vào việc nhập, tổ chức tư liệu thô và chọn ra các take tốt nhất?",
+            "options": [
+              "Assembly",
+              "Fine cut",
+              "Rough cut",
+              "Time lock"
+            ],
+            "correctIndex": 0,
+            "explanation": "Assembly là giai đoạn nhập và tổ chức toàn bộ tư liệu thô từ buổi quay, chọn cảnh và take tốt nhất để xếp thành chuỗi sơ bộ."
+          }
+        ]
+      }
+    ],
+    "origin": "gemini",
+    "status": "published"
+  },
+  {
+    "id": "tu-duy-dung-dieu-huong-tiep-nhan",
+    "courseId": "dung-audio-video-phi-tuyen",
+    "title": "Tổ chức cấu trúc nội dung và điều hướng tiếp nhận trong dựng phim",
+    "youtubeId": "1fiBJcP0AFM",
+    "durationSec": 385,
+    "summary": "Bài giảng phân tích bản chất của tư duy dựng phim không chỉ là cắt ghép kỹ thuật mà là nghệ thuật tổ chức chiến lược thông tin và điều hướng nhận thức khán giả. Giảng viên trình bày vai trò của việc thấu hiểu người xem, xác định mục tiêu giao tiếp, áp dụng các nguyên tắc cấu trúc ba hồi, đồng thời quản lý tải trí tuệ (cognitive load) để tránh tình trạng quá tải thông tin. Cuối cùng, bài học điểm qua ba công cụ dẫn dắt sự chú ý gồm hình ảnh, âm thanh và cấu trúc nội dung.",
+    "concepts": [
+      {
+        "id": "tu-duy-dung",
+        "name": "Tư duy dựng",
+        "definition": "Tư duy dựng là việc tổ chức chiến lược thông tin, tạo ra lộ trình giúp người xem hiểu nội dung có hệ thống từ bắt đầu đến kết luận.",
+        "segment": {
+          "start": 0,
+          "end": 50
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "vai-tro-nguoi-xem",
+        "name": "Vai trò của người xem",
+        "definition": "Xác định rõ đặc điểm khán giả (tuổi tác, học vấn, văn hóa) vì kiến thức sẵn có của họ quyết định cách họ tiếp nhận nội dung video.",
+        "segment": {
+          "start": 70,
+          "end": 108
+        },
+        "prerequisiteIds": [
+          "tu-duy-dung"
+        ]
+      },
+      {
+        "id": "muc-tieu-giao-tiep",
+        "name": "Mục tiêu giao tiếp",
+        "definition": "Mục đích của video (thông tin, thuyết phục, giải trí, giáo dục) sẽ quyết định phong cách và cách thức dựng hình khác nhau.",
+        "segment": {
+          "start": 108,
+          "end": 146
+        },
+        "prerequisiteIds": [
+          "vai-tro-nguoi-xem"
+        ]
+      },
+      {
+        "id": "tai-tri-tue",
+        "name": "Tải trí tuệ (Cognitive Load)",
+        "definition": "Tải trí tuệ mô tả khả năng xử lý thông tin hữu hạn của bộ não người xem (khoảng 4 đến 7 đơn vị thông tin một lúc), gồm tải nội tại, tải ngoại sinh và tải tạo ý nghĩa.",
+        "segment": {
+          "start": 187,
+          "end": 255
+        },
+        "prerequisiteIds": [
+          "tu-duy-dung"
+        ]
+      },
+      {
+        "id": "cong-cu-dan-dat-chu-y",
+        "name": "Công cụ dẫn dắt sự chú ý",
+        "definition": "Các phương tiện gồm hình ảnh (bố cục, màu sắc, chuyển động), âm thanh (nhạc nền, hiệu ứng) và cấu trúc nội dung dùng để định hướng nhận thức và sự tập trung của khán giả.",
+        "segment": {
+          "start": 255,
+          "end": 319
+        },
+        "prerequisiteIds": [
+          "tai-tri-tue"
+        ]
+      }
+    ],
+    "transcript": [
+      {
+        "start": 0,
+        "end": 23,
+        "text": "Hãy tưởng tượng hai người dựng được đưa một bản tư liệu giống hệt nhau, cùng những cảnh quay đó, cùng những câu thoại đó. Một người cho ra video khiến bạn xem mà rồi không hiểu đang nói gì bỏ ngang giữa chừng. Nhưng mà người kia lại cho ra một video mà bạn dán mắt từ đầu đến cuối. Cùng một nguyên liệu nhưng mà khác nhau ở đâu nhỉ? Khác ở một thứ vô hình gọi là tư duy dựng. Và hôm nay mình sẽ làm một thứ tưởng chừng như là vô hình đó nhìn thấy được."
+      },
+      {
+        "start": 23,
+        "end": 31,
+        "text": "Phần một, định nghĩa. Dựng là tổ chức chiến lược thông tin."
+      },
+      {
+        "start": 31,
+        "end": 50,
+        "text": "Hầu hết người mới sẽ nghĩ rằng dựng chẳng qua là ghép nối giữa các cảnh quay. Sai! Hoặc đúng hơn, nó mới chỉ là cái vỏ. Dựng là tổ chức chiến lược thông tin, nó là quá trình tạo ra một lộ trình giúp người xem hiểu nội dung một cách có hệ thống từ điểm bắt đầu cho đến điểm kết luận cuối cùng."
+      },
+      {
+        "start": 50,
+        "end": 70,
+        "text": "Nhiệm vụ cốt lõi của một người dựng là tổ chức và cấu trúc các hình ảnh, các thông tin, các âm thanh thành một câu chuyện mạch lạc. Và mọi quyết định về trình tự, về nhịp độ, về chuyển cảnh đều nhằm một mục đích duy nhất, đó chính là hướng dẫn hành trình nhận thức của khán giả qua nội dung. Bạn không chỉ đang xếp các clip với nhau, mà bạn còn đang dẫn đường cho não của người xem."
+      },
+      {
+        "start": 70,
+        "end": 108,
+        "text": "Phần hai, vai trò của người xem. Muốn dẫn đường thì phải biết mình đang dẫn ai, và đây là điểm mà rất nhiều người bỏ qua. Trước khi cắt một nhát, người dựng giỏi sẽ tự hỏi khán giả của mình là ai, bao nhiêu tuổi, trình độ học vấn ra sao, nền tảng văn hóa thế nào? Vì kiến thức có sẵn của mỗi người xem sẽ quyết định cách họ tiếp nhận nội dung."
+      },
+      {
+        "start": 108,
+        "end": 146,
+        "text": "Phần ba, mục tiêu giao tiếp. Biết khán giả rồi, câu hỏi tiếp theo sẽ là video này để làm gì? Vì mỗi mục tiêu đòi hỏi một cách dựng khác nhau. Nếu mục tiêu là thông tin thì chúng ta cần trình bày rõ ràng, logic, có hệ thống để người xem dễ tiếp thu và ghi nhớ chính xác. Nếu là thuyết phục thì bạn dùng nhịp điệu cảm xúc, những điểm nhấn mạnh mẽ để tác động vào tâm lý và thay đổi quan điểm người xem."
+      },
+      {
+        "start": 146,
+        "end": 187,
+        "text": "Phần bốn, nguyên tắc cấu trúc nội dung. Giờ đến phân khung sườn, làm sao để tổ chức nội dung cho mạch lạc? Nguyên tắc kinh điển nhất chính là cấu trúc ba hồi: mở đầu, phát triển và kết luận. Mở đầu thiết lập bối cảnh rõ ràng, phát triển sẽ xây dựng thông tin từng bước, và kết luận khép lại có điểm nhấn. Nghe đơn giản nhưng đây là bộ khung mà gần như mọi nội dung tốt đều dựa vào."
+      },
+      {
+        "start": 187,
+        "end": 217,
+        "text": "Phần năm, tải trí tuệ. Phần khó nhằn nhưng quyết định. Đây là khái niệm học thuật quan trọng nhất của tập này, và nếu bạn nắm bắt được nó thì bạn sẽ dựng khác hẳn. Nói chính là tải trí tuệ hay còn gọi là cognitive load. Hiểu đơn giản, bộ não người xem giống như một cái bàn làm việc nhỏ, nó chỉ xử lý được khoảng bốn đến bảy đơn vị thông tin của một lúc."
+      },
+      {
+        "start": 217,
+        "end": 255,
+        "text": "Có ba loại tải: tải nội tại đến từ độ phức tạp tự nhiên của nội dung. Nội dung càng khó thì tải này càng cao. Tải ngoại sinh dựng kém hoặc lộn xộn sẽ làm tăng loại tải vô ích này, và đây chính là phần bạn kiểm soát được. Và tải tạo ra ý nghĩa là nỗ lực tốt giúp người xem hiểu sâu và nhớ lâu."
+      },
+      {
+        "start": 255,
+        "end": 319,
+        "text": "Phần sáu, ba công cụ dẫn dắt sự chú ý. Vậy người dựng dẫn dắt sự chú ý bằng điều gì? Chúng ta có ba công cụ: một, qua hình ảnh. Bố cục và khung hình định hướng thị giác, chuyển động và độ tương phản thu hút ánh nhìn, nhấn màu thì tạo điểm nhấn. Hai, qua âm thanh. Nhạc nền thiết lập không khí và tông cảm xúc, tín hiệu âm thanh nhấn mạnh điểm quan trọng."
+      },
+      {
+        "start": 319,
+        "end": 385,
+        "text": "Phần bảy, khi dựng thất bại dù thông tin đúng. Đây là điều ngược đời mà mình muốn bạn nhớ. Nội dung đúng vẫn có thể thất bại nếu bạn dựng sai. Bạn quá tải thông tin từ khán giả quá nhanh. Tóm lại, dựng là giao tiếp chiến lược chứ không phải là ghép nối. Cấu trúc nội dung phải phù hợp với khả năng nhận thức của khán giả."
+      }
+    ],
+    "quiz": [
+      {
+        "id": "q-tu-duy-dung-1",
+        "conceptId": "tu-duy-dung",
+        "prompt": "Khi một người dựng phim hoàn thành việc sắp xếp các cảnh quay theo một trình tự logic giúp khán giả hiểu rõ câu chuyện từ đầu đến cuối, thao tác này phản ánh điều gì?",
+        "options": [
+          "Tổ chức chiến lược thông tin và định hướng nhận thức",
+          "Chỉ là việc ghép nối kỹ thuật đơn thuần giữa các cảnh quay",
+          "Tăng tốc độ khung hình để video hấp dẫn hơn",
+          "Loại bỏ toàn bộ âm thanh phụ để tập trung vào hình ảnh"
+        ],
+        "correctIndex": 0,
+        "explanation": "Dựng phim không chỉ là ghép nối kỹ thuật mà là quá trình tổ chức chiến lược thông tin nhằm hướng dẫn hành trình nhận thức của khán giả.",
+        "pauseAt": 50,
+        "answerSegment": {
+          "start": 31,
+          "end": 50
+        },
+        "variants": [
+          {
+            "id": "q-tu-duy-dung-1-v1",
+            "conceptId": "tu-duy-dung",
+            "prompt": "Theo bài giảng, bản chất cốt lõi của công việc dựng phim là gì thay vì chỉ là ghép nối hình ảnh?",
+            "options": [
+              "Chèn thật nhiều hiệu ứng chuyển cảnh bắt mắt",
+              "Làm nổi bật kỹ xảo đồ họa máy tính",
+              "Tạo ra lộ trình giúp người xem hiểu nội dung có hệ thống",
+              "Rút ngắn thời lượng video xuống mức tối thiểu"
+            ],
+            "correctIndex": 2,
+            "explanation": "Dựng là quá trình tạo ra một lộ trình giúp người xem hiểu nội dung một cách có hệ thống từ điểm bắt đầu đến kết luận."
+          }
+        ]
+      },
+      {
+        "id": "q-vai-tro-nguoi-xem-1",
+        "conceptId": "vai-tro-nguoi-xem",
+        "prompt": "Trước khi cắt dựng một video hướng dẫn kỹ thuật cho trẻ em, người dựng cần lưu ý điều gì quan trọng nhất theo bài học?",
+        "options": [
+          "Bỏ qua bước phân tích bối cảnh để tiết kiệm thời gian",
+          "Chọn nhạc nền có âm lượng lớn để gây chú ý",
+          "Xác định rõ đối tượng khán giả để lựa chọn cách tiếp nhận nội dung phù hợp",
+          "Sử dụng càng nhiều kỹ thuật dựng phức tạp càng tốt"
+        ],
+        "correctIndex": 2,
+        "explanation": "Bài học nhấn mạnh việc thấu hiểu khán giả (tuổi tác, học vấn, văn hóa) là nền tảng để quyết định cách họ tiếp nhận nội dung.",
+        "pauseAt": 108,
+        "answerSegment": {
+          "start": 70,
+          "end": 108
+        },
+        "variants": [
+          {
+            "id": "q-vai-tro-nguoi-xem-1-v1",
+            "conceptId": "vai-tro-nguoi-xem",
+            "prompt": "Vì sao việc phân tích người xem lại đóng vai trò quyết định trước khi bắt tay vào dựng phim?",
+            "options": [
+              "Vì điều này giúp quyết định thời lượng chính xác của video",
+              "Vì nhà sản xuất yêu cầu báo cáo chi tiết nhân khẩu học",
+              "Vì nó giúp chọn đúng phần mềm dựng phim phù hợp",
+              "Vì kiến thức sẵn có của khán giả sẽ quyết định cách họ tiếp nhận nội dung"
+            ],
+            "correctIndex": 3,
+            "explanation": "Kiến thức có sẵn của mỗi người xem quyết định cách họ tiếp nhận nội dung, ví dụ video cho trẻ em sẽ khác chuyên gia."
+          }
+        ]
+      },
+      {
+        "id": "q-muc-tieu-giao-tiep-1",
+        "conceptId": "muc-tieu-giao-tiep",
+        "prompt": "Nếu mục tiêu của video là thuyết phục khán giả thay đổi quan điểm, người dựng nên áp dụng phương pháp nào?",
+        "options": [
+          "Giữ nguyên một góc quay tĩnh từ đầu đến cuối video",
+          "Dùng hiệu ứng âm thanh hài hước để giải trí",
+          "Sử dụng nhịp điệu cảm xúc và điểm nhấn mạnh mẽ để tác động tâm lý",
+          "Trình bày thông tin thật nhanh và dày đặc số liệu"
+        ],
+        "correctIndex": 2,
+        "explanation": "Mục tiêu thuyết phục đòi hỏi sử dụng nhịp điệu cảm xúc và các điểm nhấn mạnh mẽ để tác động vào tâm lý người xem.",
+        "pauseAt": 146,
+        "answerSegment": {
+          "start": 108,
+          "end": 146
+        },
+        "variants": [
+          {
+            "id": "q-muc-tieu-giao-tiep-1-v1",
+            "conceptId": "muc-tieu-giao-tiep",
+            "prompt": "Khi video có mục tiêu truyền tải thông tin, cách trình bày nào là phù hợp nhất?",
+            "options": [
+              "Rõ ràng, logic và có hệ thống",
+              "Liên tục thay đổi góc quay không theo quy luật",
+              "Sử dụng nhiều cú sốc cảm xúc mạnh",
+              "Bỏ qua phần kết luận để khán giả tự suy đoán"
+            ],
+            "correctIndex": 0,
+            "explanation": "Mục tiêu thông tin đòi hỏi trình bày rõ ràng, logic và có hệ thống để khán giả dễ tiếp thu và ghi nhớ."
+          }
+        ]
+      },
+      {
+        "id": "q-tai-tri-tue-1",
+        "conceptId": "tai-tri-tue",
+        "prompt": "Khái niệm 'tải trí tuệ' (cognitive load) trong bài giảng mô tả điều gì về bộ não người xem?",
+        "options": [
+          "Tải trí tuệ chỉ xuất hiện khi video không có nhạc nền",
+          "Khán giả có thể tiếp thu vô hạn thông tin nếu hình ảnh đẹp",
+          "Bộ não có khả năng ghi nhớ toàn bộ chi tiết trong video nếu dựng nhanh",
+          "Bộ não chỉ xử lý được giới hạn khoảng 4 đến 7 đơn vị thông tin cùng lúc"
+        ],
+        "correctIndex": 3,
+        "explanation": "Bộ não người xem được ví như một bàn làm việc nhỏ, chỉ xử lý được khoảng 4-7 đơn vị thông tin một lúc.",
+        "pauseAt": 255,
+        "answerSegment": {
+          "start": 187,
+          "end": 217
+        },
+        "variants": [
+          {
+            "id": "q-tai-tri-tue-1-v1",
+            "conceptId": "tai-tri-tue",
+            "prompt": "Loại tải nào trong dựng phim phát sinh do cách dựng lộn xộn, thiếu logic và là phần người dựng có thể kiểm soát?",
+            "options": [
+              "Tải nội tại (intrinsic load)",
+              "Tải ngoại sinh (extraneous load)",
+              "Tải nhận thức tuyệt đối",
+              "Tải cảm xúc tự nhiên"
+            ],
+            "correctIndex": 1,
+            "explanation": "Tải ngoại sinh đến từ việc dựng kém hoặc lộn xộn, làm tăng tải vô ích mà người dựng cần kiểm soát và giảm thiểu."
+          }
+        ]
+      },
+      {
+        "id": "q-cong-cu-dan-dat-chu-y-1",
+        "conceptId": "cong-cu-dan-dat-chu-y",
+        "prompt": "Trong các công cụ dẫn dắt sự chú ý qua hình ảnh, yếu tố nào giúp tạo điểm nhấn thị giác mạnh mẽ nhất?",
+        "options": [
+          "Loại bỏ hoàn toàn các khung hình có chuyển động",
+          "Giữ nguyên độ sáng đều nhau cho mọi cảnh quay",
+          "Tăng tốc độ chuyển cảnh liên tục mỗi giây",
+          "Sử dụng màu sắc nhấn (nhấn màu) và độ tương phản"
+        ],
+        "correctIndex": 3,
+        "explanation": "Nhấn màu và độ tương phản là những công cụ hình ảnh giúp tạo điểm nhấn và thu hút ánh nhìn của khán giả.",
+        "pauseAt": 319,
+        "answerSegment": {
+          "start": 255,
+          "end": 319
+        },
+        "variants": [
+          {
+            "id": "q-cong-cu-dan-dat-chu-y-1-v1",
+            "conceptId": "cong-cu-dan-dat-chu-y",
+            "prompt": "Công cụ 'khoảng lặng' trong dựng phim có tác dụng gì đối với người xem?",
+            "options": [
+              "Làm cho người xem cảm thấy nhà ngủ gật và bỏ xem",
+              "Tạo nhịp thở để người xem xử lý thông tin và tĩnh lặng đúng lúc",
+              "Tăng tốc độ truyền tải thông tin lên mức tối đa",
+              "Che giấu các lỗi kỹ thuật về ánh sáng"
+            ],
+            "correctIndex": 1,
+            "explanation": "Khoảng lặng tạo nhịp thở cho người xem xử lý thông tin và im lặng đúng lúc cũng là một công cụ dựng quan trọng."
+          }
+        ]
+      }
+    ],
+    "origin": "gemini",
+    "status": "published"
+  },
+  {
+    "id": "nhip-dieu-to-chuc-thoi-gian",
+    "courseId": "dung-audio-video-phi-tuyen",
+    "title": "Nhịp Điệu Dựng Phim",
+    "youtubeId": "x0KOqBHDJ98",
+    "durationSec": 379,
+    "summary": "Bài giảng trình bày về khái niệm nhịp điệu trong dựng phim, bao gồm nhịp hình, nhịp âm và sự kết hợp hài hòa giữa chúng. Giảng viên phân tích vai trò của thời lượng cảnh quay, kỹ thuật nhấn mạnh, cao trào, cũng như nén và kéo dài thời gian nhằm tác động mạnh mẽ đến cảm xúc người xem.",
+    "concepts": [
+      {
+        "id": "nhip-hinh",
+        "name": "Nhịp hình",
+        "definition": "Nhịp hình (Visual rhythm) là những nhịp cảm nhận qua thị giác, dựa trên thời lượng cảnh quay, các mẫu cảnh ngắn dài xen kẽ và chuyển động trong khung hình.",
+        "segment": {
+          "start": 59,
           "end": 95
         },
         "prerequisiteIds": []
       },
       {
-        "id": "duong-dan",
-        "name": "Đường dẫn",
-        "definition": "Các đường có sẵn trong cảnh (con đường, hàng rào, bờ sông) dẫn mắt người xem từ tiền cảnh về phía chủ thể.",
+        "id": "nhip-am",
+        "name": "Nhịp âm",
+        "definition": "Nhịp âm (Audio rhythm) là nhịp cảm nhận qua thính giác, dựa trên tiết tấu và nhịp điệu của âm thanh, lời thoại, khoảng nghỉ và hiệu ứng âm thanh.",
         "segment": {
           "start": 95,
-          "end": 180
-        },
-        "prerequisiteIds": [
-          "quy-tac-mot-phan-ba"
-        ]
-      }
-    ],
-    "transcript": [
-      {
-        "start": 0,
-        "end": 20,
-        "text": "Chào các bạn, hôm nay chúng ta học hai công cụ bố cục dùng nhiều nhất."
-      },
-      {
-        "start": 20,
-        "end": 95,
-        "text": "Đầu tiên là quy tắc một phần ba: chia khung hình thành 9 ô bằng nhau và đặt chủ thể ở một trong bốn giao điểm."
-      },
-      {
-        "start": 95,
-        "end": 180,
-        "text": "Tiếp theo là đường dẫn: tận dụng con đường, hàng cây hay bờ sông để kéo mắt người xem về chủ thể."
-      },
-      {
-        "start": 180,
-        "end": 240,
-        "text": "Bài tập: chụp ba ảnh, mỗi ảnh dùng ít nhất một trong hai kỹ thuật vừa học."
-      }
-    ],
-    "quiz": [
-      {
-        "id": "q-mot-phan-ba-1",
-        "conceptId": "quy-tac-mot-phan-ba",
-        "pauseAt": 95,
-        "prompt": "Theo quy tắc một phần ba, nên đặt chủ thể ở đâu?",
-        "options": [
-          "Chính giữa khung hình",
-          "Tại giao điểm của các đường chia",
-          "Sát mép khung hình",
-          "Ở góc trên bên trái"
-        ],
-        "correctIndex": 1,
-        "explanation": "Bốn giao điểm của các đường chia là nơi mắt người xem dễ dừng lại nhất.",
-        "variants": [
-          {
-            "id": "q-mot-phan-ba-1b",
-            "conceptId": "quy-tac-mot-phan-ba",
-            "prompt": "Khi chụp phong cảnh, đặt đường chân trời ở đâu là đúng quy tắc một phần ba?",
-            "options": [
-              "Cắt ngang chính giữa ảnh",
-              "Trùng với đường chia ngang trên hoặc dưới",
-              "Sát mép trên khung hình",
-              "Chéo qua khung hình"
-            ],
-            "correctIndex": 1,
-            "explanation": "Đặt chân trời ở đường chia ngang để ưu tiên bầu trời hoặc mặt đất, tránh chia ảnh làm đôi."
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "anh-sang-co-ban",
-    "courseId": "nhiep-anh-co-ban",
-    "title": "Ánh sáng cơ bản: hướng sáng và ánh sáng ba điểm",
-    "youtubeId": "",
-    "durationSec": 300,
-    "summary": "Dữ liệu mẫu để dựng giao diện. Bài thật sẽ do scripts/generate-content.ts tạo từ video YouTube.",
-    "origin": "sample",
-    "status": "published",
-    "concepts": [
-      {
-        "id": "huong-anh-sang",
-        "name": "Hướng ánh sáng",
-        "definition": "Vị trí nguồn sáng so với chủ thể (trước, bên, sau) quyết định hình khối, bóng đổ và cảm xúc của ảnh.",
-        "segment": {
-          "start": 15,
-          "end": 100
+          "end": 131
         },
         "prerequisiteIds": []
       },
       {
-        "id": "anh-sang-ba-diem",
-        "name": "Ánh sáng ba điểm",
-        "definition": "Bố trí ba nguồn sáng: đèn chính tạo hình khối, đèn phụ làm dịu bóng, đèn viền tách chủ thể khỏi phông.",
+        "id": "thoi-luong-canh",
+        "name": "Thời lượng cảnh quay",
+        "definition": "Độ dài của một cảnh quay (ngắn dưới 2 giây, trung bình 2-5 giây, dài trên 5 giây) ảnh hưởng trực tiếp đến tiết tấu, năng lượng và cảm xúc của nhịp dựng.",
         "segment": {
-          "start": 100,
-          "end": 205
+          "start": 161,
+          "end": 195
         },
         "prerequisiteIds": [
-          "huong-anh-sang",
-          "duong-dan"
+          "nhip-hinh",
+          "nhip-am"
         ]
       },
       {
-        "id": "do-tuong-phan",
-        "name": "Độ tương phản",
-        "definition": "Chênh lệch giữa vùng sáng và vùng tối trong ảnh; điều chỉnh bằng tỉ lệ giữa đèn chính và đèn phụ.",
+        "id": "nen-va-keo-dai-thoi-gian",
+        "name": "Nén và kéo dài thời gian",
+        "definition": "Là công cụ điều khiển thời gian trong dựng phim bằng cách dùng montage để nén thời gian hoặc dùng slow-motion và cảnh quay dài để kéo dài thời gian.",
         "segment": {
-          "start": 205,
-          "end": 280
+          "start": 240,
+          "end": 281
         },
         "prerequisiteIds": [
-          "anh-sang-ba-diem"
+          "thoi-luong-canh"
         ]
       }
     ],
     "transcript": [
       {
         "start": 0,
-        "end": 15,
-        "text": "Hôm nay chúng ta học cách nhìn và điều khiển ánh sáng trong một khung hình."
+        "end": 32,
+        "text": "Bạn có để ý không, có những video bạn xem mà bạn thấy hay, thấy cuốn, hay có những bộ phim bạn xem mà bạn thấy không thể quên được mặc dù bạn chẳng nói được tại sao không."
       },
       {
-        "start": 15,
-        "end": 100,
-        "text": "Trước hết là hướng ánh sáng: sáng từ bên cạnh làm nổi khối, sáng từ phía trước làm phẳng, sáng từ phía sau tạo bóng viền."
+        "start": 32,
+        "end": 59,
+        "text": "Định nghĩa cho gọn, nhịp điệu là mô hình thời gian và tiết tấu trong chuỗi dựng. Nó được tạo ra bởi hai thứ: độ dài các cảnh và thời điểm các điểm cắt."
       },
       {
-        "start": 100,
-        "end": 205,
-        "text": "Tiếp theo là ánh sáng ba điểm với đèn chính, đèn phụ và đèn viền, dùng rất nhiều trong chân dung."
+        "start": 59,
+        "end": 95,
+        "text": "Nhịp hình hay còn gọi là visual rhythm là những nhịp mà bạn cảm thấy bằng mắt, dựa trên thời lượng cảnh, các mẫu cảnh ngắn dài xen kẽ và chuyển động ngay trong khung hình."
       },
       {
-        "start": 205,
-        "end": 300,
-        "text": "Cuối cùng là độ tương phản: giảm đèn phụ thì bóng đậm hơn, ảnh kịch tính hơn."
+        "start": 95,
+        "end": 131,
+        "text": "Nhịp âm hay còn gọi là audio rhythm là nhịp mà bạn cảm nhận được bằng tai, dựa trên tiết tấu và nhịp điệu của âm thanh, tốc độ lời thoại, các khoảng nghỉ và hiệu ứng âm thanh."
+      },
+      {
+        "start": 131,
+        "end": 161,
+        "text": "Nhịp hình và nhịp âm giống như hai chân của một người vậy, khi mà chúng bước cùng nhịp thì video của bạn sẽ rất là vững."
+      },
+      {
+        "start": 161,
+        "end": 195,
+        "text": "Thời lượng của một cảnh ảnh hưởng đến tiết tấu của nhịp như thế nào? Cảnh ngắn dưới hai giây tạo nhịp nhanh, năng lượng cao, kích thích thị giác mạnh."
+      },
+      {
+        "start": 195,
+        "end": 240,
+        "text": "Đây là lúc nhịp điệu trở thành nghệ thuật, ta dùng nó để nhấn mạnh và đẩy cao trào, muốn nhấn mạnh một khoảnh khắc quan trọng, giảm tốc độ, tạm dừng ngay trước điểm then chốt."
+      },
+      {
+        "start": 240,
+        "end": 281,
+        "text": "Nhịp điệu còn là công cụ điều khiển thời gian và chúng ta có hai chiều ngược nhau: nén thời gian là montage cắt nhanh thể hiện sự trôi qua của thời gian một cách hiệu quả."
+      },
+      {
+        "start": 281,
+        "end": 378,
+        "text": "Tóm lại, nhịp điệu là thứ cốt lõi quyết định sức sống và hiệu quả truyền tải của mọi sản phẩm hình ảnh, kết hợp nhịp hình và nhịp âm sẽ tạo nên sức mạnh giúp câu chuyện chạm đến cảm xúc."
       }
     ],
     "quiz": [
       {
-        "id": "q-huong-sang-1",
-        "conceptId": "huong-anh-sang",
-        "pauseAt": 100,
-        "prompt": "Muốn làm nổi khối và chất liệu bề mặt của chủ thể, nên đặt nguồn sáng ở đâu?",
+        "id": "q-nhip-hinh-1",
+        "conceptId": "nhip-hinh",
+        "prompt": "Khi dựng một đoạn video mà bạn nhận thấy nhịp điệu thông qua mắt, dựa vào thời lượng cảnh quay và chuyển động trong khung hình mà không cần nghe tiếng, đó là khái niệm nào?",
         "options": [
-          "Ngay sau máy ảnh, chiếu thẳng vào chủ thể",
-          "Ở bên cạnh chủ thể",
-          "Ngay trên đầu máy ảnh",
-          "Phía sau chủ thể, hướng vào ống kính"
+          "Cao trào",
+          "Montage",
+          "Nhịp hình",
+          "Nhịp âm"
         ],
-        "correctIndex": 1,
-        "explanation": "Ánh sáng chiếu ngang tạo bóng đổ rõ, nên khối và chất liệu hiện rõ hơn.",
+        "correctIndex": 2,
+        "explanation": "Nhịp hình (Visual rhythm) là nhịp cảm nhận bằng mắt, dựa trên thời lượng cảnh và chuyển động ngay trong khung hình.",
+        "pauseAt": 95,
+        "answerSegment": {
+          "start": 59,
+          "end": 95
+        },
         "variants": [
           {
-            "id": "q-huong-sang-1b",
-            "conceptId": "huong-anh-sang",
-            "prompt": "Ánh sáng chiếu thẳng từ phía trước chủ thể thường cho kết quả nào?",
+            "id": "q-nhip-hinh-1-v1",
+            "conceptId": "nhip-hinh",
+            "prompt": "Yếu tố nào sau đây trực tiếp tạo nên nhịp hình khi dựng phim?",
             "options": [
-              "Ảnh phẳng, ít khối",
-              "Bóng đổ dài và đậm",
-              "Chủ thể chỉ còn bóng đen",
-              "Ảnh có viền sáng quanh chủ thể"
+              "Sự biến đổi âm thanh đồng bộ",
+              "Độ dài các cảnh và thời điểm các điểm cắt",
+              "Hiệu ứng âm thanh nền và âm lượng nhạc",
+              "Tốc độ đọc lời thoại và khoảng nghỉ"
+            ],
+            "correctIndex": 1,
+            "explanation": "Nhịp hình được tạo nên bởi độ dài các cảnh và thời điểm các điểm cắt ảnh hưởng đến thị giác."
+          }
+        ]
+      },
+      {
+        "id": "q-nhip-am-1",
+        "conceptId": "nhip-am",
+        "prompt": "Khi bạn nhắm mắt lại khi xem video và vẫn có thể cảm nhận được câu chuyện đang căng thẳng hay lắng đọng thông qua âm nhạc và lời thoại, đó là biểu hiện của yếu tố nào?",
+        "options": [
+          "Nén thời gian",
+          "Nhịp hình",
+          "Nhịp âm",
+          "Cảnh ngắn"
+        ],
+        "correctIndex": 2,
+        "explanation": "Nhịp âm (Audio rhythm) là nhịp cảm nhận được bằng tai qua âm thanh, lời thoại và hiệu ứng âm thanh.",
+        "pauseAt": 131,
+        "answerSegment": {
+          "start": 95,
+          "end": 131
+        },
+        "variants": [
+          {
+            "id": "q-nhip-am-1-v1",
+            "conceptId": "nhip-am",
+            "prompt": "Đặc điểm nào giúp phân biệt nhịp âm với nhịp hình?",
+            "options": [
+              "Nhịp âm cảm nhận qua thính giác và có thể trải nghiệm ngay cả khi nhắm mắt",
+              "Nhịp âm không liên quan đến tiết tấu âm thanh",
+              "Nhịp âm chỉ phụ thuộc vào màu sắc và ánh sáng",
+              "Nhịp âm chỉ xuất hiện ở các cảnh quay hành động"
             ],
             "correctIndex": 0,
-            "explanation": "Sáng từ phía trước xóa gần hết bóng đổ nên chủ thể trông phẳng."
+            "explanation": "Nhịp âm cảm nhận qua tai, dựa trên âm thanh và lời thoại, có thể nhận biết ngay cả khi nhắm mắt."
+          }
+        ]
+      },
+      {
+        "id": "q-thoi-luong-canh-1",
+        "conceptId": "thoi-luong-canh",
+        "prompt": "Bạn đang dựng một cảnh hành động cần tạo nhịp nhanh, năng lượng cao và cảm giác khẩn trương. Thời lượng của mỗi cảnh quay nên được thiết kế như thế nào?",
+        "options": [
+          "Cảnh ngắn dưới 2 giây",
+          "Cảnh tĩnh không cắt ghép",
+          "Cảnh trung bình từ 2 đến 5 giây",
+          "Cảnh dài trên 5 giây"
+        ],
+        "correctIndex": 0,
+        "explanation": "Cảnh ngắn dưới 2 giây tạo nhịp nhanh, năng lượng cao và kích thích thị giác mạnh, rất phù hợp cho cảnh hành động.",
+        "pauseAt": 195,
+        "answerSegment": {
+          "start": 161,
+          "end": 195
+        },
+        "variants": [
+          {
+            "id": "q-thoi-luong-canh-1-v1",
+            "conceptId": "thoi-luong-canh",
+            "prompt": "Loại cảnh nào được xem là nhịp kể chuyện chuẩn, giúp cân bằng giữa thông tin và cảm xúc trong video?",
+            "options": [
+              "Cảnh quay không chuyển động",
+              "Cảnh dài trên 10 giây",
+              "Cảnh ngắn dưới 2 giây",
+              "Cảnh trung bình từ 2 đến 5 giây"
+            ],
+            "correctIndex": 3,
+            "explanation": "Cảnh trung bình từ 2 đến 5 giây là nhịp kể chuyện chuẩn, cân bằng tốt giữa thông tin và cảm xúc."
+          }
+        ]
+      },
+      {
+        "id": "q-nen-va-keo-dai-thoi-gian-1",
+        "conceptId": "nen-va-keo-dai-thoi-gian",
+        "prompt": "Để gói gọn cả tháng tập luyện hoặc một hành trình dài trong vòng 30 giây mà vẫn đảm bảo sự trôi qua của thời gian một cách hiệu quả, bạn nên dùng kỹ thuật nào?",
+        "options": [
+          "Dùng hiệu ứng âm thanh tĩnh lặng",
+          "Sử dụng cảnh dài trên 5 giây không cắt",
+          "Nén thời gian bằng montage cắt nhanh",
+          "Kéo dài thời gian bằng slow-motion"
+        ],
+        "correctIndex": 2,
+        "explanation": "Montage cắt nhanh là kỹ thuật nén thời gian giúp thể hiện sự trôi qua của thời gian một cách hiệu quả và súc tích.",
+        "pauseAt": 281,
+        "answerSegment": {
+          "start": 240,
+          "end": 281
+        },
+        "variants": [
+          {
+            "id": "q-nen-va-keo-dai-thoi-gian-1-v1",
+            "conceptId": "nen-va-keo-dai-thoi-gian",
+            "prompt": "Khi muốn mở rộng trải nghiệm, giúp người xem thấm nhuần cảm xúc và suy ngẫm sâu lắng trong một khoảnh khắc, bạn nên áp dụng phương pháp nào?",
+            "options": [
+              "Tăng tốc độ khung hình lên gấp đôi",
+              "Kéo dài thời gian bằng slow-motion và cảnh quay dài không cắt",
+              "Cắt liên tục với tốc độ cao",
+              "Sử dụng kỹ thuật nén thời gian montage"
+            ],
+            "correctIndex": 1,
+            "explanation": "Kéo dài thời gian bằng slow-motion và cảnh quay dài không cắt giúp mở rộng trải nghiệm và thấm nhuần cảm xúc."
           }
         ]
       }
-    ]
+    ],
+    "origin": "gemini",
+    "status": "published"
   }
 ]

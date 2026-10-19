@@ -380,7 +380,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
             </Building>
 
             {/* Tòa A3: khối vàng, mái chóp đỏ */}
-            <Building {...b('Tòa A3')} sub="Nhiếp ảnh · Quay phim" anchorY={7.6} position={[12.5, 0, -9.5]}>
+            <Building {...b('Tòa A3')} sub="Dựng phim · Quay phim" anchorY={7.6} position={[12.5, 0, -9.5]}>
                 <Box s={[13, 4.6, 4.4]} c={C.yellow} />
                 {Array.from({ length: 10 }, (_, i) => (
                     <Box key={i} s={[0.7, 3.4, 0.1]} c={C.win} at={[-5.4 + i * 1.2, 0.6, 2.23]} />

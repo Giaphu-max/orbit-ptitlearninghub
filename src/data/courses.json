@@ -1,13 +1,14 @@
 [
   {
-    "id": "nhiep-anh-co-ban",
-    "title": "Nhiếp ảnh cơ bản",
-    "subject": "Nhiếp ảnh",
-    "instructor": "Giảng viên khoa Đa phương tiện",
-    "description": "Bố cục, ánh sáng và cách đọc một khung hình trước khi bấm máy.",
+    "id": "dung-audio-video-phi-tuyen",
+    "title": "Dựng audio và video phi tuyến",
+    "subject": "Dựng phim",
+    "instructor": "Khoa Đa phương tiện, PTIT",
+    "description": "Bản chất của dựng phi tuyến, tư duy dựng và điều hướng tiếp nhận, nhịp điệu và tổ chức thời gian.",
     "lessonIds": [
-      "bo-cuc-co-ban",
-      "anh-sang-co-ban"
+      "ban-chat-dung-phi-tuyen",
+      "tu-duy-dung-dieu-huong-tiep-nhan",
+      "nhip-dieu-to-chuc-thoi-gian"
     ]
   }
 ]

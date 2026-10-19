@@ -9,7 +9,7 @@
  *
  * Danh sách video nằm trong scripts/content.config.json. Cần GEMINI_API_KEY trong .env.local.
  * Kết quả thô của Gemini được cache ở scripts/.cache/ để chạy lại (chỉnh hậu xử lý)
- * không tốn thêm lượt API. Nội dung tạo ra có status "draft" để giảng viên duyệt.
+ * không tốn thêm lượt API. Trạng thái ban đầu lấy từ "status" trong config (mặc định draft để giảng viên duyệt).
  */
 import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -47,6 +47,8 @@ if (args.model) process.env.GEMINI_MODEL = args.model
 
 const Config = z.object({
     dailyCount: z.number().int().min(0).max(20).default(6),
+    /** Trạng thái duyệt khi mới tạo; bản demo đặt published để sinh viên thấy ngay, giảng viên vẫn gỡ/duyệt lại được */
+    status: z.enum(['draft', 'published']).default('draft'),
     courses: z.array(
         z.object({
             id: z.string().regex(/^[a-z0-9-]+$/, 'id chỉ gồm a-z, 0-9 và gạch ngang'),
@@ -282,6 +284,7 @@ async function main() {
                 })
                 printReport(label, report)
                 if (!lesson) throw new Error('Nội dung không đạt yêu cầu tối thiểu (xem lỗi ở trên)')
+                lesson.status = config.status
                 console.log(`   ✓ "${lesson.title}": ${lesson.transcript.length} đoạn, ${lesson.concepts.length} khái niệm, ${lesson.quiz.length} câu hỏi`)
                 lessonsOut.push(lesson)
                 lessonIds.push(lesson.id)

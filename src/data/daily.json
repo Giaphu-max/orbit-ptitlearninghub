@@ -1,140 +1,204 @@
 [
   {
-    "id": "daily-bo-cuc-1",
-    "title": "Vì sao ảnh đặt chủ thể ở chính giữa thường “đứng im”?",
-    "readingMinutes": 3,
+    "id": "daily-1-ban-chat-cua-dung-phim-phi-tuyen-va-cach",
+    "title": "Bản chất của dựng phim phi tuyến và cách bảo vệ tư liệu gốc như thế nào?",
+    "readingMinutes": 2,
     "conceptIds": [
-      "quy-tac-mot-phan-ba",
-      "duong-dan"
+      "dung-phi-tuyen",
+      "tinh-phi-huy-hoai"
     ],
-    "origin": "sample",
     "paragraphs": [
       {
-        "text": "Đặt chủ thể ở giao điểm của các đường một phần ba tạo khoảng trống cho mắt di chuyển, nên ảnh có cảm giác chuyển động hơn so với đặt chính giữa.",
+        "text": "Cách đây 60 năm, để cắt một bộ phim, người ta phải cầm cuộn phim nhựa, đặt lên bàn, dùng dao dọc đúng khung hình cần cắt rồi dán hai mảnh phim lại với nhau bằng băng dính. Cắt sang một phát là bạn sẽ làm hỏng cả cuộn phim gốc hoặc nếu bạn muốn thử bằng cách khác thì bạn phải làm lại từ đầu. Điều này hoàn toàn khác biệt so với công nghệ kỹ thuật số hiện đại ngày nay, nơi mọi thao tác cắt nối đều được thực hiện trên môi trường máy tính an toàn và tiện lợi hơn rất nhiều.",
         "sources": [
           {
-            "lessonId": "bo-cuc-co-ban",
-            "start": 20
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 0
           }
         ]
       },
       {
-        "text": "Kết hợp với một đường dẫn đi từ tiền cảnh, người xem sẽ được dẫn thẳng tới đúng điểm bạn muốn nhấn.",
+        "text": "Bây giờ thì sao? Bạn chỉ cần kéo một cái clip trên màn hình, thả vào đúng chỗ, không thích thì kéo ngược lại, file gốc không hề di chuyển. Nghe thì giống như một sự thuận lợi đơn thuần thôi đúng không? Nhưng mà thực chất, sự thay đổi này đã làm một việc lớn hơn nhiều, đó là thay đổi hoàn toàn cách chúng ta tư duy về quá trình dựng phim hậu kỳ. Bạn không còn phải lo lắng về việc làm hỏng tư liệu ban đầu mỗi khi muốn thử nghiệm một ý tưởng mới lạ trong dự án.",
         "sources": [
           {
-            "lessonId": "bo-cuc-co-ban",
-            "start": 95
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 16
+          }
+        ]
+      },
+      {
+        "text": "Còn dựng phi tuyến hay tiếng Anh gọi là NLE (Non-linear editing) là một thế giới khác hẳn. Với dựng phi tuyến, bạn có nhiều lớp video và nhiều lớp âm thanh chồng lên nhau, bạn thêm hiệu ứng và chuyển cảnh ngay trong thời gian thực, bạn chỉnh màu, phân loại màu, trộn âm thanh hay thiết kế âm thanh một cách mượt mà. Đây là trung tâm của mọi công việc hậu kỳ, nơi hình ảnh, âm thanh và hiệu ứng hòa quyện vào nhau.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 70
+          }
+        ]
+      },
+      {
+        "text": "Và đây là chữ quan trọng nhất mà bạn phải nhớ trong video ngày hôm nay: Phi hủy hoại (Non-destructive). Nghĩa là mọi thao tác bạn làm không hề đụng tới file gốc, bạn có thể thử nghiệm sáng tạo thoải mái mà không bao giờ sợ mất nội dung gốc. Phương pháp này cho phép bạn truy cập ngẫu nhiên tới bất kỳ khung hình nào một cách dễ dàng, giúp tối ưu hóa thời gian và mở rộng biên giới sáng tạo trong quá trình làm phim chuyên nghiệp.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 97
           }
         ]
       }
     ],
     "checks": [
       {
-        "id": "daily-bo-cuc-1-c1",
-        "conceptId": "duong-dan",
-        "prompt": "Đường dẫn trong ảnh có tác dụng chính là gì?",
+        "id": "daily-1-ban-chat-cua-dung-phim-phi-tuyen-va-cach-c1",
+        "conceptId": "tinh-phi-huy-hoai",
+        "prompt": "Tính phi hủy hoại (Non-destructive) trong dựng phim mang lại lợi ích gì?",
         "options": [
-          "Làm ảnh sáng hơn",
-          "Dẫn mắt người xem tới chủ thể",
-          "Giảm nhiễu ảnh",
-          "Làm mờ hậu cảnh"
+          "Giúp tự động cắt bỏ những đoạn phim thừa mà không cần con người can thiệp",
+          "Mọi thao tác chỉnh sửa không làm thay đổi hoặc mất dữ liệu của file gốc",
+          "Tăng tốc độ xuất file video lên nhiều lần so với bình thường",
+          "Làm thay đổi trực tiếp file gốc để tiết kiệm dung lượng ổ cứng"
         ],
         "correctIndex": 1,
-        "explanation": "Đường dẫn kéo ánh nhìn từ tiền cảnh về phía chủ thể."
+        "explanation": "Tính phi hủy hoại đảm bảo mọi thao tác chỉnh sửa đều không đụng tới hoặc làm mất dữ liệu của file gốc, cho phép thử nghiệm thoải mái."
       }
-    ]
+    ],
+    "origin": "gemini"
   },
   {
-    "id": "daily-bo-cuc-2",
-    "title": "Đường dẫn hướng: kéo mắt người xem đi đâu trước?",
-    "readingMinutes": 3,
+    "id": "daily-2-tai-sao-noi-dung-dung-van-co-the-that-ba",
+    "title": "Tại sao nội dung đúng vẫn có thể thất bại nếu thiếu tư duy dựng và kiểm soát tải trí tuệ?",
+    "readingMinutes": 2,
     "conceptIds": [
-      "duong-dan",
-      "quy-tac-mot-phan-ba"
+      "tu-duy-dung",
+      "tai-tri-tue"
     ],
-    "origin": "sample",
     "paragraphs": [
       {
-        "text": "Mắt người xem không nhìn cả khung hình cùng lúc: nó đi theo những đường nét rõ nhất. Con đường, hàng rào hay bờ sông chính là những đường như vậy, nên người chụp có thể chủ động chọn nơi mắt sẽ dừng.",
+        "text": "Hãy tưởng tượng hai người dựng được đưa một bản tư liệu giống hệt nhau, cùng những cảnh quay đó, cùng những câu thoại đó. Một người cho ra video khiến bạn xem mà rồi không hiểu đang nói gì phải bỏ ngang giữa chừng. Nhưng mà người kia lại cho ra một video mà bạn dán mắt từ đầu đến cuối. Cùng một nguyên liệu nhưng mà khác nhau ở đâu nhỉ? Khác ở một thứ vô hình gọi là tư duy dựng, và việc nắm bắt nó sẽ thay đổi hoàn toàn sản phẩm của bạn.",
         "sources": [
           {
-            "lessonId": "bo-cuc-co-ban",
-            "start": 95
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 0
           }
         ]
       },
       {
-        "text": "Cách dùng gọn nhất là để đường dẫn bắt đầu từ mép khung hình rồi kết thúc đúng ở chủ thể. Khi chủ thể lại nằm ở một giao điểm của lưới một phần ba, ảnh vừa có hướng đi vừa cân bằng.",
+        "text": "Hầu hết người mới sẽ nghĩ rằng dựng chẳng qua là ghép nối giữa các cảnh quay. Sai! Hoặc đúng hơn, nó mới chỉ là cái vỏ bên ngoài. Dựng thực chất là tổ chức chiến lược thông tin, là quá trình tạo ra một lộ trình giúp người xem hiểu nội dung một cách có hệ thống từ điểm bắt đầu cho đến điểm kết luận cuối cùng. Bạn không chỉ đang xếp các clip với nhau, mà bạn còn đang dẫn đường cho bộ não của người xem qua từng khung hình.",
         "sources": [
           {
-            "lessonId": "bo-cuc-co-ban",
-            "start": 20
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 31
+          }
+        ]
+      },
+      {
+        "text": "Khi bàn về cách tiếp nhận thông tin, có một khái niệm học thuật vô cùng quan trọng mà bạn phải nắm bắt, đó chính là tải trí tuệ hay còn gọi là cognitive load. Hiểu một cách đơn giản, bộ não của người xem giống như một cái bàn làm việc nhỏ, nó chỉ có thể xử lý được khoảng bốn đến bảy đơn vị thông tin cùng một lúc mà thôi. Do đó, người dựng cần phải phân phối lượng thông tin sao cho thật hợp lý.",
+        "sources": [
+          {
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 187
+          }
+        ]
+      },
+      {
+        "text": "Bên trong cấu trúc đó, có ba loại tải mà bạn cần lưu ý: tải nội tại đến từ độ phức tạp tự nhiên của nội dung, tải ngoại sinh xuất hiện khi dựng kém hoặc lộn xộn làm tăng loại tải vô ích này, và tải tạo ra ý nghĩa là nỗ lực tốt giúp người xem hiểu sâu và nhớ lâu. Nội dung đúng vẫn có thể thất bại hoàn toàn nếu bạn nhồi nhét quá nhiều thông tin và làm khán giả bị quá tải quá nhanh.",
+        "sources": [
+          {
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 217
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-2-tai-sao-noi-dung-dung-van-co-the-that-ba-c1",
+        "conceptId": "tai-tri-tue",
+        "prompt": "Theo bài giảng, bộ não của người xem có khả năng xử lý khoảng bao nhiêu đơn vị thông tin cùng một lúc?",
+        "options": [
+          "Khoảng 10 đến 15 đơn vị thông tin",
+          "Khoảng 1 đến 2 đơn vị thông tin",
+          "Khoảng 4 đến 7 đơn vị thông tin",
+          "Không giới hạn số lượng đơn vị thông tin"
+        ],
+        "correctIndex": 2,
+        "explanation": "Bộ não người xem giống như một chiếc bàn làm việc nhỏ, chỉ xử lý được khoảng 4 đến 7 đơn vị thông tin một lúc."
+      }
+    ],
+    "origin": "gemini"
+  },
+  {
+    "id": "daily-3-nhip-hinh-va-nhip-am-ket-hop-the-nao-de-",
+    "title": "Nhịp hình và nhịp âm kết hợp thế nào để tạo nên sức hút cảm xúc trong phim?",
+    "readingMinutes": 2,
+    "conceptIds": [
+      "nhip-hinh",
+      "nhip-am",
+      "thoi-luong-canh"
+    ],
+    "paragraphs": [
+      {
+        "text": "Bạn có để ý không, có những video bạn xem mà bạn thấy hay, thấy cuốn, hay có những bộ phim bạn xem mà bạn thấy không thể quên được mặc dù bạn chẳng nói được tại sao không. Bí mật đằng sau những thước phim ấy nằm ở mô hình thời gian và tiết tấu trong chuỗi dựng. Nó được tạo ra từ sự kết hợp nhịp nhàng giữa độ dài của các cảnh quay khác nhau và thời điểm chính xác của các điểm cắt.",
+        "sources": [
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 0
           },
           {
-            "lessonId": "bo-cuc-co-ban",
-            "start": 95
-          }
-        ]
-      }
-    ],
-    "checks": [
-      {
-        "id": "daily-bo-cuc-2-c1",
-        "conceptId": "duong-dan",
-        "prompt": "Đường dẫn hiệu quả nhất khi nó bắt đầu và kết thúc ở đâu?",
-        "options": [
-          "Bắt đầu ở giữa ảnh, kết thúc ở mép khung",
-          "Bắt đầu từ mép khung, kết thúc ở chủ thể",
-          "Nằm hoàn toàn ngoài chủ thể",
-          "Cắt ngang chủ thể"
-        ],
-        "correctIndex": 1,
-        "explanation": "Đường dẫn kéo ánh nhìn từ tiền cảnh về chủ thể, nên nó nên chạy từ mép khung tới chủ thể."
-      }
-    ]
-  },
-  {
-    "id": "daily-bo-cuc-3",
-    "title": "Một phần ba ngang hay dọc: chọn thế nào?",
-    "readingMinutes": 3,
-    "conceptIds": [
-      "quy-tac-mot-phan-ba"
-    ],
-    "origin": "sample",
-    "paragraphs": [
-      {
-        "text": "Lưới một phần ba có hai đường ngang và hai đường dọc, nên bạn có hai cách đặt trọng tâm: theo đường ngang (ví dụ đường chân trời) hoặc theo đường dọc (ví dụ người đứng cạnh cửa sổ).",
-        "sources": [
-          {
-            "lessonId": "bo-cuc-co-ban",
-            "start": 20
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 32
           }
         ]
       },
       {
-        "text": "Một mẹo nhỏ: phần nào của cảnh kể chuyện nhiều hơn thì chiếm hai phần ba khung hình. Bầu trời nhiều mây thì để chân trời thấp, mặt đất nhiều chi tiết thì để chân trời cao.",
+        "text": "Đầu tiên là nhịp hình hay còn gọi là visual rhythm, đây là những nhịp mà bạn cảm nhận được bằng mắt. Nó dựa hoàn toàn trên thời lượng của từng cảnh quay, các mẫu cảnh ngắn dài xen kẽ liên tục và những chuyển động ngay trong khung hình. Nhịp hình giúp định hình cách mắt khán giả quét qua không gian thị giác và tạo ra sự kích thích cần thiết cho người xem xuyên suốt chiều dài câu chuyện.",
         "sources": [
           {
-            "lessonId": "bo-cuc-co-ban",
-            "start": 20
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 59
+          }
+        ]
+      },
+      {
+        "text": "Song hành với thị giác chính là nhịp âm hay còn gọi là audio rhythm. Đây là nhịp mà bạn cảm nhận được bằng tai, dựa trên tiết tấu và nhịp điệu của âm thanh, tốc độ của lời thoại, các khoảng nghỉ tĩnh lặng đầy dụng ý và các hiệu ứng âm thanh đặc sắc. Nhịp hình và nhịp âm giống như hai chân của một người vậy, khi mà chúng bước cùng một nhịp thì video của bạn sẽ cực kỳ vững chắc.",
+        "sources": [
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 95
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 131
+          }
+        ]
+      },
+      {
+        "text": "Bên cạnh đó, thời lượng của một cảnh quay cũng ảnh hưởng trực tiếp đến tiết tấu của nhịp dựng phim. Cụ thể, các cảnh ngắn dưới hai giây sẽ tạo ra nhịp độ nhanh, mang lại năng lượng cao và kích thích thị giác mạnh mẽ cho khán giả. Ngược lại, việc kiểm soát khéo léo thời lượng cảnh quay sẽ giúp người dựng dễ dàng đẩy cao trào, nhấn mạnh khoảnh khắc quan trọng hoặc tạo ra những khoảng lặng đắt giá trước điểm then chốt.",
+        "sources": [
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 161
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 195
           }
         ]
       }
     ],
     "checks": [
       {
-        "id": "daily-bo-cuc-3-c1",
-        "conceptId": "quy-tac-mot-phan-ba",
-        "prompt": "Bầu trời có nhiều mây đẹp, đường chân trời nên đặt ở đâu?",
+        "id": "daily-3-nhip-hinh-va-nhip-am-ket-hop-the-nao-de--c1",
+        "conceptId": "thoi-luong-canh",
+        "prompt": "Cảnh quay có thời lượng dưới 2 giây thường mang lại hiệu quả gì cho nhịp dựng?",
         "options": [
-          "Chính giữa khung hình",
-          "Ở đường chia ngang phía dưới để bầu trời chiếm hai phần ba",
-          "Sát mép trên",
-          "Chéo qua khung hình"
+          "Tạo nhịp chậm rãi, mang lại cảm giác buồn ngủ cho người xem",
+          "Tạo nhịp nhanh, năng lượng cao và kích thích thị giác mạnh",
+          "Làm gián đoạn mạch cảm xúc và gây khó chịu cho khán giả",
+          "Giúp khán giả có nhiều thời gian suy ngẫm về nội dung cốt truyện"
         ],
         "correctIndex": 1,
-        "explanation": "Phần nào kể chuyện nhiều hơn thì chiếm hai phần ba khung hình; ở đây là bầu trời."
+        "explanation": "Cảnh ngắn dưới hai giây tạo ra nhịp nhanh, năng lượng cao và kích thích thị giác mạnh mẽ cho người xem."
       }
-    ]
+    ],
+    "origin": "gemini"
   }
 ]

@@ -95,13 +95,13 @@ export function makeDemoProfile() {
     return {
         role: null as Role | null,
         learnerName: DEFAULT_LEARNER_NAME,
-        dailyRead: { 'daily-bo-cuc-1': today } as Record<string, string>,
+        dailyRead: { 'daily-1-ban-chat-cua-dung-phim-phi-tuyen-va-cach': today } as Record<string, string>,
         xp: 2480,
         streak: { count: 12, lastStudyDate: today as string | null, freezeUsedWeek: null as string | null },
-        // 110s / 240s ≈ 46%
-        lessonProgress: { 'bo-cuc-co-ban': { lastPositionSec: 110, completed: false } } as Record<string, LessonProgress>,
-        // Mức nắm vững khác nhau: vững, vững, đang học (62%), còn lại bị khóa (chưa học)
-        conceptMastery: { 'quy-tac-mot-phan-ba': 0.92, 'huong-anh-sang': 0.85, 'duong-dan': 0.62 } as Record<string, number>,
+        // 202s / 439s ≈ 46%
+        lessonProgress: { 'ban-chat-dung-phi-tuyen': { lastPositionSec: 202, completed: false } } as Record<string, LessonProgress>,
+        // Mức nắm vững khác nhau: vững, vững, đang học (62%, 40%, 25%), còn lại bị khóa (chưa học)
+        conceptMastery: { 'dung-tuyen-tinh': 0.92, 'dung-phi-tuyen': 0.85, 'tinh-phi-huy-hoai': 0.62, 'tu-duy-dung': 0.4, 'nhip-hinh': 0.25 } as Record<string, number>,
         earnedBadgeIds: ['chuoi-7-ngay'],
         quizResults: {} as Record<string, QuizResult>,
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
@@ -227,7 +227,7 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 2,
+            version: 3,
             // Phiên bản cũ chưa có hồ sơ demo: bỏ để dùng hồ sơ mặc định mới
             migrate: () => makeDemoProfile() as unknown as OrbitState,
             storage: createJSONStorage(() => safeLocalStorage),
