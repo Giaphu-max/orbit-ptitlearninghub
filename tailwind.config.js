@@ -27,10 +27,8 @@ export default {
           soft: token('brand-soft'),
         },
         // Trung tính ấm thay cho xám lạnh mặc định
-        // Trung tính ấm. Đây là thang theo giao diện: gray-900 là chữ đậm ở chế độ sáng và chữ sáng ở chế độ tối
-        gray: scale('gray', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]),
         /** Nền tối cố định ở cả hai giao diện (khung video, lớp phủ, thông báo) */
-        ink: token('ink'),
+        ink: { DEFAULT: token('ink'), foreground: token('ink-foreground') },
         info: token('info'),
         border: token('border'),
         input: token('input'),
