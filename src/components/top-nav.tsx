@@ -5,6 +5,10 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { levelFromXp, visibleStreak } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
+// Logo thật: đặt file src/assets/brand/logo.(svg|png|webp) là tự dùng; không có thì dùng khối chữ PTIT
+const logoFiles = import.meta.glob('/src/assets/brand/logo.{svg,png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+const LOGO_URL = Object.values(logoFiles)[0]
+
 export type NavTone = 'hero' | 'plain'
 
 interface NavItem {
@@ -83,10 +87,15 @@ export function TopNav({ tone }: { tone: NavTone }) {
     )
 
     return (
-        <header className={`relative z-40 ${t.text}`}>
+        <header className={`relative z-50 ${t.text}`}>
             <div className="mx-auto flex max-w-[1320px] items-center gap-4 px-5 py-5 lg:gap-6 lg:px-10">
                 <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="Orbit, trang chủ">
-                    <span className={`flex h-10 w-10 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${t.logo}`}>PTIT</span>
+                    {LOGO_URL ? (
+                        <img src={LOGO_URL} alt="PTIT" className="h-10 w-10 rounded-xl bg-ink-foreground object-contain p-1" />
+                    ) : (
+                        // Khối vuông trắng bo góc, chữ PTIT đỏ: nổi trên nền tối của hero
+                        <span className={`flex h-10 w-10 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${t.logo}`}>PTIT</span>
+                    )}
                     <span className="leading-tight">
                         <span className="block text-[17px] font-extrabold tracking-tight">Orbit</span>
                         <span className={`hidden whitespace-nowrap text-[11px] xl:block ${t.sub}`}>Học viện Công nghệ BCVT</span>
@@ -119,7 +128,7 @@ export function TopNav({ tone }: { tone: NavTone }) {
                         aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
                         aria-expanded={menuOpen}
                         onClick={() => setMenuOpen((v) => !v)}
-                        className={`flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur-md ${t.burger}`}
+                        className={`flex h-10 w-10 items-center justify-center rounded-full border ${t.burger}`}
                     >
                         {menuOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>

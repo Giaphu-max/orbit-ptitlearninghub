@@ -123,33 +123,34 @@ interface BuildingProps {
     anchorY: number
     position: Vec3
     hovered: boolean
-    compact: boolean
+    /** Nhãn đang hiển thị (không bị che, không chồng nhãn khác) */
+    labelVisible: boolean
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     children: ReactNode
 }
 
-function Building({ name, sub, anchorY, position, hovered, compact, registry, children }: BuildingProps) {
+function Building({ name, sub, anchorY, position, hovered, labelVisible, registry, children }: BuildingProps) {
     const ref = useRef<THREE.Group>(null)
     useLayoutEffect(() => {
         const g = ref.current
         if (!g) return
         const map = registry.current
         g.userData.buildingName = name
+        g.userData.anchorY = anchorY
         map.set(name, g)
         return () => {
             map.delete(name)
         }
-    }, [name, registry])
+    }, [name, anchorY, registry])
 
-    // Trên màn hình hẹp chỉ giữ nhãn tòa A2 và nhãn tòa đang hover
-    const hidden = compact && !hovered && name !== 'Tòa A2'
+    const hidden = !labelVisible && !hovered
     return (
         <group ref={ref} position={position}>
             {children}
             <Html position={[0, anchorY, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
                 <div
                     className="flex -translate-x-1/2 -translate-y-full flex-col items-center gap-1 transition-opacity duration-200"
-                    style={{ opacity: hidden ? 0 : 1 }}
+                    style={{ opacity: hidden ? 0 : 1, visibility: hidden ? 'hidden' : 'visible' }}
                 >
                     <div
                         className={`whitespace-nowrap rounded-xl px-[11px] py-[7px] text-xs font-bold shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)] transition duration-200 ${
@@ -157,7 +158,8 @@ function Building({ name, sub, anchorY, position, hovered, compact, registry, ch
                         }`}
                     >
                         {name}
-                        <small className={`block text-[11px] font-medium ${hovered ? 'text-ink-foreground/85' : 'text-muted-foreground'}`}>{sub}</small>
+                        {/* Mặc định chỉ hiện tên; dòng phụ chỉ hiện khi rê chuột vào tòa */}
+                        <small className={`block overflow-hidden text-[11px] font-medium text-ink-foreground/85 transition-all duration-200 ${hovered ? 'max-h-6 opacity-100' : 'max-h-0 opacity-0'}`}>{sub}</small>
                     </div>
                     <div className="h-4 w-0.5 bg-ink-foreground/80" />
                 </div>
@@ -305,15 +307,14 @@ const CARS: [string, number, number][] = [[CAMPUS.ptitRed, -1.8, 10.8], [CAMPUS.
 
 interface WorldProps {
     hovered: BuildingName | null
-    compact: boolean
+    visibleLabels: ReadonlySet<string>
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     nightRef: React.MutableRefObject<number>
     reduce: boolean
 }
 
-function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
-    const shared = { hovered: false, compact, registry }
-    const b = (name: BuildingName) => ({ ...shared, name, hovered: hovered === name })
+function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldProps) {
+    const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name) })
 
     return (
         <>
@@ -507,6 +508,53 @@ function useFitCamera(controls: React.RefObject<OrbitControlsImpl | null>) {
     }, [camera, size, controls])
 }
 
+const _anchor = new THREE.Vector3()
+const _dir = new THREE.Vector3()
+
+/**
+ * Chọn nhãn được hiện: ưu tiên tòa đang hover rồi tới tòa gần camera; bỏ nhãn nằm ngoài khung,
+ * bị tòa khác che (tia từ camera tới điểm neo trúng tòa khác) hoặc chồng lên nhãn đã chọn.
+ */
+function computeVisibleLabels(
+    registry: Map<string, THREE.Group>,
+    camera: THREE.PerspectiveCamera,
+    size: { width: number; height: number },
+    raycaster: THREE.Raycaster,
+    hovered: string | null,
+) {
+    const items = [...registry.entries()].map(([name, grp]) => {
+        _anchor.set(0, grp.userData.anchorY as number, 0)
+        grp.localToWorld(_anchor)
+        const world = _anchor.clone()
+        const dist = world.distanceTo(camera.position)
+        const p = world.clone().project(camera)
+        return { name, grp, world, dist, x: ((p.x + 1) / 2) * size.width, y: ((1 - p.y) / 2) * size.height, behind: p.z > 1 }
+    })
+    items.sort((a, b) => (a.name === hovered ? -1 : b.name === hovered ? 1 : a.dist - b.dist))
+
+    const taken: { l: number; t: number; r: number; b: number }[] = []
+    const shown: string[] = []
+    for (const it of items) {
+        // Hộp nhãn ước lượng: chip (tên) + cọc 16px phía trên điểm neo, rộng theo độ dài chữ
+        const w = it.name.length * 7.6 + 30
+        const rect = { l: it.x - w / 2, r: it.x + w / 2, t: it.y - 16 - 32, b: it.y }
+        if (it.behind || rect.l < 4 || rect.r > size.width - 4 || rect.t < 4 || rect.b > size.height - 4) continue
+        if (it.name !== hovered) {
+            if (taken.some((o) => rect.l < o.r + 6 && rect.r > o.l - 6 && rect.t < o.b + 6 && rect.b > o.t - 6)) continue
+            _dir.copy(it.world).sub(camera.position).normalize()
+            raycaster.set(camera.position, _dir)
+            raycaster.far = it.dist - 1.5
+            const others = items.filter((o) => o.name !== it.name).map((o) => o.grp)
+            const blocked = raycaster.intersectObjects(others, true).length > 0
+            raycaster.far = Infinity
+            if (blocked) continue
+        }
+        taken.push(rect)
+        shown.push(it.name)
+    }
+    return shown.sort().join('|')
+}
+
 function Scene({ night, reduce, touch, pointer }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
@@ -521,13 +569,15 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
     const nightRef = useRef(reduce && night ? 1 : 0)
     const nightTarget = useRef(night ? 1 : 0)
     const [hovered, setHovered] = useState<BuildingName | null>(null)
+    const [visibleLabels, setVisibleLabels] = useState<ReadonlySet<string>>(() => new Set())
+    const labelKey = useRef('')
+    const frame = useRef(0)
     const raycaster = useMemo(() => new THREE.Raycaster(), [])
     const ndc = useMemo(() => new THREE.Vector2(-9, -9), [])
 
     const size = useThree((s) => s.size)
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const domElement = useThree((s) => s.gl.domElement)
-    const compact = size.width < 560
 
     useFitCamera(controls)
 
@@ -598,6 +648,15 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
             grp.position.y = next
         })
 
+        // Nhãn: mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
+        if (frame.current++ % 6 === 0) {
+            const key = computeVisibleLabels(registry.current, camera, size, raycaster, hb)
+            if (key !== labelKey.current) {
+                labelKey.current = key
+                setVisibleLabels(new Set(key ? key.split('|') : []))
+            }
+        }
+
         // Chuyển hoàng hôn ↔ buổi tối
         nightRef.current += (nightTarget.current - nightRef.current) * (reduce ? 1 : 0.04)
         const n = nightRef.current
@@ -652,7 +711,7 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
             />
             <directionalLight ref={rim} color={CAMPUS.rimLight} intensity={0.35 * Math.PI} position={[30, 14, -30]} />
             <group ref={world}>
-                <Campus hovered={hovered} compact={compact} registry={registry} nightRef={nightRef} reduce={reduce} />
+                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} />
             </group>
         </>
     )
@@ -670,6 +729,15 @@ export default function CampusScene({ night, reduce }: CampusSceneProps) {
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
     const wrapRef = useRef<HTMLDivElement>(null)
+    const [inView, setInView] = useState(true)
+
+    useEffect(() => {
+        const el = wrapRef.current
+        if (!el || typeof IntersectionObserver === 'undefined') return
+        const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { rootMargin: '120px' })
+        io.observe(el)
+        return () => io.disconnect()
+    }, [])
 
     // Chờ font Be Vietnam Pro (tối đa 1,5 giây) để chữ trên biển hiệu không bị font dự phòng
     useEffect(() => {
@@ -706,6 +774,8 @@ export default function CampusScene({ night, reduce }: CampusSceneProps) {
         <div ref={wrapRef} className="absolute inset-0">
             {fontsReady && (
                 <Canvas
+                    // Hero cuộn khỏi màn hình thì dừng vẽ: nhẹ GPU và tránh lỗi ghép lớp khi cuộn
+                    frameloop={inView ? 'always' : 'never'}
                     legacy
                     flat
                     shadows="soft"

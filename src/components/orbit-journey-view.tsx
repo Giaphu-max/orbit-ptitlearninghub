@@ -49,7 +49,7 @@ function StatusRow() {
 
     return (
         <section aria-label="Cấp độ và chuỗi ngày học" className="grid gap-5 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <div className="rounded-panel bg-gradient-to-br from-brand-600 to-brand-900 p-7 text-ink-foreground shadow-brand">
+            <div className="rounded-panel surface-red-deep p-7 shadow-brand">
                 <div className="flex items-end justify-between gap-4">
                     <div>
                         <p className="text-eyebrow uppercase text-ink-foreground/80">Cấp độ</p>

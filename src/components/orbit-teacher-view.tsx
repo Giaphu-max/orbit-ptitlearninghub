@@ -342,7 +342,7 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
             </p>
 
             {worst && (
-                <div className="flex flex-wrap items-center gap-4 rounded-panel bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-ink-foreground shadow-brand">
+                <div className="flex flex-wrap items-center gap-4 rounded-panel surface-red-deep p-6 shadow-brand">
                     <TriangleAlert size={28} className="shrink-0" />
                     <div className="min-w-0 flex-1">
                         <p className="text-eyebrow uppercase text-ink-foreground/70">Cần chú ý nhất</p>
@@ -351,7 +351,7 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
                         </p>
                         <p className="mt-1 text-sm text-ink-foreground/80">Nên xem lại cách giảng hoặc câu hỏi ở khái niệm này trên lớp.</p>
                     </div>
-                    <button type="button" onClick={onEdit} className="rounded-full bg-ink-foreground px-5 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-ink-foreground/90">
+                    <button type="button" onClick={onEdit} className="on-red-btn rounded-full px-5 py-2.5 text-sm font-bold transition hover:opacity-90">
                         Xem nội dung
                     </button>
                 </div>

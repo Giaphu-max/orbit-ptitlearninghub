@@ -13,22 +13,46 @@
         "id": "quy-tac-mot-phan-ba",
         "name": "Quy tắc một phần ba",
         "definition": "Chia khung hình bằng hai đường ngang và hai đường dọc thành 9 ô bằng nhau; đặt chủ thể ở đường chia hoặc giao điểm để ảnh cân bằng mà không cứng nhắc.",
-        "segment": { "start": 20, "end": 95 },
+        "segment": {
+          "start": 20,
+          "end": 95
+        },
         "prerequisiteIds": []
       },
       {
         "id": "duong-dan",
         "name": "Đường dẫn",
         "definition": "Các đường có sẵn trong cảnh (con đường, hàng rào, bờ sông) dẫn mắt người xem từ tiền cảnh về phía chủ thể.",
-        "segment": { "start": 95, "end": 180 },
-        "prerequisiteIds": ["quy-tac-mot-phan-ba"]
+        "segment": {
+          "start": 95,
+          "end": 180
+        },
+        "prerequisiteIds": [
+          "quy-tac-mot-phan-ba"
+        ]
       }
     ],
     "transcript": [
-      { "start": 0, "end": 20, "text": "Chào các bạn, hôm nay chúng ta học hai công cụ bố cục dùng nhiều nhất." },
-      { "start": 20, "end": 95, "text": "Đầu tiên là quy tắc một phần ba: chia khung hình thành 9 ô bằng nhau và đặt chủ thể ở một trong bốn giao điểm." },
-      { "start": 95, "end": 180, "text": "Tiếp theo là đường dẫn: tận dụng con đường, hàng cây hay bờ sông để kéo mắt người xem về chủ thể." },
-      { "start": 180, "end": 240, "text": "Bài tập: chụp ba ảnh, mỗi ảnh dùng ít nhất một trong hai kỹ thuật vừa học." }
+      {
+        "start": 0,
+        "end": 20,
+        "text": "Chào các bạn, hôm nay chúng ta học hai công cụ bố cục dùng nhiều nhất."
+      },
+      {
+        "start": 20,
+        "end": 95,
+        "text": "Đầu tiên là quy tắc một phần ba: chia khung hình thành 9 ô bằng nhau và đặt chủ thể ở một trong bốn giao điểm."
+      },
+      {
+        "start": 95,
+        "end": 180,
+        "text": "Tiếp theo là đường dẫn: tận dụng con đường, hàng cây hay bờ sông để kéo mắt người xem về chủ thể."
+      },
+      {
+        "start": 180,
+        "end": 240,
+        "text": "Bài tập: chụp ba ảnh, mỗi ảnh dùng ít nhất một trong hai kỹ thuật vừa học."
+      }
     ],
     "quiz": [
       {
@@ -36,7 +60,12 @@
         "conceptId": "quy-tac-mot-phan-ba",
         "pauseAt": 95,
         "prompt": "Theo quy tắc một phần ba, nên đặt chủ thể ở đâu?",
-        "options": ["Chính giữa khung hình", "Tại giao điểm của các đường chia", "Sát mép khung hình", "Ở góc trên bên trái"],
+        "options": [
+          "Chính giữa khung hình",
+          "Tại giao điểm của các đường chia",
+          "Sát mép khung hình",
+          "Ở góc trên bên trái"
+        ],
         "correctIndex": 1,
         "explanation": "Bốn giao điểm của các đường chia là nơi mắt người xem dễ dừng lại nhất.",
         "variants": [
@@ -44,9 +73,114 @@
             "id": "q-mot-phan-ba-1b",
             "conceptId": "quy-tac-mot-phan-ba",
             "prompt": "Khi chụp phong cảnh, đặt đường chân trời ở đâu là đúng quy tắc một phần ba?",
-            "options": ["Cắt ngang chính giữa ảnh", "Trùng với đường chia ngang trên hoặc dưới", "Sát mép trên khung hình", "Chéo qua khung hình"],
+            "options": [
+              "Cắt ngang chính giữa ảnh",
+              "Trùng với đường chia ngang trên hoặc dưới",
+              "Sát mép trên khung hình",
+              "Chéo qua khung hình"
+            ],
             "correctIndex": 1,
             "explanation": "Đặt chân trời ở đường chia ngang để ưu tiên bầu trời hoặc mặt đất, tránh chia ảnh làm đôi."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "anh-sang-co-ban",
+    "courseId": "nhiep-anh-co-ban",
+    "title": "Ánh sáng cơ bản: hướng sáng và ánh sáng ba điểm",
+    "youtubeId": "",
+    "durationSec": 300,
+    "summary": "Dữ liệu mẫu để dựng giao diện. Bài thật sẽ do scripts/generate-content.ts tạo từ video YouTube.",
+    "origin": "sample",
+    "status": "published",
+    "concepts": [
+      {
+        "id": "huong-anh-sang",
+        "name": "Hướng ánh sáng",
+        "definition": "Vị trí nguồn sáng so với chủ thể (trước, bên, sau) quyết định hình khối, bóng đổ và cảm xúc của ảnh.",
+        "segment": {
+          "start": 15,
+          "end": 100
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "anh-sang-ba-diem",
+        "name": "Ánh sáng ba điểm",
+        "definition": "Bố trí ba nguồn sáng: đèn chính tạo hình khối, đèn phụ làm dịu bóng, đèn viền tách chủ thể khỏi phông.",
+        "segment": {
+          "start": 100,
+          "end": 205
+        },
+        "prerequisiteIds": [
+          "huong-anh-sang",
+          "duong-dan"
+        ]
+      },
+      {
+        "id": "do-tuong-phan",
+        "name": "Độ tương phản",
+        "definition": "Chênh lệch giữa vùng sáng và vùng tối trong ảnh; điều chỉnh bằng tỉ lệ giữa đèn chính và đèn phụ.",
+        "segment": {
+          "start": 205,
+          "end": 280
+        },
+        "prerequisiteIds": [
+          "anh-sang-ba-diem"
+        ]
+      }
+    ],
+    "transcript": [
+      {
+        "start": 0,
+        "end": 15,
+        "text": "Hôm nay chúng ta học cách nhìn và điều khiển ánh sáng trong một khung hình."
+      },
+      {
+        "start": 15,
+        "end": 100,
+        "text": "Trước hết là hướng ánh sáng: sáng từ bên cạnh làm nổi khối, sáng từ phía trước làm phẳng, sáng từ phía sau tạo bóng viền."
+      },
+      {
+        "start": 100,
+        "end": 205,
+        "text": "Tiếp theo là ánh sáng ba điểm với đèn chính, đèn phụ và đèn viền, dùng rất nhiều trong chân dung."
+      },
+      {
+        "start": 205,
+        "end": 300,
+        "text": "Cuối cùng là độ tương phản: giảm đèn phụ thì bóng đậm hơn, ảnh kịch tính hơn."
+      }
+    ],
+    "quiz": [
+      {
+        "id": "q-huong-sang-1",
+        "conceptId": "huong-anh-sang",
+        "pauseAt": 100,
+        "prompt": "Muốn làm nổi khối và chất liệu bề mặt của chủ thể, nên đặt nguồn sáng ở đâu?",
+        "options": [
+          "Ngay sau máy ảnh, chiếu thẳng vào chủ thể",
+          "Ở bên cạnh chủ thể",
+          "Ngay trên đầu máy ảnh",
+          "Phía sau chủ thể, hướng vào ống kính"
+        ],
+        "correctIndex": 1,
+        "explanation": "Ánh sáng chiếu ngang tạo bóng đổ rõ, nên khối và chất liệu hiện rõ hơn.",
+        "variants": [
+          {
+            "id": "q-huong-sang-1b",
+            "conceptId": "huong-anh-sang",
+            "prompt": "Ánh sáng chiếu thẳng từ phía trước chủ thể thường cho kết quả nào?",
+            "options": [
+              "Ảnh phẳng, ít khối",
+              "Bóng đổ dài và đậm",
+              "Chủ thể chỉ còn bóng đen",
+              "Ảnh có viền sáng quanh chủ thể"
+            ],
+            "correctIndex": 0,
+            "explanation": "Sáng từ phía trước xóa gần hết bóng đổ nên chủ thể trông phẳng."
           }
         ]
       }

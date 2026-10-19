@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
-import { advanceStreak, dailyFor, emptyDaily, evaluateBadges, MISSIONS, type DailyState } from '@/lib/gamification'
+import { advanceStreak, dailyFor, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
 // Lưu localStorage; mọi thao tác storage bọc try/catch để chế độ ẩn danh
@@ -85,20 +85,30 @@ const STORAGE_KEY = 'orbit-demo-state'
 
 export const DEFAULT_LEARNER_NAME = 'Phú'
 
-const initialData = {
-    role: null,
-    learnerName: DEFAULT_LEARNER_NAME,
-    dailyRead: {},
-    xp: 0,
-    streak: { count: 0, lastStudyDate: null, freezeUsedWeek: null },
-    lessonProgress: {},
-    conceptMastery: {},
-    earnedBadgeIds: [],
-    quizResults: {},
-    daily: emptyDaily(),
-    lessonReview: {},
-    lessonEdits: {},
-} satisfies Partial<OrbitState>
+/**
+ * Hồ sơ demo mặc định: như một sinh viên đã học khoảng 2 tuần (chuỗi 12 ngày, cấp 7, 2.480 XP,
+ * đọc 1/3 bài Daily hôm nay, 1/3 nhiệm vụ xong, đang xem bài ở 46%). Ngày tính theo hôm nay để
+ * chuỗi ngày luôn còn "sống" lúc mở demo. Lần đầu mở và nút "Đặt lại dữ liệu demo" đều trả về hồ sơ này.
+ */
+export function makeDemoProfile() {
+    const today = localDate()
+    return {
+        role: null as Role | null,
+        learnerName: DEFAULT_LEARNER_NAME,
+        dailyRead: { 'daily-bo-cuc-1': today } as Record<string, string>,
+        xp: 2480,
+        streak: { count: 12, lastStudyDate: today as string | null, freezeUsedWeek: null as string | null },
+        // 110s / 240s ≈ 46%
+        lessonProgress: { 'bo-cuc-co-ban': { lastPositionSec: 110, completed: false } } as Record<string, LessonProgress>,
+        // Mức nắm vững khác nhau: vững, vững, đang học (62%), còn lại bị khóa (chưa học)
+        conceptMastery: { 'quy-tac-mot-phan-ba': 0.92, 'huong-anh-sang': 0.85, 'duong-dan': 0.62 } as Record<string, number>,
+        earnedBadgeIds: ['chuoi-7-ngay'],
+        quizResults: {} as Record<string, QuizResult>,
+        daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
+        lessonReview: {} as Record<string, ReviewStatus>,
+        lessonEdits: {} as Record<string, LessonEdits>,
+    }
+}
 
 const safeLocalStorage: StateStorage = {
     getItem: (name) => {
@@ -127,7 +137,7 @@ const safeLocalStorage: StateStorage = {
 export const useOrbitStore = create<OrbitState>()(
     persist(
         (set, get) => ({
-            ...initialData,
+            ...makeDemoProfile(),
 
             setRole: (role) => set({ role }),
 
@@ -213,11 +223,13 @@ export const useOrbitStore = create<OrbitState>()(
                 return mission.rewardXp
             },
 
-            resetDemo: () => set({ ...initialData, daily: emptyDaily() }),
+            resetDemo: () => set({ ...makeDemoProfile() }),
         }),
         {
             name: STORAGE_KEY,
-            version: 1,
+            version: 2,
+            // Phiên bản cũ chưa có hồ sơ demo: bỏ để dùng hồ sơ mặc định mới
+            migrate: () => makeDemoProfile() as unknown as OrbitState,
             storage: createJSONStorage(() => safeLocalStorage),
         },
     ),

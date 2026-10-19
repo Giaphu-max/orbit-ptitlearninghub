@@ -166,6 +166,27 @@
     background-color: hsl(var(--reward-mid));
     background-image: radial-gradient(80% 70% at 50% 30%, hsl(var(--reward-from)) 0%, hsl(var(--reward-mid)) 45%, hsl(var(--reward-to)) 100%);
   }
+  /* Bề mặt đỏ cố định (thẻ ưu tiên, thẻ cấp độ...): chữ luôn trắng ở cả hai giao diện. Viết bằng CSS thuần
+     để không phụ thuộc cấu hình Tailwind nên không thể mất màu chữ. */
+  .surface-red {
+    color: hsl(var(--ink-foreground));
+    background-image: linear-gradient(135deg, hsl(var(--brand)) 0%, hsl(358 80% 28%) 100%);
+  }
+  .surface-red-deep {
+    color: hsl(var(--ink-foreground));
+    background-image: linear-gradient(135deg, hsl(358 80% 33%) 0%, hsl(358 78% 21%) 100%);
+  }
+  .on-red-chip {
+    background-color: hsl(var(--ink-foreground));
+    color: hsl(358 80% 33%);
+  }
+  .on-red-btn {
+    background-color: hsl(var(--ink-foreground));
+    color: hsl(358 80% 33%);
+  }
+  .on-red-muted {
+    color: hsl(var(--ink-foreground) / 0.8);
+  }
   .mask-fade-b {
     mask-image: linear-gradient(180deg, hsl(0 0% 0%), transparent 80%);
   }

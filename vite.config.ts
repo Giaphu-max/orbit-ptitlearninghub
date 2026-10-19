@@ -6,6 +6,22 @@ import { Readable } from 'node:stream'
 // Chỉ dùng khi chạy `npm run dev`: phục vụ các hàm trong api/ ngay trong Vite
 // để không bắt buộc cài Vercel CLI. Khi deploy, Vercel tự chạy api/ như serverless.
 // Biến môi trường (GEMINI_API_KEY...) chỉ nạp vào process.env phía Node, không lộ ra trình duyệt.
+// Tailwind không tự nạp lại tailwind.config.js khi server dev đang chạy, dẫn tới class mới (token màu...)
+// không có CSS và giao diện sai màu. Plugin này khởi động lại server dev mỗi khi file config đổi.
+function restartOnTailwindConfig(): Plugin {
+  return {
+    name: 'orbit-restart-on-tailwind-config',
+    apply: 'serve',
+    configureServer(server) {
+      const file = path.resolve(process.cwd(), 'tailwind.config.js')
+      server.watcher.add(file)
+      server.watcher.on('change', (changed) => {
+        if (path.resolve(changed) === file) void server.restart()
+      })
+    },
+  }
+}
+
 function devApi(): Plugin {
   return {
     name: 'orbit-dev-api',
@@ -48,7 +64,7 @@ function devApi(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), devApi()],
+  plugins: [react(), devApi(), restartOnTailwindConfig()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),

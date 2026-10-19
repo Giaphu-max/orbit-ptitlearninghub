@@ -57,8 +57,8 @@ function Hero() {
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-stripes" />
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots mask-fade-b" />
 
-            {/* Canvas 3D phủ cả hero, nằm sau chữ */}
-            <div className="absolute inset-0 z-0">
+            {/* Canvas 3D phủ hero từ dưới thanh điều hướng (cao 80px) trở xuống, nằm sau chữ: mây/nhãn không bao giờ bay vào vùng nav */}
+            <div className="absolute inset-x-0 bottom-0 top-20 z-0 overflow-hidden">
                 <CampusHero />
             </div>
 
@@ -199,25 +199,25 @@ function PriorityCard({ article }: { article: DailyArticle }) {
     return (
         <Link
             to={`/daily/${article.id}`}
-            className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-600 to-brand-800 p-7 text-ink-foreground shadow-brand transition duration-base ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:col-span-2 lg:row-span-2 lg:p-9"
+            className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] surface-red p-7 shadow-brand transition duration-base ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:col-span-2 lg:row-span-2 lg:p-9"
         >
             <span aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[440px] w-[440px] rounded-full border border-ink-foreground/25" />
             <span aria-hidden className="pointer-events-none absolute -bottom-24 -right-8 h-[300px] w-[300px] rounded-full border border-ink-foreground/25" />
             <span aria-hidden className="pointer-events-none absolute bottom-24 right-40 h-2.5 w-2.5 rounded-full bg-ink-foreground" />
             <div className="relative">
-                <span className="inline-flex rounded-full bg-ink-foreground px-3.5 py-1.5 text-xs font-extrabold text-brand-700">{reason}</span>
+                <span className="on-red-chip inline-flex rounded-full px-3.5 py-1.5 text-xs font-extrabold">{reason}</span>
                 <h3 className="mt-6 max-w-xl text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight">{article.title}</h3>
                 {lesson && src && (
-                    <p className="mt-4 text-[15px] text-ink-foreground/80">
+                    <p className="mt-4 text-[15px] on-red-muted">
                         Tổng hợp từ {lesson.title} (<span className="font-mono">{formatTime(src.start)}</span>).
                     </p>
                 )}
             </div>
             <div className="relative mt-10 flex flex-wrap items-center gap-4">
-                <span className="inline-flex items-center gap-2 rounded-2xl bg-ink-foreground px-6 py-3.5 text-[15px] font-extrabold text-brand-700 shadow-raised transition duration-base group-hover:gap-3">
+                <span className="on-red-btn inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 text-[15px] font-extrabold shadow-raised transition duration-base group-hover:gap-3">
                     Đọc ngay <ArrowRight size={16} />
                 </span>
-                <span className="text-sm text-ink-foreground/80">
+                <span className="on-red-muted text-sm">
                     {article.readingMinutes} phút · +{DAILY_ARTICLE_XP} XP
                 </span>
             </div>
@@ -228,11 +228,11 @@ function PriorityCard({ article }: { article: DailyArticle }) {
 /** Đã đọc cả 3 bài: màn "Hôm nay đủ rồi" kèm tóm tắt những gì đã học. */
 function DoneCard({ articles }: { articles: DailyArticle[] }) {
     return (
-        <div className="relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-600 to-brand-800 p-7 text-ink-foreground shadow-brand lg:col-span-2 lg:row-span-2 lg:p-9">
+        <div className="relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] surface-red p-7 shadow-brand lg:col-span-2 lg:row-span-2 lg:p-9">
             <div>
-                <span className="inline-flex rounded-full bg-ink-foreground px-3.5 py-1.5 text-xs font-extrabold text-brand-700">Xong 3/3</span>
+                <span className="on-red-chip inline-flex rounded-full px-3.5 py-1.5 text-xs font-extrabold">Xong 3/3</span>
                 <h3 className="mt-6 text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight">Hôm nay đủ rồi. Hẹn bạn ngày mai.</h3>
-                <p className="mt-4 text-[15px] text-ink-foreground/80">Hôm nay bạn đã học:</p>
+                <p className="mt-4 text-[15px] on-red-muted">Hôm nay bạn đã học:</p>
                 <ul className="mt-2 flex flex-col gap-1.5 text-[15px]">
                     {articles.map((a) => (
                         <li key={a.id} className="flex items-start gap-2">

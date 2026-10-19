@@ -8,10 +8,10 @@ import type { QuizResult } from '@/store/useOrbitStore'
 
 // ─── Cấp độ ────────────────────────────────────────────────────────────────
 
-/** XP cần để bắt đầu cấp n: 50·(n−1)² → cấp 2 ở 50 XP, cấp 3 ở 200, cấp 4 ở 450… */
-export const xpForLevel = (level: number) => 50 * (level - 1) ** 2
+/** XP cần để bắt đầu cấp n: 60·(n−1)² → cấp 2 ở 60 XP, cấp 3 ở 240, cấp 7 ở 2.160… */
+export const xpForLevel = (level: number) => 60 * (level - 1) ** 2
 
-export const levelFromXp = (xp: number) => Math.floor(Math.sqrt(Math.max(0, xp) / 50)) + 1
+export const levelFromXp = (xp: number) => Math.floor(Math.sqrt(Math.max(0, xp) / 60)) + 1
 
 export interface LevelProgress {
     level: number
@@ -128,8 +128,7 @@ export interface Mission {
 
 export const MISSIONS: Mission[] = [
     { id: 'daily', title: 'Đọc một bài Orbit Daily', hint: 'Đọc xong và trả lời đúng câu kiểm tra nhanh', target: 1, rewardXp: 15, progress: (d) => d.readArticles },
-    { id: 'answer', title: 'Trả lời đúng một câu hỏi trong video', hint: 'Dừng ở mốc quiz và chọn đáp án đúng', target: 1, rewardXp: 10, progress: (d) => d.answered },
-    { id: 'fix', title: 'Sửa đúng một câu sau khi sai', hint: 'Xem lại đoạn video rồi làm câu biến thể', target: 1, rewardXp: 15, progress: (d) => d.corrected },
+    { id: 'fix', title: 'Sửa đúng một câu sau khi sai', hint: 'Xem lại đoạn video rồi làm câu biến thể', target: 1, rewardXp: 30, progress: (d) => d.corrected },
     { id: 'finish', title: 'Hoàn thành một bài giảng', hint: 'Làm hết các câu hỏi trong bài', target: 1, rewardXp: 20, progress: (d) => d.completedLessons },
 ]
 

@@ -84,7 +84,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     initial={{ scale: 0.4, rotate: -12, opacity: 0 }}
                     animate={{ scale: 1, rotate: 0, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 260, damping: 16, delay: 0.1 }}
-                    className="flex h-24 w-24 items-center justify-center rounded-full bg-ink-foreground text-brand-600 shadow-raised"
+                    className="flex h-24 w-24 items-center justify-center on-red-btn rounded-full shadow-raised"
                 >
                     <Icon size={44} className={event.kind === 'xp' ? 'fill-current' : ''} />
                 </motion.span>
@@ -126,7 +126,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     initial={{ y: 16, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.7 }}
-                    className="mt-10 inline-flex items-center gap-2 rounded-full bg-ink-foreground px-8 py-3.5 text-sm font-bold text-brand-700 shadow-raised transition duration-fast hover:bg-ink-foreground/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/40"
+                    className="mt-10 inline-flex items-center gap-2 on-red-btn rounded-full px-8 py-3.5 text-sm font-bold shadow-raised transition duration-fast hover:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/40"
                 >
                     <Sparkles size={16} /> Tiếp tục
                 </motion.button>
