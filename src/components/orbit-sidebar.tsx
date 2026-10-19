@@ -41,7 +41,7 @@ export function OrbitSidebar({ activeTab, onTabChange }: OrbitSidebarProps) {
                 {(role === 'teacher' ? [...navigation, ...teacherNavigation] : navigation).map(({ label, tab, icon: Icon }) => {
                     const active = activeTab === tab;
                     return (
-                        <button key={label} type="button" aria-label={label} aria-current={active ? 'page' : undefined} onClick={() => onTabChange(tab)} className={`${itemClass} ${active ? 'text-brand-700' : 'text-gray-500 hover:text-gray-800'}`}>
+                        <button key={label} type="button" aria-label={label} aria-current={active ? 'page' : undefined} onClick={() => onTabChange(tab)} className={`${itemClass} ${active ? 'text-brand-ink' : 'text-gray-500 hover:text-gray-800'}`}>
                             <div className="w-7 flex-shrink-0 flex justify-center">
                                 <Icon size={28} strokeWidth={active ? 2.5 : 2} />
                             </div>
@@ -64,7 +64,7 @@ export function OrbitSidebar({ activeTab, onTabChange }: OrbitSidebarProps) {
                     </div>
                     <span className={`${labelClass} text-[13px]`}>Đổi vai trò</span>
                 </button>
-                <button type="button" onClick={handleReset} className={`${itemClass} text-gray-500 hover:text-brand-700`} aria-label="Đặt lại dữ liệu demo">
+                <button type="button" onClick={handleReset} className={`${itemClass} text-gray-500 hover:text-brand-ink`} aria-label="Đặt lại dữ liệu demo">
                     <div className="w-7 flex-shrink-0 flex justify-center">
                         <RotateCcw size={20} />
                     </div>

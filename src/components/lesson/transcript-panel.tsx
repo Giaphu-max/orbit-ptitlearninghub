@@ -29,7 +29,7 @@ export function TranscriptPanel({ transcript, currentTime, onSeek }: TranscriptP
         <section aria-label="Transcript bài giảng" className="flex flex-col rounded-card border border-border bg-card shadow-card">
             <header className="flex items-center justify-between gap-4 border-b border-border px-5 py-3">
                 <h2 className="flex items-center gap-2 font-bold text-gray-900">
-                    <ListVideo size={18} className="text-brand-600" /> Transcript
+                    <ListVideo size={18} className="text-brand-ink" /> Transcript
                 </h2>
                 <label className="flex cursor-pointer select-none items-center gap-2 text-xs font-semibold text-gray-500">
                     <input
@@ -54,7 +54,7 @@ export function TranscriptPanel({ transcript, currentTime, onSeek }: TranscriptP
                                     isActive ? 'bg-brand-50' : 'hover:bg-gray-50'
                                 }`}
                             >
-                                <span className={`shrink-0 pt-0.5 font-mono text-xs ${isActive ? 'font-bold text-brand-700' : 'text-gray-400'}`}>
+                                <span className={`shrink-0 pt-0.5 font-mono text-xs ${isActive ? 'font-bold text-brand-ink' : 'text-gray-400'}`}>
                                     {formatTime(seg.start)}
                                 </span>
                                 <span className={`text-[15px] leading-relaxed ${isActive ? 'text-gray-900' : 'text-gray-600'}`}>{seg.text}</span>

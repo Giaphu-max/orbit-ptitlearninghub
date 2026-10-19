@@ -68,7 +68,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
             className="w-full max-w-2xl rounded-panel bg-card p-5 outline-none text-card-foreground shadow-raised md:max-h-full md:overflow-y-auto md:p-6"
         >
             <div className="flex flex-wrap items-center gap-2">
-                <span className="text-eyebrow uppercase text-brand-600">
+                <span className="text-eyebrow uppercase text-brand-ink">
                     {attempt === 0 ? 'Câu hỏi nhanh' : `Câu tương tự ${attempt}/${root.variants.length}`}
                 </span>
                 {concept && <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">{concept.name}</span>}
@@ -87,12 +87,12 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                     const revealCorrect = answered && (answered.correct || !hasNextVariant)
                     // Đã trả lời: thu gọn, chỉ giữ phương án đã chọn (và đáp án đúng nếu được lộ) để chừa chỗ cho giải thích
                     if (answered && !isChosen && !(revealCorrect && isCorrectOption)) return null
-                    let tone = 'border-border bg-white hover:border-brand-300 hover:bg-brand-50/50'
+                    let tone = 'border-border bg-card hover:border-brand-300 hover:bg-brand-50/50'
                     if (answered) {
                         if (isChosen && answered.correct) tone = 'border-success bg-success/10 text-gray-900'
                         else if (isChosen) tone = 'border-brand-400 bg-brand-50 text-gray-900'
                         else if (revealCorrect && isCorrectOption) tone = 'border-success/60 bg-success/5'
-                        else tone = 'border-border bg-white opacity-60'
+                        else tone = 'border-border bg-card opacity-60'
                     }
                     return (
                         <motion.button
@@ -107,7 +107,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                             className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-[15px] transition duration-fast disabled:cursor-default ${tone}`}
                         >
                             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 font-mono text-xs font-bold text-gray-600">
-                                {answered && isChosen ? answered.correct ? <Check size={14} className="text-success" /> : <X size={14} className="text-brand-600" /> : LETTERS[i]}
+                                {answered && isChosen ? answered.correct ? <Check size={14} className="text-success" /> : <X size={14} className="text-brand-ink" /> : LETTERS[i]}
                             </span>
                             <span className="text-gray-800">{option}</span>
                         </motion.button>
@@ -135,14 +135,14 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-3">
                     <div className="rounded-card border border-brand-100 bg-brand-50 p-4">
                         <p className="flex items-center gap-2 font-bold text-gray-900">
-                            <Sparkles size={16} className="text-brand-600" /> Chưa đúng, cùng xem lại nhé
+                            <Sparkles size={16} className="text-brand-ink" /> Chưa đúng, cùng xem lại nhé
                         </p>
                         {explain?.status === 'loading' ? (
                             <p className="mt-2 flex items-center gap-2 text-sm text-gray-600">
                                 <Loader2 size={14} className="animate-spin" /> Trợ giảng đang xem lại bài giảng để giải thích…
                             </p>
                         ) : (
-                            <div className="prose prose-sm mt-2 max-w-none text-gray-700">
+                            <div className="prose prose-sm mt-2 max-w-none dark:prose-invert text-gray-700">
                                 <ReactMarkdown>{explain?.text ?? question.explanation}</ReactMarkdown>
                             </div>
                         )}
@@ -152,7 +152,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                     </div>
                     {reviewRange && reviewText && (
                         <blockquote className="border-l-4 border-brand-200 pl-4 text-sm leading-relaxed text-gray-600">
-                            <span className="mr-2 font-mono text-xs text-brand-600">
+                            <span className="mr-2 font-mono text-xs text-brand-ink">
                                 {formatTime(reviewRange.start)}–{formatTime(reviewRange.end)}
                             </span>
                             {reviewText}

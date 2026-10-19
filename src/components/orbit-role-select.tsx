@@ -23,7 +23,7 @@ export function OrbitRoleSelect() {
     return (
         <div className="min-h-screen w-full bg-surface px-6 py-16 lg:px-12">
             <div className="mx-auto flex max-w-5xl flex-col">
-                <p className="text-eyebrow uppercase text-brand-600">Orbit · PTIT Learning Hub</p>
+                <p className="text-eyebrow uppercase text-brand-ink">Orbit · PTIT Learning Hub</p>
                 <h1 className="mt-4 max-w-3xl text-display text-gray-900">Bạn vào Orbit với vai trò nào?</h1>
                 <p className="mt-6 max-w-2xl text-lg leading-relaxed text-gray-600">
                     Đây là bản demo nên không cần đăng nhập. Tiến độ được lưu ngay trên trình duyệt này, có thể đổi vai trò hoặc đặt lại bất cứ lúc nào.
@@ -37,12 +37,12 @@ export function OrbitRoleSelect() {
                             onClick={() => setRole(role)}
                             className="group flex flex-col items-start rounded-panel border border-border bg-card p-8 text-left shadow-card transition duration-base ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                         >
-                            <span className="flex h-14 w-14 items-center justify-center rounded-card bg-brand-soft text-brand-600 transition duration-base group-hover:bg-brand-600 group-hover:text-white">
+                            <span className="flex h-14 w-14 items-center justify-center rounded-card bg-brand-soft text-brand-ink transition duration-base group-hover:bg-brand-600 group-hover:text-white">
                                 <Icon size={28} strokeWidth={2} />
                             </span>
                             <span className="mt-8 text-title text-gray-900">{title}</span>
                             <span className="mt-3 text-[15px] leading-relaxed text-gray-600">{description}</span>
-                            <span className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-brand-600">
+                            <span className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-brand-ink">
                                 Vào với vai trò {title.toLowerCase()}
                                 <ArrowRight size={16} className="transition duration-base group-hover:translate-x-1" />
                             </span>

@@ -40,7 +40,7 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
                             onClick={() => onSeek(c.segment.start)}
                             title={`${c.name} · ${formatTime(c.segment.start)}`}
                             aria-label={`Tua tới khái niệm ${c.name}, ${formatTime(c.segment.start)}`}
-                            className={`absolute top-1/2 h-3 -translate-y-1/2 rounded-full border-2 border-white transition duration-fast hover:h-4 ${isActive ? 'bg-brand-600' : 'bg-gray-400 hover:bg-brand-400'}`}
+                            className={`absolute top-1/2 h-3 -translate-y-1/2 rounded-full border-2 border-card transition duration-fast hover:h-4 ${isActive ? 'bg-brand-600' : 'bg-gray-400 hover:bg-brand-400'}`}
                             style={{ left: pct(c.segment.start), width: `calc(${pct(c.segment.end - c.segment.start)} - 2px)` }}
                         />
                     )
@@ -50,7 +50,7 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
                         key={q.id}
                         type="button"
                         onClick={() => onOpenQuiz(q)}
-                        className={`absolute -top-0.5 z-10 h-3 w-3 -translate-x-1/2 rounded-full ring-2 ring-white transition duration-fast hover:scale-125 ${
+                        className={`absolute -top-0.5 z-10 h-3 w-3 -translate-x-1/2 rounded-full ring-2 ring-card transition duration-fast hover:scale-125 ${
                             results[q.id] ? 'bg-success' : 'bg-brand-600'
                         }`}
                         style={{ left: pct(q.pauseAt) }}
@@ -72,8 +72,8 @@ export function ConceptTimeline({ lesson, currentTime, onSeek, onOpenQuiz, resul
                         onClick={() => onSeek(c.segment.start)}
                         className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition duration-fast ${
                             active?.id === c.id
-                                ? 'border-brand-200 bg-brand-50 text-brand-700'
-                                : 'border-border bg-white text-gray-700 hover:border-gray-300'
+                                ? 'border-brand-200 bg-brand-50 text-brand-ink'
+                                : 'border-border bg-card text-gray-700 hover:border-gray-300'
                         }`}
                     >
                         <span className="font-mono text-[11px] text-gray-500">{formatTime(c.segment.start)}</span>

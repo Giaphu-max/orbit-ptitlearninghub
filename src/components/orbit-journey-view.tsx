@@ -23,7 +23,7 @@ export function OrbitJourneyView() {
         <div className="h-full w-full overflow-y-auto bg-surface">
             <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 py-8 lg:px-8 lg:py-12">
                 <header>
-                    <p className="text-eyebrow uppercase text-brand-600">Hành trình của bạn</p>
+                    <p className="text-eyebrow uppercase text-brand-ink">Hành trình của bạn</p>
                     <h1 className="mt-3 text-headline text-gray-900">Điểm thưởng đến từ việc hiểu bài</h1>
                     <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-gray-600">
                         XP chỉ tính khi bạn trả lời đúng, sửa được lỗi sai hoặc hoàn thành bài. Xem video lâu hay bấm nhiều không làm tăng điểm.
@@ -52,7 +52,7 @@ function StatusRow() {
             <div className="rounded-panel bg-gradient-to-br from-brand-600 to-brand-900 p-7 text-white shadow-brand">
                 <div className="flex items-end justify-between gap-4">
                     <div>
-                        <p className="text-eyebrow uppercase text-brand-100">Cấp độ</p>
+                        <p className="text-eyebrow uppercase text-white/80">Cấp độ</p>
                         <p className="mt-2 font-mono text-6xl font-bold leading-none">{lp.level}</p>
                         <p className="mt-2 text-lg font-bold">{levelTitle(lp.level)}</p>
                     </div>
@@ -80,7 +80,7 @@ function StatusRow() {
 
             <div className="flex flex-col justify-between rounded-panel border border-border bg-card p-7 shadow-card">
                 <div className="flex items-center gap-4">
-                    <span className={`flex h-16 w-16 items-center justify-center rounded-full ${streak.count > 0 ? 'bg-brand-soft text-brand-600' : 'bg-muted text-gray-400'}`}>
+                    <span className={`flex h-16 w-16 items-center justify-center rounded-full ${streak.count > 0 ? 'bg-brand-soft text-brand-ink' : 'bg-muted text-gray-400'}`}>
                         <Flame size={32} className={streak.count > 0 ? 'fill-current' : ''} />
                     </span>
                     <div>
@@ -95,7 +95,7 @@ function StatusRow() {
                           ? 'Trả lời một câu quiz hôm nay để giữ chuỗi.'
                           : 'Trả lời một câu quiz để bắt đầu chuỗi mới.'}
                 </p>
-                <p className={`mt-3 inline-flex items-center gap-2 text-xs font-semibold ${canFreeze ? 'text-sky-700' : 'text-gray-500'}`}>
+                <p className={`mt-3 inline-flex items-center gap-2 text-xs font-semibold ${canFreeze ? 'text-info' : 'text-gray-500'}`}>
                     <Snowflake size={14} />
                     {canFreeze ? 'Còn 1 lần đóng băng tuần này, tự dùng khi bạn lỡ một ngày' : 'Đã dùng lần đóng băng của tuần này'}
                 </p>
@@ -217,14 +217,14 @@ function SkillNodeCard({ node }: { node: ReturnType<typeof buildSkillTree>[numbe
             aria-disabled={!node.unlocked}
             onClick={(e) => !node.unlocked && e.preventDefault()}
             className={`flex items-center gap-4 rounded-card border p-4 transition duration-base ease-out ${
-                node.unlocked ? 'border-border bg-white hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card' : 'cursor-not-allowed border-dashed border-border bg-muted/60'
+                node.unlocked ? 'border-border bg-card hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card' : 'cursor-not-allowed border-dashed border-border bg-muted/60'
             }`}
         >
             <span
                 className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                 style={{ background: node.unlocked ? `conic-gradient(hsl(var(--brand)) ${pct * 3.6}deg, hsl(var(--muted)) 0)` : 'hsl(var(--muted))' }}
             >
-                <span className={`flex h-[46px] w-[46px] items-center justify-center rounded-full font-mono text-sm font-bold ${mastered ? 'bg-brand-600 text-white shadow-brand' : 'bg-white text-gray-800'}`}>
+                <span className={`flex h-[46px] w-[46px] items-center justify-center rounded-full font-mono text-sm font-bold ${mastered ? 'bg-brand-600 text-white shadow-brand' : 'bg-card text-gray-800'}`}>
                     {node.unlocked ? (mastered ? <Check size={20} /> : `${pct}%`) : <Lock size={16} className="text-gray-400" />}
                 </span>
             </span>
@@ -264,7 +264,7 @@ function Badges() {
                     const { current, target } = badgeProgress(b, { conceptMastery, quizResults, streak })
                     return (
                         <li key={b.id} className={`flex flex-col gap-4 rounded-card border p-5 ${has ? 'border-brand-200 bg-card shadow-card' : 'border-border bg-muted/50'}`}>
-                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-white shadow-brand' : 'bg-white text-gray-400'}`}>
+                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-white shadow-brand' : 'bg-card text-gray-400'}`}>
                                 {has ? <Award size={28} /> : <Lock size={22} />}
                             </span>
                             <div>

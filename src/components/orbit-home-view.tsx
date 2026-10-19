@@ -21,10 +21,10 @@ export function OrbitHomeView() {
     return (
         <div className="h-full w-full overflow-y-auto bg-surface">
             {/* ── Tầng 1: hero ── */}
-            <section className="relative isolate overflow-hidden bg-[#12090A] text-white [background-image:radial-gradient(90%_80%_at_85%_15%,#C4161C_0%,transparent_60%),radial-gradient(70%_70%_at_5%_100%,#7A0C10_0%,transparent_65%),linear-gradient(160deg,#2A0E0F_0%,#12090A_100%)]">
+            <section className="relative isolate overflow-hidden bg-hero text-white">
                 <div
                     aria-hidden
-                    className="pointer-events-none absolute inset-0 -z-10 opacity-80 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1.4px)] [background-size:28px_28px] [mask-image:linear-gradient(180deg,#000,transparent_80%)]"
+                    className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots [mask-image:linear-gradient(180deg,#000,transparent_80%)]"
                 />
                 {/* Canvas 3D phủ cả hero, nằm sau chữ */}
                 <div className="absolute inset-0 z-0">
@@ -32,7 +32,7 @@ export function OrbitHomeView() {
                 </div>
                 <div className="pointer-events-none relative z-10 mx-auto flex min-h-[clamp(880px,110vh,960px)] max-w-[1320px] items-start px-5 py-10 lg:min-h-[clamp(600px,88vh,780px)] lg:items-center lg:px-10">
                     <div className="flex min-w-0 max-w-[440px] flex-col gap-5">
-                        <span className="text-eyebrow uppercase text-[#FFB4A8]">Orbit · PTIT Learning Hub</span>
+                        <span className="text-eyebrow uppercase text-brand-light">Orbit · PTIT Learning Hub</span>
                         <h1 className="text-[clamp(2.5rem,5vw,4.25rem)] font-black leading-[0.98] tracking-[-0.045em] [text-wrap:balance]">
                             Học tập trung, có điểm dừng.
                         </h1>
@@ -43,13 +43,13 @@ export function OrbitHomeView() {
                         {resume ? (
                             <Link
                                 to={`/lesson/${resume.id}`}
-                                className="group pointer-events-auto mt-2 flex items-center gap-4 rounded-card bg-white p-4 text-gray-900 shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                                className="group pointer-events-auto mt-2 flex items-center gap-4 rounded-card bg-card p-4 text-gray-900 shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                             >
                                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition duration-base group-hover:scale-105">
                                     <Play size={20} className="fill-current" />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                    <span className="block text-eyebrow uppercase text-brand-600">{resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu học'}</span>
+                                    <span className="block text-eyebrow uppercase text-brand-ink">{resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu học'}</span>
                                     <span className="mt-1 block truncate font-bold">{resume.title}</span>
                                     {resumeAt > 0 && (
                                         <span className="block font-mono text-xs text-gray-500">
@@ -57,7 +57,7 @@ export function OrbitHomeView() {
                                         </span>
                                     )}
                                 </span>
-                                <ArrowRight size={18} className="shrink-0 text-gray-400 transition duration-base group-hover:translate-x-1 group-hover:text-brand-600" />
+                                <ArrowRight size={18} className="shrink-0 text-gray-400 transition duration-base group-hover:translate-x-1 group-hover:text-brand-ink" />
                             </Link>
                         ) : (
                             <p className="rounded-card bg-white/10 p-4 text-sm text-white/80">Chưa có bài nào được giảng viên xuất bản.</p>
@@ -72,7 +72,7 @@ export function OrbitHomeView() {
                 <section aria-labelledby="daily-title">
                     <div className="flex flex-wrap items-end justify-between gap-3">
                         <div>
-                            <p className="text-eyebrow uppercase text-brand-600">Orbit Daily</p>
+                            <p className="text-eyebrow uppercase text-brand-ink">Orbit Daily</p>
                             <h2 id="daily-title" className="mt-2 text-headline text-gray-900">Hôm nay đọc gì?</h2>
                         </div>
                         <p className="text-sm text-gray-600">Tối đa 3 bài mỗi ngày, ưu tiên phần bạn còn yếu.</p>
@@ -92,7 +92,7 @@ export function OrbitHomeView() {
                                     }`}
                                 >
                                     <div>
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand-700">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand-ink">
                                             <Sparkles size={13} /> {big ? 'Ưu tiên hôm nay' : 'Gợi ý'} · {a.readingMinutes} phút
                                         </span>
                                         <h3 className={`mt-4 text-gray-900 ${big ? 'text-title md:text-[1.75rem] md:leading-tight' : 'text-lg font-bold leading-snug'}`}>{a.title}</h3>
@@ -102,7 +102,7 @@ export function OrbitHomeView() {
                                         {a.conceptIds.slice(0, 2).map((id) => (
                                             <span key={id} className="rounded-full bg-muted px-2.5 py-1 font-semibold">{getConcept(id)?.name ?? id}</span>
                                         ))}
-                                        <span className="ml-auto inline-flex items-center gap-1 font-bold text-brand-600">
+                                        <span className="ml-auto inline-flex items-center gap-1 font-bold text-brand-ink">
                                             Xem bài nguồn <ArrowRight size={14} className="transition duration-base group-hover:translate-x-1" />
                                         </span>
                                     </div>
@@ -110,7 +110,7 @@ export function OrbitHomeView() {
                             )
                         })}
                         {dailyArticles.length < 3 && (
-                            <div className="flex flex-col justify-center rounded-panel border border-dashed border-border bg-white/60 p-6 text-sm text-gray-600 md:col-span-2">
+                            <div className="flex flex-col justify-center rounded-panel border border-dashed border-border bg-card/60 p-6 text-sm text-gray-600 md:col-span-2">
                                 <span className="font-bold text-gray-800">Còn {3 - dailyArticles.length} lượt hôm nay</span>
                                 Hoàn thành thêm bài học để mở thêm bài đọc mới.
                             </div>

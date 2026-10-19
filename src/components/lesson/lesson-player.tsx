@@ -12,7 +12,7 @@ interface LessonPlayerProps {
 /** Khung 16:9 chứa iframe YouTube, kèm trạng thái đang tải / lỗi / chưa có video. */
 export function LessonPlayer({ containerRef, status, error, youtubeId }: LessonPlayerProps) {
     return (
-        <div className="relative aspect-video w-full overflow-hidden rounded-panel bg-gray-950 shadow-raised">
+        <div className="relative aspect-video w-full overflow-hidden rounded-panel bg-ink shadow-raised">
             <div ref={containerRef} className="absolute inset-0 [&_iframe]:h-full [&_iframe]:w-full" />
 
             {status === 'loading' && (
@@ -22,7 +22,7 @@ export function LessonPlayer({ containerRef, status, error, youtubeId }: LessonP
             )}
 
             {status === 'no-video' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-gray-900 via-gray-950 to-brand-950 px-6 text-center text-white">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-ink via-ink to-brand-950 px-6 text-center text-white">
                     <Film size={36} className="text-white/60" />
                     <p className="text-lg font-bold">Bài mẫu chưa gắn video</p>
                     <p className="max-w-md text-sm text-white/70">
@@ -32,7 +32,7 @@ export function LessonPlayer({ containerRef, status, error, youtubeId }: LessonP
             )}
 
             {status === 'error' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gray-950 px-6 text-center text-white">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-ink px-6 text-center text-white">
                     <AlertTriangle size={36} className="text-warning" />
                     <p className="text-lg font-bold">Chưa phát được video</p>
                     <p className="max-w-md text-sm text-white/70">{error}</p>

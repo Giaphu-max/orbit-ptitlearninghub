@@ -2,6 +2,7 @@ import { lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 import { MainLayout } from '@/layouts/MainLayout'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 // Mỗi trang một chunk riêng: trang chủ không phải tải trình phát, quiz, markdown…
 // (Suspense nằm trong MainLayout để sidebar vẫn hiện khi trang đang tải)
@@ -15,6 +16,7 @@ function App() {
   return (
     // Tôn trọng prefers-reduced-motion cho mọi animation của thư viện motion
     <MotionConfig reducedMotion="user">
+      <ThemeToggle />
       <BrowserRouter>
         <Routes>
           <Route element={<MainLayout />}>

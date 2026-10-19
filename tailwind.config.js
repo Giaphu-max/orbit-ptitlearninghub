@@ -2,9 +2,12 @@ import typography from '@tailwindcss/typography'
 import animate from 'tailwindcss-animate'
 
 const token = (name) => `hsl(var(--${name}) / <alpha-value>)`
+// Thang màu lưu dạng kênh RGB trong CSS variables để đổi theo giao diện sáng/tối mà vẫn dùng được độ trong suốt
+const scale = (name, steps) => Object.fromEntries(steps.map((n) => [n, `rgb(var(--${name}-${n}) / <alpha-value>)`]))
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -14,35 +17,21 @@ export default {
       colors: {
         // Thang đỏ PTIT, 600 là màu gốc #C4161C
         brand: {
-          50: '#FDF3F2',
-          100: '#FBE3E2',
-          200: '#F6C4C3',
-          300: '#EE9A98',
-          400: '#E2605F',
-          500: '#D42F31',
-          600: '#C4161C',
-          700: '#A11117',
-          800: '#810F14',
-          900: '#5E0C10',
-          950: '#3A0709',
+          ...scale('brand', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]),
+          /** Màu chữ/nhấn đỏ trên nền theo giao diện (sáng hơn ở chế độ tối để đủ tương phản) */
+          ink: token('brand-ink'),
+          /** Đỏ nhạt luôn dùng trên nền tối/đỏ (hero, màn nhận XP), không đổi theo giao diện */
+          light: token('brand-light'),
           DEFAULT: token('brand'),
           foreground: token('brand-foreground'),
           soft: token('brand-soft'),
         },
         // Trung tính ấm thay cho xám lạnh mặc định
-        gray: {
-          50: '#FAFAF9',
-          100: '#F5F5F4',
-          200: '#E7E5E4',
-          300: '#D6D3D1',
-          400: '#A8A29E',
-          500: '#78716C',
-          600: '#57534E',
-          700: '#44403C',
-          800: '#292524',
-          900: '#1C1917',
-          950: '#0C0A09',
-        },
+        // Trung tính ấm. Đây là thang theo giao diện: gray-900 là chữ đậm ở chế độ sáng và chữ sáng ở chế độ tối
+        gray: scale('gray', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]),
+        /** Nền tối cố định ở cả hai giao diện (khung video, lớp phủ, thông báo) */
+        ink: token('ink'),
+        info: token('info'),
         border: token('border'),
         input: token('input'),
         ring: token('ring'),

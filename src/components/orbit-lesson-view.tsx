@@ -35,7 +35,7 @@ export function OrbitLessonView() {
 function UnpublishedNotice() {
     return (
         <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="text-eyebrow uppercase text-brand-600">Chưa xuất bản</p>
+            <p className="text-eyebrow uppercase text-brand-ink">Chưa xuất bản</p>
             <h1 className="text-headline text-gray-900">Bài này đang chờ giảng viên duyệt</h1>
             <p className="max-w-md text-gray-600">Nội dung do AI tạo cần được giảng viên xem lại trước khi đến tay sinh viên.</p>
             <Link to="/learning" className="rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-brand transition hover:bg-brand-700">
@@ -112,15 +112,15 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
             <div className={`mx-auto grid max-w-[1600px] gap-6 p-4 lg:p-6 ${isTutorOpen ? 'xl:grid-cols-[minmax(0,1fr)_400px]' : ''}`}>
                 {/* ── Cột chính ── */}
                 <div className="flex min-w-0 flex-col gap-5">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3 pr-14 lg:pr-12">
                         <Link
                             to="/learning"
-                            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-gray-600 transition hover:bg-white hover:text-gray-900"
+                            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-gray-600 transition hover:bg-card hover:text-gray-900"
                         >
                             <ChevronLeft size={16} /> {course?.title ?? 'Khóa học'}
                         </Link>
                         <span
-                            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-card"
+                            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-2 text-sm font-semibold text-gray-700 shadow-card"
                             title="Tổng XP"
                         >
                             <Zap size={15} className="fill-brand-500 text-brand-500" />
@@ -129,7 +129,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         <button
                             type="button"
                             onClick={() => setIsTutorOpen((v) => !v)}
-                            className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-card transition hover:border-gray-300"
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-gray-700 shadow-card transition hover:border-gray-300"
                         >
                             {isTutorOpen ? <PanelRightClose size={16} /> : <MessageSquare size={16} />}
                             {isTutorOpen ? 'Tập trung xem' : 'Mở trợ giảng AI'}
@@ -151,7 +151,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="mt-4 flex justify-center md:absolute md:inset-x-0 md:top-0 md:mt-0 md:aspect-video md:items-center md:rounded-panel md:bg-gray-950/75 md:p-3 lg:p-5 md:backdrop-blur-sm"
+                                    className="mt-4 flex justify-center md:absolute md:inset-x-0 md:top-0 md:mt-0 md:aspect-video md:items-center md:rounded-panel md:bg-ink/75 md:p-3 lg:p-5 md:backdrop-blur-sm"
                                 >
                                     <QuizCard
                                         lesson={lesson}
@@ -168,7 +168,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         </AnimatePresence>
 
                         {phase.kind === 'reviewing' && (
-                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-card bg-gray-900 px-4 py-3 text-sm text-white md:absolute md:left-4 md:right-4 md:top-4 md:mt-0 md:bg-gray-900/85 md:backdrop-blur">
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-card bg-ink px-4 py-3 text-sm text-white md:absolute md:left-4 md:right-4 md:top-4 md:mt-0 md:bg-gray-900/85 md:backdrop-blur">
                                 <span>
                                     Đang xem lại đoạn{' '}
                                     <span className="font-mono font-bold">
@@ -189,13 +189,13 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
 
                     {showResume && (
                         <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-brand-100 bg-brand-50 px-4 py-3 text-sm">
-                            <span className="text-brand-800">
+                            <span className="text-brand-ink">
                                 Đang tiếp tục từ <span className="font-mono font-bold">{formatTime(resumeFrom)}</span>, chỗ bạn dừng lần trước.
                             </span>
                             <button
                                 type="button"
                                 onClick={() => handleSeek(0)}
-                                className="inline-flex items-center gap-1.5 font-semibold text-brand-700 hover:underline"
+                                className="inline-flex items-center gap-1.5 font-semibold text-brand-ink hover:underline"
                             >
                                 <RotateCcw size={14} /> Xem từ đầu
                             </button>
@@ -205,7 +205,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                     <ConceptTimeline lesson={lesson} currentTime={currentTime} onSeek={handleSeek} onOpenQuiz={quiz.open} results={quiz.results} />
 
                     <header className="pt-2">
-                        <p className="text-eyebrow uppercase text-brand-600">
+                        <p className="text-eyebrow uppercase text-brand-ink">
                             {course?.subject ?? 'Bài giảng'}
                             {lessonIndex >= 0 && ` · Bài ${lessonIndex + 1}/${courseLessons.length}`}
                         </p>
@@ -234,7 +234,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleSeek(c.segment.start)}
-                                                    className="font-mono text-xs font-medium text-brand-600 hover:underline"
+                                                    className="font-mono text-xs font-medium text-brand-ink hover:underline"
                                                 >
                                                     {formatTime(c.segment.start)}
                                                 </button>
@@ -255,7 +255,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                                     to={`/lesson/${l.id}`}
                                                     aria-current={l.id === lesson.id ? 'page' : undefined}
                                                     className={`flex gap-3 rounded-lg px-2 py-2 text-sm transition ${
-                                                        l.id === lesson.id ? 'bg-brand-50 font-semibold text-brand-700' : 'text-gray-700 hover:bg-gray-50'
+                                                        l.id === lesson.id ? 'bg-brand-50 font-semibold text-brand-ink' : 'text-gray-700 hover:bg-gray-50'
                                                     }`}
                                                 >
                                                     <span className="font-mono text-xs text-gray-400">{String(i + 1).padStart(2, '0')}</span>

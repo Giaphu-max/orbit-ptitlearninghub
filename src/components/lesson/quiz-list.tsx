@@ -6,7 +6,7 @@ import type { QuizResult } from '@/store/useOrbitStore'
 const STATUS = {
     correct: { icon: CheckCircle2, label: 'Đúng ngay', className: 'text-success' },
     corrected: { icon: Wrench, label: 'Đã sửa được', className: 'text-success' },
-    missed: { icon: CircleDot, label: 'Cần ôn lại', className: 'text-brand-600' },
+    missed: { icon: CircleDot, label: 'Cần ôn lại', className: 'text-brand-ink' },
 } as const
 
 interface QuizListProps {

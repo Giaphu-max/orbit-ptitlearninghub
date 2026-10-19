@@ -40,7 +40,7 @@ export function MainLayout() {
                 <div className="absolute top-[40%] left-[-10%] w-[500px] h-[500px] rounded-full bg-brand-100/50 blur-[120px]"></div>
 
                 {/* Subtle warm glow on bottom right */}
-                <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] rounded-full bg-orange-50/40 blur-[100px]"></div>
+                <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] rounded-full bg-brand-100/40 blur-[100px]"></div>
             </div>
 
             <OrbitSidebar activeTab={activeTab} onTabChange={(tab) => navigate(TAB_PATHS[tab])} />

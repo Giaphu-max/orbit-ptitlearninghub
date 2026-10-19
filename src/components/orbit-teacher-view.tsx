@@ -9,7 +9,7 @@ import { useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 type Section = 'review' | 'stats'
 
 const fieldClass =
-    'w-full rounded-md border border-input bg-white px-3 py-2 text-[15px] text-gray-900 transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
+    'w-full rounded-md border border-input bg-card px-3 py-2 text-[15px] text-gray-900 transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
 const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-500'
 
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0)
@@ -27,7 +27,7 @@ export function OrbitTeacherView() {
         <div className="h-full w-full overflow-y-auto bg-surface">
             <div className="mx-auto flex max-w-5xl flex-col gap-8 px-5 py-8 lg:px-8 lg:py-12">
                 <header>
-                    <p className="text-eyebrow uppercase text-brand-600">Dành cho giảng viên</p>
+                    <p className="text-eyebrow uppercase text-brand-ink">Dành cho giảng viên</p>
                     <h1 className="mt-3 text-headline text-gray-900">Duyệt nội dung và theo dõi lớp</h1>
                     <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-gray-600">
                         Nội dung do AI tạo từ video bài giảng. Sinh viên chỉ thấy bài sau khi bạn xem lại, chỉnh sửa và xuất bản.
@@ -46,7 +46,7 @@ export function OrbitTeacherView() {
                                 className={`rounded-full border px-4 py-2 text-sm font-semibold transition duration-fast ${
                                     l.id === lessonId
                                         ? 'border-brand-600 bg-brand-600 text-white'
-                                        : 'border-border bg-white text-gray-700 hover:border-gray-300'
+                                        : 'border-border bg-card text-gray-700 hover:border-gray-300'
                                 }`}
                             >
                                 {l.title}
@@ -85,7 +85,7 @@ function SectionTab({ active, onClick, icon, children }: { active: boolean; onCl
             aria-selected={active}
             onClick={onClick}
             className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition duration-fast ${
-                active ? 'border-brand-600 text-brand-700' : 'border-transparent text-gray-500 hover:text-gray-800'
+                active ? 'border-brand-600 text-brand-ink' : 'border-transparent text-gray-500 hover:text-gray-800'
             }`}
         >
             {icon}
@@ -166,7 +166,7 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
                             {lesson.origin === 'gemini' ? 'Nội dung do Gemini tạo' : 'Dữ liệu mẫu'}
                         </span>
                         {hasEdits && (
-                            <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-700">Đã chỉnh bởi giảng viên</span>
+                            <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand-ink">Đã chỉnh bởi giảng viên</span>
                         )}
                     </div>
                     <p className="mt-2 text-sm text-gray-600">
@@ -182,7 +182,7 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
                     type="button"
                     onClick={save}
                     disabled={!dirty || problems.length > 0}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-5 py-2.5 text-sm font-bold text-gray-800 transition hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold text-gray-800 transition hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <Save size={15} /> Lưu chỉnh sửa
                 </button>
@@ -191,7 +191,7 @@ function ReviewPanel({ lesson }: { lesson: Lesson }) {
                     onClick={togglePublish}
                     disabled={!published && problems.length > 0}
                     className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                        published ? 'border border-border bg-white text-gray-800 hover:border-gray-300' : 'bg-brand-600 text-white shadow-brand hover:bg-brand-700'
+                        published ? 'border border-border bg-card text-gray-800 hover:border-gray-300' : 'bg-brand-600 text-white shadow-brand hover:bg-brand-700'
                     }`}
                 >
                     {published ? <EyeOff size={15} /> : <CheckCircle2 size={15} />}
@@ -318,7 +318,7 @@ function QuestionEditor({ question, onChange }: { question: QuizChoiceQuestion; 
 function ErrorRateTag({ rate }: { rate: number }) {
     const high = rate >= 50
     return (
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${high ? 'bg-brand-soft text-brand-700' : 'bg-muted text-gray-600'}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-bold ${high ? 'bg-brand-soft text-brand-ink' : 'bg-muted text-gray-600'}`}>
             {rate}% lớp sai lần đầu
         </span>
     )
@@ -345,13 +345,13 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
                 <div className="flex flex-wrap items-center gap-4 rounded-panel bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-white shadow-brand">
                     <TriangleAlert size={28} className="shrink-0" />
                     <div className="min-w-0 flex-1">
-                        <p className="text-eyebrow uppercase text-brand-200">Cần chú ý nhất</p>
+                        <p className="text-eyebrow uppercase text-white/70">Cần chú ý nhất</p>
                         <p className="mt-1 text-xl font-bold">
                             {worst.concept.name}: {worst.rate}% sinh viên sai ngay lần đầu
                         </p>
-                        <p className="mt-1 text-sm text-brand-100">Nên xem lại cách giảng hoặc câu hỏi ở khái niệm này trên lớp.</p>
+                        <p className="mt-1 text-sm text-white/80">Nên xem lại cách giảng hoặc câu hỏi ở khái niệm này trên lớp.</p>
                     </div>
-                    <button type="button" onClick={onEdit} className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-brand-50">
+                    <button type="button" onClick={onEdit} className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-brand-700 transition hover:bg-white/90">
                         Xem nội dung
                     </button>
                 </div>

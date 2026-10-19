@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, animate, motion } from 'motion/react'
 import { Award, Sparkles, TrendingUp, Zap, type LucideIcon } from 'lucide-react'
 import { levelProgress, levelTitle } from '@/lib/gamification'
@@ -20,10 +21,10 @@ export function RewardOverlay() {
         return () => window.removeEventListener('keydown', onKey)
     }, [event, dismiss])
 
-    return (
-        <AnimatePresence mode="wait">
-            {event && <RewardScreen key={event.id} event={event} onClose={dismiss} />}
-        </AnimatePresence>
+    // Portal ra <body>: nằm trên mọi lớp của layout, kể cả nút chuyển giao diện
+    return createPortal(
+        <AnimatePresence mode="wait">{event && <RewardScreen key={event.id} event={event} onClose={dismiss} />}</AnimatePresence>,
+        document.body,
     )
 }
 
@@ -64,9 +65,9 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-brand-700 px-6 text-white [background-image:radial-gradient(80%_70%_at_50%_30%,#D42F31_0%,#C4161C_45%,#5E0C10_100%)]"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-reward px-6 text-white"
         >
-            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(rgba(255,255,255,0.18)_1px,transparent_1.4px)] [background-size:28px_28px] [mask-image:radial-gradient(circle_at_50%_40%,#000,transparent_70%)]" />
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70 bg-dots [mask-image:radial-gradient(circle_at_50%_40%,#000,transparent_70%)]" />
             {[0, 1, 2].map((i) => (
                 <motion.span
                     key={i}
@@ -88,7 +89,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     <Icon size={44} className={event.kind === 'xp' ? 'fill-current' : ''} />
                 </motion.span>
 
-                <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.25 }} className="mt-8 text-eyebrow uppercase text-brand-100">
+                <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.25 }} className="mt-8 text-eyebrow uppercase text-brand-light">
                     {eyebrow}
                 </motion.p>
 
@@ -125,7 +126,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     initial={{ y: 16, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.7 }}
-                    className="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-brand-700 shadow-raised transition duration-fast hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+                    className="mt-10 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-brand-700 shadow-raised transition duration-fast hover:bg-white/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
                 >
                     <Sparkles size={16} /> Tiếp tục
                 </motion.button>

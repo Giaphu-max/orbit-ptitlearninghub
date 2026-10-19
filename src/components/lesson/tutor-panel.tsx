@@ -79,8 +79,8 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
 
     return (
         <aside className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-panel border border-border bg-card shadow-card">
-            <header className="flex shrink-0 items-center gap-3 border-b border-border bg-gradient-to-r from-brand-50 to-white px-5 py-4">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-100 text-brand-600">
+            <header className="flex shrink-0 items-center gap-3 border-b border-border bg-gradient-to-r from-brand-50 to-card px-5 py-4">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-100 text-brand-ink">
                     <Sparkles size={18} />
                 </span>
                 <div>
@@ -99,17 +99,17 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                     <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                         {msg.role === 'ai' && (
                             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100">
-                                <Sparkles size={14} className="text-brand-600" />
+                                <Sparkles size={14} className="text-brand-ink" />
                             </span>
                         )}
                         <div className={`flex min-w-0 flex-col gap-2 ${msg.role === 'user' ? 'items-end' : ''}`}>
                             <div
-                                className={`prose prose-sm max-w-none break-words rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm ${
+                                className={`prose prose-sm max-w-none break-words dark:prose-invert rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm ${
                                     msg.role === 'user'
-                                        ? 'prose-invert rounded-tr-sm bg-gray-900 text-white'
+                                        ? 'prose-invert rounded-tr-sm bg-ink text-white dark:border dark:border-border'
                                         : msg.isError
-                                          ? 'rounded-tl-sm border border-brand-100 bg-brand-50 text-brand-800'
-                                          : 'rounded-tl-sm border border-gray-100 bg-white text-gray-700'
+                                          ? 'rounded-tl-sm border border-brand-100 bg-brand-50 text-brand-ink'
+                                          : 'rounded-tl-sm border border-gray-100 bg-card text-gray-700'
                                 }`}
                             >
                                 <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -121,12 +121,12 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                                             key={c.start}
                                             type="button"
                                             onClick={() => onSeek(c.start)}
-                                            className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 transition duration-fast hover:bg-brand-100"
+                                            className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-ink transition duration-fast hover:bg-brand-100"
                                             title="Tua video tới đoạn này"
                                         >
                                             <Play size={10} className="fill-current" />
                                             <span className="font-mono">{formatTime(c.start)}</span>
-                                            <span className="text-brand-600/80">{c.label}</span>
+                                            <span className="text-brand-ink/80">{c.label}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -137,9 +137,9 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                 {isTyping && (
                     <div className="flex gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100">
-                            <Sparkles size={14} className="text-brand-600" />
+                            <Sparkles size={14} className="text-brand-ink" />
                         </span>
-                        <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-white p-3.5 text-sm text-gray-500 shadow-sm">
+                        <div className="rounded-2xl rounded-tl-sm border border-gray-100 bg-card p-3.5 text-sm text-gray-500 shadow-sm">
                             <span className="animate-pulse">Đang xem lại bài giảng…</span>
                         </div>
                     </div>
@@ -154,14 +154,14 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                         setIsScrolledUp(false)
                         scrollToBottom()
                     }}
-                    className="absolute bottom-36 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-700 shadow-md backdrop-blur transition hover:bg-gray-100"
+                    className="absolute bottom-36 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-gray-200 bg-card/90 text-gray-700 shadow-md backdrop-blur transition hover:bg-gray-100"
                     aria-label="Xuống tin mới nhất"
                 >
                     {isTyping ? <MoreHorizontal size={16} className="animate-pulse text-brand-500" /> : <ArrowDown size={16} />}
                 </button>
             )}
 
-            <div className="shrink-0 border-t border-border bg-white p-4">
+            <div className="shrink-0 border-t border-border bg-card p-4">
                 <form
                     className="relative"
                     onSubmit={(e) => {
@@ -193,7 +193,7 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                         type="button"
                         disabled={isTyping}
                         onClick={() => send('Giải thích giúp mình đoạn đang xem.')}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-ink transition hover:bg-brand-100 disabled:opacity-50"
                     >
                         <Crosshair size={12} /> Hỏi về đoạn đang xem
                     </button>

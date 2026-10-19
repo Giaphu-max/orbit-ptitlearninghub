@@ -3,17 +3,14 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
+import { CAMPUS } from './campus-palette'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
 // Hình khối, màu và số đo giữ nguyên bản gốc; không dùng file model nào.
 // Canvas chạy chế độ legacy + flat (không color management, không tone mapping) và cường độ đèn
 // nhân π để ra đúng màu như bản three r128 mà bản gốc dùng.
 
-const C = {
-    plate: '#EFE7E1', plateEdge: '#8E0E13', pave: '#E2D8D0', road: '#6B5F5C', grass: '#8DBF8F', grassDark: '#6FA474',
-    cream: '#F4EEE4', granite: '#8C8583', glass: '#2E8C70', win: '#3F8F79', roofRed: '#C23A2C',
-    yellow: '#EFC86E', white: '#F7F4EF', stripe: '#BDB5AE', trunk: '#7A5544', tree: '#5E9E6A', tree2: '#7DB27A',
-}
+const C = CAMPUS
 
 type Vec3 = [number, number, number]
 type MatOpts = { roughness?: number; metalness?: number }
@@ -156,11 +153,11 @@ function Building({ name, sub, anchorY, position, hovered, compact, registry, ch
                 >
                     <div
                         className={`whitespace-nowrap rounded-xl px-[11px] py-[7px] text-xs font-bold shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)] transition duration-200 ${
-                            hovered ? '-translate-y-1.5 bg-[#C4161C] text-white' : 'bg-white/95 text-[#1A1412]'
+                            hovered ? '-translate-y-1.5 bg-brand-600 text-white' : 'bg-card/95 text-foreground'
                         }`}
                     >
                         {name}
-                        <small className={`block text-[11px] font-medium ${hovered ? 'text-white/85' : 'text-[#5E5551]'}`}>{sub}</small>
+                        <small className={`block text-[11px] font-medium ${hovered ? 'text-white/85' : 'text-muted-foreground'}`}>{sub}</small>
                     </div>
                     <div className="h-4 w-0.5 bg-white/80" />
                 </div>
@@ -487,7 +484,7 @@ function useFitCamera(controls: React.RefObject<OrbitControlsImpl | null>) {
         const { width: w, height: h } = size
         const wide = w >= 900
         // Vùng trống (px): nửa phải khi có cột chữ bên trái, nửa dưới khi chữ xếp trên
-        const region = wide ? { w: w * 0.62, h, cx: w * 0.69, cy: h / 2 } : { w, h: h * 0.46, cx: w / 2, cy: h * 0.77 }
+        const region = wide ? { w: w * 0.56, h, cx: w * 0.72, cy: h / 2 } : { w, h: h * 0.46, cx: w / 2, cy: h * 0.77 }
         const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
         // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang, vùng trống chiếm một phần của nó
         const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * (region.w / h))

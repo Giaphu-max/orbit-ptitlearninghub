@@ -10,6 +10,46 @@
 @layer base {
   :root {
     /* Màu thương hiệu: đỏ PTIT #C4161C */
+    /* Thang màu theo giao diện, dạng kênh RGB (xem tailwind.config.js) */
+    --brand-50: 253 243 242;
+    --brand-100: 251 227 226;
+    --brand-200: 246 196 195;
+    --brand-300: 238 154 152;
+    --brand-400: 226 96 95;
+    --brand-500: 212 47 49;
+    --brand-600: 196 22 28;
+    --brand-700: 161 17 23;
+    --brand-800: 129 15 20;
+    --brand-900: 94 12 16;
+    --brand-950: 58 7 9;
+    --brand-ink: 358 80% 43%;
+    --brand-light: 8 100% 83%;
+
+    --gray-50: 250 250 249;
+    --gray-100: 245 245 244;
+    --gray-200: 231 229 228;
+    --gray-300: 214 211 209;
+    --gray-400: 168 162 158;
+    --gray-500: 120 113 108;
+    --gray-600: 87 83 78;
+    --gray-700: 68 64 60;
+    --gray-800: 41 37 36;
+    --gray-900: 28 25 23;
+    --gray-950: 12 10 9;
+
+    /* Nền tối cố định, không đổi theo giao diện */
+    --ink: 24 10% 6%;
+    --info: 201 80% 32%;
+
+    /* Hero và màn nhận XP: luôn nền tối/đỏ ở cả hai giao diện */
+    --hero-base: 12 36% 5%;
+    --hero-glow: 358 80% 43%;
+    --hero-glow-deep: 358 83% 27%;
+    --hero-top: 358 40% 12%;
+    --reward-from: 358 67% 51%;
+    --reward-mid: 358 80% 43%;
+    --reward-to: 358 78% 21%;
+
     --brand: 358 80% 43%;
     --brand-foreground: 0 0% 100%;
     --brand-soft: 4 75% 96%;
@@ -63,6 +103,57 @@
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
+
+  /* Giao diện tối: chỉ đổi giá trị token, component không phải sửa */
+  .dark {
+    color-scheme: dark;
+
+    --brand-50: 43 15 17;
+    --brand-100: 58 20 22;
+    --brand-200: 83 26 29;
+    --brand-300: 122 37 40;
+    --brand-ink: 358 90% 68%;
+    --brand-soft: 358 45% 16%;
+
+    --gray-50: 26 23 21;
+    --gray-100: 34 31 29;
+    --gray-200: 46 42 39;
+    --gray-300: 68 64 60;
+    --gray-400: 120 113 108;
+    --gray-500: 168 162 158;
+    --gray-600: 189 184 179;
+    --gray-700: 214 211 209;
+    --gray-800: 231 229 228;
+    --gray-900: 245 245 244;
+    --gray-950: 250 250 249;
+
+    --info: 199 80% 68%;
+
+    --background: 20 14% 6%;
+    --foreground: 30 15% 94%;
+    --surface: 20 12% 8%;
+    --card: 20 10% 11%;
+    --card-foreground: 30 15% 94%;
+    --popover: 20 10% 11%;
+    --popover-foreground: 30 15% 94%;
+    --muted: 20 8% 16%;
+    --muted-foreground: 30 6% 66%;
+    --border: 20 6% 20%;
+    --input: 20 6% 22%;
+
+    --secondary: 20 8% 16%;
+    --secondary-foreground: 30 15% 94%;
+    --accent-foreground: 358 90% 80%;
+    --ring: 358 80% 55%;
+
+    --success: 152 55% 45%;
+    --warning: 38 92% 55%;
+    --destructive: 358 80% 55%;
+
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.3), 0 4px 16px hsl(0 0% 0% / 0.35);
+    --shadow-raised: 0 2px 4px hsl(0 0% 0% / 0.35), 0 16px 40px hsl(0 0% 0% / 0.5);
+    --shadow-brand: 0 8px 24px hsl(358 80% 43% / 0.4);
+  }
 }
 
 @layer base {
@@ -77,6 +168,41 @@
 
   body {
     @apply bg-background font-sans text-foreground;
+  }
+}
+
+/* Hero tối và màn nhận XP đỏ: nền dựng từ token để đổi ở một chỗ */
+@layer components {
+  .bg-hero {
+    background-color: hsl(var(--hero-base));
+    background-image:
+      radial-gradient(90% 80% at 85% 15%, hsl(var(--hero-glow)) 0%, transparent 60%),
+      radial-gradient(70% 70% at 5% 100%, hsl(var(--hero-glow-deep)) 0%, transparent 65%),
+      linear-gradient(160deg, hsl(var(--hero-top)) 0%, hsl(var(--hero-base)) 100%);
+  }
+  .bg-reward {
+    background-color: hsl(var(--reward-mid));
+    background-image: radial-gradient(80% 70% at 50% 30%, hsl(var(--reward-from)) 0%, hsl(var(--reward-mid)) 45%, hsl(var(--reward-to)) 100%);
+  }
+  .bg-dots {
+    background-image: radial-gradient(hsl(0 0% 100% / 0.16) 1px, transparent 1.4px);
+    background-size: 28px 28px;
+  }
+}
+
+/* Chuyển giao diện sáng/tối mượt: class tạm thời do theme store bật trong lúc đổi */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-fade,
+  html.theme-fade *,
+  html.theme-fade *::before,
+  html.theme-fade *::after {
+    transition:
+      background-color 0.7s var(--ease-in-out),
+      color 0.7s var(--ease-in-out),
+      border-color 0.7s var(--ease-in-out),
+      fill 0.7s var(--ease-in-out),
+      stroke 0.7s var(--ease-in-out),
+      box-shadow 0.7s var(--ease-in-out) !important;
   }
 }
 

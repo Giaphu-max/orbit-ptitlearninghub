@@ -30,7 +30,7 @@ export function QuizRewardToast({ reward }: { reward: QuizReward | null }) {
                         exit={{ opacity: 0, y: 12, scale: 0.95 }}
                         transition={{ type: 'spring', stiffness: 420, damping: 28 }}
                         className={`flex items-center gap-4 rounded-card px-5 py-4 shadow-raised ${
-                            visible.xp > 0 ? 'bg-brand-600 text-white shadow-brand' : 'bg-gray-900 text-white'
+                            visible.xp > 0 ? 'bg-brand-600 text-white shadow-brand' : 'bg-ink text-white'
                         }`}
                     >
                         {visible.xp > 0 && (

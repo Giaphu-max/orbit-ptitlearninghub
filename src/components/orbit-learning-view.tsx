@@ -30,8 +30,6 @@ interface EnrolledCourse {
     completedLessons: number
     currentLesson: string
     thumbnail: string
-    gradientFrom: string
-    gradientTo: string
 }
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -46,8 +44,6 @@ const enrolledCourses: EnrolledCourse[] = [
         completedLessons: 12,
         currentLesson: 'Thiết kế giao diện trong Figma',
         thumbnail: 'https://picsum.photos/seed/enrolled1/600/400',
-        gradientFrom: '#ef4444', // brand-500
-        gradientTo: '#e11d48', // brand-600
     },
     {
         id: 2,
@@ -58,8 +54,6 @@ const enrolledCourses: EnrolledCourse[] = [
         completedLessons: 8,
         currentLesson: 'Texturing & Material cơ bản',
         thumbnail: 'https://picsum.photos/seed/enrolled2/600/400',
-        gradientFrom: '#f43f5e', // brand-500
-        gradientTo: '#be123c', // brand-700
     },
 ]
 
@@ -245,7 +239,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             
-            <div className="relative w-full max-w-5xl bg-white rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+            <div className="relative w-full max-w-5xl bg-card rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
                 <div className="grid grid-cols-1 md:grid-cols-2 flex-1 overflow-hidden">
                     
                     {/* Left Column: Detailed Course Info */}
@@ -270,7 +264,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                 <p className="text-sm font-medium text-gray-300 flex items-center gap-2">
                                     Giảng viên: <span className="text-white font-semibold">{course.instructor}</span>
                                     <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                                    <span className="text-yellow-400 font-bold">{course.socialProof}</span>
+                                    <span className="text-warning font-bold">{course.socialProof}</span>
                                 </p>
                             </div>
                         </div>
@@ -291,7 +285,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                     'Xây dựng Portfolio chuyên nghiệp'
                                 ].map((item, idx) => (
                                     <div key={idx} className="flex items-start gap-3">
-                                        <CheckCircle2 size={18} className="text-green-500 shrink-0 mt-0.5" />
+                                        <CheckCircle2 size={18} className="text-success shrink-0 mt-0.5" />
                                         <span className="text-sm text-gray-700 font-medium">{item}</span>
                                     </div>
                                 ))}
@@ -300,7 +294,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                     </div>
 
                     {/* Right Column: Interactive Learning Path & Upsell */}
-                    <div className="flex flex-col relative bg-white">
+                    <div className="flex flex-col relative bg-card">
                         <button 
                             onClick={onClose} 
                             className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors z-10"
@@ -323,7 +317,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                         <div key={idx} className="flex items-center gap-3 p-4 rounded-xl border border-brand-100 bg-brand-50/40">
                                             <input 
                                                 type="checkbox" 
-                                                className="w-5 h-5 rounded border-brand-200 text-brand-500 focus:ring-brand-500 bg-white" 
+                                                className="w-5 h-5 rounded border-brand-200 text-brand-500 focus:ring-brand-500 bg-card" 
                                                 checked={true}
                                                 readOnly 
                                             />
@@ -341,7 +335,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                             className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
                                                 selectedPremiums.includes(lesson.id) 
                                                 ? 'border-brand-400 bg-brand-50' 
-                                                : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'
+                                                : 'border-gray-200 bg-card hover:border-gray-300 shadow-sm hover:shadow-md'
                                             }`}
                                             onClick={() => togglePremium(lesson.id)}
                                         >
@@ -356,7 +350,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                                     {lesson.title}
                                                 </span>
                                             </div>
-                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md shrink-0 transition-colors ${selectedPremiums.includes(lesson.id) ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-600'}`}>
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md shrink-0 transition-colors ${selectedPremiums.includes(lesson.id) ? 'bg-brand-100 text-brand-ink' : 'bg-gray-100 text-gray-600'}`}>
                                                 <Lock size={12} className="opacity-70" />
                                                 <span className="text-xs font-bold">{lesson.price.toLocaleString()}đ</span>
                                             </div>
@@ -367,7 +361,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                         </div>
 
                         {/* CTA Footer */}
-                        <div className="p-6 border-t border-gray-100 bg-white shrink-0">
+                        <div className="p-6 border-t border-gray-100 bg-card shrink-0">
                             <div className="flex items-center gap-3">
                                 <button 
                                     onClick={onClose}
@@ -377,7 +371,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                 </button>
                                 <button 
                                     onClick={() => setIsSaved(!isSaved)}
-                                    className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm transition-colors ${isSaved ? 'text-brand-700 bg-brand-100' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
+                                    className={`flex items-center gap-2 px-6 py-4 rounded-xl font-bold text-sm transition-colors ${isSaved ? 'text-brand-ink bg-brand-100' : 'text-gray-700 bg-gray-100 hover:bg-gray-200'}`}
                                 >
                                     <Bookmark size={18} className={isSaved ? "fill-current" : ""} />
                                     <span className="hidden sm:inline">{isSaved ? 'Đã lưu' : 'Lưu để sau'}</span>
@@ -386,7 +380,7 @@ function CourseModal({ course, onClose }: { course: Course; onClose: () => void 
                                     className={`flex-1 py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all duration-300 flex justify-center items-center gap-2 ${
                                         hasPremium 
                                         ? 'bg-brand-600 hover:bg-brand-700 shadow-brand-500/30 scale-[1.02]' 
-                                        : 'bg-gray-900 hover:bg-gray-800 shadow-gray-900/20 hover:-translate-y-0.5'
+                                        : 'bg-ink hover:bg-ink/90 shadow-ink/20 hover:-translate-y-0.5'
                                     }`}
                                     onClick={() => {
                                         onClose();
@@ -436,13 +430,13 @@ function CourseCard3D({ course, onClick }: { course: Course; onClick: () => void
                 </div>
 
                 {/* ── Back Face ── */}
-                <div className="absolute inset-0 w-full h-full rounded-2xl bg-white border border-gray-100 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] p-4 flex flex-col justify-between">
+                <div className="absolute inset-0 w-full h-full rounded-2xl bg-card border border-gray-100 shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)] p-4 flex flex-col justify-between">
                     <div>
                         <h3 className="font-bold text-gray-900 text-[13px] leading-snug line-clamp-2">{course.title}</h3>
                         <p className="text-[10px] text-gray-500 mt-1">bởi {course.instructor}</p>
                         
                         <div className="mt-3 p-2 bg-brand-50/80 rounded-lg border border-brand-100/50">
-                            <p className="text-[10px] font-semibold text-brand-600 text-center">{course.socialProof}</p>
+                            <p className="text-[10px] font-semibold text-brand-ink text-center">{course.socialProof}</p>
                         </div>
                     </div>
 
@@ -476,7 +470,7 @@ function EnrolledSidebar() {
         <aside className="group/sidebar relative w-20 hover:w-[380px] transition-all duration-300 ease-in-out bg-transparent border-r-0 h-full overflow-hidden shrink-0 hidden md:flex flex-col z-20">
             <div className="p-6 flex items-center gap-4 w-[380px]">
                 <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
-                    <TrendingUp size={16} className="text-brand-600" />
+                    <TrendingUp size={16} className="text-brand-ink" />
                 </div>
                 <h2 className="text-sm font-bold text-gray-900 uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 delay-100">
                     Lộ trình đang học
