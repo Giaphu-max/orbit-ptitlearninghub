@@ -52,11 +52,13 @@ export function CampusHero() {
                         <CampusScene night={night} reduce={reduce} />
                     </Suspense>
                 ) : (
-                    <StaticCampus />
+                    <div className="absolute inset-x-4 bottom-4 top-[45%] lg:left-[40%] lg:top-8">
+                        <StaticCampus />
+                    </div>
                 )}
             </div>
             {enabled && (
-                <div className="absolute bottom-3 right-3 z-30 flex gap-2" role="group" aria-label="Thời điểm trong ngày">
+                <div className="absolute bottom-4 right-4 z-30 lg:bottom-6 lg:right-8 flex gap-2" role="group" aria-label="Thời điểm trong ngày">
                     <TimeButton pressed={!night} onClick={() => setNight(false)} icon={<Sunset size={15} />}>Hoàng hôn</TimeButton>
                     <TimeButton pressed={night} onClick={() => setNight(true)} icon={<Moon size={15} />}>Buổi tối</TimeButton>
                 </div>

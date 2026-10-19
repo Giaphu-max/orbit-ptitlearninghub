@@ -26,8 +26,12 @@ export function OrbitHomeView() {
                     aria-hidden
                     className="pointer-events-none absolute inset-0 -z-10 opacity-80 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1.4px)] [background-size:28px_28px] [mask-image:linear-gradient(180deg,#000,transparent_80%)]"
                 />
-                <div className="mx-auto flex max-w-[1320px] flex-wrap items-center gap-8 px-5 py-10 lg:px-10">
-                    <div className="flex min-w-0 max-w-[440px] flex-[1_1_320px] flex-col gap-5">
+                {/* Canvas 3D phủ cả hero, nằm sau chữ */}
+                <div className="absolute inset-0 z-0">
+                    <CampusHero />
+                </div>
+                <div className="pointer-events-none relative z-10 mx-auto flex min-h-[clamp(880px,110vh,960px)] max-w-[1320px] items-start px-5 py-10 lg:min-h-[clamp(600px,88vh,780px)] lg:items-center lg:px-10">
+                    <div className="flex min-w-0 max-w-[440px] flex-col gap-5">
                         <span className="text-eyebrow uppercase text-[#FFB4A8]">Orbit · PTIT Learning Hub</span>
                         <h1 className="text-[clamp(2.5rem,5vw,4.25rem)] font-black leading-[0.98] tracking-[-0.045em] [text-wrap:balance]">
                             Học tập trung, có điểm dừng.
@@ -39,7 +43,7 @@ export function OrbitHomeView() {
                         {resume ? (
                             <Link
                                 to={`/lesson/${resume.id}`}
-                                className="group mt-2 flex items-center gap-4 rounded-card bg-white p-4 text-gray-900 shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                                className="group pointer-events-auto mt-2 flex items-center gap-4 rounded-card bg-white p-4 text-gray-900 shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
                             >
                                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition duration-base group-hover:scale-105">
                                     <Play size={20} className="fill-current" />
@@ -58,11 +62,7 @@ export function OrbitHomeView() {
                         ) : (
                             <p className="rounded-card bg-white/10 p-4 text-sm text-white/80">Chưa có bài nào được giảng viên xuất bản.</p>
                         )}
-                        <span className="text-sm text-white/60">Rê chuột để xoay, di vào một tòa nhà để làm nổi nó lên.</span>
-                    </div>
-
-                    <div className="relative h-[clamp(380px,62vw,620px)] min-w-0 flex-[999_1_560px]">
-                        <CampusHero />
+                        <span className="hidden text-sm text-white/60 lg:block">Kéo để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
                     </div>
                 </div>
             </section>

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Html } from '@react-three/drei'
+import { Html, OrbitControls } from '@react-three/drei'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
@@ -454,22 +455,72 @@ function Campus({ hovered, compact, registry, nightRef, reduce }: WorldProps) {
 
 const SUN_DAY = new THREE.Color('#FFD9B8')
 const SUN_NIGHT = new THREE.Color('#7E8FD6')
-const LOOK_AT = new THREE.Vector3(0, 3, 0)
+const TARGET = new THREE.Vector3(0, 3, 0)
+const START_POS = new THREE.Vector3(52, 40, 58)
+
+/** Phạm vi cần nằm gọn trong khung ở mọi góc xoay (đơn vị cảnh): bán kính ngang (đế + mây) và nửa chiều cao (tính cả nhãn). */
+const BOUND_RADIUS = 34
+const BOUND_HALF_HEIGHT = 22
+const FIT_MARGIN = 1.05
+const FOV = 28
+/** Sau khi buông tay, chờ chừng này rồi mới tự xoay tiếp. */
+const RESUME_AUTOROTATE_MS = 3000
 
 interface SceneProps {
     night: boolean
     reduce: boolean
+    /** Màn cảm ứng: không cho kéo xoay (nhường thao tác cuộn trang), chỉ tự xoay */
+    touch: boolean
     pointer: React.MutableRefObject<{ x: number; y: number; inside: boolean }>
 }
 
-function Scene({ night, reduce, pointer }: SceneProps) {
+/**
+ * Canvas phủ cả hero, chữ nằm đè lên. Mô hình được đặt vào "vùng trống" (nửa phải trên màn rộng,
+ * nửa dưới trên màn hẹp) bằng view offset của camera, và camera lùi đủ xa để khối cầu bao
+ * khuôn viên nằm gọn trong vùng đó, chừa lề.
+ */
+function useFitCamera(controls: React.RefObject<OrbitControlsImpl | null>) {
+    const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
+    const size = useThree((s) => s.size)
+
+    useEffect(() => {
+        const { width: w, height: h } = size
+        const wide = w >= 900
+        // Vùng trống (px): nửa phải khi có cột chữ bên trái, nửa dưới khi chữ xếp trên
+        const region = wide ? { w: w * 0.62, h, cx: w * 0.69, cy: h / 2 } : { w, h: h * 0.46, cx: w / 2, cy: h * 0.77 }
+        const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
+        // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang, vùng trống chiếm một phần của nó
+        const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * (region.w / h))
+        const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / (tanHalf * (region.h / h))
+        const distance = Math.max(fitW, fitH)
+
+        camera.fov = FOV
+        camera.aspect = w / h
+        // Dịch ảnh để tâm vùng trống trùng tâm mô hình: cắt khung từ vị trí âm = đẩy cảnh sang phải/xuống
+        camera.setViewOffset(w, h, -(region.cx - w / 2), -(region.cy - h / 2), w, h)
+        camera.far = distance * 3
+        camera.updateProjectionMatrix()
+
+        // Giữ nguyên hướng nhìn hiện tại, chỉ đổi khoảng cách
+        const offset = camera.position.clone().sub(TARGET)
+        if (offset.lengthSq() < 1e-6) offset.copy(START_POS).sub(TARGET)
+        camera.position.copy(TARGET).add(offset.setLength(distance))
+        controls.current?.update()
+        return () => camera.clearViewOffset()
+    }, [camera, size, controls])
+}
+
+function Scene({ night, reduce, touch, pointer }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
     const rim = useRef<THREE.DirectionalLight>(null)
+    const controls = useRef<OrbitControlsImpl>(null)
     const registry = useRef(new Map<string, THREE.Group>())
     const lifts = useRef(new Map<string, number>())
     const hoverRef = useRef<BuildingName | null>(null)
+    const dragging = useRef(false)
+    const resumeTimer = useRef<number>(0)
     const nightRef = useRef(reduce && night ? 1 : 0)
     const nightTarget = useRef(night ? 1 : 0)
     const [hovered, setHovered] = useState<BuildingName | null>(null)
@@ -481,32 +532,55 @@ function Scene({ night, reduce, pointer }: SceneProps) {
     const domElement = useThree((s) => s.gl.domElement)
     const compact = size.width < 560
 
+    useFitCamera(controls)
+
+    // Đưa camera về góc nhìn ban đầu (OrbitControls lấy vị trí camera làm điểm xuất phát)
+    useLayoutEffect(() => {
+        camera.position.copy(START_POS)
+        camera.lookAt(TARGET)
+    }, [camera])
+
     useEffect(() => {
         nightTarget.current = night ? 1 : 0
         if (reduce) nightRef.current = nightTarget.current
     }, [night, reduce])
 
+    const updateCursor = () => {
+        domElement.style.cursor = hoverRef.current ? 'pointer' : touch ? 'default' : dragging.current ? 'grabbing' : 'grab'
+    }
     useEffect(() => {
-        camera.fov = compact ? 38 : 28
-        camera.updateProjectionMatrix()
-    }, [camera, compact])
+        domElement.style.touchAction = touch ? 'pan-y' : 'none'
+        updateCursor()
+        return () => window.clearTimeout(resumeTimer.current)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [domElement, touch])
+
+    // Kéo thì dừng tự xoay; buông tay chờ 3 giây rồi xoay tiếp
+    const onStart = () => {
+        dragging.current = true
+        window.clearTimeout(resumeTimer.current)
+        if (controls.current) controls.current.autoRotate = false
+        updateCursor()
+    }
+    const onEnd = () => {
+        dragging.current = false
+        updateCursor()
+        window.clearTimeout(resumeTimer.current)
+        resumeTimer.current = window.setTimeout(() => {
+            if (controls.current && !reduce) controls.current.autoRotate = true
+        }, RESUME_AUTOROTATE_MS)
+    }
 
     useFrame((state, delta) => {
         const g = world.current
         if (!g) return
         const p = pointer.current
-        const mx = p.inside ? p.x : 0
-        const my = p.inside ? p.y : 0
-        const t = state.clock.elapsedTime
 
-        // Xoay theo chuột (cộng chút lắc nhẹ), camera nghiêng theo chiều dọc
-        const sway = reduce ? 0 : Math.sin(t * 0.25) * 0.12
-        g.rotation.y += (mx * 0.45 + sway - g.rotation.y) * 0.06
-        camera.position.y += (40 + my * 6 - camera.position.y) * 0.05
-        camera.lookAt(LOOK_AT)
+        // Màn cảm ứng không có OrbitControls: tự xoay mô hình
+        if (touch && !reduce) g.rotation.y += delta * 0.12
 
-        // Tia từ con trỏ: tòa nào bị trúng thì được nâng lên
-        ndc.set(p.inside ? p.x : -9, p.inside ? p.y : -9)
+        // Tia từ con trỏ: tòa nào bị trúng thì được nâng lên (không nâng khi đang kéo)
+        ndc.set(p.inside && !dragging.current ? p.x : -9, p.inside && !dragging.current ? p.y : -9)
         raycaster.setFromCamera(ndc, camera)
         const hit = raycaster.intersectObjects([...registry.current.values()], true)[0]
         let hb: BuildingName | null = null
@@ -517,7 +591,7 @@ function Scene({ night, reduce, pointer }: SceneProps) {
         }
         if (hb !== hoverRef.current) {
             hoverRef.current = hb
-            domElement.style.cursor = hb ? 'pointer' : 'grab'
+            updateCursor()
             setHovered(hb)
         }
         registry.current.forEach((grp, name) => {
@@ -536,11 +610,33 @@ function Scene({ night, reduce, pointer }: SceneProps) {
         }
         if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI
         if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI
-        void delta
+        void state
     })
 
     return (
         <>
+            {!touch && (
+                <OrbitControls
+                    ref={controls}
+                    makeDefault
+                    target={TARGET.toArray()}
+                    enableZoom={false}
+                    enablePan={false}
+                    enableDamping
+                    dampingFactor={0.07}
+                    rotateSpeed={0.7}
+                    // Xoay ngang 360°; dọc giới hạn để không lật xuống dưới đế hay nhìn thẳng từ trên xuống
+                    minPolarAngle={0.55}
+                    maxPolarAngle={1.35}
+                    autoRotate={!reduce}
+                    autoRotateSpeed={0.6}
+                    // Chỉ chuột trái xoay; chuột phải/giữa không bị chiếm
+                    mouseButtons={{ LEFT: THREE.MOUSE.ROTATE }}
+                    touches={{}}
+                    onStart={onStart}
+                    onEnd={onEnd}
+                />
+            )}
             <hemisphereLight ref={hemi} args={[0xffe9e0, 0x5a2a28, 0.75 * Math.PI]} />
             <directionalLight
                 ref={sun}
@@ -574,6 +670,7 @@ export interface CampusSceneProps {
 
 export default function CampusScene({ night, reduce }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
+    const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
     const wrapRef = useRef<HTMLDivElement>(null)
 
@@ -589,8 +686,9 @@ export default function CampusScene({ night, reduce }: CampusSceneProps) {
         }
     }, [])
 
+    // Con trỏ theo dõi trên cả hero (chữ nằm đè lên canvas nên canvas không nhận được sự kiện ở đó)
     useEffect(() => {
-        const el = wrapRef.current
+        const el = wrapRef.current?.parentElement
         if (!el) return
         const move = (e: PointerEvent) => {
             const r = el.getBoundingClientRect()
@@ -608,19 +706,20 @@ export default function CampusScene({ night, reduce }: CampusSceneProps) {
     }, [])
 
     return (
-        <div ref={wrapRef} className="absolute inset-0" style={{ cursor: 'grab' }}>
+        <div ref={wrapRef} className="absolute inset-0">
             {fontsReady && (
                 <Canvas
                     legacy
                     flat
                     shadows="soft"
                     dpr={[1, 2]}
-                    camera={{ fov: 28, position: [52, 40, 58], near: 1, far: 400 }}
+                    camera={{ fov: FOV, position: START_POS.toArray(), near: 1, far: 400 }}
                     gl={{ antialias: true, alpha: true }}
-                    aria-label="Mô hình 3D khuôn viên PTIT, có thể xoay bằng chuột"
+                    // Sự kiện lấy từ cả hero để kéo xoay được kể cả khi bắt đầu kéo từ vùng có chữ
+                    aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} pointer={pointer} />
+                    <Scene night={night} reduce={reduce} touch={touch} pointer={pointer} />
                 </Canvas>
             )}
         </div>

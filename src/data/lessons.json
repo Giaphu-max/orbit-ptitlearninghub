@@ -7,7 +7,7 @@
     "durationSec": 240,
     "summary": "Dữ liệu mẫu để dựng giao diện. Bài thật sẽ do scripts/generate-content.ts tạo từ video YouTube.",
     "origin": "sample",
-    "status": "draft",
+    "status": "published",
     "concepts": [
       {
         "id": "quy-tac-mot-phan-ba",
