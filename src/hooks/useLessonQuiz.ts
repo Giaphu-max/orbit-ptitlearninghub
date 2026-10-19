@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Lesson, LessonQuizQuestion } from '@/data/types'
 import { explainAnswer } from '@/lib/api'
-import { questionAt, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
-import { announceRewards } from '@/lib/gamification'
+import { questionAt, type QuizOutcome } from '@/lib/quiz'
+import { announceRewards, lessonCompleteScreen } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 // Vòng quiz củng cố trong video:
@@ -105,12 +105,7 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
             // Màn thưởng phủ đỏ chỉ ở khoảnh khắc đáng nhớ: xong bài, lên cấp, huy hiệu mới
             const after = useOrbitStore.getState()
             const lessonDone = !wasDone && (after.lessonProgress[lesson.id]?.completed ?? false)
-            const lessonXp = lesson.quiz.reduce((sum, q) => sum + (after.quizResults[q.id] ? QUIZ_XP[after.quizResults[q.id].outcome] : 0), 0)
-            announceRewards(
-                { xp: before.xp, earnedBadgeIds: before.earnedBadgeIds },
-                { xp: after.xp, earnedBadgeIds: after.earnedBadgeIds },
-                lessonDone ? { title: 'Hoàn thành bài giảng', subtitle: `Bạn nhận ${lessonXp} XP từ bài "${lesson.title}"` } : undefined,
-            )
+            announceRewards(before, after, lessonDone ? lessonCompleteScreen(lesson, after.quizResults, root.conceptId) : undefined)
         },
         [lesson, recordQuizResult],
     )

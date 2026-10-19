@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Check, ChevronLeft, Clock, X } from 'lucide-react'
 import { dailyArticles, getConcept, getLesson } from '@/data'
-import { announceRewards, DAILY_ARTICLE_XP } from '@/lib/gamification'
+import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP } from '@/lib/gamification'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -23,9 +23,17 @@ export function OrbitDailyView() {
         if (complete(article.id, DAILY_ARTICLE_XP) === 0) return
         const after = useOrbitStore.getState()
         announceRewards(
-            { xp: before.xp, earnedBadgeIds: before.earnedBadgeIds },
-            { xp: after.xp, earnedBadgeIds: after.earnedBadgeIds },
-            { title: 'Đã đọc xong', subtitle: article.title },
+            before,
+            after,
+            {
+                context: `Hoàn thành · ${article.title}`,
+                headline: 'Thêm một mảnh ghép.',
+                rows: [
+                    { label: 'Đọc xong bài', xp: DAILY_ARTICLE_XP - DAILY_CHECK_XP },
+                    { label: 'Trả lời đúng câu kiểm tra', xp: DAILY_CHECK_XP },
+                ],
+                next: { label: 'Học tiếp', to: '/#daily' },
+            },
         )
     }
 

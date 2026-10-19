@@ -1,6 +1,7 @@
-import { useRewardStore } from '@/store/useRewardStore'
+import { useRewardStore, type RewardEvent, type RewardRow } from '@/store/useRewardStore'
 import { badges, lessons } from '@/data'
-import type { Badge, Concept } from '@/data/types'
+import type { Badge, Concept, Lesson } from '@/data/types'
+import { QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 import type { QuizResult } from '@/store/useOrbitStore'
 
 // Quy tắc gamification dùng chung cho store và giao diện.
@@ -95,6 +96,8 @@ export const freezeAvailable = (s: StreakState, now = new Date()) => s.freezeUse
 
 /** XP khi đọc xong một bài Orbit Daily (trả lời đúng câu kiểm tra). */
 export const DAILY_ARTICLE_XP = 20
+/** Trong đó phần thưởng cho việc trả lời đúng câu kiểm tra (đọc xong bài là phần còn lại). */
+export const DAILY_CHECK_XP = 5
 
 // ─── Nhiệm vụ hằng ngày ────────────────────────────────────────────────────
 
@@ -208,21 +211,69 @@ export function evaluateBadges(ctx: BadgeContext, already: string[]) {
 interface Snapshot {
     xp: number
     earnedBadgeIds: string[]
+    conceptMastery: Record<string, number>
+    streak: { count: number }
+}
+
+/** Nội dung riêng của từng tình huống; phần còn lại (cấp, huy hiệu, mở khóa, chuỗi ngày) tính từ trạng thái trước/sau. */
+export interface RewardScreen {
+    context: string
+    headline: string
+    rows: RewardRow[]
+    /** Khái niệm có mức nắm vững thay đổi, để hiện thẻ "Mức nắm vững" khi không có huy hiệu mới */
+    masteryConceptId?: string
+    next?: { label: string; to: string }
 }
 
 /**
- * So sánh trạng thái trước/sau một hành động và đẩy màn hình thưởng tương ứng:
- * XP (khi có tiêu đề riêng) → lên cấp → huy hiệu mới.
+ * So sánh trạng thái trước/sau một hành động và đẩy một màn hình thưởng:
+ * có `screen` (và XP tăng) thì là màn nhận XP đầy đủ; không thì chỉ hiện khi lên cấp hoặc có huy hiệu mới.
  */
-export function announceRewards(before: Snapshot, after: Snapshot, xpScreen?: { title: string; subtitle: string }) {
-    const events: Parameters<ReturnType<typeof useRewardStore.getState>['push']> = []
+export function announceRewards(before: Snapshot, after: Snapshot, screen?: RewardScreen) {
     const gained = after.xp - before.xp
-    if (xpScreen && gained > 0) events.push({ kind: 'xp', xp: gained, ...xpScreen })
     const level = levelFromXp(after.xp)
-    if (level > levelFromXp(before.xp)) events.push({ kind: 'level-up', level })
-    for (const id of after.earnedBadgeIds.filter((b) => !before.earnedBadgeIds.includes(b))) {
-        const badge = badges.find((b) => b.id === id)
-        if (badge) events.push({ kind: 'badge', badge })
+    const levelUp = level > levelFromXp(before.xp)
+    const badge = after.earnedBadgeIds.filter((b) => !before.earnedBadgeIds.includes(b)).map((id) => badges.find((b) => b.id === id)).find(Boolean)
+    const full = screen && gained > 0
+    if (!full && !levelUp && !badge) return
+
+    const unlockedBefore = new Set(buildSkillTree(before.conceptMastery).filter((n) => n.unlocked).map((n) => n.concept.id))
+    const unlocked = buildSkillTree(after.conceptMastery).filter((n) => n.unlocked && !unlockedBefore.has(n.concept.id)).map((n) => n.concept.name)
+
+    let mastery: RewardEvent['mastery']
+    if (screen?.masteryConceptId) {
+        const from = before.conceptMastery[screen.masteryConceptId] ?? 0
+        const to = after.conceptMastery[screen.masteryConceptId] ?? 0
+        const name = lessons.flatMap((l) => l.concepts).find((c) => c.id === screen.masteryConceptId)?.name
+        if (name && to !== from) mastery = { name, from, to }
     }
-    if (events.length) useRewardStore.getState().push(...events)
+
+    useRewardStore.getState().push({
+        context: full ? screen.context : badge ? 'Huy hiệu mới' : 'Lên cấp',
+        headline: full ? screen.headline : badge ? 'Bạn vừa mở một huy hiệu.' : `Cấp ${level}. Học đều là tới.`,
+        xp: Math.max(0, gained),
+        rows: full ? screen.rows : [],
+        xpBefore: before.xp,
+        xpAfter: after.xp,
+        badge,
+        mastery,
+        unlocked,
+        streak: after.streak.count,
+        next: screen?.next ?? { label: 'Học tiếp', to: '/learning' },
+    })
+}
+
+/** Màn thưởng khi xong bài giảng: dòng chi tiết theo kết quả từng câu, câu chốt theo tình huống. */
+export function lessonCompleteScreen(lesson: Lesson, quizResults: Record<string, { outcome: QuizOutcome }>, conceptId: string): RewardScreen {
+    const outcomes = lesson.quiz.map((q) => quizResults[q.id]?.outcome).filter((o): o is QuizOutcome => Boolean(o))
+    const count = (o: QuizOutcome) => outcomes.filter((x) => x === o).length
+    const correct = count('correct')
+    const corrected = count('corrected')
+    const missed = count('missed')
+    const rows: RewardRow[] = []
+    if (correct) rows.push({ label: `Trả lời đúng ${correct} câu ngay lần đầu`, xp: correct * QUIZ_XP.correct })
+    if (corrected) rows.push({ label: `Sửa đúng sau khi sai · thưởng x2 (${corrected} câu)`, xp: corrected * QUIZ_XP.corrected, highlight: true })
+    if (missed) rows.push({ label: `${missed} câu chưa đúng, nên xem lại`, xp: 0 })
+    const headline = corrected ? 'Sai một lần, hiểu tận gốc.' : missed ? 'Xong bài. Còn vài chỗ cần xem lại.' : 'Gọn gàng, không sót câu nào.'
+    return { context: `Hoàn thành · ${lesson.title}`, headline, rows, masteryConceptId: conceptId, next: { label: 'Học tiếp', to: '/learning' } }
 }

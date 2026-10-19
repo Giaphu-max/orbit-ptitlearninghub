@@ -144,10 +144,10 @@ export default {
           '60%': { opacity: '1', transform: 'scale(1.08)' },
           '100%': { transform: 'scale(1)' },
         },
-        // Mockup đổi width 58% -> 86%; ở đây scaleX từ gốc bên trái
+        // Mockup đổi width 58% -> 86%; ở đây scaleX từ gốc bên trái, giá trị đầu/cuối lấy từ biến CSS
         fillBar: {
-          from: { transform: 'scaleX(var(--fill-from, .674))' },
-          to: { transform: 'scaleX(1)' },
+          from: { transform: 'scaleX(var(--fill-from, 0))' },
+          to: { transform: 'scaleX(var(--fill-to, 1))' },
         },
         glowRing: {
           '0%, 100%': { transform: 'scale(1)', opacity: '.55' },

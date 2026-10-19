@@ -116,9 +116,14 @@ function Missions() {
         if (claimMission(id) === 0) return
         const after = useOrbitStore.getState()
         announceRewards(
-            { xp: before.xp, earnedBadgeIds: before.earnedBadgeIds },
-            { xp: after.xp, earnedBadgeIds: after.earnedBadgeIds },
-            { title: 'Nhiệm vụ hoàn thành', subtitle: title },
+            before,
+            after,
+            {
+                context: 'Nhiệm vụ hoàn thành',
+                headline: 'Xong một việc, gần thêm một bước.',
+                rows: [{ label: title, xp: after.xp - before.xp }],
+                next: { label: 'Học tiếp', to: '/learning' },
+            },
         )
     }
 
