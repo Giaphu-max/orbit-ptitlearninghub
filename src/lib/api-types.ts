@@ -16,6 +16,8 @@ export interface ChatRequest {
     question: string
     /** Vài lượt hỏi đáp gần nhất để AI hiểu ngữ cảnh câu hỏi tiếp theo */
     history?: ChatTurn[]
+    /** Giây video sinh viên đang xem, để trả lời được câu kiểu "đoạn này nghĩa là gì" */
+    currentTimeSec?: number
 }
 
 /** Mốc thời gian AI dẫn ra, frontend hiện thành chip bấm để tua video. */

@@ -15,12 +15,12 @@ export function MainLayout() {
     const role = useOrbitStore((s) => s.role)
 
     const activeTab: OrbitTab =
-        location.pathname === '/learning' || location.pathname === '/lesson' ? 'learning' : 'home'
+        location.pathname === '/learning' || location.pathname.startsWith('/lesson') ? 'learning' : 'home'
 
     if (!role) return <OrbitRoleSelect />
 
     return (
-        <div className="flex min-h-screen w-full relative z-0 bg-surface font-sans text-gray-900 overflow-hidden">
+        <div className="flex h-screen w-full relative z-0 bg-surface font-sans text-gray-900 overflow-hidden">
             {/* ── Global Premium Ambient Glow Background ── */}
             <div className="absolute inset-0 z-[-1] overflow-hidden pointer-events-none">
                 {/* Soft Rose glow on top right */}
@@ -35,7 +35,7 @@ export function MainLayout() {
 
             <OrbitSidebar activeTab={activeTab} onTabChange={(tab) => navigate(TAB_PATHS[tab])} />
 
-            <main className="flex-1 flex flex-col overflow-hidden relative bg-transparent pl-[90px]">
+            <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative bg-transparent pl-[90px]">
                 <Outlet />
             </main>
         </div>
