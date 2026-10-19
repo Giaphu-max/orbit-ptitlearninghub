@@ -1,7 +1,7 @@
-import { Home, Brain, GraduationCap, Presentation, Repeat, RotateCcw, type LucideIcon } from 'lucide-react'
+import { Home, Brain, GraduationCap, Presentation, ClipboardCheck, Repeat, RotateCcw, type LucideIcon } from 'lucide-react'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
-export type OrbitTab = 'home' | 'learning'
+export type OrbitTab = 'home' | 'learning' | 'teacher'
 
 interface OrbitSidebarProps {
     activeTab: OrbitTab;
@@ -11,6 +11,10 @@ interface OrbitSidebarProps {
 const navigation: { label: string; tab: OrbitTab; icon: LucideIcon }[] = [
     { label: 'Trang chủ', tab: 'home', icon: Home },
     { label: 'Khóa học', tab: 'learning', icon: Brain },
+]
+
+const teacherNavigation: { label: string; tab: OrbitTab; icon: LucideIcon }[] = [
+    { label: 'Duyệt & thống kê', tab: 'teacher', icon: ClipboardCheck },
 ]
 
 const labelClass = 'font-bold text-[15px] overflow-hidden whitespace-nowrap transition-all duration-100 group-hover:duration-300 ease-in-out w-0 opacity-0 group-hover:w-auto group-hover:opacity-100 group-hover:ml-4 text-left'
@@ -33,7 +37,7 @@ export function OrbitSidebar({ activeTab, onTabChange }: OrbitSidebarProps) {
             </div>
 
             <nav className="flex-1 flex flex-col justify-center w-full gap-8 px-5" aria-label="Điều hướng chính">
-                {navigation.map(({ label, tab, icon: Icon }) => {
+                {(role === 'teacher' ? [...navigation, ...teacherNavigation] : navigation).map(({ label, tab, icon: Icon }) => {
                     const active = activeTab === tab;
                     return (
                         <button key={label} type="button" aria-label={label} aria-current={active ? 'page' : undefined} onClick={() => onTabChange(tab)} className={`${itemClass} ${active ? 'text-brand-700' : 'text-gray-500 hover:text-gray-800'}`}>

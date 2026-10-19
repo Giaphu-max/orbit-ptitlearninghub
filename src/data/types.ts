@@ -102,3 +102,13 @@ export interface Badge {
     description: string
     criterion: BadgeCriterion
 }
+
+/** Thống kê lớp (dữ liệu mẫu) để giảng viên thấy khái niệm nào sinh viên hay sai. */
+export interface ClassStats {
+    note: string
+    classSize: number
+    /** Theo khái niệm: số sinh viên đã làm, số sai ngay lần đầu, số sửa đúng sau khi sai */
+    concepts: Record<string, { answered: number; wrongFirstTry: number; corrected: number }>
+    /** Theo câu gốc: số lượt chọn từng đáp án (cùng thứ tự options) */
+    questions: Record<string, { picks: number[] }>
+}

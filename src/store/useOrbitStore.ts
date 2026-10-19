@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import type { ReviewStatus, Seconds } from '@/data/types'
+import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
@@ -34,6 +34,9 @@ export interface RecordQuizInput {
     lessonQuestionIds: string[]
 }
 
+/** Phần nội dung AI tạo mà giảng viên được sửa; lưu cả khối để thay thế bản gốc. */
+export type LessonEdits = Pick<Lesson, 'summary' | 'concepts' | 'quiz'>
+
 interface OrbitState {
     role: Role | null
     xp: number
@@ -52,11 +55,15 @@ interface OrbitState {
     quizResults: Record<string, QuizResult>
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
     lessonReview: Record<string, ReviewStatus>
+    /** Bản chỉnh sửa của giảng viên theo bài; chưa có thì dùng nội dung AI trong JSON */
+    lessonEdits: Record<string, LessonEdits>
 
     setRole: (role: Role | null) => void
     addXp: (amount: number) => void
     saveLessonPosition: (lessonId: string, positionSec: Seconds) => void
     setLessonReview: (lessonId: string, status: ReviewStatus) => void
+    /** edits = null: bỏ chỉnh sửa, quay về bản AI tạo */
+    setLessonEdits: (lessonId: string, edits: LessonEdits | null) => void
     /** Ghi kết quả một câu quiz, cập nhật mức nắm vững; trả về số XP được cộng */
     recordQuizResult: (input: RecordQuizInput) => number
     resetDemo: () => void
@@ -73,6 +80,7 @@ const initialData = {
     earnedBadgeIds: [],
     quizResults: {},
     lessonReview: {},
+    lessonEdits: {},
 } satisfies Partial<OrbitState>
 
 const safeLocalStorage: StateStorage = {
@@ -121,6 +129,12 @@ export const useOrbitStore = create<OrbitState>()(
 
             setLessonReview: (lessonId, status) =>
                 set((s) => ({ lessonReview: { ...s.lessonReview, [lessonId]: status } })),
+
+            setLessonEdits: (lessonId, edits) =>
+                set((s) => {
+                    const { [lessonId]: _old, ...rest } = s.lessonEdits
+                    return { lessonEdits: edits ? { ...rest, [lessonId]: edits } : rest }
+                }),
 
             recordQuizResult: ({ lessonId, conceptId, questionId, outcome, attempts, lessonQuestionIds }) => {
                 if (get().quizResults[questionId]) return 0

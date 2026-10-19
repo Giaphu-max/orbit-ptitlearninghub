@@ -1,0 +1,11 @@
+{
+  "note": "Dữ liệu mẫu cho bản demo: lớp 32 sinh viên. Bản triển khai thật tổng hợp từ kết quả quiz trên server.",
+  "classSize": 32,
+  "concepts": {
+    "quy-tac-mot-phan-ba": { "answered": 31, "wrongFirstTry": 19, "corrected": 16 },
+    "duong-dan": { "answered": 27, "wrongFirstTry": 8, "corrected": 7 }
+  },
+  "questions": {
+    "q-mot-phan-ba-1": { "picks": [14, 12, 3, 2] }
+  }
+}

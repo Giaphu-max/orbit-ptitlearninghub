@@ -8,6 +8,7 @@ import { useOrbitStore } from '@/store/useOrbitStore'
 const TAB_PATHS: Record<OrbitTab, string> = {
     home: '/',
     learning: '/learning',
+    teacher: '/teacher',
 }
 
 export function MainLayout() {
@@ -16,8 +17,11 @@ export function MainLayout() {
 
     const role = useOrbitStore((s) => s.role)
 
-    const activeTab: OrbitTab =
-        location.pathname === '/learning' || location.pathname.startsWith('/lesson') ? 'learning' : 'home'
+    const activeTab: OrbitTab = location.pathname.startsWith('/teacher')
+        ? 'teacher'
+        : location.pathname === '/learning' || location.pathname.startsWith('/lesson')
+          ? 'learning'
+          : 'home'
 
     if (!role) return <OrbitRoleSelect />
 

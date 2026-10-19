@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronLeft, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
-import { getCourse, getLesson, getLessonsOfCourse, lessons } from '@/data'
+import { getCourse, getLessonsOfCourse, lessons } from '@/data'
 import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { useLessonQuiz } from '@/hooks/useLessonQuiz'
 import { formatTime } from '@/lib/youtube'
+import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
 import { ConceptTimeline } from '@/components/lesson/concept-timeline'
@@ -19,11 +20,28 @@ import { QuizRewardToast } from '@/components/lesson/quiz-reward-toast'
 /** /lesson/:lessonId – không có id thì mở bài đầu tiên. */
 export function OrbitLessonView() {
     const { lessonId } = useParams()
+    const role = useOrbitStore((s) => s.role)
+    const lesson = useEffectiveLesson(lessonId)
+    const status = useReviewStatus(lesson)
     if (!lessonId) return lessons[0] ? <Navigate to={`/lesson/${lessons[0].id}`} replace /> : <Navigate to="/learning" replace />
-    const lesson = getLesson(lessonId)
     if (!lesson) return <Navigate to="/learning" replace />
+    // Sinh viên chỉ học bài giảng viên đã xuất bản; giảng viên xem trước được cả bản nháp
+    if (status !== 'published' && role !== 'teacher') return <UnpublishedNotice />
     // key: đổi bài thì dựng lại trình phát và khung chat từ đầu
     return <LessonPage key={lesson.id} lesson={lesson} />
+}
+
+function UnpublishedNotice() {
+    return (
+        <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+            <p className="text-eyebrow uppercase text-brand-600">Chưa xuất bản</p>
+            <h1 className="text-headline text-gray-900">Bài này đang chờ giảng viên duyệt</h1>
+            <p className="max-w-md text-gray-600">Nội dung do AI tạo cần được giảng viên xem lại trước khi đến tay sinh viên.</p>
+            <Link to="/learning" className="rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-brand transition hover:bg-brand-700">
+                Về danh sách khóa học
+            </Link>
+        </div>
+    )
 }
 
 // Chỉ tiếp tục từ vị trí cũ khi đã xem được một đoạn và chưa tới cuối
