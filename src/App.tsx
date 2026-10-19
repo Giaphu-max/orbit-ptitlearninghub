@@ -2,6 +2,7 @@ import { lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 import { MainLayout } from '@/layouts/MainLayout'
+import { ThemeCurtain } from '@/components/theme-curtain'
 
 // Mỗi trang một chunk riêng: trang chủ không phải tải trình phát, quiz, markdown…
 // (Suspense nằm trong MainLayout để sidebar vẫn hiện khi trang đang tải)
@@ -58,6 +59,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      <ThemeCurtain />
     </MotionConfig>
   )
 }

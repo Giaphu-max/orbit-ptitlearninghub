@@ -11,6 +11,7 @@ type Tone = 'hero' | 'plain'
 export function ThemeToggle({ tone = 'plain', className = 'relative' }: { tone?: Tone; className?: string }) {
     const theme = useThemeStore((s) => s.theme)
     const toggle = useThemeStore((s) => s.toggle)
+    const busy = useThemeStore((s) => s.busy)
     const dark = theme === 'dark'
     const label = dark ? 'Chuyển sang giao diện sáng (hoàng hôn)' : 'Chuyển sang giao diện tối (buổi tối)'
 
@@ -18,7 +19,11 @@ export function ThemeToggle({ tone = 'plain', className = 'relative' }: { tone?:
         <div className={`group ${className}`}>
             <button
                 type="button"
-                onClick={toggle}
+                onClick={(e) => {
+                    const b = e.currentTarget.getBoundingClientRect()
+                    toggle({ x: b.left + b.width / 2, y: b.top + b.height / 2 })
+                }}
+                aria-disabled={busy}
                 aria-label={label}
                 className={`flex h-10 w-10 items-center justify-center rounded-full border transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${
                     tone === 'hero'

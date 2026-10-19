@@ -202,22 +202,6 @@
   }
 }
 
-/* Chuyển giao diện sáng/tối mượt: class tạm thời do theme store bật trong lúc đổi */
-@media (prefers-reduced-motion: no-preference) {
-  html.theme-fade,
-  html.theme-fade *,
-  html.theme-fade *::before,
-  html.theme-fade *::after {
-    transition:
-      background-color 0.7s var(--ease-in-out),
-      color 0.7s var(--ease-in-out),
-      border-color 0.7s var(--ease-in-out),
-      fill 0.7s var(--ease-in-out),
-      stroke 0.7s var(--ease-in-out),
-      box-shadow 0.7s var(--ease-in-out) !important;
-  }
-}
-
 /* Tôn trọng người dùng tắt chuyển động: giữ trạng thái cuối, bỏ phần chạy */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -230,21 +214,54 @@
   }
 }
 
-/* View Transitions cho đổi giao diện: ảnh mới lộ ra bằng clip-path (do theme-transition.ts điều khiển) */
-::view-transition {
+/* Chuyển sáng/tối: tắt mọi transition màu trong lúc đổi để việc đổi chỉ tốn một khung hình */
+:root.switching *,
+:root.switching *::before,
+:root.switching *::after {
+  transition: none !important;
+}
+
+@property --hole {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* Màn phủ chuyển giao diện (điều khiển bởi src/lib/theme-switch.ts) */
+.theme-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
   pointer-events: none;
+  visibility: hidden;
+  background: radial-gradient(60% 60% at 50% 45%, hsl(var(--reward-from)) 0%, hsl(var(--reward-mid)) 45%, hsl(var(--reward-to)) 100%);
+  will-change: clip-path, mask-image;
+  contain: strict;
 }
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+.theme-curtain.to-dark {
+  background: radial-gradient(60% 60% at 50% 45%, hsl(var(--reward-mid)) 0%, hsl(var(--reward-to)) 55%, hsl(var(--hero-base)) 100%);
 }
-::view-transition-old(orbit-logo) {
-  display: none;
+.theme-curtain.on {
+  visibility: visible;
 }
-::view-transition-new(orbit-logo) {
-  animation: none;
+.theme-curtain.hole {
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 1px));
+  mask-image: radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 1px));
 }
-::view-transition-group(orbit-logo) {
-  animation: none;
+.theme-curtain-emblem {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(44vw, 260px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+.theme-curtain-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: hsl(var(--ink-foreground));
+  opacity: 0;
 }

@@ -1,8 +1,9 @@
 import { create } from 'zustand'
-import { runThemeTransition } from '@/lib/theme-transition'
+import { curtainReady, playCurtain } from '@/lib/theme-switch'
 
 // Giao diện sáng/tối. Lưu riêng khỏi trạng thái demo để "Đặt lại dữ liệu demo" không đổi giao diện.
 // Class `dark` trên <html> do script trong index.html đặt trước khi vẽ; store chỉ đồng bộ và cập nhật.
+// Đổi giao diện có màn phủ PTIT (lib/theme-switch.ts); giảm chuyển động thì đổi ngay.
 
 export type Theme = 'light' | 'dark'
 
@@ -13,21 +14,48 @@ const initialTheme = (): Theme =>
 
 interface ThemeState {
     theme: Theme
-    setTheme: (theme: Theme) => void
-    toggle: () => void
+    /** Đang chạy hiệu ứng chuyển: nút bị khóa */
+    busy: boolean
+    /** Màn đang che kín: cảnh 3D ngừng vẽ và đặt thẳng ánh sáng mới */
+    frozen: boolean
+    setTheme: (theme: Theme, origin?: { x: number; y: number }) => void
+    toggle: (origin?: { x: number; y: number }) => void
 }
 
-export const useThemeStore = create<ThemeState>()((set, get) => ({
-    theme: initialTheme(),
-    setTheme: (theme) => {
-        // Store cập nhật ngay (bấm liên tiếp vẫn đảo đúng); callback của View Transition chạy bất đồng bộ nên chỉ đổi class ở đó
-        set({ theme })
-        runThemeTransition(() => document.documentElement.classList.toggle('dark', get().theme === 'dark'))
+export const useThemeStore = create<ThemeState>()((set, get) => {
+    // Đổi thật sự: tắt transition màu trong lúc đổi, bật lại sau 2 khung hình
+    const apply = (theme: Theme) => {
+        const root = document.documentElement
+        root.classList.add('switching')
+        root.classList.toggle('dark', theme === 'dark')
         try {
             window.localStorage.setItem(STORAGE_KEY, theme)
         } catch {
             // Storage bị chặn: vẫn đổi được, chỉ là không nhớ giữa các lần mở
         }
-    },
-    toggle: () => get().setTheme(get().theme === 'dark' ? 'light' : 'dark'),
-}))
+        set({ theme })
+        requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('switching')))
+    }
+
+    return {
+        theme: initialTheme(),
+        busy: false,
+        frozen: false,
+        setTheme: (theme, origin) => {
+            const { busy, theme: cur } = get()
+            if (busy || theme === cur) return
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            if (reduce || !curtainReady()) {
+                apply(theme)
+                return
+            }
+            set({ busy: true })
+            const o = origin ?? { x: window.innerWidth - 40, y: 40 }
+            void playCurtain(o, theme === 'dark', {
+                swap: () => apply(theme),
+                freeze: (on) => set({ frozen: on }),
+            }).finally(() => set({ busy: false, frozen: false }))
+        },
+        toggle: (origin) => get().setTheme(get().theme === 'dark' ? 'light' : 'dark', origin),
+    }
+})

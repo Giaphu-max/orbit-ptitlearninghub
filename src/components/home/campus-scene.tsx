@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useThemeStore } from '@/store/useThemeStore'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -587,10 +588,27 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
         camera.lookAt(TARGET)
     }, [camera])
 
+    const applyLights = (n: number) => {
+        if (sun.current) {
+            sun.current.intensity = (1.05 - n * 0.75) * Math.PI
+            sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
+        }
+        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI
+        if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI
+    }
+
+    // Màn chuyển giao diện đang che: đặt thẳng ánh sáng mới rồi vẽ đúng một khung (canvas đang dừng)
+    const frozen = useThemeStore((s) => s.frozen)
+    const advance = useThree((s) => s.advance)
     useEffect(() => {
         nightTarget.current = night ? 1 : 0
-        if (reduce) nightRef.current = nightTarget.current
-    }, [night, reduce])
+        if (reduce || frozen) {
+            nightRef.current = nightTarget.current
+            applyLights(nightRef.current)
+            if (frozen) advance(performance.now())
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [night, reduce, frozen])
 
     const updateCursor = () => {
         domElement.style.cursor = hoverRef.current ? 'pointer' : touch ? 'default' : dragging.current ? 'grabbing' : 'grab'
@@ -659,13 +677,7 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
 
         // Chuyển hoàng hôn ↔ buổi tối
         nightRef.current += (nightTarget.current - nightRef.current) * (reduce ? 1 : 0.04)
-        const n = nightRef.current
-        if (sun.current) {
-            sun.current.intensity = (1.05 - n * 0.75) * Math.PI
-            sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
-        }
-        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI
-        if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI
+        applyLights(nightRef.current)
         void state
     })
 
@@ -730,6 +742,7 @@ export default function CampusScene({ night, reduce }: CampusSceneProps) {
     const pointer = useRef({ x: 0, y: 0, inside: false })
     const wrapRef = useRef<HTMLDivElement>(null)
     const [inView, setInView] = useState(true)
+    const frozen = useThemeStore((s) => s.frozen)
 
     useEffect(() => {
         const el = wrapRef.current
@@ -775,7 +788,7 @@ export default function CampusScene({ night, reduce }: CampusSceneProps) {
             {fontsReady && (
                 <Canvas
                     // Hero cuộn khỏi màn hình thì dừng vẽ: nhẹ GPU và tránh lỗi ghép lớp khi cuộn
-                    frameloop={inView ? 'always' : 'never'}
+                    frameloop={inView && !frozen ? 'always' : 'never'}
                     legacy
                     flat
                     shadows="soft"
