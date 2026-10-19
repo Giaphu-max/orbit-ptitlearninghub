@@ -1,0 +1,16 @@
+{
+  "$comment": "Danh sách video để scripts/generate-content.ts tạo nội dung. Mỗi video thành một bài học; id dùng làm đường dẫn nên viết không dấu, nối gạch ngang.",
+  "dailyCount": 6,
+  "courses": [
+    {
+      "id": "nhiep-anh-co-ban",
+      "title": "Nhiếp ảnh cơ bản",
+      "subject": "Nhiếp ảnh",
+      "instructor": "Giảng viên khoa Đa phương tiện",
+      "description": "Bố cục, ánh sáng và cách đọc một khung hình trước khi bấm máy.",
+      "lessons": [
+        { "id": "bai-1", "url": "https://www.youtube.com/watch?v=THAY_LINK_VIDEO_1" }
+      ]
+    }
+  ]
+}

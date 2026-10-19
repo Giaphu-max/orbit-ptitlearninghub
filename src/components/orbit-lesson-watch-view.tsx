@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Play, Pause, Volume2, Maximize, Send, CheckCircle2, Settings, Sparkles, PanelRightClose, MessageSquare, ArrowDown, MoreHorizontal, ChevronLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate } from 'react-router-dom'
-import { getLesson } from '@/data'
+import { getLesson, lessons } from '@/data'
 import { askTutor } from '@/lib/api'
 import { CHAT_LIMITS, type ChatCitation, type ChatTurn } from '@/lib/api-types'
 
@@ -31,7 +31,7 @@ interface OrbitLessonWatchViewProps {
 
 export function OrbitLessonWatchView({ onBack }: OrbitLessonWatchViewProps = {}) {
     const navigate = useNavigate()
-    const lesson = getLesson(DEMO_LESSON_ID)!
+    const lesson = getLesson(DEMO_LESSON_ID) ?? lessons[0]
     const [currentTime, setCurrentTime] = useState(0)
 
     const handleBack = () => {

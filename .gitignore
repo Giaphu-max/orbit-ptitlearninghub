@@ -25,3 +25,6 @@ dist-ssr
 .env*
 !.env.example
 .vercel
+
+# Cache kết quả thô của Gemini khi tạo nội dung
+scripts/.cache
