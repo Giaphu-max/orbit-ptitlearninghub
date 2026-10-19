@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Play, BookOpen, Clock, ChevronRight, TrendingUp, X, CheckCircle2, Lock, Bookmark } from 'lucide-react'
+import { BookOpen, Clock, ChevronRight, TrendingUp, X, CheckCircle2, Lock, Bookmark } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
