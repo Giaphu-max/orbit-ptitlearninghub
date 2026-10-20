@@ -8,6 +8,7 @@ import { InlineText } from '@/components/daily/inline-text'
 import { SourceChip } from '@/components/daily/source-chip'
 import { checkBlocks } from '@/lib/daily-text'
 import { celebrate, reactWrong } from '@/lib/feedback'
+import { nextDaily } from '@/lib/next-step'
 import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -103,6 +104,8 @@ export function OrbitDailyView() {
         const before = useOrbitStore.getState()
         if (complete(article.id, DAILY_ARTICLE_XP) === 0) return
         const after = useOrbitStore.getState()
+        const upcoming = nextDaily()
+        const nextStep = upcoming ? { label: 'Bài Daily kế', to: `/daily/${upcoming.id}` } : { label: 'Xem tóm tắt hôm nay', to: '/#daily' }
         announceRewards(
             before,
             after,
@@ -113,8 +116,10 @@ export function OrbitDailyView() {
                     { label: 'Đọc xong bài', xp: DAILY_ARTICLE_XP - DAILY_CHECK_XP },
                     { label: 'Trả lời đúng câu kiểm tra', xp: DAILY_CHECK_XP },
                 ],
-                next: { label: 'Học tiếp', to: '/#daily' },
+                next: nextStep,
             },
+            // Một hành động chính: bài Daily kế; hết lượt thì về màn "Hôm nay đủ rồi"
+            { source: 'daily', next: nextStep },
         )
     }
 

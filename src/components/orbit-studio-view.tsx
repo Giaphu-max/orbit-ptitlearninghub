@@ -77,7 +77,7 @@ export function OrbitStudioView() {
             const before = useOrbitStore.getState()
             before.recordDirectorScore(result.overall)
             const after = useOrbitStore.getState()
-            announceRewards(before, after)
+            announceRewards(before, after, undefined, { source: 'studio', next: { label: 'Chụp lại theo gợi ý', onClick: () => {} } })
             setShots((list) => [{ image: dataUrl, result, at: Date.now() }, ...list].slice(0, HISTORY_MAX))
             setPhase({ kind: 'result', image: dataUrl, result })
         } catch (err) {
@@ -181,7 +181,7 @@ export function OrbitStudioView() {
                                     disabled={phase.kind === 'grading'}
                                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:opacity-50 sm:flex-none"
                                 >
-                                    <RotateCcw size={16} /> Chụp lại
+                                    <RotateCcw size={16} /> {phase.kind === 'result' ? 'Chụp lại theo gợi ý' : 'Chụp lại'}
                                 </button>
                             ) : (
                                 <button

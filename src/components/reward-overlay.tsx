@@ -41,16 +41,26 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const cancelRef = useRef<() => void>(() => {})
     const soundPlayed = useRef(false)
-    useEffect(() => btnRef.current?.focus(), [])
+    // Chống bấm nhầm: 500ms đầu vùng nút không nhận chuột/phím, sau đó mới focus nút chính
+    const [armed, setArmed] = useState(false)
+    useEffect(() => {
+        const t = window.setTimeout(() => {
+            setArmed(true)
+            btnRef.current?.focus()
+        }, 500)
+        return () => window.clearTimeout(t)
+    }, [])
 
     // Đóng: hủy mọi animation, bộ đếm và canvas ngay, rồi để AnimatePresence làm mờ phần còn lại
     const close = () => {
         cancelRef.current()
         onClose()
     }
-    const go = (to: string) => {
+    /** Nút chính chạy `next` (đóng màn rồi đi tiếp, hoặc chỉ chạy việc kế tiếp tại chỗ); nút phụ chỉ có `to`. */
+    const go = (next: { to?: string; onClick?: () => void }) => {
         close()
-        navigate(to)
+        next.onClick?.()
+        if (next.to) navigate(next.to)
     }
     const closeRef = useRef(close)
     closeRef.current = close
@@ -331,18 +341,20 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                         </span>
                     </div>
 
-                    <div data-fx="actions" className="flex gap-3">
+                    <div data-fx="actions" className={`flex gap-3 ${armed ? '' : 'pointer-events-none'}`}>
                         <button
                             ref={btnRef}
                             type="button"
-                            onClick={() => go(event.next.to)}
+                            tabIndex={armed ? 0 : -1}
+                            onClick={() => go(event.next)}
                             className="rw-btn-solid flex-1 rounded-[14px] p-4 text-base font-extrabold transition duration-fast hover:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/50"
                         >
                             {event.next.label}
                         </button>
                         <button
                             type="button"
-                            onClick={() => go('/')}
+                            tabIndex={armed ? 0 : -1}
+                            onClick={() => go({ to: '/' })}
                             className="rw-btn-ghost flex-1 rounded-[14px] p-4 text-base font-bold transition duration-fast focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/50"
                         >
                             Về trang chủ

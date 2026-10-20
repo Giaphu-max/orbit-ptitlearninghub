@@ -10,6 +10,16 @@ export interface RewardRow {
     highlight?: boolean
 }
 
+/** Nơi màn thưởng được mở, để nút chính dẫn đúng việc kế tiếp trong ngữ cảnh đó. */
+export type RewardSource = 'lesson' | 'daily' | 'test' | 'studio' | 'mission'
+
+/** Hành động chính của màn thưởng: đi tới `to`, hoặc chạy `onClick` (ví dụ xem tiếp video, không rời trang). */
+export interface RewardNext {
+    label: string
+    to?: string
+    onClick?: () => void
+}
+
 /** Một màn nhận thưởng đầy đủ: XP + chi tiết + cấp độ + huy hiệu hoặc mức nắm vững + mở khóa. */
 export interface RewardEvent {
     id: number
@@ -26,7 +36,8 @@ export interface RewardEvent {
     /** Tên khái niệm vừa được mở khóa trên cây kỹ năng */
     unlocked: string[]
     streak: number
-    next: { label: string; to: string }
+    next: RewardNext
+    source: RewardSource
     /** Điểm màn nền đỏ lan ra: nút vừa bấm (px trong cửa sổ) */
     origin?: { x: number; y: number }
     /** Chờ bao lâu (ms) mới mở màn, để phản hồi tại nút kịp chạy sau khi trả lời */

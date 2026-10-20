@@ -3,6 +3,7 @@ import type { Lesson, LessonQuizQuestion } from '@/data/types'
 import { explainAnswer } from '@/lib/api'
 import { questionAt, type QuizOutcome } from '@/lib/quiz'
 import { announceRewards, lessonCompleteScreen } from '@/lib/gamification'
+import { afterLesson } from '@/lib/next-step'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 // Vòng quiz củng cố trong video:
@@ -57,6 +58,7 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
     const [reward, setReward] = useState<QuizReward | null>(null)
     const prevTimeRef = useRef(currentTime)
     const requestRef = useRef(0)
+    const resumeRef = useRef<() => void>(() => {})
 
     const open = useCallback(
         (root: LessonQuizQuestion) => {
@@ -105,7 +107,13 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
             // Màn thưởng phủ đỏ chỉ ở khoảnh khắc đáng nhớ: xong bài, lên cấp, huy hiệu mới
             const after = useOrbitStore.getState()
             const lessonDone = !wasDone && (after.lessonProgress[lesson.id]?.completed ?? false)
-            announceRewards(before, after, lessonDone ? lessonCompleteScreen(lesson, after.quizResults, root.conceptId) : undefined, { afterAnswer: true })
+            // Bài xong: nút chính sang bài kế (hoặc test cuối chương). Chưa xong (lên cấp/huy hiệu giữa bài): chỉ đóng màn và xem tiếp video
+            const finished = afterLesson(lesson.id)
+            announceRewards(before, after, lessonDone ? lessonCompleteScreen(lesson, after.quizResults, root.conceptId, finished) : undefined, {
+                source: 'lesson',
+                afterAnswer: true,
+                next: lessonDone ? finished : { label: 'Xem tiếp video', onClick: () => resumeRef.current() },
+            })
         },
         [lesson, recordQuizResult],
     )
@@ -173,6 +181,10 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
         prevTimeRef.current = root.pauseAt
         if (canPlay) seekTo(root.pauseAt, { play: true })
     }, [phase, canPlay, seekTo])
+
+    useEffect(() => {
+        resumeRef.current = resume
+    }, [resume])
 
     return { phase, reward, open, answer, review, nextVariant, resume, results: quizResults }
 }

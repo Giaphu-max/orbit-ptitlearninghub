@@ -1,21 +1,19 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { Award, Check, ChevronRight, Flame, Gift, Lock, Snowflake, Zap } from 'lucide-react'
+import { Award, Check, ChevronRight, Flame, Lock, Snowflake, Zap } from 'lucide-react'
 import { badges, courses, getLesson } from '@/data'
 import {
-    announceRewards,
     badgeProgress,
     bestTestRatio,
     buildSkillTree,
-    dailyFor,
     freezeAvailable,
     levelProgress,
     levelTitle,
-    MISSIONS,
     UNLOCK_THRESHOLD,
     visibleStreak,
 } from '@/lib/gamification'
+import { MissionList } from '@/components/missions'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 /** /journey – cấp độ, chuỗi ngày học, nhiệm vụ hằng ngày, cây kỹ năng và huy hiệu. */
@@ -91,7 +89,7 @@ function StatusRow() {
                         <p className="mt-2 text-lg font-bold">{levelTitle(lp.level)}</p>
                     </div>
                     <p className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/15 px-4 py-2 font-mono text-sm font-bold">
-                        <Zap size={15} className="fill-current" /> {xp} XP
+                        <Zap size={15} className="fill-current" /> {xp.toLocaleString('vi-VN')} XP
                     </p>
                 </div>
                 <div className="mt-7">
@@ -106,8 +104,8 @@ function StatusRow() {
                         <motion.div initial={{ width: 0 }} animate={{ width: `${Math.round(lp.ratio * 100)}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} className="h-full rounded-full bg-ink-foreground" />
                     </div>
                     <p className="mt-2 flex justify-between font-mono text-xs text-ink-foreground/80">
-                        <span>{lp.into}/{lp.span} XP</span>
-                        <span>Còn {lp.toNext} XP lên cấp {lp.level + 1}</span>
+                        <span>{xp.toLocaleString('vi-VN')} / {(xp + lp.toNext).toLocaleString('vi-VN')} XP</span>
+                        <span>Còn {lp.toNext.toLocaleString('vi-VN')} XP lên Cấp {lp.level + 1} · {levelTitle(lp.level + 1)}</span>
                     </p>
                 </div>
             </div>
@@ -141,59 +139,13 @@ function StatusRow() {
 // ─── Nhiệm vụ hằng ngày ────────────────────────────────────────────────────
 
 function Missions() {
-    const dailyRaw = useOrbitStore((s) => s.daily)
-    const claimMission = useOrbitStore((s) => s.claimMission)
-    const daily = dailyFor(dailyRaw)
-
-    const claim = (id: string) => {
-        const before = useOrbitStore.getState()
-        if (claimMission(id) === 0) return
-        const after = useOrbitStore.getState()
-        announceRewards(before, after)
-    }
-
     return (
         <section aria-labelledby="missions-title">
             <div className="flex items-end justify-between gap-3">
                 <h2 id="missions-title" className="text-title text-foreground">Nhiệm vụ hôm nay</h2>
                 <p className="text-sm text-muted-foreground">Làm mới mỗi ngày</p>
             </div>
-            <ul className="mt-4 flex flex-col gap-3">
-                {MISSIONS.map((m) => {
-                    const value = Math.min(m.target, m.progress(daily))
-                    const done = value >= m.target
-                    const claimed = daily.claimed.includes(m.id)
-                    return (
-                        <li key={m.id} className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-card p-5 shadow-card">
-                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${claimed ? 'bg-success/10 text-success' : done ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                {claimed ? <Check size={20} /> : <Gift size={18} />}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                                <p className={`font-bold ${claimed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{m.title}</p>
-                                <p className="text-sm text-muted-foreground">{m.hint}</p>
-                                <div className="mt-2 flex items-center gap-3">
-                                    <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
-                                        <div className="h-full rounded-full bg-brand-600 transition-all duration-slow" style={{ width: `${(value / m.target) * 100}%` }} />
-                                    </div>
-                                    <span className="font-mono text-xs text-muted-foreground">{value}/{m.target}</span>
-                                </div>
-                            </div>
-                            {claimed ? (
-                                <span className="text-sm font-semibold text-success">Đã nhận +{m.rewardXp} XP</span>
-                            ) : (
-                                <button
-                                    type="button"
-                                    disabled={!done}
-                                    onClick={() => claim(m.id)}
-                                    className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
-                                >
-                                    <Zap size={14} className="fill-current" /> {done ? 'Nhận' : 'Thưởng'} +{m.rewardXp} XP
-                                </button>
-                            )}
-                        </li>
-                    )
-                })}
-            </ul>
+            <MissionList />
         </section>
     )
 }

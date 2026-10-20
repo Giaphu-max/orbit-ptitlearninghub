@@ -59,12 +59,16 @@ export function OrbitTestView() {
         const rows = [{ label: `Đúng ${correct}/${attempt.total} câu`, xp: testXp(correct, attempt.total, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).base }]
         const bonus = testXp(correct, attempt.total, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).bonus
         if (bonus) rows.push({ label: `Đạt từ ${Math.round(TEST_PASS_RATIO * 100)}% · thưởng một lần`, xp: bonus })
+        // Một hành động chính: ôn khái niệm yếu nhất trong lộ trình (xem lại đúng đoạn giảng)
+        const weakest = attempt.concepts.filter((c) => !c.correct && c.after < MASTERED_RATIO).sort((a, b) => a.after - b.after)[0]
+        const step = weakest ? reviewStepFor(weakest.conceptId) : undefined
+        const weakestStep = step ? { label: `Ôn: ${step.conceptName}`, to: `/lesson/${step.lessonId}?t=${step.start}` } : undefined
         announceRewards(before, after, {
             context: `Test cuối chương · ${course.title}`,
             headline: correct / attempt.total >= TEST_PASS_RATIO ? 'Nắm chắc cả chương.' : 'Biết chỗ hổng là đã đi được nửa đường.',
             rows: rows.filter((r) => r.xp > 0 || rows.length === 1),
-            next: { label: 'Xem cây kỹ năng', to: '/journey' },
-        })
+            next: weakestStep ?? { label: 'Xem cây kỹ năng', to: '/journey' },
+        }, { source: 'test', next: weakestStep ?? { label: 'Xem cây kỹ năng', to: '/journey' } })
         setPhase({ kind: 'result', attempt, questions, picks, xp })
         window.scrollTo(0, 0)
     }

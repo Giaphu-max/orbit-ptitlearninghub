@@ -1,0 +1,80 @@
+import { dailyArticles, courses, getCourse, getLessonsOfCourse, lessons } from '@/data'
+import type { DailyArticle, Lesson } from '@/data/types'
+import { localDate } from '@/lib/gamification'
+import { useOrbitStore } from '@/store/useOrbitStore'
+
+// "Bước tiếp theo" cho mọi điểm kết thúc (màn thưởng, nhiệm vụ): luôn dẫn người dùng tới việc kế tiếp
+// trong đúng ngữ cảnh, không đẩy về danh sách chung. Đọc trạng thái từ store, dùng được ngoài component.
+
+export const DAILY_LIMIT = 3
+
+/** Bài ưu tiên = bài có khái niệm bạn còn yếu nhất (chưa làm quiz thì coi như 50%). */
+export function gapScore(a: DailyArticle, mastery: Record<string, number>) {
+    return a.conceptIds.reduce((sum, id) => sum + (1 - (mastery[id] ?? 0.5)), 0) / Math.max(1, a.conceptIds.length)
+}
+
+/** 3 bài mỗi ngày: bài đã đọc hôm nay, rồi bài chưa đọc ưu tiên theo lỗ hổng kiến thức. */
+export function todaysDaily(read: Record<string, string>, mastery: Record<string, number>): DailyArticle[] {
+    const today = localDate()
+    return [
+        ...dailyArticles.filter((a) => read[a.id] === today),
+        ...dailyArticles.filter((a) => !read[a.id]).sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery)),
+    ].slice(0, DAILY_LIMIT)
+}
+
+/** Bài Daily chưa đọc ưu tiên nhất trong lượt hôm nay (undefined khi đã đủ lượt hoặc hết bài). */
+export function nextDaily(): DailyArticle | undefined {
+    const { dailyRead, conceptMastery } = useOrbitStore.getState()
+    return todaysDaily(dailyRead, conceptMastery)
+        .filter((a) => !dailyRead[a.id])
+        .sort((a, b) => gapScore(b, conceptMastery) - gapScore(a, conceptMastery))[0]
+}
+
+/** Bài sinh viên thấy được: bài đã xuất bản (giảng viên thấy cả bản nháp). */
+export function visibleLessons(): Lesson[] {
+    const { role, lessonReview } = useOrbitStore.getState()
+    return lessons.filter((l) => role === 'teacher' || (lessonReview[l.id] ?? l.status) === 'published')
+}
+
+/** Bài đang học dở; chưa có thì bài đầu tiên chưa xong. */
+export function resumeLesson(): Lesson | undefined {
+    const progress = useOrbitStore.getState().lessonProgress
+    const visible = visibleLessons()
+    return visible.find((l) => progress[l.id] && !progress[l.id].completed && progress[l.id].lastPositionSec > 0) ?? visible.find((l) => !progress[l.id]?.completed) ?? visible[0]
+}
+
+export interface NextStep {
+    label: string
+    to: string
+}
+
+/** Sau khi xong một bài: bài kế trong khóa; bài cuối khóa thì làm test cuối chương. */
+export function afterLesson(lessonId: string): NextStep {
+    const lesson = lessons.find((l) => l.id === lessonId)
+    const course = lesson && getCourse(lesson.courseId)
+    if (!lesson || !course) return { label: 'Về danh sách khóa học', to: '/learning' }
+    const visible = new Set(visibleLessons().map((l) => l.id))
+    const order = getLessonsOfCourse(course.id).filter((l) => visible.has(l.id))
+    const next = order[order.findIndex((l) => l.id === lessonId) + 1]
+    return next ? { label: 'Bài tiếp theo', to: `/lesson/${next.id}` } : { label: 'Làm test cuối chương', to: `/test/${course.id}` }
+}
+
+/** Khóa đang học (theo bài đang học dở), để dẫn tới đúng bài test. */
+export function activeCourseId(): string | undefined {
+    return resumeLesson()?.courseId ?? courses[0]?.id
+}
+
+/** Nơi "Làm ngay" của từng nhiệm vụ hằng ngày. */
+export function missionTarget(missionId: string): string {
+    const lesson = resumeLesson()
+    switch (missionId) {
+        case 'daily': {
+            const next = nextDaily()
+            return next ? `/daily/${next.id}` : '/#daily'
+        }
+        case 'test':
+            return `/test/${activeCourseId()}`
+        default:
+            return lesson ? `/lesson/${lesson.id}` : '/learning'
+    }
+}

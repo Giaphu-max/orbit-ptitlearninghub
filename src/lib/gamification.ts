@@ -1,4 +1,4 @@
-import { useRewardStore, type RewardEvent, type RewardRow } from '@/store/useRewardStore'
+import { useRewardStore, type RewardEvent, type RewardNext, type RewardRow, type RewardSource } from '@/store/useRewardStore'
 import { badges, lessons } from '@/data'
 import type { Badge, Concept, Lesson } from '@/data/types'
 import { inputOrigin } from '@/lib/feedback'
@@ -248,7 +248,7 @@ export interface RewardScreen {
     rows: RewardRow[]
     /** Khái niệm có mức nắm vững thay đổi, để hiện thẻ "Mức nắm vững" khi không có huy hiệu mới */
     masteryConceptId?: string
-    next?: { label: string; to: string }
+    next?: RewardNext
 }
 
 /**
@@ -257,7 +257,7 @@ export interface RewardScreen {
  * Chỉ truyền `screen` khi xong bài giảng, xong bài Daily hoặc xong test; các hành động còn lại (từng câu quiz,
  * nhiệm vụ, Studio) chỉ nhận phản hồi nhỏ ở chip XP.
  */
-export function announceRewards(before: Snapshot, after: Snapshot, screen?: RewardScreen, opts: { afterAnswer?: boolean } = {}) {
+export function announceRewards(before: Snapshot, after: Snapshot, screen: RewardScreen | undefined, opts: { source: RewardSource; next: RewardNext; afterAnswer?: boolean }) {
     const gained = after.xp - before.xp
     const level = levelFromXp(after.xp)
     const levelUp = level > levelFromXp(before.xp)
@@ -287,7 +287,8 @@ export function announceRewards(before: Snapshot, after: Snapshot, screen?: Rewa
         mastery,
         unlocked,
         streak: after.streak.count,
-        next: screen?.next ?? { label: 'Học tiếp', to: '/learning' },
+        next: screen?.next ?? opts.next,
+        source: opts.source,
         origin: inputOrigin(),
         // Vừa trả lời xong: chờ ~750ms cho tia sáng, chip XP bay vào nav rồi mới mở màn
         delayMs: opts.afterAnswer ? 750 : 0,
@@ -295,7 +296,7 @@ export function announceRewards(before: Snapshot, after: Snapshot, screen?: Rewa
 }
 
 /** Màn thưởng khi xong bài giảng: dòng chi tiết theo kết quả từng câu, câu chốt theo tình huống. */
-export function lessonCompleteScreen(lesson: Lesson, quizResults: Record<string, { outcome: QuizOutcome }>, conceptId: string): RewardScreen {
+export function lessonCompleteScreen(lesson: Lesson, quizResults: Record<string, { outcome: QuizOutcome }>, conceptId: string, next: RewardNext): RewardScreen {
     const outcomes = lesson.quiz.map((q) => quizResults[q.id]?.outcome).filter((o): o is QuizOutcome => Boolean(o))
     const count = (o: QuizOutcome) => outcomes.filter((x) => x === o).length
     const correct = count('correct')
@@ -306,7 +307,7 @@ export function lessonCompleteScreen(lesson: Lesson, quizResults: Record<string,
     if (corrected) rows.push({ label: `Sửa đúng sau khi sai · thưởng x2 (${corrected} câu)`, xp: corrected * QUIZ_XP.corrected, highlight: true })
     if (missed) rows.push({ label: `${missed} câu chưa đúng, nên xem lại`, xp: 0 })
     const headline = corrected ? 'Sai một lần, hiểu tận gốc.' : missed ? 'Xong bài. Còn vài chỗ cần xem lại.' : 'Gọn gàng, không sót câu nào.'
-    return { context: `Hoàn thành · ${lesson.title}`, headline, rows, masteryConceptId: conceptId, next: { label: 'Học tiếp', to: '/learning' } }
+    return { context: `Hoàn thành · ${lesson.title}`, headline, rows, masteryConceptId: conceptId, next }
 }
 
 /** XP Virtual Director: chỉ thưởng khi đạt từ 70 điểm và vượt kỷ lục cũ, để không cày bằng cách chụp lặp. */

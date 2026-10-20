@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check, Play } from 'lucide-react'
-import { dailyArticles, getConcept, getCourse, getLesson, lessons } from '@/data'
+import { getConcept, getCourse, getLesson, lessons } from '@/data'
 import type { DailyArticle } from '@/data/types'
-import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, localDate, MISSIONS, UNLOCK_THRESHOLD } from '@/lib/gamification'
+import { MissionList } from '@/components/missions'
+import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, MISSIONS, UNLOCK_THRESHOLD } from '@/lib/gamification'
+import { DAILY_LIMIT, gapScore, todaysDaily } from '@/lib/next-step'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusHero } from '@/components/home/campus-hero'
@@ -10,8 +12,6 @@ import { SiteFooter } from '@/components/site-footer'
 import { SectionHeading } from '@/components/section-heading'
 import { CoursesSection } from '@/components/home/courses-section'
 import { StudioSection } from '@/components/home/studio-section'
-
-const DAILY_LIMIT = 3
 
 /** Trang chủ 3 tầng theo mockup: hero tối (nav trong suốt, lời chào, thẻ Học tiếp, mô hình 3D) → Orbit Daily → Tiến độ của bạn. */
 export function OrbitHomeView() {
@@ -138,23 +138,14 @@ function GridThumb() {
 
 // ─── Tầng 2: Orbit Daily ───────────────────────────────────────────────────
 
-/** Bài ưu tiên = bài có khái niệm bạn còn yếu nhất (chưa làm quiz thì coi như 50%). */
-function gapScore(a: DailyArticle, mastery: Record<string, number>) {
-    return a.conceptIds.reduce((sum, id) => sum + (1 - (mastery[id] ?? 0.5)), 0) / Math.max(1, a.conceptIds.length)
-}
-
 function DailySection() {
     const read = useOrbitStore((s) => s.dailyRead)
     const mastery = useOrbitStore((s) => s.conceptMastery)
     const today = new Date()
     const dateLabel = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}`
 
-    // 3 bài mỗi ngày: bài đã đọc hôm nay, rồi bài chưa đọc ưu tiên theo lỗ hổng kiến thức (bài đã đọc từ ngày trước không quay lại)
-    const todayStr = localDate()
-    const articles = [
-        ...dailyArticles.filter((a) => read[a.id] === todayStr),
-        ...dailyArticles.filter((a) => !read[a.id]).sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery)),
-    ].slice(0, DAILY_LIMIT)
+    // 3 bài mỗi ngày (bài đã đọc từ ngày trước không quay lại)
+    const articles = todaysDaily(read, mastery)
     const readCount = articles.filter((a) => read[a.id]).length
     const unread = articles.filter((a) => !read[a.id])
     const priority = [...unread].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
@@ -341,17 +332,9 @@ function ProgressSection() {
                             {missionsDone}/{MISSIONS.length}
                         </span>
                     </div>
-                    <ul className="mt-4 flex flex-col gap-2.5">
-                        {MISSIONS.map((m) => {
-                            const done = m.progress(daily) >= m.target
-                            return (
-                                <li key={m.id} className="flex items-baseline justify-between gap-3 text-sm">
-                                    <span className={done ? 'text-muted-foreground line-through' : 'font-semibold text-foreground'}>{m.title}</span>
-                                    <span className={`shrink-0 font-mono font-semibold ${done ? 'text-muted-foreground' : 'text-brand-ink'}`}>+{m.rewardXp}</span>
-                                </li>
-                            )
-                        })}
-                    </ul>
+                    <div className="mt-4">
+                        <MissionList compact />
+                    </div>
                 </div>
             </div>
         </section>
