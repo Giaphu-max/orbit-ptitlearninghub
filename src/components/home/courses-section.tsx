@@ -64,6 +64,7 @@ export function CoursesSection() {
                             <Link
                                 key={l.id}
                                 to={`/lesson/${l.id}`}
+                                data-vt={`lesson-${l.id}`}
                                 className={`group flex min-h-[140px] flex-col justify-between rounded-3xl border p-6 transition duration-base ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
                                     state === 'done' ? 'border-transparent bg-muted' : 'border-border bg-card shadow-card hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised'
                                 }`}

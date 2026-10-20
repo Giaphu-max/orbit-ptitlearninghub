@@ -73,6 +73,7 @@ function Hero() {
                     {resume ? (
                         <Link
                             to={`/lesson/${resume.id}`}
+                            data-vt={`lesson-${resume.id}`}
                             className="group pointer-events-auto relative mt-1 flex animate-rise-3 items-center gap-4 overflow-hidden rounded-[22px] bg-card p-3 pr-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
                         >
                             <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-[40%] animate-sheen bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
@@ -188,6 +189,7 @@ function PriorityCard({ article }: { article: DailyArticle }) {
     return (
         <Link
             to={`/daily/${article.id}`}
+            data-vt={`daily-${article.id}`}
             className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] surface-red p-7 shadow-brand transition duration-base ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:col-span-2 lg:row-span-2 lg:p-9"
         >
             <span aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[440px] w-[440px] rounded-full border border-ink-foreground/25" />
@@ -239,6 +241,7 @@ function SmallCard({ article, index, done }: { article: DailyArticle; index: num
     return (
         <Link
             to={`/daily/${article.id}`}
+            data-vt={`daily-${article.id}`}
             className={`group flex min-h-[140px] flex-col justify-between rounded-3xl border p-6 transition duration-base ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
                 done ? 'border-transparent bg-muted' : 'border-border bg-card shadow-card hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised'
             }`}

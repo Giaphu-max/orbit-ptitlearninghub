@@ -132,10 +132,13 @@ export function OrbitDailyView() {
                 <Link to="/#daily" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
                     <ChevronLeft size={16} /> Orbit Daily
                 </Link>
-                <p className="mt-6 flex items-center gap-2 text-eyebrow uppercase text-brand-ink">
-                    <Clock size={13} /> {article.readingMinutes} phút đọc · +{DAILY_ARTICLE_XP} XP
-                </p>
-                <h1 className="mt-3 text-headline text-foreground">{article.title}</h1>
+                {/* Header bài đọc: nơi thẻ Orbit Daily ở trang chủ morph tới (cùng view-transition-name) */}
+                <div style={{ viewTransitionName: `vt-daily-${article.id}` }} className="mt-6">
+                    <p className="flex items-center gap-2 text-eyebrow uppercase text-brand-ink">
+                        <Clock size={13} /> {article.readingMinutes} phút đọc · +{DAILY_ARTICLE_XP} XP
+                    </p>
+                    <h1 className="mt-3 text-headline text-foreground">{article.title}</h1>
+                </div>
 
                 <div className="flex flex-col gap-10 pt-[24vh] sm:gap-12">
                     {article.blocks.map((block, i) => (

@@ -146,7 +146,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                         </button>
                     </div>
 
-                    <div ref={playerAreaRef} className="relative scroll-mt-6">
+                    <div ref={playerAreaRef} style={{ viewTransitionName: `vt-lesson-${lesson.id}` }} className="relative scroll-mt-6">
                         <LessonPlayer
                             containerRef={player.containerRef}
                             status={player.status}

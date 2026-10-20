@@ -1,66 +1,13 @@
-import { lazy, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { RouterProvider } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
-import { MainLayout } from '@/layouts/MainLayout'
 import { ThemeCurtain } from '@/components/theme-curtain'
-import { scrollToSection } from '@/lib/scroll'
-
-// Mỗi trang một chunk riêng: trang chủ không phải tải trình phát, quiz, markdown…
-// (Suspense nằm trong MainLayout để sidebar vẫn hiện khi trang đang tải)
-const OrbitHomeView = lazy(() => import('@/components/orbit-home-view').then((m) => ({ default: m.OrbitHomeView })))
-const OrbitLearningView = lazy(() => import('@/components/orbit-learning-view').then((m) => ({ default: m.OrbitLearningView })))
-const OrbitLessonView = lazy(() => import('@/components/orbit-lesson-view').then((m) => ({ default: m.OrbitLessonView })))
-const OrbitTeacherView = lazy(() => import('@/components/orbit-teacher-view').then((m) => ({ default: m.OrbitTeacherView })))
-const OrbitJourneyView = lazy(() => import('@/components/orbit-journey-view').then((m) => ({ default: m.OrbitJourneyView })))
-const OrbitDailyView = lazy(() => import('@/components/orbit-daily-view').then((m) => ({ default: m.OrbitDailyView })))
-const OrbitTestView = lazy(() => import('@/components/orbit-test-view').then((m) => ({ default: m.OrbitTestView })))
-const OrbitStudioView = lazy(() => import('@/components/orbit-studio-view').then((m) => ({ default: m.OrbitStudioView })))
-
-/**
- * Cửa sổ trình duyệt là vùng cuộn duy nhất. Đổi trang thì cuộn về đầu ngay; có #hash thì cuộn mượt tới phần tử đó
- * (trang tải lười nên chờ phần tử xuất hiện tối đa ~3 giây). scroll-margin-top của .section-anchor chừa chỗ cho thanh nav.
- * Tôn trọng prefers-reduced-motion: khi bật thì nhảy thẳng.
- */
-function ScrollManager() {
-  const { pathname, hash } = useLocation()
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
-  useEffect(() => {
-    if (!hash) return
-    const id = decodeURIComponent(hash.slice(1))
-    let tries = 0
-    let raf = 0
-    const seek = () => {
-      if (!scrollToSection(id) && tries++ < 180) raf = requestAnimationFrame(seek)
-    }
-    seek()
-    return () => cancelAnimationFrame(raf)
-  }, [pathname, hash])
-  return null
-}
+import { router } from '@/router'
 
 function App() {
   return (
     // Tôn trọng prefers-reduced-motion cho mọi animation của thư viện motion
     <MotionConfig reducedMotion="user">
-      <BrowserRouter>
-        <ScrollManager />
-        <Routes>
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<OrbitHomeView />} />
-            <Route path="/learning" element={<OrbitLearningView />} />
-            <Route path="/lesson" element={<OrbitLessonView />} />
-            <Route path="/lesson/:lessonId" element={<OrbitLessonView />} />
-            <Route path="/journey" element={<OrbitJourneyView />} />
-            <Route path="/daily/:articleId" element={<OrbitDailyView />} />
-            <Route path="/test/:courseId" element={<OrbitTestView />} />
-            <Route path="/studio" element={<OrbitStudioView />} />
-            <Route path="/teacher" element={<OrbitTeacherView />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <RouterProvider router={router} />
       <ThemeCurtain />
     </MotionConfig>
   )

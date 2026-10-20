@@ -450,3 +450,41 @@
 @media (prefers-reduced-motion: reduce) {
   .fb, .fb-bar, .fb-uline, .fb-kp, .fb-qtext { transition: none !important; }
 }
+
+/* Chuyển trang bằng View Transitions API (xem src/lib/view-transition.ts).
+   data-vt trên <html> do JS đặt: morph (thẻ → trang), slide (fade + trượt 12px), mặc định cross-fade 220ms. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-out);
+}
+:root[data-vt='morph'] ::view-transition-group(*) {
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-out);
+}
+:root[data-vt='morph']::view-transition-group(root) {
+  animation-duration: 220ms;
+}
+:root[data-vt='slide']::view-transition-old(root) {
+  animation: vt-fade-out 160ms var(--ease-out) both;
+}
+:root[data-vt='slide']::view-transition-new(root) {
+  animation: vt-slide-in 400ms var(--ease-out) both;
+}
+/* Thanh điều hướng đứng yên, không trượt theo trang */
+::view-transition-group(site-nav) {
+  animation-duration: 220ms;
+}
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-slide-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

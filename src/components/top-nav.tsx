@@ -183,7 +183,7 @@ export function TopNav() {
     )
 
     return (
-        <header className={`fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] transition-colors duration-base ${t.text} ${tone === 'plain' ? 'border-b border-border bg-background/90 backdrop-blur' : 'border-b border-transparent'}`}>
+        <header style={{ viewTransitionName: 'site-nav' }} className={`fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] transition-colors duration-base ${t.text} ${tone === 'plain' ? 'border-b border-border bg-background/90 backdrop-blur' : 'border-b border-transparent'}`}>
             <div className="container-page flex h-full items-center gap-4 lg:gap-6">
                 <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="Orbit, trang chủ">
                     <BrandLogo />
