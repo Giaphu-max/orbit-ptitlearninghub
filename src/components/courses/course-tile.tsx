@@ -1,15 +1,14 @@
 import { Check } from 'lucide-react'
 import { subjectVars, type CourseSummary } from '@/lib/course-map'
-import { FALLBACK_BG, Thumb } from '@/components/courses/featured-course'
+import { CourseArt } from '@/components/courses/course-cover'
 import './course-map.css'
 
 /** Số cột lưới ô khóa: tự co theo bề rộng (≥250px/ô), mobile 2 cột. */
 export const COURSE_GRID = 'grid grid-cols-2 gap-2.5 min-[760px]:grid-cols-[repeat(auto-fill,minmax(250px,1fr))] min-[760px]:gap-3.5'
 
-/** Ô khóa: một ảnh bìa lớn (bài đang học, hoặc bài đầu), chip môn, tên khóa, đường chặng mini và một dòng trạng thái. */
+/** Ô khóa: bìa khóa 16:7, chip môn, tên khóa, đường chặng mini và một dòng trạng thái. */
 export function CourseTile({ summary, selected, onSelect }: { summary: CourseSummary; selected: boolean; onSelect: () => void }) {
     const { course, lessons, status, pct, pcts, curIndex, fill, minutes, record } = summary
-    const cover = lessons[curIndex] ?? lessons[0]
     const passed = record && record.bestTotal > 0 && record.bestCorrect / record.bestTotal >= 0.7
     const sub =
         status === 'done'
@@ -22,13 +21,13 @@ export function CourseTile({ summary, selected, onSelect }: { summary: CourseSum
             type="button"
             aria-pressed={selected}
             onClick={onSelect}
-            style={subjectVars(course.subject)}
+            style={subjectVars(course.subject, course.cover?.accent)}
             className={`group flex w-full flex-col overflow-hidden rounded-[20px] border bg-card text-left transition duration-base ease-out hover:-translate-y-[3px] hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${
                 selected ? 'border-brand-600 shadow-[0_0_0_1px_rgb(var(--brand-600))]' : 'border-border'
             }`}
         >
-            <span className={`relative block h-16 overflow-hidden min-[760px]:h-[116px] ${status === 'new' ? 'saturate-[.35] brightness-90' : ''}`} style={{ background: FALLBACK_BG }}>
-                {cover && <Thumb youtubeId={cover.youtubeId} />}
+            <span className={`relative block aspect-[16/7] max-h-60 w-full overflow-hidden ${status === 'new' ? 'saturate-[.35] brightness-90' : ''}`}>
+                <CourseArt course={course} />
                 {status !== 'new' && (
                     <b className={`absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-lg px-2 py-0.5 font-mono text-[13px] ${status === 'done' ? 'bg-success text-success-foreground' : 'bg-ink/60 text-ink-foreground'}`}>
                         {status === 'done' && <Check size={12} strokeWidth={3} aria-hidden />}

@@ -1,19 +1,37 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { clock, STRONG_MASTERY, subjectVars, thumbUrl, type CourseSummary } from '@/lib/course-map'
+import { clock, STRONG_MASTERY, subjectVars, type CourseSummary } from '@/lib/course-map'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import './course-map.css'
 
 const RING_LEN = 263.9 // 2π · 42
 const calm = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/** Ảnh thumbnail YouTube (lazy); lỗi hoặc offline thì để lộ nền gradient theo màu môn. */
+// Thumbnail YouTube: thử độ phân giải cao nhất trước; maxres không có thì YouTube trả ảnh xám 120×90, khi đó lùi về sd rồi hq.
+const THUMB_STEPS = ['maxresdefault', 'sddefault', 'hqdefault'] as const
+
+/** Ảnh thumbnail bài giảng (lazy, fade-in 250ms); trong lúc chờ hoặc khi lỗi hết thì lộ nền gradient của khung cha. */
 export function Thumb({ youtubeId, className = '' }: { youtubeId: string; className?: string }) {
+    return <ThumbImg key={youtubeId} youtubeId={youtubeId} className={className} />
+}
+
+function ThumbImg({ youtubeId, className }: { youtubeId: string; className: string }) {
+    const [step, setStep] = useState(0)
+    const [loaded, setLoaded] = useState(false)
     const [failed, setFailed] = useState(false)
+    const next = () => (step < THUMB_STEPS.length - 1 ? setStep(step + 1) : setFailed(true))
+    if (failed) return null
     return (
-        <>
-            {!failed && <img src={thumbUrl(youtubeId)} alt="" loading="lazy" onError={() => setFailed(true)} className={`cm-img absolute inset-0 h-full w-full object-cover ${className}`} />}
-        </>
+        <img
+            key={step}
+            src={`https://i.ytimg.com/vi/${youtubeId}/${THUMB_STEPS[step]}.jpg`}
+            alt=""
+            loading="lazy"
+            onLoad={(e) => (e.currentTarget.naturalWidth <= 120 && step < THUMB_STEPS.length - 1 ? next() : setLoaded(true))}
+            onError={next}
+            // hqdefault/sddefault có viền đen trên dưới: phóng nhẹ để cắt; maxres là 16:9 nguyên bản
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[250ms] ${step > 0 ? 'cm-img' : ''} ${loaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+        />
     )
 }
 
@@ -85,7 +103,7 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
 
     const tag = status === 'doing' ? 'Đang học' : status === 'done' ? 'Đã xong' : 'Khóa đang xem'
     return (
-        <article ref={rootRef} aria-labelledby={`course-title-${course.id}`} data-in={shown} style={{ ...subjectVars(course.subject), ['--fill' as string]: fill }} className="cm-featured overflow-hidden rounded-[28px] border border-border bg-card shadow-card">
+        <article ref={rootRef} aria-labelledby={`course-title-${course.id}`} data-in={shown} style={{ ...subjectVars(course.subject, course.cover?.accent), ['--fill' as string]: fill }} className="cm-featured overflow-hidden rounded-[28px] border border-border bg-card shadow-card">
             <div className="grid items-center gap-6 px-5 pb-2 pt-6 min-[760px]:grid-cols-[minmax(0,1fr)_auto] min-[760px]:px-8 min-[760px]:pt-7">
                 <div>
                     <p className="flex flex-wrap items-center gap-x-2 gap-y-2">

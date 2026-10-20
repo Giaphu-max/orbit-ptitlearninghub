@@ -19,6 +19,7 @@ import { ApiError, MediaResolution } from '@google/genai'
 import { z } from 'zod'
 import type { Badge, Course, DailyArticle, Lesson } from '../src/data/types.js'
 import { getGemini, withFallback } from '../api/_lib/gemini.js'
+import { COVER_ACCENTS, COVER_MOTIFS, deriveCover, type CourseCoverSpec } from '../src/lib/cover-kinds.js'
 import { DailyDraft, LessonDraft, LessonDraftWire, fromWireDraft, toGeminiSchema } from './lib/schemas.js'
 import { normalizeDaily, normalizeLesson, type Report } from './lib/postprocess.js'
 
@@ -56,6 +57,8 @@ const Config = z.object({
             subject: z.string(),
             instructor: z.string(),
             description: z.string(),
+            /** Ghi tay để bỏ qua bước Gemini chọn bìa */
+            cover: z.object({ motif: z.enum(COVER_MOTIFS).optional(), accent: z.enum(COVER_ACCENTS).optional(), seed: z.number().int().optional() }).optional(),
             lessons: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]+$/), url: z.string().url() })).min(1),
         }),
     ),
@@ -224,6 +227,33 @@ async function generateJson<T>(schema: z.ZodType<T>, parts: object[], extraConfi
     return parsed.data
 }
 
+// ── Bìa khóa học ─────────────────────────────────────────────────────────────
+
+const CoverPick = z.object({ motif: z.enum(COVER_MOTIFS), accent: z.enum(COVER_ACCENTS) })
+
+/**
+ * Chọn họa tiết và màu nhấn cho bìa của khóa mới: giữ cover đã có (config hoặc courses.json hiện tại), nếu chưa có thì gọi Gemini một lần
+ * (JSON schema, chỉ chọn trong danh sách cố định). Lỗi mạng/hạn mức thì suy từ tên môn, không làm hỏng cả lần chạy.
+ */
+async function coverFor(course: { id: string; title: string; subject: string; description: string; cover?: CourseCoverSpec }, existing: CourseCoverSpec | undefined): Promise<CourseCoverSpec> {
+    if (course.cover?.motif && course.cover.accent) return { seed: 0, ...course.cover }
+    if (existing?.motif && existing.accent) return existing
+    const fallback = deriveCover(course.subject)
+    try {
+        const prompt = `Chọn bìa minh họa cho một khóa học. Tên khóa: "${course.title}". Môn: "${course.subject}". Mô tả: "${course.description}".
+motif: timeline (dựng phim, dòng thời gian), light (nhiếp ảnh, ánh sáng, ống kính), wave (âm thanh, âm nhạc), grid (thiết kế, bố cục), shapes (chủ đề khác).
+accent: film (đỏ, phim và video), photo (cam, ảnh và ánh sáng), audio (tím, âm thanh), design (xanh ngọc, thiết kế), default (trung tính).
+Chọn cặp hợp nhất với nội dung khóa.`
+        const pick = await generateJson(CoverPick, [{ text: prompt }])
+        console.log(`   ✓ bìa ${course.id}: ${pick.motif} / ${pick.accent}`)
+        return { ...pick, seed: 0 }
+    } catch (err) {
+        if (err instanceof QuotaExhausted) console.warn(`   ! hết hạn mức khi chọn bìa ${course.id}, dùng mặc định theo môn`)
+        else console.warn(`   ! không chọn được bìa ${course.id} (${err instanceof Error ? err.message : err}), dùng mặc định theo môn`)
+        return { ...fallback, seed: 0 }
+    }
+}
+
 // ── Chạy ─────────────────────────────────────────────────────────────────────
 
 interface LessonCache {
@@ -246,6 +276,7 @@ async function main() {
     let regenerated = false
 
     const existingLessons = readJson<Lesson[]>(path.join(args.out!, 'lessons.json')) ?? []
+    const existingCourses = readJson<Course[]>(path.join(args.out!, 'courses.json')) ?? []
 
     for (const course of config.courses) {
         const lessonIds: string[] = []
@@ -315,8 +346,9 @@ async function main() {
             }
         }
         if (lessonIds.length) {
-            const { lessons: _, ...rest } = course
-            coursesOut.push({ ...rest, lessonIds })
+            const { lessons: _, cover: __, ...rest } = course
+            const cover = await coverFor(course, existingCourses.find((c) => c.id === course.id)?.cover)
+            coursesOut.push({ ...rest, lessonIds, cover })
         }
     }
 

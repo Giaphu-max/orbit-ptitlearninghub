@@ -9,7 +9,12 @@
       "ban-chat-dung-phi-tuyen",
       "tu-duy-dung-dieu-huong-tiep-nhan",
       "nhip-dieu-to-chuc-thoi-gian"
-    ]
+    ],
+    "cover": {
+      "motif": "timeline",
+      "accent": "film",
+      "seed": 0
+    }
   },
   {
     "id": "nhiep-anh-va-anh-sang",
@@ -21,6 +26,11 @@
       "ba-loai-anh-sang-co-ban",
       "nguyen-ly-mau-sac",
       "tu-duy-nhiep-anh"
-    ]
+    ],
+    "cover": {
+      "motif": "light",
+      "accent": "photo",
+      "seed": 0
+    }
   }
 ]

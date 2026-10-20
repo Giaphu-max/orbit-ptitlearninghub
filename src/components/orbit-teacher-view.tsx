@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Navigate } from 'react-router-dom'
-import { BarChart3, CheckCircle2, ClipboardCheck, ClipboardList, Eye, EyeOff, RotateCcw, Save, Sparkles, TriangleAlert } from 'lucide-react'
+import { BarChart3, CheckCircle2, ClipboardCheck, ClipboardList, Eye, Image as ImageIcon, EyeOff, RotateCcw, Save, Sparkles, TriangleAlert } from 'lucide-react'
 import { classStats, courses, getConcept, lessons } from '@/data'
 import type { Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
+import { CoverEditor } from '@/components/courses/cover-editor'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
 import { useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
-type Section = 'review' | 'stats' | 'tests'
+type Section = 'review' | 'stats' | 'tests' | 'covers'
 
 const fieldClass =
     'w-full rounded-md border border-input bg-card px-3 py-2 text-[15px] text-foreground transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
@@ -22,7 +23,7 @@ export function OrbitTeacherView() {
     // Mục đang mở nằm trong ?tab= để thanh điều hướng của giảng viên trỏ thẳng tới từng mục
     const [searchParams, setSearchParams] = useSearchParams()
     const tab = searchParams.get('tab')
-    const section: Section = tab === 'stats' || tab === 'tests' ? tab : 'review'
+    const section: Section = tab === 'stats' || tab === 'tests' || tab === 'covers' ? tab : 'review'
     const setSection = (next: Section) => setSearchParams(next === 'review' ? {} : { tab: next }, { replace: true })
     const lesson = useEffectiveLesson(lessonId)
 
@@ -39,7 +40,7 @@ export function OrbitTeacherView() {
                     </p>
                 </header>
 
-                <div className={`flex flex-wrap items-center gap-3 ${section === 'tests' ? 'hidden' : ''}`}>
+                <div className={`flex flex-wrap items-center gap-3 ${section === 'tests' || section === 'covers' ? 'hidden' : ''}`}>
                     <div className="flex flex-wrap gap-2" role="tablist" aria-label="Chọn bài học">
                         {lessons.map((l) => (
                             <button
@@ -70,9 +71,14 @@ export function OrbitTeacherView() {
                     <SectionTab active={section === 'tests'} onClick={() => setSection('tests')} icon={<ClipboardList size={16} />}>
                         Kết quả test
                     </SectionTab>
+                    <SectionTab active={section === 'covers'} onClick={() => setSection('covers')} icon={<ImageIcon size={16} />}>
+                        Bìa khóa học
+                    </SectionTab>
                 </div>
 
-                {section === 'tests' ? (
+                {section === 'covers' ? (
+                    <CoverEditor />
+                ) : section === 'tests' ? (
                     <TestStatsPanel />
                 ) : !lesson ? (
                     <p className="text-muted-foreground">Chưa có bài học nào.</p>

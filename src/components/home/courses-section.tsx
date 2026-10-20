@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-import { FALLBACK_BG, Thumb } from '@/components/courses/featured-course'
+import { CourseArt } from '@/components/courses/course-cover'
 import { SectionHeading } from '@/components/section-heading'
 import { STATUS_ORDER, subjectVars, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import '@/components/courses/course-map.css'
@@ -54,11 +54,11 @@ function CourseCard({ summary }: { summary: CourseSummary }) {
     const action = status === 'done' ? 'Xem lại' : pct > 0 ? 'Học tiếp' : 'Bắt đầu'
 
     return (
-        <article style={subjectVars(course.subject)} className="group relative flex h-full flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-card transition duration-base ease-out focus-within:ring-2 focus-within:ring-ring/60 hover:-translate-y-[3px] hover:shadow-raised">
+        <article style={subjectVars(course.subject, course.cover?.accent)} className="group relative flex h-full flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-card transition duration-base ease-out focus-within:ring-2 focus-within:ring-ring/60 hover:-translate-y-[3px] hover:shadow-raised">
             {/* Bấm phần còn lại của thẻ → bản đồ chặng của khóa; nút nhỏ bên dưới nằm trên lớp này */}
             <Link to={`/learning?course=${course.id}`} aria-label={`Xem khóa ${course.title}`} className="absolute inset-0 z-0 rounded-[22px] focus-visible:outline-none" />
-            <div className={`relative aspect-[16/7] overflow-hidden ${status === 'new' ? 'saturate-[.45]' : ''}`} style={{ background: FALLBACK_BG }}>
-                {lesson && <Thumb youtubeId={lesson.youtubeId} />}
+            <div className={`relative aspect-[16/7] max-h-60 w-full overflow-hidden ${status === 'new' ? 'saturate-[.45]' : ''}`}>
+                <CourseArt course={course} />
                 {status === 'doing' && (
                     <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-ink/65 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-foreground">
                         <span aria-hidden className="h-2 w-2 rounded-full bg-brand-500" />
@@ -66,16 +66,16 @@ function CourseCard({ summary }: { summary: CourseSummary }) {
                     </span>
                 )}
             </div>
-            <div className="pointer-events-none relative flex flex-1 flex-col gap-2 p-5">
+            <div className="pointer-events-none relative flex flex-1 flex-col gap-1.5 px-4 pb-3.5 pt-3">
                 <span className="cm-chip self-start rounded-full px-2.5 py-0.5 text-[11px] font-extrabold">{course.subject}</span>
-                <h3 className="line-clamp-2 text-lg font-extrabold leading-snug tracking-tight text-foreground">{course.title}</h3>
-                <span className="cm-mini mt-1" style={{ ['--f' as string]: fill }} aria-hidden>
+                <h3 className="line-clamp-2 text-[17px] font-extrabold leading-snug tracking-tight text-foreground">{course.title}</h3>
+                <span className="cm-mini mt-0.5" style={{ ['--f' as string]: fill }} aria-hidden>
                     {lessons.map((l, j) => (
                         <i key={l.id} className={pcts[j] >= 100 ? 'd' : j === curIndex && status === 'doing' ? 'c' : ''} />
                     ))}
                     <i className={`f ${passed ? 'd' : ''}`} />
                 </span>
-                <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+                <div className="mt-auto flex items-center justify-between gap-3 pt-1.5">
                     <span className={`text-[13px] ${status === 'doing' ? 'font-bold text-brand-ink' : 'text-muted-foreground'}`}>{sub}</span>
                     {lesson && (
                         <Link

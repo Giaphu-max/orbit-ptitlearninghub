@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { courses } from '@/data'
 import type { Course, Lesson } from '@/data/types'
 import { lessonPercent, lessonState } from '@/lib/course-progress'
+import { deriveCover, type CoverAccent } from '@/lib/cover-kinds'
 import { useAllCourseLessons } from '@/lib/lesson-edits'
 import { useOrbitStore, type TestRecord } from '@/store/useOrbitStore'
 
@@ -77,8 +78,8 @@ export const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.rou
 
 export const thumbUrl = (youtubeId: string) => `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`
 
-/** Biến CSS màu nhấn của môn (token --subject-*): Dựng phim = đỏ brand, Nhiếp ảnh = cam ấm, môn khác = trung tính. */
-export function subjectVars(subject: string): React.CSSProperties {
-    const key = subject === 'Dựng phim' ? 'film' : subject === 'Nhiếp ảnh' ? 'photo' : 'default'
+/** Biến CSS màu nhấn (token --subject-*) cho chip môn và đường chặng mini: theo accent của bìa khóa, thiếu thì suy từ môn. */
+export function subjectVars(subject: string, accent?: CoverAccent): React.CSSProperties {
+    const key = accent ?? deriveCover(subject).accent
     return { ['--subject' as string]: `var(--subject-${key})`, ['--subject-ink' as string]: `var(--subject-${key}-ink)` }
 }

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { dailyArticles } from '@/data'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
+import type { CourseCoverSpec } from '@/lib/cover-kinds'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 import { masteryAfterTest, testXp, type TestAnswerInput } from '@/lib/final-test'
 import { advanceStreak, bestTestRatio, dailyFor, directorXp, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
@@ -59,6 +60,11 @@ export interface TestRecord {
 /** Phần nội dung AI tạo mà giảng viên được sửa; lưu cả khối để thay thế bản gốc. */
 export type LessonEdits = Pick<Lesson, 'summary' | 'concepts' | 'quiz'>
 
+/** Bìa khóa học do giảng viên chọn: kiểu/họa tiết/seed tự sinh, hoặc ảnh tải lên (dataURL JPEG, ưu tiên hơn bìa tự sinh) */
+export interface CourseCoverOverride extends CourseCoverSpec {
+    image?: string
+}
+
 interface OrbitState {
     role: Role | null
     /** Tên hiển thị trong lời chào và avatar (demo không có tài khoản) */
@@ -89,6 +95,8 @@ interface OrbitState {
     lessonReview: Record<string, ReviewStatus>
     /** Bản chỉnh sửa của giảng viên theo bài; chưa có thì dùng nội dung AI trong JSON */
     lessonEdits: Record<string, LessonEdits>
+    /** Bìa khóa học do giảng viên chỉnh (id khóa → lựa chọn); chưa có thì dùng cover trong courses.json */
+    courseCovers: Record<string, CourseCoverOverride>
 
     setRole: (role: Role | null) => void
     setLearnerName: (name: string) => void
@@ -97,6 +105,8 @@ interface OrbitState {
     addXp: (amount: number) => void
     saveLessonPosition: (lessonId: string, positionSec: Seconds) => void
     setLessonReview: (lessonId: string, status: ReviewStatus) => void
+    /** patch = null: bỏ chỉnh sửa bìa, quay về bìa mặc định */
+    setCourseCover: (courseId: string, patch: CourseCoverOverride | null) => void
     /** edits = null: bỏ chỉnh sửa, quay về bản AI tạo */
     setLessonEdits: (lessonId: string, edits: LessonEdits | null) => void
     /** Ghi kết quả một câu quiz, cập nhật mức nắm vững; trả về số XP được cộng */
@@ -139,6 +149,7 @@ export function makeDemoProfile() {
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
         lessonReview: {} as Record<string, ReviewStatus>,
         lessonEdits: {} as Record<string, LessonEdits>,
+        courseCovers: {} as Record<string, CourseCoverOverride>,
     }
 }
 
@@ -187,6 +198,12 @@ export const useOrbitStore = create<OrbitState>()(
                 })
                 return xp
             },
+
+            setCourseCover: (courseId, patch) =>
+                set((s) => {
+                    const { [courseId]: old, ...rest } = s.courseCovers
+                    return { courseCovers: patch ? { ...rest, [courseId]: { ...old, ...patch } } : rest }
+                }),
 
             addXp: (amount) => set((s) => ({ xp: Math.max(0, s.xp + amount) })),
 

@@ -2,6 +2,8 @@
 // Nội dung do scripts/generate-content.ts (Gemini) tạo một lần rồi ghi ra JSON;
 // mọi mốc thời gian tính bằng giây kể từ đầu video YouTube.
 
+import type { CourseCoverSpec } from '../lib/cover-kinds.js'
+
 export type Seconds = number
 
 /** Nguồn gốc của một mục nội dung: AI tạo thật, hay dữ liệu mẫu viết tay để dựng giao diện. */
@@ -18,6 +20,8 @@ export interface Course {
     instructor: string
     description: string
     lessonIds: string[]
+    /** Bìa tự sinh (họa tiết, màu nhấn, seed); thiếu thì suy từ subject */
+    cover?: CourseCoverSpec
 }
 
 export interface TranscriptSegment {
