@@ -83,16 +83,20 @@ function useActiveSection(enabled: boolean) {
     return active
 }
 
-/** Trên trang chủ: thanh nav trong suốt đè hero, đổi sang nền thường khi cuộn qua hết hero. */
-function useScrolledPastHero(enabled: boolean) {
-    const [past, setPast] = useState(false)
+/**
+ * Trạng thái cuộn của nav trên trang chủ (một listener scroll passive + rAF):
+ * scrolled = đã cuộn quá 8px (nav hero chuyển từ trong suốt sang kính tối); past = đã qua hết hero (nav chuyển sang tone plain).
+ */
+function useNavScroll(enabled: boolean) {
+    const [state, setState] = useState({ scrolled: false, past: false })
     useEffect(() => {
         if (!enabled) return
         let raf = 0
         const check = () => {
             const heroH = document.getElementById('top')?.offsetHeight ?? 600
             const navH = document.querySelector('header')?.getBoundingClientRect().height ?? 80
-            setPast(window.scrollY > heroH - navH)
+            const next = { scrolled: window.scrollY > 8, past: window.scrollY > heroH - navH }
+            setState((s) => (s.scrolled === next.scrolled && s.past === next.past ? s : next))
         }
         const onScroll = () => {
             cancelAnimationFrame(raf)
@@ -107,7 +111,7 @@ function useScrolledPastHero(enabled: boolean) {
             window.removeEventListener('resize', onScroll)
         }
     }, [enabled])
-    return past
+    return enabled ? state : { scrolled: false, past: false }
 }
 
 const initials = (name: string) =>
@@ -149,7 +153,7 @@ export function TopNav() {
     const navigate = useNavigate()
     const [menuOpen, setMenuOpen] = useState(false)
     const onHome = pathname === '/'
-    const pastHero = useScrolledPastHero(onHome)
+    const { scrolled, past: pastHero } = useNavScroll(onHome)
     const activeSection = useActiveSection(onHome)
     const tone: NavTone = onHome && !pastHero ? 'hero' : 'plain'
     const t = TONE[tone]
@@ -183,7 +187,11 @@ export function TopNav() {
     )
 
     return (
-        <header style={{ viewTransitionName: 'site-nav' }} className={`fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] transition-colors duration-base ${t.text} ${tone === 'plain' ? 'border-b border-border bg-background/90 backdrop-blur' : 'border-b border-transparent'}`}>
+        <header
+            style={{ viewTransitionName: 'site-nav' }}
+            data-nav={tone === 'plain' ? 'plain' : scrolled ? 'glass' : 'clear'}
+            className={`nav-bar fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] ${t.text}`}
+        >
             <div className="container-page flex h-full items-center gap-4 lg:gap-6">
                 <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="Orbit, trang chủ">
                     <BrandLogo />
