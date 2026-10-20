@@ -63,7 +63,10 @@ function useActiveSection(enabled: boolean) {
             }
             observer = new IntersectionObserver(
                 (entries) => {
-                    for (const e of entries) e.isIntersecting ? live.add(e.target.id) : live.delete(e.target.id)
+                    for (const e of entries) {
+                        if (e.isIntersecting) live.add(e.target.id)
+                        else live.delete(e.target.id)
+                    }
                     const current = HOME_SECTIONS.filter((id) => live.has(id)).pop()
                     if (current) setActive(current)
                 },

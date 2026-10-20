@@ -1,0 +1,226 @@
+<title>Chuyển chế độ PTIT</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: mock Orbit page (nav + hero + cards) with a full-screen curtain overlay for the theme switch */
+:root{
+  --bg:#FAF8F5; --surface:#FFFFFF; --fg:#1A1412; --muted:#5E5551; --line:#E8E2DC;
+  --red:#C4161C; --red-deep:#7A0C10; --wine:#1A0A0B; --on-red:#FFFFFF; --soft:#FBEAEA;
+  --display:"Be Vietnam Pro","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121011; --surface:#1C1819; --fg:#F4EEEA; --muted:#B4AAA5; --line:#2E2729; --soft:#3A1618; color-scheme:dark } }
+:root[data-theme="dark"]{ --bg:#121011; --surface:#1C1819; --fg:#F4EEEA; --muted:#B4AAA5; --line:#2E2729; --soft:#3A1618; color-scheme:dark }
+:root[data-theme="light"]{ color-scheme:light }
+@property --hole{ syntax:'<length>'; inherits:false; initial-value:0px }
+
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--display)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+
+/* page */
+.hero{background:radial-gradient(80% 90% at 85% 10%, #C4161C 0%, rgba(196,22,28,0) 60%), linear-gradient(160deg,#2A0E0F,#12090A);color:#fff}
+nav{display:flex;align-items:center;gap:24px;padding-block:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-.02em}
+.mark{width:38px;height:38px;border-radius:9px;background:#fff;color:var(--red);display:grid;place-items:center;font-weight:900;font-size:11px;letter-spacing:.04em}
+.links{display:flex;gap:6px;flex:1 1 auto;flex-wrap:wrap}
+.links a{color:rgba(255,255,255,.82);text-decoration:none;font-size:14px;font-weight:600;padding:9px 12px;border-radius:999px}
+.links a:first-child{background:rgba(255,255,255,.14);color:#fff}
+.toggle{width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;display:grid;place-items:center;cursor:pointer;position:relative}
+.toggle:focus-visible{outline:2px solid #FFB4A8;outline-offset:3px}
+.toggle svg{position:absolute;transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+:root[data-theme="dark"] .toggle .sun,:root:not([data-theme]) .toggle .sun{opacity:0;transform:rotate(-90deg) scale(.4)}
+:root[data-theme="dark"] .toggle .moon,:root:not([data-theme]) .toggle .moon{opacity:1;transform:none}
+:root[data-theme="light"] .toggle .sun{opacity:1;transform:none}
+:root[data-theme="light"] .toggle .moon{opacity:0;transform:rotate(90deg) scale(.4)}
+.hero-in{padding-block:56px 96px;display:flex;flex-direction:column;gap:18px;max-width:640px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#FFB4A8}
+h1{margin:0;font-size:clamp(40px,7vw,76px);line-height:.98;font-weight:900;letter-spacing:-.045em;text-wrap:balance}
+.hero-in p{margin:0;font-size:17px;line-height:1.6;color:rgba(255,255,255,.8);max-width:52ch}
+.hint{display:inline-flex;align-self:flex-start;gap:8px;align-items:center;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.1);font-size:14px}
+main{padding-block:48px 80px;display:flex;flex-direction:column;gap:20px}
+main h2{margin:0;font-size:36px;font-weight:900;letter-spacing:-.03em}
+.cards{display:flex;gap:16px;flex-wrap:wrap}
+.card{flex:1 1 260px;min-width:0;padding:24px;border-radius:20px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.card.red{background:linear-gradient(150deg,#C4161C,#8E0E13);border:0;color:var(--on-red);flex-basis:420px}
+.card .k{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.card.red .k{color:rgba(255,255,255,.8)}
+.card h3{margin:0;font-size:20px;line-height:1.3;font-weight:800;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+.card.red p{color:rgba(255,255,255,.85)}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:13px;color:var(--muted)}
+.ctrl button{font:inherit;font-weight:700;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;min-height:44px}
+
+/* while switching: kill all colour transitions so the swap is one cheap frame */
+:root.switching *, :root.switching *::before, :root.switching *::after{transition:none !important}
+
+/* curtain */
+.curtain{position:fixed;inset:0;z-index:100;pointer-events:none;visibility:hidden;
+  background:radial-gradient(60% 60% at 50% 45%, #D7262E 0%, #A3121A 45%, #5A0A0E 100%);
+  will-change:clip-path,mask-image;contain:strict}
+.curtain.to-dark{background:radial-gradient(60% 60% at 50% 45%, #B3141B 0%, #5A0A0E 55%, #12090A 100%)}
+.curtain.on{visibility:visible}
+.curtain.hole{-webkit-mask-image:radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 1px));
+  mask-image:radial-gradient(circle at 50% 50%, transparent var(--hole), #000 calc(var(--hole) + 1px))}
+.emblem{position:absolute;left:50%;top:50%;width:min(44vw,260px);aspect-ratio:1;transform:translate(-50%,-50%);will-change:transform,opacity}
+.emblem svg{width:100%;height:100%;overflow:visible}
+.word{font-family:var(--display);font-weight:900;font-size:58px;letter-spacing:.02em;fill:#fff}
+.sub{font-family:var(--display);font-weight:600;font-size:11px;letter-spacing:.3em;fill:rgba(255,255,255,.75)}
+.stars{position:absolute;inset:0}
+.stars span{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:0}
+</style>
+
+<div class="hero">
+  <div class="wrap">
+    <nav aria-label="Điều hướng mẫu">
+      <span class="brand"><span class="mark">PTIT</span>Orbit</span>
+      <span class="links"><a href="#">Trang chủ</a><a href="#">Khóa học</a><a href="#">Orbit Daily</a><a href="#">Studio 3D</a></span>
+      <button class="toggle" id="toggle" aria-label="Chuyển chế độ sáng / tối">
+        <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+      </button>
+    </nav>
+    <div class="hero-in">
+      <span class="eyebrow">Bản mẫu chuyển động</span>
+      <h1>Chuyển sáng / tối bằng logo PTIT.</h1>
+      <p>Bấm nút mặt trời / mặt trăng ở góc phải. Màn đỏ lan ra từ chính cái nút, logo vẽ quỹ đạo, giao diện đổi ở phía sau, rồi màn mở ra từ tâm logo.</p>
+      <span class="hint">Tổng thời gian khoảng 1,2 giây, bấm liên tục không bị kẹt</span>
+    </div>
+  </div>
+</div>
+<main class="wrap">
+  <h2>3 bài đọc. Rồi nghỉ.</h2>
+  <div class="cards">
+    <article class="card red"><span class="k">Ưu tiên · bạn mới nắm 62%</span><h3>Đường dẫn hướng: kéo mắt người xem đi đâu trước?</h3><p>Tổng hợp từ Bố cục cơ bản (01:35).</p></article>
+    <article class="card"><span class="k">02 · Mở rộng</span><h3>Một phần ba ngang hay dọc: chọn thế nào?</h3><p>3 phút · +20 XP</p></article>
+    <article class="card"><span class="k">03 · Đã đọc</span><h3>Vì sao chủ thể ở giữa thường "đứng im"?</h3><p>+20 XP đã nhận</p></article>
+  </div>
+  <div class="ctrl">
+    <button id="slow">Xem chậm x3: tắt</button>
+    <span>Dùng để soi từng nhịp chuyển động.</span>
+  </div>
+</main>
+
+<div class="curtain" id="curtain" aria-hidden="true">
+  <div class="stars" id="stars"></div>
+  <div class="emblem" id="emblem">
+    <svg viewBox="-130 -130 260 260">
+      <defs>
+        <linearGradient id="ringg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#FFB4A8"/></linearGradient>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g>
+        <circle id="ring" cx="0" cy="0" r="112" fill="none" stroke="url(#ringg)" stroke-width="3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
+        <g id="sat"><circle cx="112" cy="0" r="7" fill="#fff" filter="url(#glow)"/></g>
+      </g>
+      <g id="wordg">
+        <text class="word" x="-62" y="20" id="l1">P</text>
+        <text class="word" x="-24" y="20" id="l2">T</text>
+        <text class="word" x="14" y="20" id="l3">I</text>
+        <text class="word" x="34" y="20" id="l4">T</text>
+        <text class="sub" x="0" y="52" text-anchor="middle" id="subt">ORBIT</text>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<script>
+(function(){
+  const root = document.documentElement;
+  const curtain = document.getElementById('curtain');
+  const emblem = document.getElementById('emblem');
+  const ring = document.getElementById('ring');
+  const sat = document.getElementById('sat');
+  const letters = ['l1','l2','l3','l4','subt'].map(id => document.getElementById(id));
+  const starsEl = document.getElementById('stars');
+  const toggle = document.getElementById('toggle');
+  const slowBtn = document.getElementById('slow');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  let busy = false, speed = 1, running = [];
+
+  try { CSS.registerProperty && CSS.registerProperty({name:'--hole', syntax:'<length>', inherits:false, initialValue:'0px'}); } catch(e){}
+
+  function current(){
+    const t = root.getAttribute('data-theme');
+    if (t) return t;
+    return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  root.setAttribute('data-theme', (function(){ try { return localStorage.getItem('orbit-theme') || current(); } catch(e){ return current(); } })());
+
+  for (let i = 0; i < 26; i++){
+    const s = document.createElement('span');
+    const a = (i * 137.5) * Math.PI / 180, r = 30 + (i * 53 % 40);
+    s.style.left = (50 + Math.cos(a) * r * .9) + '%';
+    s.style.top = (50 + Math.sin(a) * r * .6) + '%';
+    starsEl.appendChild(s);
+  }
+
+  const E = { inOut:'cubic-bezier(.65,0,.35,1)', out:'cubic-bezier(.16,1,.3,1)', in:'cubic-bezier(.7,0,.84,0)', back:'cubic-bezier(.34,1.56,.64,1)' };
+  const anim = (el, kf, o) => { const a = el.animate(kf, Object.assign({fill:'both'}, o, {duration:o.duration*speed, delay:(o.delay||0)*speed})); running.push(a); return a; };
+  const done = a => a.finished.catch(()=>{});
+
+  function swap(next){
+    root.classList.add('switching');
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('orbit-theme', next); } catch(e){}
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('switching')));
+  }
+
+  async function run(){
+    const next = current() === 'dark' ? 'light' : 'dark';
+    if (reduce.matches){ swap(next); return; }
+    if (busy) return;
+    busy = true; running = [];
+
+    const b = toggle.getBoundingClientRect();
+    const bx = b.left + b.width/2, by = b.top + b.height/2;
+    const W = innerWidth, H = innerHeight;
+    const R = Math.hypot(Math.max(bx, W-bx), Math.max(by, H-by)) + 20;
+    const Rc = Math.hypot(W/2, H/2) + 20;
+
+    curtain.classList.toggle('to-dark', next === 'dark');
+    curtain.classList.remove('hole');
+    curtain.style.setProperty('--hole','0px');
+    curtain.classList.add('on');
+    emblem.style.opacity = '0';
+
+    // 1. curtain grows out of the toggle button
+    const cover = anim(curtain, [
+      {clipPath:`circle(0px at ${bx}px ${by}px)`},
+      {clipPath:`circle(${R}px at ${bx}px ${by}px)`}
+    ], {duration:520, easing:E.inOut});
+
+    // 2. emblem: ring draws, satellite orbits, letters rise
+    anim(emblem, [{opacity:0, transform:'translate(-50%,-50%) scale(.82)'},{opacity:1, transform:'translate(-50%,-50%) scale(1)'}], {duration:520, delay:200, easing:E.out});
+    anim(ring, [{strokeDashoffset:1},{strokeDashoffset:0}], {duration:620, delay:240, easing:E.out});
+    anim(sat, [{transform:'rotate(-200deg) scale(.4)', opacity:0},{transform:'rotate(-40deg) scale(1)', opacity:1, offset:.35},{transform:'rotate(160deg) scale(1)', opacity:1}], {duration:900, delay:220, easing:E.inOut});
+    letters.forEach((l, i) => anim(l, [{opacity:0, transform:'translateY(18px)'},{opacity:1, transform:'translateY(0)'}], {duration:420, delay:330 + i*55, easing:E.back}));
+    Array.from(starsEl.children).forEach((s, i) => anim(s, [{opacity:0, transform:'scale(0)'},{opacity:.9, transform:'scale(1)', offset:.5},{opacity:0, transform:'scale(.4)'}], {duration:900, delay:260 + (i%9)*40, easing:'ease-out'}));
+
+    // 3. swap the theme behind the fully closed curtain
+    await done(cover);
+    swap(next);
+
+    // 4. hold on the logo, then open an iris from its centre while the logo bursts
+    await new Promise(r => setTimeout(r, 300 * speed));
+    curtain.classList.add('hole');
+    const open = anim(curtain, [{'--hole':'0px'},{'--hole':Rc + 'px'}], {duration:560, easing:E.in});
+    anim(emblem, [{opacity:1, transform:'translate(-50%,-50%) scale(1)'},{opacity:0, transform:'translate(-50%,-50%) scale(1.7)'}], {duration:460, easing:E.in});
+
+    // fallback where registered custom properties don't animate: fade the curtain
+    if (!(window.CSS && CSS.registerProperty)) anim(curtain, [{opacity:1},{opacity:0}], {duration:420, easing:'ease-out'});
+
+    await done(open);
+    curtain.classList.remove('on','hole');
+    running.forEach(a => a.cancel());
+    curtain.style.removeProperty('--hole');
+    emblem.style.opacity = '';
+    busy = false;
+  }
+
+  toggle.addEventListener('click', run);
+  slowBtn.addEventListener('click', () => { speed = speed === 1 ? 3 : 1; slowBtn.textContent = 'Xem chậm x3: ' + (speed === 1 ? 'tắt' : 'bật'); });
+})();
+</script>

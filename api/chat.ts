@@ -91,7 +91,7 @@ function parseRequest(body: unknown): ChatRequest {
 
 export async function POST(request: Request): Promise<Response> {
     try {
-        rateLimit(request, 15, 60_000)
+        rateLimit(request)
         const { lessonId, question, history = [], currentTimeSec } = parseRequest(await readJsonBody(request, 16_000))
 
         const lesson = lessons.find((l) => l.id === lessonId)

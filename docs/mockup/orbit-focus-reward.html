@@ -1,0 +1,367 @@
+<title>Orbit Daily Focus</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,700;0,800;0,900;1,700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: single reading column; the block nearest the reading line scales up, the rest recede; reward overlay is a fixed layer */
+:root{
+  --bg:#FAF8F5; --fg:#1A1412; --muted:#6B605B; --line:#E8E2DC; --card:#FFFFFF;
+  --red:#C4161C; --red-deep:#7A0C10; --soft:#FBEAEA; --gold:#FFD27A; --on-red:#FFFFFF;
+  --hl:#F9D9D7; --hl-fg:#7A0C10;
+  --display:"Be Vietnam Pro","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121011; --fg:#F4EEEA; --muted:#A79C97; --line:#2E2729; --card:#1C1819; --soft:#3A1618; --hl:#4A1A1D; --hl-fg:#FFC9C4; color-scheme:dark } }
+:root[data-theme="dark"]{ --bg:#121011; --fg:#F4EEEA; --muted:#A79C97; --line:#2E2729; --card:#1C1819; --soft:#3A1618; --hl:#4A1A1D; --hl-fg:#FFC9C4; color-scheme:dark }
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--display)}
+@property --hole{syntax:'<length>';inherits:false;initial-value:0px}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--bg)}
+.bar-in{max-width:880px;margin:0 auto;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar-in strong{font-size:14px;flex:1 1 auto}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);font-size:13px;font-weight:700;font-family:var(--mono);background:var(--card)}
+.chip.bump{animation:bump .5s cubic-bezier(.34,1.8,.5,1)}
+@keyframes bump{0%{transform:scale(1)}30%{transform:scale(1.35);border-color:var(--red);color:var(--red)}100%{transform:scale(1)}}
+.btn{font:inherit;font-size:13px;font-weight:700;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer;min-height:40px}
+.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.btn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.progress{height:3px;background:var(--line)}
+.progress span{display:block;height:100%;width:0;background:var(--red);transition:width .25s ease-out}
+
+/* reader */
+main{max-width:720px;margin:0 auto;padding-block:30vh 40vh;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.meta{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:10px}
+.blk{position:relative;margin-block:40px;transform-origin:left center;transition:transform .55s cubic-bezier(.22,1,.36,1),opacity .45s ease,filter .45s ease;opacity:.22;transform:scale(.94);filter:blur(1.2px)}
+.blk.near{opacity:.5;transform:scale(.97);filter:blur(.4px)}
+.blk.on{opacity:1;transform:scale(1.07);filter:none}
+.blk::before{content:"";position:absolute;left:-22px;top:6px;bottom:6px;width:4px;border-radius:4px;background:var(--red);transform:scaleY(0);transform-origin:top;transition:transform .45s cubic-bezier(.22,1,.36,1)}
+.blk.on::before{transform:scaleY(1)}
+.blk.quote::before,.blk.key::before,.blk.check::before{display:none}
+.title{font-size:clamp(26px,4vw,34px);line-height:1.15;font-weight:800;letter-spacing:-.025em;margin:0;text-wrap:balance}
+.hook{font-size:clamp(34px,6vw,56px);line-height:1.08;font-weight:900;letter-spacing:-.035em;margin:0;text-wrap:balance}
+.p{font-size:clamp(18px,2.2vw,21px);line-height:1.7;margin:0;max-width:60ch}
+.quote p{font-size:clamp(26px,3.6vw,36px);line-height:1.3;font-style:italic;font-weight:700;letter-spacing:-.02em;margin:0}
+.quote i{display:block;width:56px;height:4px;border-radius:4px;background:var(--red);margin-top:18px}
+.key{padding:24px 26px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:0 20px 50px -30px rgba(122,12,16,.45)}
+.blk.key.on{box-shadow:0 30px 70px -28px rgba(196,22,28,.55);border-color:color-mix(in srgb,var(--red) 40%,var(--line))}
+.key small{display:block;font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--red);margin-bottom:10px}
+.key p{font-size:clamp(19px,2.4vw,23px);line-height:1.55;font-weight:600;margin:0}
+ul.list{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:10px;font-size:clamp(18px,2.2vw,21px);line-height:1.5}
+ul.list li::marker{color:var(--red)}
+mark{background:var(--hl);color:var(--hl-fg);padding:1px 6px;border-radius:6px;font-weight:700}
+.src{display:inline-flex;margin-top:12px;font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.check{padding:24px;border-radius:20px;background:var(--card);border:1px solid var(--line)}
+.check small{display:block;font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--red);margin-bottom:10px}
+.check h3{margin:0 0 16px;font-size:20px;line-height:1.35}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{font:inherit;text-align:left;font-size:16px;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;min-height:48px;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--red)}
+.opt.wrong{border-color:#B4232A;background:var(--soft);animation:shake .35s}
+.opt.right{border-color:#1F8A4C;background:color-mix(in srgb,#1F8A4C 14%,transparent);animation:pop .35s cubic-bezier(.34,1.8,.5,1)}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+.hint{margin-top:12px;font-size:14px;color:var(--muted);min-height:1.4em}
+
+/* reward overlay (single dark-red world, no theme switch) */
+.rw{position:fixed;inset:0;z-index:100;visibility:hidden;color:#fff;overflow:hidden}
+.rw.on{visibility:visible}
+.rw .bg{position:absolute;inset:0;background:radial-gradient(70% 70% at 50% 45%,#E0262E 0%,#A8121A 45%,#4A080B 100%)}
+.rw .rays{position:absolute;left:50%;top:44%;width:180vmax;height:180vmax;margin:-90vmax 0 0 -90vmax;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.10) 0deg 6deg,transparent 6deg 18deg);-webkit-mask-image:radial-gradient(circle,#000 0%,transparent 55%);mask-image:radial-gradient(circle,#000 0%,transparent 55%);opacity:0}
+.rw .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.rw .ring{position:absolute;left:50%;top:44%;width:240px;height:240px;margin:-120px 0 0 -120px;border-radius:50%;border:3px solid rgba(255,255,255,.85);opacity:0}
+.rw canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.rw .center{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;width:min(92vw,640px)}
+.rw .eyebrow{font-size:13px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);opacity:0}
+.rw .num{display:flex;align-items:baseline;gap:12px;font-family:var(--mono);font-weight:700;line-height:.9;letter-spacing:-.06em;text-shadow:0 10px 40px rgba(0,0,0,.35)}
+.rw .num b{font-size:clamp(110px,22vw,230px)}
+.rw .num span{font-size:clamp(34px,6vw,64px);font-family:var(--display);font-weight:900;letter-spacing:0}
+.rw h2{margin:6px 0 0;font-size:clamp(28px,4.5vw,48px);font-weight:900;letter-spacing:-.03em;opacity:0}
+.rw .lvl{margin-top:18px;width:min(84vw,460px);padding:16px 18px;border-radius:18px;background:#fff;color:#1A1412;opacity:0;text-align:left}
+.rw .lvl-top{display:flex;justify-content:space-between;font-size:14px;font-weight:800}
+.rw .lvl-top em{font-style:normal;font-family:var(--mono);color:#6B605B;font-weight:500}
+.rw .track{position:relative;height:12px;border-radius:6px;background:#F1EDE8;margin-top:12px;overflow:hidden}
+.rw .fill{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:6px;background:linear-gradient(90deg,#C4161C,#FF4D4D);transform-origin:left;transform:scaleX(.55)}
+.rw .gain{position:absolute;top:0;bottom:0;border-radius:6px;background:#FFD27A;transform-origin:left}
+.rw .actions{display:flex;gap:10px;margin-top:20px;opacity:0;flex-wrap:wrap;justify-content:center}
+.rw .actions button{font:inherit;font-weight:800;font-size:15px;padding:14px 22px;border-radius:14px;cursor:pointer;min-height:48px}
+.rw .go{background:#fff;color:#9E1016;border:0}
+.rw .home{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.85)}
+
+/* inline +XP fly */
+.fly{position:fixed;z-index:90;font-family:var(--mono);font-weight:700;font-size:20px;color:#1F8A4C;pointer-events:none;text-shadow:0 2px 10px rgba(0,0,0,.15)}
+@media (prefers-reduced-motion: reduce){ .blk{transition:none} .chip.bump,.opt.right,.opt.wrong{animation:none} }
+</style>
+
+<header class="bar">
+  <div class="bar-in">
+    <strong>Bản mẫu · Đọc tập trung + nhận XP</strong>
+    <span class="chip" id="xpChip">⚡ <span id="xpNum">2.500</span> XP</span>
+    <button class="btn" id="soundBtn" aria-pressed="true">Âm thanh: bật</button>
+    <button class="btn primary" id="demoBtn">Xem hiệu ứng XP</button>
+  </div>
+  <div class="progress"><span id="prog"></span></div>
+</header>
+
+<main id="reader">
+  <div class="blk" data-k="title"><div class="meta">Orbit Daily · 1 phút đọc · +20 XP</div><h1 class="title">Sự kết hợp giữa nhịp hình và nhịp âm trong dựng phim</h1></div>
+  <div class="blk"><p class="hook">Có những video khiến bạn nhớ mãi dù không hiểu rõ lý do kỹ thuật đằng sau.</p></div>
+  <div class="blk"><p class="p">Nhịp điệu được tạo ra bởi <mark>độ dài các cảnh</mark> và thời điểm các điểm cắt. Trong đó <mark>nhịp hình</mark> cảm nhận qua thị giác, còn <mark>nhịp âm</mark> cảm nhận qua thính giác.</p><span class="src">Nguồn · 2</span></div>
+  <div class="blk"><p class="p">Sự đan xen giữa cảnh ngắn và cảnh dài quyết định năng lượng và cảm xúc người xem nhận được.</p><span class="src">Nguồn · 1</span></div>
+  <div class="blk quote"><p>“Nhịp hình và nhịp âm giống như hai chân của một người. Bước cùng nhịp thì video sẽ rất vững.”</p><i></i></div>
+  <div class="blk"><ul class="list"><li>Cắt nhanh: dồn dập, căng thẳng.</li><li>Giữ cảnh lâu: lắng lại, suy ngẫm.</li><li>Điểm cắt khớp phách nhạc: mượt, “đã tai”.</li></ul></div>
+  <div class="blk key"><small>ĐIỂM CỐT LÕI</small><p>Nhịp điệu không nằm ở một cảnh riêng lẻ mà ở <mark>quan hệ độ dài</mark> giữa các cảnh với nhau.</p></div>
+  <div class="blk"><p class="p">Thử dựng lại một đoạn 30 giây chỉ bằng cách đổi độ dài cảnh, bạn sẽ thấy cảm xúc thay đổi hoàn toàn dù nội dung giữ nguyên.</p><span class="src">Nguồn · 1</span></div>
+  <div class="blk check" id="check">
+    <small>KIỂM TRA NHANH</small>
+    <h3>Yếu tố nào tạo ra nhịp điệu trong dựng phim?</h3>
+    <div class="opts">
+      <button class="opt" data-ok="0">Độ phân giải của video</button>
+      <button class="opt" data-ok="1">Độ dài các cảnh và thời điểm điểm cắt</button>
+      <button class="opt" data-ok="0">Số lượng hiệu ứng chuyển cảnh</button>
+    </div>
+    <p class="hint" id="hint">Chọn sai trước một lần để nghe hiệu ứng “sửa đúng sau khi sai”.</p>
+  </div>
+</main>
+
+<div class="rw" id="rw" role="dialog" aria-modal="true" aria-label="Nhận XP">
+  <div class="bg" id="rwBg"></div>
+  <div class="rays" id="rays"></div>
+  <div class="ring" id="ring1"></div><div class="ring" id="ring2"></div>
+  <canvas id="confetti"></canvas>
+  <div class="flash" id="flash"></div>
+  <div class="center" id="center">
+    <div class="eyebrow" id="eyebrow">Nhận XP</div>
+    <div class="num" id="num"><b id="numVal">+0</b><span>XP</span></div>
+    <h2 id="rwTitle">Thêm một mảnh ghép.</h2>
+    <div class="lvl" id="lvl">
+      <div class="lvl-top"><span>Cấp 7 · Người tập dựng</span><em id="lvlNum">2.500 / 2.940</em></div>
+      <div class="track"><div class="fill" id="fill"></div><div class="gain" id="gain"></div></div>
+    </div>
+    <div class="actions" id="actions"><button class="go" id="goBtn">Học tiếp</button><button class="home" id="homeBtn">Về trang chủ</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* ---------- focus reading ---------- */
+  const blocks = Array.from(document.querySelectorAll('.blk'));
+  const prog = document.getElementById('prog');
+  let ticking = false;
+  function focus(){
+    ticking = false;
+    const line = innerHeight * 0.42;
+    let best = 0, bestD = Infinity;
+    blocks.forEach((b, i) => {
+      const r = b.getBoundingClientRect();
+      const d = Math.abs((r.top + r.height / 2) - line);
+      if (d < bestD){ bestD = d; best = i; }
+    });
+    blocks.forEach((b, i) => { b.classList.toggle('on', i === best); b.classList.toggle('near', Math.abs(i - best) === 1); });
+    prog.style.width = (best / (blocks.length - 1) * 100) + '%';
+  }
+  addEventListener('scroll', () => { if (!ticking){ ticking = true; requestAnimationFrame(focus); } }, {passive:true});
+  addEventListener('resize', focus); focus();
+  addEventListener('keydown', e => {
+    if (!['ArrowDown','ArrowUp','j','k'].includes(e.key) || e.target.closest('button')) return;
+    const cur = blocks.findIndex(b => b.classList.contains('on'));
+    const next = blocks[Math.max(0, Math.min(blocks.length - 1, cur + (e.key === 'ArrowDown' || e.key === 'j' ? 1 : -1)))];
+    const r = next.getBoundingClientRect();
+    scrollTo({top: scrollY + r.top + r.height / 2 - innerHeight * 0.42, behavior: reduce ? 'auto' : 'smooth'});
+    e.preventDefault();
+  });
+  blocks.forEach(b => b.addEventListener('click', e => {
+    if (e.target.closest('button')) return;
+    const r = b.getBoundingClientRect();
+    scrollTo({top: scrollY + r.top + r.height / 2 - innerHeight * 0.42, behavior: reduce ? 'auto' : 'smooth'});
+  }));
+
+  /* ---------- sound (Web Audio, no files) ---------- */
+  let ac = null, master = null, soundOn = true;
+  function audio(){
+    if (!ac){
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      const comp = ac.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.knee.value = 8; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
+      master = ac.createGain(); master.gain.value = 0.9;
+      master.connect(comp); comp.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function tone(freq, t, dur, type, vol, dest){
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(dest || master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function bell(freq, t, vol){ // bright metallic "ting": fundamental + inharmonic partials
+    tone(freq, t, 1.1, 'sine', vol);
+    tone(freq * 2.76, t, 0.6, 'sine', vol * 0.45);
+    tone(freq * 5.4, t, 0.3, 'sine', vol * 0.22);
+    tone(freq * 2, t, 0.25, 'triangle', vol * 0.25);
+  }
+  function thump(t){ // low impact under the slam
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.22);
+    g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.35);
+  }
+  function whoosh(t, dur){
+    const n = ac.createBufferSource(), buf = ac.createBuffer(1, ac.sampleRate * dur, ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    n.buffer = buf;
+    const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(400, t); f.frequency.exponentialRampToValueAtTime(5000, t + dur);
+    const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + dur);
+  }
+  let combo = 0;
+  const SFX = {
+    correct(){ if (!soundOn) return; audio(); const t = ac.currentTime; const step = Math.min(combo, 6); bell(1318.5 * Math.pow(2, step / 12), t, 0.55); },
+    fixed(){ if (!soundOn) return; audio(); const t = ac.currentTime; bell(1046.5, t, 0.5); bell(1568, t + 0.11, 0.55); },
+    wrong(){ if (!soundOn) return; audio(); const t = ac.currentTime; tone(220, t, 0.18, 'triangle', 0.25); tone(185, t + 0.09, 0.22, 'triangle', 0.22); },
+    tick(){ if (!soundOn || !ac) return; tone(2400 + Math.random() * 400, ac.currentTime, 0.04, 'square', 0.05); },
+    reward(){
+      if (!soundOn) return; audio(); const t = ac.currentTime;
+      whoosh(t, 0.32); thump(t + 0.3);
+      [1046.5, 1318.5, 1568, 2093].forEach((f, i) => bell(f, t + 0.32 + i * 0.075, 0.42));
+      tone(2093, t + 0.62, 1.4, 'sine', 0.12); tone(2637, t + 0.62, 1.4, 'sine', 0.08); // shimmer tail
+    }
+  };
+  const soundBtn = document.getElementById('soundBtn');
+  soundBtn.addEventListener('click', () => { soundOn = !soundOn; soundBtn.textContent = 'Âm thanh: ' + (soundOn ? 'bật' : 'tắt'); soundBtn.setAttribute('aria-pressed', String(soundOn)); });
+
+  /* ---------- confetti ---------- */
+  const cv = document.getElementById('confetti'), cx = cv.getContext('2d');
+  let parts = [], raf = 0;
+  function burst(x, y, n){
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const cols = ['#FFFFFF', '#FFD27A', '#FFB4A8', '#FF6B6B', '#FFF1C9'];
+    for (let i = 0; i < n; i++){
+      const a = Math.random() * Math.PI * 2, s = 6 + Math.random() * 12;
+      parts.push({x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 4, r: Math.random() * Math.PI, vr: (Math.random() - .5) * .4, w: 6 + Math.random() * 7, h: 3 + Math.random() * 5, c: cols[i % cols.length], life: 1});
+    }
+    if (!raf) loop();
+  }
+  function loop(){
+    cx.clearRect(0, 0, innerWidth, innerHeight);
+    parts.forEach(p => { p.vy += 0.32; p.vx *= 0.985; p.vy *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life -= 0.009;
+      cx.save(); cx.globalAlpha = Math.max(p.life, 0); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore(); });
+    parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+    raf = parts.length ? requestAnimationFrame(loop) : 0;
+  }
+
+  /* ---------- inline micro reward ---------- */
+  const xpChip = document.getElementById('xpChip'), xpNum = document.getElementById('xpNum');
+  let xp = 2500;
+  function fly(fromEl, amount){
+    const a = fromEl.getBoundingClientRect(), b = xpChip.getBoundingClientRect();
+    const f = document.createElement('div'); f.className = 'fly'; f.textContent = '+' + amount + ' XP'; document.body.appendChild(f);
+    const sx = a.left + a.width - 90, sy = a.top + a.height / 2 - 12, ex = b.left + 10, ey = b.top + 4;
+    f.style.left = sx + 'px'; f.style.top = sy + 'px';
+    if (reduce){ f.remove(); setXp(xp + amount); return; }
+    f.animate([
+      {transform: 'translate(0,0) scale(.6)', opacity: 0},
+      {transform: 'translate(0,-26px) scale(1.25)', opacity: 1, offset: .25},
+      {transform: `translate(${ex - sx}px,${ey - sy}px) scale(.7)`, opacity: .9}
+    ], {duration: 650, easing: 'cubic-bezier(.5,0,.3,1)'}).finished.then(() => { f.remove(); setXp(xp + amount); xpChip.classList.remove('bump'); void xpChip.offsetWidth; xpChip.classList.add('bump'); });
+  }
+  function setXp(v){
+    const from = xp; xp = v; const t0 = performance.now();
+    (function step(now){ const k = Math.min((now - t0) / 400, 1); xpNum.textContent = Math.round(from + (v - from) * k).toLocaleString('vi-VN'); if (k < 1) requestAnimationFrame(step); })(t0);
+  }
+  function sparks(el){
+    const r = el.getBoundingClientRect();
+    if (reduce) return;
+    for (let i = 0; i < 10; i++){
+      const s = document.createElement('div'); s.style.cssText = `position:fixed;z-index:90;width:6px;height:6px;border-radius:50%;background:${i % 2 ? '#1F8A4C' : '#FFD27A'};left:${r.left + r.width * .5}px;top:${r.top + r.height / 2}px;pointer-events:none`;
+      document.body.appendChild(s);
+      const a = i / 10 * Math.PI * 2, d = 50 + Math.random() * 40;
+      s.animate([{transform: 'translate(0,0) scale(1)', opacity: 1}, {transform: `translate(${Math.cos(a) * d * 2.2}px,${Math.sin(a) * d}px) scale(0)`, opacity: 0}], {duration: 520, easing: 'cubic-bezier(.2,.8,.3,1)'}).finished.then(() => s.remove());
+    }
+    if (navigator.vibrate) try { navigator.vibrate(30); } catch(e){}
+  }
+
+  /* ---------- big reward ---------- */
+  const rw = document.getElementById('rw');
+  const el = id => document.getElementById(id);
+  const A = (node, kf, o) => node.animate(kf, Object.assign({fill: 'both'}, o));
+  let running = [];
+  function reward(amount, title, originEl){
+    running.forEach(a => a.cancel()); running = [];
+    el('rwTitle').textContent = title;
+    rw.classList.add('on');
+    const r = originEl ? originEl.getBoundingClientRect() : {left: innerWidth / 2, top: innerHeight / 2, width: 0, height: 0};
+    const ox = r.left + r.width / 2, oy = r.top + r.height / 2;
+    const R = Math.hypot(Math.max(ox, innerWidth - ox), Math.max(oy, innerHeight - oy)) + 30;
+    SFX.reward();
+    if (reduce){
+      el('numVal').textContent = '+' + amount;
+      ['eyebrow','rwTitle','lvl','actions'].forEach(id => el(id).style.opacity = 1);
+      el('fill').style.transform = 'scaleX(.58)';
+      return;
+    }
+    const E = {out: 'cubic-bezier(.16,1,.3,1)', back: 'cubic-bezier(.34,1.7,.5,1)', snap: 'cubic-bezier(.7,0,.2,1)'};
+    running.push(A(el('rwBg'), [{clipPath: `circle(0px at ${ox}px ${oy}px)`}, {clipPath: `circle(${R}px at ${ox}px ${oy}px)`}], {duration: 300, easing: E.snap}));
+    running.push(A(el('flash'), [{opacity: 0}, {opacity: .85, offset: .2}, {opacity: 0}], {duration: 260, delay: 290}));
+    running.push(A(document.getElementById('center'), [{transform: 'translate(-50%,-50%)'}, {transform: 'translate(calc(-50% - 8px),calc(-50% + 4px))'}, {transform: 'translate(calc(-50% + 6px),calc(-50% - 3px))'}, {transform: 'translate(-50%,-50%)'}], {duration: 240, delay: 320}));
+    running.push(A(el('num'), [{transform: 'scale(2.6)', opacity: 0, filter: 'blur(14px)'}, {transform: 'scale(.88)', opacity: 1, filter: 'blur(0)', offset: .55}, {transform: 'scale(1)', opacity: 1}], {duration: 380, delay: 300, easing: E.out}));
+    [el('ring1'), el('ring2')].forEach((g, i) => running.push(A(g, [{transform: 'scale(.3)', opacity: .95}, {transform: 'scale(3.4)', opacity: 0}], {duration: 700, delay: 330 + i * 120, easing: E.out})));
+    running.push(A(el('rays'), [{opacity: 0, transform: 'rotate(0deg) scale(.6)'}, {opacity: 1, transform: 'rotate(40deg) scale(1)', offset: .3}, {opacity: .7, transform: 'rotate(140deg) scale(1)'}], {duration: 6000, delay: 320, easing: 'linear'}));
+    running.push(A(el('eyebrow'), [{opacity: 0, transform: 'translateY(10px)'}, {opacity: 1, transform: 'none'}], {duration: 260, delay: 420, easing: E.out}));
+    running.push(A(el('rwTitle'), [{opacity: 0, transform: 'translateY(16px)'}, {opacity: 1, transform: 'none'}], {duration: 320, delay: 620, easing: E.back}));
+    running.push(A(el('lvl'), [{opacity: 0, transform: 'translateY(24px) scale(.96)'}, {opacity: 1, transform: 'none'}], {duration: 340, delay: 760, easing: E.back}));
+    running.push(A(el('actions'), [{opacity: 0, transform: 'translateY(16px)'}, {opacity: 1, transform: 'none'}], {duration: 300, delay: 960, easing: E.out}));
+    // level bar: base, gain flash, then merge
+    const base = .55, add = .045;
+    el('gain').style.left = (base * 100) + '%'; el('gain').style.width = (add * 100) + '%';
+    running.push(A(el('gain'), [{transform: 'scaleX(0)', opacity: 1}, {transform: 'scaleX(1)', opacity: 1, offset: .5}, {transform: 'scaleX(1)', opacity: 0}], {duration: 900, delay: 900, easing: E.out}));
+    running.push(A(el('fill'), [{transform: `scaleX(${base})`}, {transform: `scaleX(${base + add})`}], {duration: 500, delay: 1250, easing: E.out}));
+    // counter roll with ticks
+    setTimeout(() => {
+      const t0 = performance.now(); let lastTick = -1;
+      (function step(now){
+        const k = Math.min((now - t0) / 420, 1), v = Math.round(amount * (1 - Math.pow(1 - k, 3)));
+        el('numVal').textContent = '+' + v;
+        if (v !== lastTick && v % 2 === 0){ SFX.tick(); lastTick = v; }
+        if (k < 1) requestAnimationFrame(step);
+      })(t0);
+      el('lvlNum').textContent = (2500 + amount).toLocaleString('vi-VN') + ' / 2.940';
+    }, 320);
+    setTimeout(() => { burst(innerWidth / 2, innerHeight * .44, 160); }, 340);
+    setTimeout(() => { burst(innerWidth * .15, innerHeight * .9, 50); burst(innerWidth * .85, innerHeight * .9, 50); }, 520);
+  }
+  function closeReward(){
+    const a = A(rw, [{opacity: 1}, {opacity: 0}], {duration: reduce ? 1 : 220});
+    a.finished.then(() => { rw.classList.remove('on'); a.cancel(); running.forEach(x => x.cancel()); ['eyebrow','rwTitle','lvl','actions'].forEach(id => el(id).style.opacity = ''); });
+  }
+  el('goBtn').addEventListener('click', closeReward);
+  el('homeBtn').addEventListener('click', closeReward);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && rw.classList.contains('on')) closeReward(); });
+  document.getElementById('demoBtn').addEventListener('click', e => reward(20, 'Thêm một mảnh ghép.', e.currentTarget));
+
+  /* ---------- quiz ---------- */
+  let wrongOnce = false, done = false;
+  document.querySelectorAll('.opt').forEach(o => o.addEventListener('click', () => {
+    if (done) return;
+    if (o.dataset.ok === '1'){
+      done = true; o.classList.add('right'); combo++;
+      if (wrongOnce){ SFX.fixed(); el('hint').textContent = 'Sửa đúng sau khi sai · thưởng x2'; } else { SFX.correct(); el('hint').textContent = 'Chính xác!'; }
+      sparks(o); fly(o, wrongOnce ? 10 : 5);
+      setTimeout(() => reward(wrongOnce ? 25 : 20, wrongOnce ? 'Sai một lần, hiểu tận gốc.' : 'Thêm một mảnh ghép.', o), 750);
+    } else {
+      wrongOnce = true; combo = 0; o.classList.remove('wrong'); void o.offsetWidth; o.classList.add('wrong'); SFX.wrong();
+      el('hint').textContent = 'Chưa đúng. Gợi ý: đọc lại khối “Điểm cốt lõi”.';
+    }
+  }));
+  el('goBtn').addEventListener('click', () => { done = false; wrongOnce = false; document.querySelectorAll('.opt').forEach(o => o.classList.remove('right', 'wrong')); el('hint').textContent = 'Chọn sai trước một lần để nghe hiệu ứng “sửa đúng sau khi sai”.'; });
+})();
+</script>

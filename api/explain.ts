@@ -40,7 +40,7 @@ function parseRequest(body: unknown) {
 
 export async function POST(request: Request): Promise<Response> {
     try {
-        rateLimit(request, 20, 60_000)
+        rateLimit(request)
         const { lessonId, questionId, chosenIndex } = parseRequest(await readJsonBody(request, 2_000))
 
         const lesson = lessons.find((l) => l.id === lessonId)

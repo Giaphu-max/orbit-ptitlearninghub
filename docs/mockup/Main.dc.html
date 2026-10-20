@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Orbit PTIT – Trang chủ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FAF8F5}
+a{color:#C4161C}a:hover{color:#9E1016}
+@keyframes blobA{0%{transform:translate(0,0) scale(1)}50%{transform:translate(80px,40px) scale(1.15)}100%{transform:translate(0,0) scale(1)}}
+@keyframes blobB{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-90px,-50px) scale(.9)}100%{transform:translate(0,0) scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes sweep{from{transform:translateX(-120%)}to{transform:translateX(220%)}}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}
+</style>
+</helmet>
+<div style="font-family: 'Be Vietnam Pro', sans-serif; color: #1A1412; background: #FAF8F5; min-height: 100vh">
+
+  <section style="position: relative; overflow: hidden; background: #1A0A0B; color: #FFFFFF; padding-bottom: 96px">
+
+    <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
+      <div style="position: absolute; inset: 0; background: radial-gradient(90% 80% at 85% 20%, #C4161C 0%, rgba(196,22,28,0) 60%), radial-gradient(70% 70% at 10% 100%, #7A0C10 0%, rgba(122,12,16,0) 65%), linear-gradient(160deg, #2A0E0F 0%, #12090A 100%)"></div>
+      <div style="position: absolute; right: 0; top: 0; width: 62%; height: 100%; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.06) 0 1px, transparent 1px 16px); opacity: .9"></div>
+      <span style="position: absolute; right: 22%; top: 64%; padding: 6px 10px; border-radius: 8px; border: 1px dashed rgba(255,255,255,.35); font-size: 11px; color: rgba(255,255,255,.7)">Ảnh khuôn viên PTIT · phủ multiply, độ mờ 35%</span>
+      <div style="position: absolute; left: -10%; top: 30%; width: 520px; height: 520px; border-radius: 999px; background: #E0242B; filter: blur(110px); opacity: .45; animation: blobA 14s ease-in-out infinite"></div>
+      <div style="position: absolute; right: -6%; top: -18%; width: 600px; height: 600px; border-radius: 999px; background: #FF5A4E; filter: blur(130px); opacity: .35; animation: blobB 18s ease-in-out infinite"></div>
+      <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.18) 1px, transparent 1.4px); background-size: 28px 28px; mask-image: linear-gradient(180deg, #000 0%, transparent 85%); -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 85%)"></div>
+      <span style="position: absolute; left: 14%; top: 22%; width: 4px; height: 4px; border-radius: 999px; background: #FFFFFF; animation: twinkle 2.4s ease-in-out infinite"></span>
+      <span style="position: absolute; left: 46%; top: 12%; width: 3px; height: 3px; border-radius: 999px; background: #FFFFFF; animation: twinkle 3.1s .6s ease-in-out infinite"></span>
+      <span style="position: absolute; left: 38%; top: 78%; width: 4px; height: 4px; border-radius: 999px; background: #FFD27A; animation: twinkle 2.8s 1s ease-in-out infinite"></span>
+    </div>
+
+    <header style="position: relative; max-width: 1280px; margin: 0 auto; padding: 20px 32px; display: flex; align-items: center; gap: 32px; flex-wrap: wrap">
+      <a href="#" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #FFFFFF">
+        <span style="width: 40px; height: 40px; border-radius: 9px; background: #FFFFFF; color: {{accent}}; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; letter-spacing: 0.04em">PTIT</span>
+        <span style="display: flex; flex-direction: column; line-height: 1.1">
+          <span style="font-weight: 800; font-size: 18px; letter-spacing: -0.02em">Orbit</span>
+          <span style="font-size: 11px; color: rgba(255,255,255,.72); font-weight: 500">Học viện Công nghệ BCVT</span>
+        </span>
+      </a>
+      <nav aria-label="Điều hướng chính" style="display: flex; gap: 4px; flex-wrap: wrap; flex: 1 1 auto">
+        <a href="#" style="padding: 10px 14px; border-radius: 999px; background: rgba(255,255,255,.14); color: #FFFFFF; font-weight: 700; font-size: 14px; text-decoration: none">Trang chủ</a>
+        <a href="#" style="padding: 10px 14px; border-radius: 999px; color: rgba(255,255,255,.82); font-weight: 500; font-size: 14px; text-decoration: none">Khóa học</a>
+        <a href="#" style="padding: 10px 14px; border-radius: 999px; color: rgba(255,255,255,.82); font-weight: 500; font-size: 14px; text-decoration: none">Orbit Daily</a>
+        <a href="#" style="padding: 10px 14px; border-radius: 999px; color: rgba(255,255,255,.82); font-weight: 500; font-size: 14px; text-decoration: none">Studio 3D</a>
+      </nav>
+      <button aria-label="Tài khoản" style="width: 44px; height: 44px; border-radius: 999px; border: 2px solid rgba(255,255,255,.4); background: #FFFFFF; color: #1A1412; font-weight: 800; font-family: inherit; cursor: pointer">GP</button>
+    </header>
+
+    <div style="position: relative; max-width: 1280px; margin: 0 auto; padding: 56px 32px 0; display: flex; flex-wrap: wrap; gap: 48px; align-items: center">
+
+      <div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; animation: rise .6s ease-out both">
+          <span style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); font-size: 13px; font-weight: 600">
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFD27A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/></svg>
+            Chuỗi 12 ngày
+          </span>
+          <span style="display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); font-size: 13px; font-weight: 600">Cấp 7 · 2.480 XP</span>
+        </div>
+        <h1 style="margin: 0; font-size: 76px; line-height: 0.98; font-weight: 900; letter-spacing: -0.045em; animation: rise .7s .1s ease-out both">Chào Phú.<br>Hôm nay chỉ cần <span style="color: #FFB4A8">25 phút.</span></h1>
+        <p style="margin: 0; font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.78); max-width: 500px; animation: rise .7s .2s ease-out both">Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.</p>
+
+        <a href="Lesson.dc.html" style="position: relative; overflow: hidden; display: flex; align-items: center; gap: 18px; max-width: 520px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.96); color: #1A1412; text-decoration: none; box-shadow: 0 30px 60px -30px rgba(0,0,0,.6); animation: rise .7s .3s ease-out both">
+          <span style="width: 92px; height: 92px; border-radius: 16px; flex-shrink: 0; background: linear-gradient(135deg, #2A0E0F, #C4161C); position: relative; overflow: hidden">
+            <span style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.25) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.25) 1px, transparent 1px); background-size: 33.33% 33.33%"></span>
+            <span style="position: absolute; left: 62%; top: 30%; width: 10px; height: 10px; border-radius: 999px; background: #FFFFFF"></span>
+          </span>
+          <span style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-width: 0">
+            <span style="font-size: 12px; font-weight: 700; color: #9E1016; letter-spacing: 0.06em; text-transform: uppercase">Học tiếp · Nhiếp ảnh cơ bản</span>
+            <strong style="font-size: 18px; line-height: 1.25; letter-spacing: -0.01em">Quy tắc 1/3 và điểm mạnh của khung hình</strong>
+            <span style="display: flex; align-items: center; gap: 10px">
+              <span style="flex: 1 1 auto; height: 6px; border-radius: 3px; background: #F1EDE8; overflow: hidden; display: block"><span style="display: block; width: 46%; height: 100%; background: {{accent}}"></span></span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #5E5551">46%</span>
+            </span>
+          </span>
+          <span style="width: 52px; height: 52px; border-radius: 999px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>
+          </span>
+          <span aria-hidden="true" style="position: absolute; top: 0; left: 0; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.7), transparent); animation: sweep 3.5s 1.2s ease-in-out infinite"></span>
+        </a>
+      </div>
+
+      <div style="flex: 1 1 460px; min-width: 0; position: relative; height: 520px">
+        <div aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 480px; height: 480px; margin: -240px 0 0 -240px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); animation: spin 50s linear infinite">
+          <span style="position: absolute; top: -6px; left: 50%; margin-left: -6px; width: 12px; height: 12px; border-radius: 999px; background: #FFFFFF; box-shadow: 0 0 18px #FFFFFF"></span>
+        </div>
+        <div aria-hidden="true" style="position: absolute; left: 50%; top: 50%; width: 340px; height: 340px; margin: -170px 0 0 -170px; border-radius: 999px; border: 1px dashed rgba(255,180,168,.45); animation: spin 30s linear infinite reverse">
+          <span style="position: absolute; bottom: -5px; left: 50%; margin-left: -5px; width: 10px; height: 10px; border-radius: 999px; background: #FFB4A8"></span>
+        </div>
+        <div style="position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 40px; background: linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.04)); border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 20px; box-sizing: border-box; animation: floaty 6s ease-in-out infinite">
+          <svg aria-hidden="true" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6M9 10h.01M15 10h.01"/></svg>
+          <strong style="font-size: 15px">Mô hình 3D khuôn viên PTIT</strong>
+          <span style="font-size: 12px; color: rgba(255,255,255,.72)">Low-poly · xoay theo chuột · nền trong suốt</span>
+        </div>
+        <span style="position: absolute; left: 4%; top: 18%; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 13px; font-weight: 600; animation: floaty 5s .4s ease-in-out infinite">Nhà A2 · Nhiếp ảnh</span>
+        <span style="position: absolute; right: 2%; top: 64%; padding: 10px 14px; border-radius: 14px; background: #FFFFFF; color: #1A1412; font-size: 13px; font-weight: 700; box-shadow: 0 20px 40px -20px rgba(0,0,0,.6); animation: floaty 5.6s 1s ease-in-out infinite">Studio 3D <span style="color: #9E1016">· mới</span></span>
+      </div>
+    </div>
+
+    <svg aria-hidden="true" viewBox="0 0 1440 80" preserveAspectRatio="none" style="position: absolute; left: 0; bottom: -1px; width: 100%; height: 80px; display: block"><path d="M0 80V40C240 0 480 0 720 30s480 50 720 10v40z" fill="#FAF8F5"/></svg>
+  </section>
+
+  <main style="max-width: 1280px; margin: 0 auto; padding: 32px 32px 96px; display: flex; flex-direction: column; gap: 80px">
+
+    <section id="daily" style="display: flex; flex-direction: column; gap: 28px">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: {{accent}}">Orbit Daily · 19/10</span>
+          <h2 style="margin: 0; font-size: 44px; line-height: 1.05; font-weight: 900; letter-spacing: -0.035em">3 bài đọc. Rồi nghỉ.</h2>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="display: flex; gap: 6px">
+            <span style="width: 40px; height: 6px; border-radius: 3px; background: {{accent}}"></span>
+            <span style="width: 40px; height: 6px; border-radius: 3px; background: #E8E2DC"></span>
+            <span style="width: 40px; height: 6px; border-radius: 3px; background: #E8E2DC"></span>
+          </span>
+          <span style="font-size: 14px; font-weight: 600; color: #5E5551">1/3</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch">
+        <article style="flex: 2 1 520px; min-width: 0; position: relative; overflow: hidden; padding: 40px; border-radius: 28px; background: linear-gradient(150deg, #C4161C 0%, #8E0E13 100%); color: #FFFFFF; display: flex; flex-direction: column; gap: 20px; min-height: 380px; box-sizing: border-box">
+          <div aria-hidden="true" style="position: absolute; right: -80px; bottom: -80px; width: 320px; height: 320px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25)"></div>
+          <div aria-hidden="true" style="position: absolute; right: -20px; bottom: -20px; width: 200px; height: 200px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); animation: spin 24s linear infinite">
+            <span style="position: absolute; top: -5px; left: 50%; width: 10px; height: 10px; border-radius: 999px; background: #FFFFFF"></span>
+          </div>
+          <span style="position: relative; align-self: flex-start; font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: #FFFFFF; color: #9E1016">Ưu tiên · bạn sai 2/3 câu phần này</span>
+          <h3 style="position: relative; margin: 0; font-size: 38px; line-height: 1.12; font-weight: 800; letter-spacing: -0.025em; max-width: 560px">Đường dẫn hướng: kéo mắt người xem đi đâu trước?</h3>
+          <p style="position: relative; margin: 0; font-size: 15px; line-height: 1.6; color: rgba(255,255,255,.82); max-width: 520px; flex-grow: 1">Tổng hợp từ Bố cục nâng cao (08:42) và Thiết kế poster (14:10).</p>
+          <div style="position: relative; display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+            <a href="#" style="display: inline-flex; align-items: center; gap: 10px; padding: 15px 22px; border-radius: 14px; background: #FFFFFF; color: #9E1016; font-weight: 800; font-size: 15px; text-decoration: none">
+              Đọc ngay
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <span style="font-size: 14px; color: rgba(255,255,255,.82)">3 phút · +20 XP</span>
+          </div>
+        </article>
+
+        <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+          <article style="flex: 1 1 auto; padding: 24px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E8E2DC; display: flex; flex-direction: column; gap: 12px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5E5551">02 · Mở rộng</span>
+            <h3 style="margin: 0; font-size: 20px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; flex-grow: 1">Ánh sáng ba điểm: dùng được cho cả chụp ảnh lẫn dựng 3D</h3>
+            <span style="font-size: 13px; color: #5E5551">3 phút · +20 XP</span>
+          </article>
+          <article style="flex: 1 1 auto; padding: 24px; border-radius: 22px; background: #F1EDE8; display: flex; flex-direction: column; gap: 12px">
+            <span style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5E5551">01 · Đã đọc
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B6B2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            <h3 style="margin: 0; font-size: 20px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; color: #5E5551; flex-grow: 1">Vì sao ảnh đặt chủ thể ở chính giữa thường “đứng im”?</h3>
+            <span style="font-size: 13px; font-weight: 700; color: #3B6B2E">+20 XP đã nhận</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="progress-h" style="display: flex; flex-direction: column; gap: 20px">
+      <h2 id="progress-h" style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.015em">Tiến độ của bạn</h2>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap">
+        <div style="flex: 999 1 560px; min-width: 0; padding: 24px 28px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E8E2DC; display: flex; flex-direction: column; gap: 18px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+            <span style="font-size: 15px; font-weight: 700">Cây kỹ năng · Nhiếp ảnh cơ bản</span>
+            <a href="#" style="font-size: 14px; font-weight: 700">Mở cây kỹ năng</a>
+          </div>
+          <div style="display: flex; align-items: center; flex-wrap: wrap; row-gap: 12px">
+            <span style="width: 40px; height: 40px; border-radius: 999px; background: {{accent}}; flex-shrink: 0"></span>
+            <span style="flex: 1 1 20px; height: 3px; background: {{accent}}; min-width: 12px"></span>
+            <span style="width: 40px; height: 40px; border-radius: 999px; background: {{accent}}; flex-shrink: 0"></span>
+            <span style="flex: 1 1 20px; height: 3px; background: linear-gradient(90deg, #C4161C, #E8E2DC); min-width: 12px"></span>
+            <span style="width: 40px; height: 40px; border-radius: 999px; border: 4px solid {{accent}}; background: #FBEAEA; box-sizing: border-box; flex-shrink: 0"></span>
+            <span style="flex: 1 1 20px; height: 3px; background: #E8E2DC; min-width: 12px"></span>
+            <span style="width: 40px; height: 40px; border-radius: 999px; border: 2px dashed #CFC6BE; box-sizing: border-box; flex-shrink: 0"></span>
+            <span style="flex: 1 1 20px; height: 3px; background: #E8E2DC; min-width: 12px"></span>
+            <span style="width: 40px; height: 40px; border-radius: 999px; border: 2px dashed #CFC6BE; box-sizing: border-box; flex-shrink: 0"></span>
+          </div>
+          <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #5E5551"><strong style="color: #9E1016">Bố cục 1/3 · 62%.</strong> Đạt 80% để mở “Đường dẫn hướng”.</p>
+        </div>
+        <div style="flex: 1 1 320px; min-width: 0; padding: 24px 28px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E8E2DC; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline">
+            <span style="font-size: 15px; font-weight: 700">Nhiệm vụ hôm nay</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5E5551">1/3</span>
+          </div>
+          <span style="display: flex; justify-content: space-between; font-size: 14px; color: #5E5551; text-decoration: line-through">Đọc 1 bài Orbit Daily<span style="text-decoration: none">+15</span></span>
+          <span style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600">Sửa đúng 1 câu từng sai<span style="color: #7A4B0A">+30</span></span>
+          <span style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600">Chụp 1 ảnh ≥7 điểm ở Studio<span style="color: #7A4B0A">+40</span></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="border-top: 1px solid #E8E2DC; background: #FFFFFF">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 24px 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #5E5551">
+      <span>Orbit · Nền tảng học tập ứng dụng AI cho sinh viên PTIT</span>
+      <span>Nội dung AI được giảng viên duyệt trước khi hiển thị</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C4161C","options":["#C4161C","#B0121B","#D7262E"]},"$preview":{"width":1440,"height":1880}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#C4161C' };
+  }
+}
+</script>
+</body>
+</html>

@@ -105,7 +105,7 @@ const clampScore = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) 
 
 export async function POST(request: Request): Promise<Response> {
     try {
-        rateLimit(request, 6, 60_000)
+        rateLimit(request)
         const { imageBase64, setup, intent } = parseRequest(await readJsonBody(request, 2_200_000))
 
         const gemini = getGemini()
@@ -132,7 +132,7 @@ export async function POST(request: Request): Promise<Response> {
                     maxOutputTokens: 2048,
                 },
             }),
-            { perModelTimeoutMs: 15_000, totalTimeoutMs: 30_000 },
+            { perModelTimeoutMs: 15_000, totalTimeoutMs: 25_000 },
         )
 
         let parsed: Record<string, unknown>

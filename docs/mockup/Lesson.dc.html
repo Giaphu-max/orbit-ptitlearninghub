@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Orbit PTIT – Trang học bài</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FAF8F5}
+a{color:#C4161C}a:hover{color:#9E1016}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(196,22,28,.5)}50%{box-shadow:0 0 0 8px rgba(196,22,28,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}
+</style>
+</helmet>
+<div style="font-family: 'Be Vietnam Pro', sans-serif; color: #1A1412; background: #FAF8F5; min-height: 100vh">
+
+  <header style="border-bottom: 1px solid #E8E2DC; background: #FFFFFF">
+    <div style="max-width: 1360px; margin: 0 auto; padding: 12px 32px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap">
+      <a href="Main.dc.html" aria-label="Về trang chủ" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #E8E2DC; display: flex; align-items: center; justify-content: center; color: #1A1412">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </a>
+      <span style="width: 36px; height: 36px; border-radius: 8px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px">PTIT</span>
+      <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 280px; min-width: 0">
+        <span style="font-size: 12px; color: #5E5551; font-weight: 600">Nhiếp ảnh cơ bản · Chương 3 · Bài 2</span>
+        <span style="font-size: 17px; font-weight: 800; letter-spacing: -0.015em">Quy tắc 1/3 và điểm mạnh của khung hình</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="font-size: 13px; color: #5E5551">Tiến độ bài</span>
+        <span style="width: 140px; height: 8px; border-radius: 4px; background: #F1EDE8; overflow: hidden; display: block">
+          <span style="display: block; width: 46%; height: 100%; background: {{accent}}"></span>
+        </span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700">46%</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1360px; margin: 0 auto; padding: 28px 32px 64px; display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start">
+
+    <div style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+      <div style="position: relative; border-radius: 24px; overflow: hidden; background: #120E0C; aspect-ratio: 16 / 9; min-height: 300px">
+        <div style="position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 30%, #3A2A24 0%, #120E0C 70%)"></div>
+        <div style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr))">
+          <span style="border-right: 1px solid rgba(255,255,255,.14); border-bottom: 1px solid rgba(255,255,255,.14)"></span>
+          <span style="border-right: 1px solid rgba(255,255,255,.14); border-bottom: 1px solid rgba(255,255,255,.14)"></span>
+          <span style="border-bottom: 1px solid rgba(255,255,255,.14)"></span>
+          <span style="border-right: 1px solid rgba(255,255,255,.14); border-bottom: 1px solid rgba(255,255,255,.14)"></span>
+          <span style="border-right: 1px solid rgba(255,255,255,.14); border-bottom: 1px solid rgba(255,255,255,.14)"></span>
+          <span style="border-bottom: 1px solid rgba(255,255,255,.14)"></span>
+          <span style="border-right: 1px solid rgba(255,255,255,.14)"></span>
+          <span style="border-right: 1px solid rgba(255,255,255,.14)"></span>
+          <span></span>
+        </div>
+        <span style="position: absolute; left: 12px; top: 12px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,.45); color: #FFFFFF; font-size: 12px; font-weight: 600">Video bài giảng · ThS. [Tên giảng viên]</span>
+
+        <div style="position: absolute; inset: 0; background: rgba(18,14,12,.62); display: flex; align-items: center; justify-content: center; padding: 24px">
+          <div style="width: 100%; max-width: 560px; background: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 16px; animation: rise .4s ease-out both">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+              <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: {{accent}}">Kiểm tra nhanh · 2/4</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5E5551">06:48</span>
+            </div>
+            <h3 style="margin: 0; font-size: 20px; line-height: 1.35; font-weight: 700">Muốn ảnh chân dung có cảm giác “nhìn về phía trước”, nên đặt mắt nhân vật ở đâu?</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <button style="display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px 16px; border-radius: 12px; border: 2px solid {{accent}}; background: #FBEAEA; font-family: inherit; font-size: 15px; color: #1A1412; cursor: pointer">
+                <span style="width: 26px; height: 26px; border-radius: 999px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </span>
+                Chính giữa khung hình
+              </button>
+              <button style="display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px 16px; border-radius: 12px; border: 1.5px solid #E8E2DC; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #1A1412; cursor: pointer">
+                <span style="width: 26px; height: 26px; border-radius: 999px; border: 1.5px solid #CFC6BE; flex-shrink: 0; box-sizing: border-box"></span>
+                Trên đường 1/3 phía trên, dư khoảng trống theo hướng nhìn
+              </button>
+            </div>
+            <div style="padding: 14px 16px; border-radius: 12px; background: #F6F3EF; display: flex; gap: 12px; align-items: flex-start">
+              <span style="width: 28px; height: 28px; border-radius: 8px; background: #1A1412; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>
+              </span>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3A322E">Chưa đúng. Đặt chính giữa làm khung hình cân bằng nhưng tĩnh. Thầy giải thích phần này ở <strong style="color: #9E1016">05:12</strong>, mình tua lại 30 giây nhé, sau đó bạn thử một câu tương tự.</p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap">
+              <button style="flex: 1 1 200px; padding: 14px 18px; border-radius: 12px; border: none; background: {{accent}}; color: #FFFFFF; font-family: inherit; font-weight: 700; font-size: 15px; cursor: pointer">Xem lại đoạn 05:12</button>
+              <button style="flex: 1 1 160px; padding: 14px 18px; border-radius: 12px; border: 1.5px solid #1A1412; background: #FFFFFF; color: #1A1412; font-family: inherit; font-weight: 700; font-size: 15px; cursor: pointer">Thử câu tương tự</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 20px; display: flex; align-items: center; gap: 14px; background: linear-gradient(transparent, rgba(0,0,0,.65))">
+          <button aria-label="Phát" style="width: 44px; height: 44px; border-radius: 999px; border: none; background: #FFFFFF; color: #1A1412; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>
+          </button>
+          <div style="position: relative; flex: 1 1 auto; height: 6px; border-radius: 3px; background: rgba(255,255,255,.25)">
+            <span style="position: absolute; left: 0; top: 0; height: 6px; width: 46%; border-radius: 3px; background: {{accent}}"></span>
+            <span title="Câu hỏi 1" style="position: absolute; left: 22%; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 4px; transform: rotate(45deg); background: #FFFFFF"></span>
+            <span title="Câu hỏi 2" style="position: absolute; left: 46%; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 4px; transform: rotate(45deg); background: {{accent}}; animation: pulse 1.6s ease-in-out infinite"></span>
+            <span title="Câu hỏi 3" style="position: absolute; left: 68%; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 4px; transform: rotate(45deg); background: rgba(255,255,255,.45)"></span>
+            <span title="Câu hỏi 4" style="position: absolute; left: 88%; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 4px; transform: rotate(45deg); background: rgba(255,255,255,.45)"></span>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #FFFFFF; flex-shrink: 0">06:48 / 14:52</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 20px; flex-wrap: wrap">
+        <section style="flex: 1 1 300px; min-width: 0; padding: 24px; border-radius: 20px; background: #FFFFFF; border: 1px solid #E8E2DC; display: flex; flex-direction: column; gap: 14px">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 800">Khái niệm trong bài</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <a href="#" style="padding: 8px 12px; border-radius: 999px; background: #1A1412; color: #FFFFFF; font-size: 13px; font-weight: 600; text-decoration: none">Quy tắc 1/3 · 01:20</a>
+            <a href="#" style="padding: 8px 12px; border-radius: 999px; border: 1.5px solid {{accent}}; color: #9E1016; font-size: 13px; font-weight: 700; text-decoration: none">Không gian nhìn · 05:12</a>
+            <a href="#" style="padding: 8px 12px; border-radius: 999px; border: 1px solid #E8E2DC; color: #1A1412; font-size: 13px; font-weight: 600; text-decoration: none">Điểm mạnh · 07:40</a>
+            <a href="#" style="padding: 8px 12px; border-radius: 999px; border: 1px solid #E8E2DC; color: #1A1412; font-size: 13px; font-weight: 600; text-decoration: none">Đường chân trời · 10:05</a>
+          </div>
+        </section>
+        <section style="flex: 1 1 300px; min-width: 0; padding: 24px; border-radius: 20px; background: #FFFFFF; border: 1px solid #E8E2DC; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 800">Tóm tắt do AI tạo</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #3A322E">[Tóm tắt 3–4 câu của bài, sinh từ transcript lúc giảng viên tải lên, giảng viên đã duyệt.]</p>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #3B6B2E">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            Giảng viên đã duyệt
+          </span>
+        </section>
+      </div>
+    </div>
+
+    <aside aria-label="Trợ lý AI" style="flex: 1 1 380px; min-width: 0; border-radius: 24px; background: #FFFFFF; border: 1px solid #E8E2DC; display: flex; flex-direction: column; overflow: hidden">
+      <div style="padding: 18px 20px; border-bottom: 1px solid #E8E2DC; display: flex; align-items: center; gap: 12px">
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>
+        </span>
+        <div style="display: flex; flex-direction: column">
+          <strong style="font-size: 15px">Trợ giảng AI</strong>
+          <span style="font-size: 12px; color: #5E5551">Chỉ trả lời dựa trên nội dung bài này</span>
+        </div>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px; min-height: 520px">
+        <div style="align-self: flex-end; max-width: 85%; padding: 12px 16px; border-radius: 16px 16px 4px 16px; background: #1A1412; color: #FFFFFF; font-size: 14px; line-height: 1.5">Sao thầy bảo đặt đường chân trời ở 1/3 mà không phải chính giữa ạ?</div>
+        <div style="align-self: flex-start; max-width: 92%; display: flex; flex-direction: column; gap: 10px">
+          <div style="padding: 14px 16px; border-radius: 16px 16px 16px 4px; background: #F6F3EF; font-size: 14px; line-height: 1.6; color: #1A1412">Theo bài giảng, đặt chân trời ở chính giữa chia ảnh thành hai nửa bằng nhau nên mắt người xem không biết ưu tiên phần nào. Đặt ở 1/3 trên hoặc dưới giúp bạn chủ động chọn: nhấn bầu trời hay nhấn mặt đất.</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <a href="#" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; background: #FBEAEA; color: #9E1016; font-size: 12px; font-weight: 700; text-decoration: none">
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>
+              10:05 Đường chân trời
+            </a>
+            <a href="#" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; background: #FBEAEA; color: #9E1016; font-size: 12px; font-weight: 700; text-decoration: none">
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>
+              01:20 Quy tắc 1/3
+            </a>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto">
+          <button style="padding: 10px 12px; border-radius: 10px; border: 1px solid #E8E2DC; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; color: #1A1412; cursor: pointer">Giải thích đơn giản hơn</button>
+          <button style="padding: 10px 12px; border-radius: 10px; border: 1px solid #E8E2DC; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; color: #1A1412; cursor: pointer">Cho ví dụ ảnh thật</button>
+          <button style="padding: 10px 12px; border-radius: 10px; border: 1px solid #E8E2DC; background: #FFFFFF; font-family: inherit; font-size: 13px; font-weight: 600; color: #1A1412; cursor: pointer">Hỏi tôi 1 câu</button>
+        </div>
+      </div>
+      <div style="padding: 14px; border-top: 1px solid #E8E2DC; display: flex; gap: 10px; align-items: center">
+        <label for="ask" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Câu hỏi cho trợ giảng</label>
+        <input id="ask" placeholder="Hỏi về bài đang xem…" style="flex: 1 1 auto; min-width: 0; height: 48px; padding: 0 16px; border-radius: 12px; border: 1.5px solid #E8E2DC; font-family: inherit; font-size: 14px; background: #FAF8F5; color: #1A1412">
+        <button aria-label="Gửi" style="width: 48px; height: 48px; border-radius: 12px; border: none; background: {{accent}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </aside>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C4161C","options":["#C4161C","#B0121B","#D7262E"]},"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#C4161C' };
+  }
+}
+</script>
+</body>
+</html>

@@ -223,9 +223,9 @@ const MARK = /\{\{([^|}]*)\|([^}]*)\}\}/g
 
 /** Giữ dấu khái niệm hợp lệ `{{id|chữ}}`; id lạ thì bỏ dấu, giữ chữ. Dấu `{{` lỗi còn sót thì xóa. */
 function cleanMarks(text: string, known: Set<string>, keep: boolean): string {
-    // Dấu hợp lệ tạm đổi sang ký tự điều khiển để bước xóa `{{`/`}}` lỗi còn sót không đụng tới
-    const out = text.replace(MARK, (_m, id: string, label: string) => (keep && known.has(id.trim()) ? `\u0001${id.trim()}|${label.trim()}\u0002` : label.trim()))
-    return out.replace(/\{\{|\}\}/g, '').replace(/\u0001/g, '{{').replace(/\u0002/g, '}}').trim()
+    // Dấu hợp lệ tạm đổi sang ký tự private-use để bước xóa `{{`/`}}` lỗi còn sót không đụng tới
+    const out = text.replace(MARK, (_m, id: string, label: string) => (keep && known.has(id.trim()) ? `\uE000${id.trim()}|${label.trim()}\uE001` : label.trim()))
+    return out.replace(/\{\{|\}\}/g, '').replace(/\uE000/g, '{{').replace(/\uE001/g, '}}').trim()
 }
 
 export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles: DailyArticle[]; report: Report } {

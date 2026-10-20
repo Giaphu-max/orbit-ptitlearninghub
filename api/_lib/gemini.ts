@@ -182,17 +182,22 @@ export async function readJsonBody(request: Request, maxBytes: number): Promise<
     }
 }
 
-// Giới hạn tần suất đơn giản theo IP. Chỉ có hiệu lực trong một instance
-// serverless (bộ nhớ không chia sẻ), đủ để chặn bấm liên tục khi demo.
+// Giới hạn tần suất theo IP: tối đa 20 lượt/phút cho tất cả các hàm AI cộng lại (chat, explain, grade-photo, environment).
+// Đếm trong bộ nhớ của một instance serverless (không chia sẻ giữa các instance), đủ để chặn bấm liên tục khi demo.
+const RATE_LIMIT = 20
+const RATE_WINDOW_MS = 60_000
 const hits = new Map<string, number[]>()
 
-export function rateLimit(request: Request, limit: number, windowMs: number) {
+export function rateLimit(request: Request) {
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'local'
     const now = Date.now()
-    const recent = (hits.get(ip) ?? []).filter((t) => now - t < windowMs)
-    if (recent.length >= limit) {
-        throw new HttpError(429, 'Bạn hỏi hơi nhanh, đợi một chút rồi hỏi tiếp nhé.')
+    const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
+    if (recent.length >= RATE_LIMIT) {
+        hits.set(ip, recent)
+        throw new HttpError(429, 'Bạn thao tác hơi nhanh, đợi một chút rồi thử lại nhé.')
     }
     recent.push(now)
     hits.set(ip, recent)
+    // Dọn IP đã im lặng để Map không phình ra
+    if (hits.size > 500) for (const [k, v] of hits) if (now - v[v.length - 1] >= RATE_WINDOW_MS) hits.delete(k)
 }

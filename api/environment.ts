@@ -57,7 +57,7 @@ function parsePrompt(body: unknown): string {
 
 export async function POST(request: Request): Promise<Response> {
     try {
-        rateLimit(request, 8, 60_000)
+        rateLimit(request)
         const prompt = parsePrompt(await readJsonBody(request, 4_000))
 
         const gemini = getGemini()
