@@ -3,6 +3,7 @@
     "id": "ban-chat-dung-phi-tuyen",
     "courseId": "dung-audio-video-phi-tuyen",
     "title": "Bản chất của dựng audio và video phi tuyến trong hậu kỳ",
+    "shortTitle": "Bản chất dựng phi tuyến",
     "youtubeId": "sF6dUF6JWy0",
     "durationSec": 439,
     "summary": "Bài giảng giới thiệu bản chất của dựng phi tuyến trong hậu kỳ so với dựng tuyến tính truyền thống. Học viên được tìm hiểu về khái niệm Non-Linear Editing (NLE), nguyên tắc phi hủy hoại và bốn giai đoạn của quy trình dựng phim chuyên nghiệp. Bài học cũng điểm qua các phần mềm dựng phổ biến và nhấn mạnh dựng phim là một chu trình ra quyết định.",
@@ -31,7 +32,7 @@
       },
       {
         "id": "tinh-phi-huy-hoai",
-        "name": "Tính phi hủy hoại (Non-destructive)",
+        "name": "Tính phi hủy hoại (non-destructive)",
         "definition": "Nguyên tắc mọi thao tác chỉnh sửa không làm thay đổi hoặc mất dữ liệu của file gốc.",
         "segment": {
           "start": 70,
@@ -267,6 +268,7 @@
     "id": "tu-duy-dung-dieu-huong-tiep-nhan",
     "courseId": "dung-audio-video-phi-tuyen",
     "title": "Tổ chức cấu trúc nội dung và điều hướng tiếp nhận trong dựng phim",
+    "shortTitle": "Tư duy dựng và người xem",
     "youtubeId": "1fiBJcP0AFM",
     "durationSec": 385,
     "summary": "Bài giảng phân tích bản chất của tư duy dựng phim không chỉ là cắt ghép kỹ thuật mà là nghệ thuật tổ chức chiến lược thông tin và điều hướng nhận thức khán giả. Giảng viên trình bày vai trò của việc thấu hiểu người xem, xác định mục tiêu giao tiếp, áp dụng các nguyên tắc cấu trúc ba hồi, đồng thời quản lý tải trí tuệ (cognitive load) để tránh tình trạng quá tải thông tin. Cuối cùng, bài học điểm qua ba công cụ dẫn dắt sự chú ý gồm hình ảnh, âm thanh và cấu trúc nội dung.",
@@ -307,7 +309,7 @@
       },
       {
         "id": "tai-tri-tue",
-        "name": "Tải trí tuệ (Cognitive Load)",
+        "name": "Tải trí tuệ (cognitive load)",
         "definition": "Tải trí tuệ mô tả khả năng xử lý thông tin hữu hạn của bộ não người xem (khoảng 4 đến 7 đơn vị thông tin một lúc), gồm tải nội tại, tải ngoại sinh và tải tạo ý nghĩa.",
         "segment": {
           "start": 187,
@@ -560,7 +562,8 @@
   {
     "id": "nhip-dieu-to-chuc-thoi-gian",
     "courseId": "dung-audio-video-phi-tuyen",
-    "title": "Nhịp Điệu Dựng Phim",
+    "title": "Nhịp điệu dựng phim",
+    "shortTitle": "Nhịp điệu dựng phim",
     "youtubeId": "x0KOqBHDJ98",
     "durationSec": 379,
     "summary": "Bài giảng trình bày về khái niệm nhịp điệu trong dựng phim, bao gồm nhịp hình, nhịp âm và sự kết hợp hài hòa giữa chúng. Giảng viên phân tích vai trò của thời lượng cảnh quay, kỹ thuật nhấn mạnh, cao trào, cũng như nén và kéo dài thời gian nhằm tác động mạnh mẽ đến cảm xúc người xem.",

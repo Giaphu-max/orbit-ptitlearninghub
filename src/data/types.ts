@@ -58,6 +58,8 @@ export interface Lesson {
     id: string
     courseId: string
     title: string
+    /** Tên rút gọn (2–5 từ) cho chip nguồn và chỗ hẹp; thiếu thì cắt từ title */
+    shortTitle?: string
     youtubeId: string
     durationSec: Seconds
     summary: string
@@ -96,6 +98,7 @@ export type BadgeCriterion =
     | { type: 'corrected-mistakes'; count: number }
     | { type: 'streak'; days: number }
     | { type: 'director-score'; minScore: number }
+    | { type: 'test-score'; minRatio: number }
 
 export interface Badge {
     id: string

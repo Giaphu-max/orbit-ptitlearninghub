@@ -58,13 +58,15 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     // Đọc vị trí cũ một lần lúc mở bài
     // ?t=giây: mở thẳng tại mốc đó (link nguồn của Orbit Daily, lộ trình ôn tập sau test)
     const [searchParams] = useSearchParams()
-    const [resumeFrom] = useState(() => {
+    const [{ resumeFrom, fromSavedPosition }] = useState(() => {
         const t = Number(searchParams.get('t'))
-        if (Number.isFinite(t) && t > 0) return Math.min(Math.floor(t), Math.max(0, lesson.durationSec - 1))
+        if (Number.isFinite(t) && t > 0) return { resumeFrom: Math.min(Math.floor(t), Math.max(0, lesson.durationSec - 1)), fromSavedPosition: false }
         const saved = useOrbitStore.getState().lessonProgress[lesson.id]?.lastPositionSec ?? 0
-        return saved >= RESUME_MIN_SEC && saved < lesson.durationSec - RESUME_TAIL_SEC ? Math.floor(saved) : 0
+        const ok = saved >= RESUME_MIN_SEC && saved < lesson.durationSec - RESUME_TAIL_SEC
+        return { resumeFrom: ok ? Math.floor(saved) : 0, fromSavedPosition: ok }
     })
-    const [showResume, setShowResume] = useState(resumeFrom > 0)
+    // Banner chỉ cho vị trí đã lưu; vào từ link nguồn Daily hay lộ trình ôn (?t=) thì không phải "chỗ dừng lần trước"
+    const [showResume, setShowResume] = useState(fromSavedPosition)
     const [isTutorOpen, setIsTutorOpen] = useState(true)
 
     const player = useYouTubePlayer(lesson.youtubeId, { startAt: resumeFrom })

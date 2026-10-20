@@ -1,11 +1,12 @@
 import { lazy, Suspense, useCallback, useRef, useState } from 'react'
-import { Camera, Grid3x3, Loader2, RotateCcw, Sparkles } from 'lucide-react'
-import type { GradePhotoResponse } from '@/lib/api-types'
-import { ApiRequestError, generateEnvironment, gradePhoto } from '@/lib/api'
+import { Camera, Grid3x3, Info, Loader2, RotateCcw, Sparkles } from 'lucide-react'
+import type { GradePhotoResponse, LightingIntent } from '@/lib/api-types'
+import { ApiRequestError, generateEnvironment, gradePhoto, isNotLightingError } from '@/lib/api'
 import { ENV_LIMITS } from '@/lib/environment'
 import { announceRewards, directorScreen, DIRECTOR_MIN_SCORE } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
-import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup, type CaptureFn } from '@/components/studio/studio-scene'
+import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup } from '@/lib/studio-setup'
+import type { CaptureFn } from '@/components/studio/studio-scene'
 
 // Phần 3D tải riêng (three.js + R3F nặng).
 const StudioScene = lazy(() => import('@/components/studio/studio-scene'))
@@ -19,6 +20,7 @@ function canRender3D() {
     }
 }
 
+const ENV_COOLDOWN_MS = 1500
 const ENV_SUGGESTIONS = ['Hoàng hôn gắt, bóng đổ dài', 'Ánh sáng studio mềm chụp chân dung', 'Đêm có sương, đèn viền lạnh', 'Nắng trưa gắt từ trên cao']
 
 type Phase =
@@ -36,7 +38,12 @@ export function OrbitStudioView() {
     const directorBest = useOrbitStore((s) => s.directorBest)
     const [webgl] = useState(canRender3D)
     const [envPrompt, setEnvPrompt] = useState('')
-    const [env, setEnv] = useState<{ kind: 'idle' } | { kind: 'loading' } | { kind: 'done'; prompt: string; explanation: string } | { kind: 'error'; message: string }>({ kind: 'idle' })
+    const [envLoading, setEnvLoading] = useState(false)
+    // Ý đồ ánh sáng đã áp dụng (giữ lại khi lần sau bị từ chối hoặc lỗi) và thông báo của lần gọi gần nhất
+    const [applied, setApplied] = useState<{ prompt: string; explanation: string; setup: CameraSetup } | null>(null)
+    const [envNotice, setEnvNotice] = useState<{ kind: 'hint' | 'error'; message: string } | null>(null)
+    const envBusy = useRef(false)
+    const lastEnvAt = useRef(0)
 
     const onReady = useCallback((fn: CaptureFn) => {
         captureRef.current = fn
@@ -51,7 +58,7 @@ export function OrbitStudioView() {
         try {
             // Chỉ gửi thông số nhiếp ảnh; dịch khung đã thể hiện trong ảnh
             const { shiftX: _x, shiftY: _y, look: _look, ...director } = setup
-            const result = await gradePhoto({ imageBase64: base64, setup: director })
+            const result = await gradePhoto({ imageBase64: base64, setup: director, intent: buildIntent(setup, applied) })
             const before = useOrbitStore.getState()
             const xp = before.recordDirectorScore(result.overall)
             const after = useOrbitStore.getState()
@@ -64,15 +71,28 @@ export function OrbitStudioView() {
 
     const applyEnvironment = async (text: string) => {
         const prompt = text.trim()
-        if (!prompt || env.kind === 'loading') return
-        setEnv({ kind: 'loading' })
+        // Khóa bằng ref (state cập nhật chậm một nhịp) và chờ một chút giữa hai lần bấm để không đốt hạn mức
+        if (!prompt || envBusy.current || Date.now() - lastEnvAt.current < ENV_COOLDOWN_MS) return
+        envBusy.current = true
+        lastEnvAt.current = Date.now()
+        setEnvLoading(true)
+        setEnvNotice(null)
         try {
             const spec = await generateEnvironment({ prompt })
             // Chỉ đổi cảnh khi đã có thông số hợp lệ; lỗi thì cảnh cũ được giữ nguyên
-            setSetup((s) => setupFromEnvironment(s, spec))
-            setEnv({ kind: 'done', prompt, explanation: spec.explanation })
+            const next = setupFromEnvironment(setup, spec)
+            setSetup(next)
+            setApplied({ prompt, explanation: spec.explanation, setup: next })
         } catch (err) {
-            setEnv({ kind: 'error', message: err instanceof ApiRequestError ? err.message : 'AI chưa tạo được ánh sáng lúc này, cảnh được giữ nguyên. Bạn thử lại nhé.' })
+            if (isNotLightingError(err)) {
+                setEnvNotice({ kind: 'hint', message: err.message })
+            } else {
+                setEnvNotice({ kind: 'error', message: err instanceof ApiRequestError ? err.message : 'AI chưa tạo được ánh sáng lúc này, cảnh được giữ nguyên. Bạn thử lại nhé.' })
+            }
+        } finally {
+            envBusy.current = false
+            lastEnvAt.current = Date.now()
+            setEnvLoading(false)
         }
     }
 
@@ -85,15 +105,15 @@ export function OrbitStudioView() {
                     <p className="text-eyebrow uppercase text-brand-ink">Virtual Director</p>
                     <h1 className="mt-3 text-headline text-foreground">Đặt máy, đặt đèn, rồi để AI chấm.</h1>
                     <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-                        Đề bài: chụp chân dung nhân vật với chủ thể ở giao điểm một phần ba và ánh sáng ba điểm. Đạt từ {DIRECTOR_MIN_SCORE} điểm và vượt kỷ lục của bạn để nhận XP.
+                        Đề bài: chụp chân dung nhân vật với chủ thể ở giao điểm một phần ba, ánh sáng đúng ý đồ bạn chọn (tự chỉnh đèn hoặc mô tả bằng lời). Đạt từ {DIRECTOR_MIN_SCORE} điểm và vượt kỷ lục của bạn để nhận XP.
                         {directorBest > 0 && (
                             <> Kỷ lục hiện tại: <span className="font-mono font-bold text-foreground">{directorBest}</span>.</>
                         )}
                     </p>
                 </header>
 
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div className="flex flex-col gap-5">
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+                    <div className="flex min-w-0 flex-col gap-5">
                         <div className="relative aspect-[3/2] w-full overflow-hidden rounded-panel bg-ink shadow-card">
                             {webgl ? (
                                 <div className={showing ? 'invisible absolute inset-0' : 'absolute inset-0'}>
@@ -142,7 +162,7 @@ export function OrbitStudioView() {
                         {phase.kind === 'result' && <Result result={phase.result} />}
                     </div>
 
-                    <aside className="flex flex-col gap-5">
+                    <aside className="grid min-w-0 gap-5 md:grid-cols-2 xl:flex xl:flex-col">
                         <Panel title="Máy ảnh">
                             <Slider label="Tiêu cự" unit="mm" min={24} max={135} step={1} value={setup.focalLengthMm} onChange={set('focalLengthMm')} />
                             <Slider label="Xoay quanh chủ thể" unit="°" min={-80} max={80} step={1} value={setup.azimuthDeg} onChange={set('azimuthDeg')} />
@@ -175,7 +195,7 @@ export function OrbitStudioView() {
                                         <li key={t}>
                                             <button
                                                 type="button"
-                                                disabled={env.kind === 'loading'}
+                                                disabled={envLoading}
                                                 onClick={() => {
                                                     setEnvPrompt(t)
                                                     void applyEnvironment(t)
@@ -189,32 +209,37 @@ export function OrbitStudioView() {
                                 </ul>
                                 <button
                                     type="submit"
-                                    disabled={env.kind === 'loading' || !envPrompt.trim()}
+                                    disabled={envLoading || !envPrompt.trim()}
                                     className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background transition hover:opacity-90 disabled:opacity-50"
                                 >
-                                    {env.kind === 'loading' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-                                    {env.kind === 'loading' ? 'AI đang bố trí đèn…' : 'Tạo ánh sáng'}
+                                    {envLoading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                                    {envLoading ? 'AI đang bố trí đèn…' : 'Tạo ánh sáng'}
                                 </button>
                             </form>
-                            {env.kind === 'error' && (
-                                <p role="alert" className="rounded-card border border-border bg-muted px-4 py-3 text-sm text-foreground">{env.message}</p>
+                            {envNotice?.kind === 'error' && (
+                                <p role="alert" className="rounded-card border border-border bg-muted px-4 py-3 text-sm text-foreground">{envNotice.message}</p>
                             )}
-                            {env.kind === 'done' && (
+                            {envNotice?.kind === 'hint' && (
+                                <p role="status" className="flex gap-2 text-[13px] leading-relaxed text-muted-foreground">
+                                    <Info size={15} className="mt-0.5 shrink-0" aria-hidden /> {envNotice.message}
+                                </p>
+                            )}
+                            {applied && (
                                 <div role="status" className="rounded-card border border-brand-100 bg-brand-50 px-4 py-3">
                                     <p className="text-eyebrow uppercase text-brand-ink">Vì sao chọn vậy</p>
-                                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">{env.explanation}</p>
+                                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">{applied.explanation}</p>
                                     <p className="mt-2 text-xs text-muted-foreground">Bạn vẫn chỉnh tiếp được bằng thanh trượt bên dưới.</p>
                                 </div>
                             )}
                         </Panel>
-                        <Panel title="Ánh sáng ba điểm">
+                        <Panel title="Chỉnh đèn">
                             <Slider label="Đèn chính" unit="%" min={0} max={100} step={1} value={setup.key} onChange={set('key')} />
                             <Slider label="Góc đèn chính" unit="°" min={-90} max={90} step={1} value={setup.keyAngleDeg} onChange={set('keyAngleDeg')} />
                             <Slider label="Đèn phụ (làm dịu bóng)" unit="%" min={0} max={100} step={1} value={setup.fill} onChange={set('fill')} />
                             <Slider label="Đèn viền (tách khỏi phông)" unit="%" min={0} max={100} step={1} value={setup.rim} onChange={set('rim')} />
                         </Panel>
 
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3 md:col-span-2 xl:col-span-1">
                             {showing ? (
                                 <button
                                     type="button"
@@ -257,6 +282,15 @@ export function OrbitStudioView() {
             </div>
         </div>
     )
+}
+
+/** Ý đồ gửi kèm khi chấm: mô tả đã dùng với AI (nếu có) và đèn có bị chỉnh tay sau đó không. */
+function buildIntent(setup: CameraSetup, applied: { prompt: string; explanation: string; setup: CameraSetup } | null): LightingIntent {
+    const base = { background: setup.look.background, fogDensity: setup.look.fogDensity }
+    if (!applied) return base
+    const a = applied.setup
+    const tweaked = a.key !== setup.key || a.fill !== setup.fill || a.rim !== setup.rim || a.keyAngleDeg !== setup.keyAngleDeg
+    return { ...base, prompt: applied.prompt, explanation: applied.explanation, tweaked }
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {

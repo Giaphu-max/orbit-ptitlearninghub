@@ -38,5 +38,14 @@
       "type": "director-score",
       "minScore": 80
     }
+  },
+  {
+    "id": "vuot-ai-cuoi-chuong",
+    "name": "Vượt ải cuối chương",
+    "description": "Đạt từ 80% trong một bài test cuối chương: nắm chắc kiến thức cả khóa.",
+    "criterion": {
+      "type": "test-score",
+      "minRatio": 0.8
+    }
   }
 ]

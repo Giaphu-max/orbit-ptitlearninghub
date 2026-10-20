@@ -2,91 +2,10 @@ import { useEffect, useMemo, useRef, type MutableRefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Color, FogExp2, MathUtils, MeshStandardMaterial, Vector3, type PointLight, type SpotLight } from 'three'
 import { STUDIO } from '@/components/home/campus-palette'
-import type { DirectorSetup } from '@/lib/api-types'
-import { DEFAULT_ENVIRONMENT, type EnvironmentSpec } from '@/lib/environment'
+import { wrap180, type CameraSetup } from '@/lib/studio-setup'
 
 // Cảnh studio của Virtual Director: phông, chủ thể, vài vật thể gây nhiễu và 3 đèn.
 // Máy ảnh điều khiển bằng thông số nhiếp ảnh (tiêu cự, góc xoay, độ cao, khoảng cách, dịch khung).
-
-/**
- * Phần "diện mạo" ánh sáng ngoài cường độ (thanh trượt): màu, độ cao, vị trí đèn phụ/đèn viền,
- * màu nền, sương. Prompt-to-Environment ghi vào đây; thanh trượt vẫn chỉnh được cường độ và góc đèn chính.
- */
-export interface LightLook {
-    keyColor: string
-    keyElevationDeg: number
-    fillColor: string
-    /** Góc đèn phụ tính ở phía đối diện đèn chính (dương = đối diện, âm = cùng phía) */
-    fillSideDeg: number
-    fillElevationDeg: number
-    rimColor: string
-    /** Lệch của đèn viền so với đường thẳng sau chủ thể, tính theo phía của đèn chính */
-    rimSideDeg: number
-    rimElevationDeg: number
-    background: string
-    /** 0–1 */
-    fogDensity: number
-}
-
-export interface CameraSetup extends DirectorSetup {
-    /** Dịch khung theo tỉ lệ khung hình: dương = chủ thể dịch sang phải / lên trên */
-    shiftX: number
-    shiftY: number
-    look: LightLook
-}
-
-const DEFAULT_LOOK: LightLook = {
-    keyColor: DEFAULT_ENVIRONMENT.key.color,
-    keyElevationDeg: DEFAULT_ENVIRONMENT.key.elevationDeg,
-    fillColor: DEFAULT_ENVIRONMENT.fill.color,
-    fillSideDeg: DEFAULT_ENVIRONMENT.fill.azimuthDeg,
-    fillElevationDeg: DEFAULT_ENVIRONMENT.fill.elevationDeg,
-    rimColor: DEFAULT_ENVIRONMENT.rim.color,
-    rimSideDeg: 30,
-    rimElevationDeg: DEFAULT_ENVIRONMENT.rim.elevationDeg,
-    background: DEFAULT_ENVIRONMENT.background,
-    fogDensity: DEFAULT_ENVIRONMENT.fogDensity,
-}
-
-const wrap180 = (deg: number) => ((((deg + 180) % 360) + 360) % 360) - 180
-
-/** Áp thông số AI vào setup: cường độ + góc đèn chính vào thanh trượt, phần còn lại vào look. Máy ảnh giữ nguyên. */
-export function setupFromEnvironment(base: CameraSetup, env: EnvironmentSpec): CameraSetup {
-    const side = Math.sign(env.key.azimuthDeg) || 1
-    return {
-        ...base,
-        key: Math.round(env.key.intensity),
-        fill: Math.round(env.fill.intensity),
-        rim: Math.round(env.rim.intensity),
-        keyAngleDeg: Math.round(env.key.azimuthDeg),
-        look: {
-            keyColor: env.key.color,
-            keyElevationDeg: env.key.elevationDeg,
-            fillColor: env.fill.color,
-            fillSideDeg: -side * env.fill.azimuthDeg,
-            fillElevationDeg: env.fill.elevationDeg,
-            rimColor: env.rim.color,
-            rimSideDeg: wrap180((env.rim.azimuthDeg - 180) * side),
-            rimElevationDeg: env.rim.elevationDeg,
-            background: env.background,
-            fogDensity: env.fogDensity,
-        },
-    }
-}
-
-export const DEFAULT_SETUP: CameraSetup = {
-    focalLengthMm: 50,
-    azimuthDeg: 0,
-    elevationDeg: 8,
-    distance: 6,
-    key: 70,
-    fill: 30,
-    rim: 0,
-    keyAngleDeg: -40,
-    shiftX: 0,
-    shiftY: 0,
-    look: DEFAULT_LOOK,
-}
 
 const TARGET = new Vector3(0, 1.1, 0)
 /** Phim full-frame 36×24 mm → góc nhìn dọc theo tiêu cự */
@@ -117,6 +36,49 @@ function Rig({ setup }: { setup: CameraSetup }) {
         cam.updateProjectionMatrix()
     }, [camera, aspect, setup.focalLengthMm, setup.azimuthDeg, setup.elevationDeg, setup.distance, setup.shiftX, setup.shiftY])
     return null
+}
+
+/** Vật liệu của cảnh, tạo riêng cho từng canvas; màu gốc được pha theo môi trường (cảnh đêm thì sàn và vật thể tối đi). */
+type MaterialKey = 'floor' | 'wall' | 'plinth' | 'skin' | 'suit' | 'scarf' | 'propBlue' | 'propYellow' | 'propGreen' | 'column'
+
+const BASE_COLORS: Record<MaterialKey, { color: string; roughness: number; floor?: boolean }> = {
+    floor: { color: STUDIO.floor, roughness: 0.9, floor: true },
+    wall: { color: STUDIO.backdrop, roughness: 1 },
+    plinth: { color: STUDIO.plinth, roughness: 0.6 },
+    skin: { color: STUDIO.skin, roughness: 0.55 },
+    suit: { color: STUDIO.suit, roughness: 0.7 },
+    scarf: { color: STUDIO.scarf, roughness: 0.8 },
+    propBlue: { color: STUDIO.propBlue, roughness: 0.5 },
+    propYellow: { color: STUDIO.propYellow, roughness: 0.4 },
+    propGreen: { color: STUDIO.propGreen, roughness: 0.6 },
+    column: { color: STUDIO.column, roughness: 0.8 },
+}
+
+type Materials = Record<MaterialKey, MeshStandardMaterial>
+
+function createMaterials(): Materials {
+    const out = {} as Materials
+    for (const key of Object.keys(BASE_COLORS) as MaterialKey[]) {
+        out[key] = new MeshStandardMaterial({ color: BASE_COLORS[key].color, roughness: BASE_COLORS[key].roughness })
+    }
+    return out
+}
+
+const luminance = (c: Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+const DEFAULT_LUMINANCE = luminance(new Color(STUDIO.backdrop))
+
+/** Pha màu vật thể theo màu nền: nền càng tối (cảnh đêm) thì sàn và vật thể càng tối, hơi ngả về màu nền. */
+function tintMaterials(mats: Materials, background: Color) {
+    const tone = MathUtils.clamp(luminance(background) / DEFAULT_LUMINANCE, 0, 1)
+    for (const key of Object.keys(BASE_COLORS) as MaterialKey[]) {
+        const base = BASE_COLORS[key]
+        if (key === 'wall') {
+            mats.wall.color.copy(background)
+            continue
+        }
+        const gain = base.floor ? 0.15 + 0.85 * tone : 0.5 + 0.5 * tone
+        mats[key].color.set(base.color).multiplyScalar(gain).lerp(background, base.floor ? 0.3 : 0.12)
+    }
 }
 
 const intensity = (v: number, max: number) => (v / 100) * max
@@ -178,7 +140,7 @@ function stepToward(cur: EnvState, target: EnvState, k: number) {
  * Ba đèn, màu phông và sương. Thông số mới được nội suy mượt (chuyển cảnh); tôn trọng prefers-reduced-motion.
  * snapRef cho phép chụp ảnh ngay đúng thông số đích mà không chờ chuyển xong.
  */
-function Environment({ setup, snapRef }: { setup: CameraSetup; snapRef: MutableRefObject<(() => void) | null> }) {
+function Environment({ setup, snapRef, mats }: { setup: CameraSetup; snapRef: MutableRefObject<(() => void) | null>; mats: Materials }) {
     const scene = useThree((s) => s.scene)
     const keyRef = useRef<SpotLight>(null)
     const fillRef = useRef<PointLight>(null)
@@ -207,7 +169,7 @@ function Environment({ setup, snapRef }: { setup: CameraSetup; snapRef: MutableR
             rimRef.current.intensity = c.rimI
             rimRef.current.color.copy(c.rimColor)
         }
-        wallMaterial.color.copy(c.background)
+        tintMaterials(mats, c.background)
         fog.color.copy(c.background)
         fog.density = c.fog * FOG_MAX
     }
@@ -236,7 +198,8 @@ function Environment({ setup, snapRef }: { setup: CameraSetup; snapRef: MutableR
         const c = cur.current!
         stepToward(c, targetRef.current, reduced ? 1 : 1 - Math.exp(-Math.min(delta, 0.1) * 4))
         apply()
-        ;(scene.background as Color).copy(c.background)
+        // Sau khi rời trang, cảnh đã được dọn (background = null) nhưng một khung hình cuối vẫn có thể chạy
+        ;(scene.background as Color | null)?.copy(c.background)
     })
 
     return (
@@ -249,68 +212,65 @@ function Environment({ setup, snapRef }: { setup: CameraSetup; snapRef: MutableR
     )
 }
 
-/** Vật liệu phông dùng chung cho 4 mặt tường, để đổi màu một chỗ khi AI chọn màu nền. */
-const wallMaterial = new MeshStandardMaterial({ color: STUDIO.backdrop, roughness: 1 })
-
-function Subject() {
+function Subject({ mats }: { mats: Materials }) {
     return (
         <group>
             <mesh position={[0, 0.06, 0]} receiveShadow castShadow>
                 <cylinderGeometry args={[0.7, 0.8, 0.12, 40]} />
-                <meshStandardMaterial color={STUDIO.plinth} roughness={0.6} />
+                <primitive object={mats.plinth} attach="material" />
             </mesh>
             {/* Nhân vật: thân, đầu, khăn đỏ */}
             <mesh position={[0, 0.85, 0]} castShadow receiveShadow>
                 <capsuleGeometry args={[0.28, 1.0, 8, 24]} />
-                <meshStandardMaterial color={STUDIO.suit} roughness={0.7} />
+                <primitive object={mats.suit} attach="material" />
             </mesh>
             <mesh position={[0, 1.78, 0]} castShadow receiveShadow>
                 <sphereGeometry args={[0.24, 32, 32]} />
-                <meshStandardMaterial color={STUDIO.skin} roughness={0.55} />
+                <primitive object={mats.skin} attach="material" />
             </mesh>
             <mesh position={[0, 1.5, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
                 <torusGeometry args={[0.27, 0.07, 16, 32]} />
-                <meshStandardMaterial color={STUDIO.scarf} roughness={0.8} />
+                <primitive object={mats.scarf} attach="material" />
             </mesh>
             {/* Vật thể xung quanh để sinh viên cân nhắc bố cục */}
             <mesh position={[-1.7, 0.4, -0.6]} castShadow receiveShadow>
                 <boxGeometry args={[0.8, 0.8, 0.8]} />
-                <meshStandardMaterial color={STUDIO.propBlue} roughness={0.5} />
+                <primitive object={mats.propBlue} attach="material" />
             </mesh>
             <mesh position={[1.5, 0.35, 0.2]} castShadow receiveShadow>
                 <sphereGeometry args={[0.35, 32, 32]} />
-                <meshStandardMaterial color={STUDIO.propYellow} roughness={0.4} />
+                <primitive object={mats.propYellow} attach="material" />
             </mesh>
             <mesh position={[2.3, 0.9, -1.4]} castShadow receiveShadow>
                 <cylinderGeometry args={[0.28, 0.28, 1.8, 32]} />
-                <meshStandardMaterial color={STUDIO.propGreen} roughness={0.6} />
+                <primitive object={mats.propGreen} attach="material" />
             </mesh>
             <mesh position={[-2.8, 1.2, -2.4]} castShadow receiveShadow>
                 <cylinderGeometry args={[0.35, 0.35, 2.4, 32]} />
-                <meshStandardMaterial color={STUDIO.column} roughness={0.8} />
+                <primitive object={mats.column} attach="material" />
             </mesh>
         </group>
     )
 }
 
-function Set() {
+function Set({ mats }: { mats: Materials }) {
     return (
         <group>
             <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                 <circleGeometry args={[14, 64]} />
-                <meshStandardMaterial color={STUDIO.floor} roughness={0.9} />
+                <primitive object={mats.floor} attach="material" />
             </mesh>
             {/* Phông cong sau lưng chủ thể */}
-            <mesh position={[0, 3.5, -4.5]} receiveShadow material={wallMaterial}>
+            <mesh position={[0, 3.5, -4.5]} receiveShadow material={mats.wall}>
                 <planeGeometry args={[18, 8]} />
             </mesh>
-            <mesh position={[0, 3.5, 4.5]} rotation={[0, Math.PI, 0]} material={wallMaterial}>
+            <mesh position={[0, 3.5, 4.5]} rotation={[0, Math.PI, 0]} material={mats.wall}>
                 <planeGeometry args={[18, 8]} />
             </mesh>
-            <mesh position={[-6, 3.5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow material={wallMaterial}>
+            <mesh position={[-6, 3.5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow material={mats.wall}>
                 <planeGeometry args={[18, 8]} />
             </mesh>
-            <mesh position={[6, 3.5, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow material={wallMaterial}>
+            <mesh position={[6, 3.5, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow material={mats.wall}>
                 <planeGeometry args={[18, 8]} />
             </mesh>
         </group>
@@ -347,12 +307,13 @@ interface Props {
 
 export default function StudioScene({ setup, onReady }: Props) {
     const snapRef = useRef<(() => void) | null>(null)
+    const mats = useMemo(() => createMaterials(), [])
     return (
         <Canvas shadows dpr={[1, 1.5]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ position: [0, 2, 6], fov: 27 }} aria-label="Studio 3D">
             <Rig setup={setup} />
-            <Environment setup={setup} snapRef={snapRef} />
-            <Set />
-            <Subject />
+            <Environment setup={setup} snapRef={snapRef} mats={mats} />
+            <Set mats={mats} />
+            <Subject mats={mats} />
             <CaptureBridge onReady={onReady} snapRef={snapRef} />
         </Canvas>
     )

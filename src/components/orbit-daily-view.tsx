@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { Check, ChevronLeft, Clock, X } from 'lucide-react'
 import { dailyArticles, getConcept, getLesson } from '@/data'
 import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP } from '@/lib/gamification'
+import { lessonShortTitle } from '@/lib/utils'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -54,16 +55,22 @@ export function OrbitDailyView() {
                             <p className="text-[17px] leading-relaxed text-foreground">{p.text}</p>
                             <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                 Nguồn:
-                                {p.sources.map((src) => (
-                                    <Link
-                                        key={`${src.lessonId}-${src.start}`}
-                                        to={`/lesson/${src.lessonId}?t=${src.start}`}
-                                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-semibold text-foreground transition hover:border-brand-300"
-                                    >
-                                        {getLesson(src.lessonId)?.title ?? src.lessonId}
-                                        <span className="font-mono text-brand-ink">{formatTime(src.start)}</span>
-                                    </Link>
-                                ))}
+                                {p.sources.map((src) => {
+                                    const lesson = getLesson(src.lessonId)
+                                    const full = lesson?.title ?? src.lessonId
+                                    return (
+                                        <Link
+                                            key={`${src.lessonId}-${src.start}`}
+                                            to={`/lesson/${src.lessonId}?t=${src.start}`}
+                                            title={`${full} · ${formatTime(src.start)}`}
+                                            aria-label={`${full}, mốc ${formatTime(src.start)}`}
+                                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-semibold text-foreground transition hover:border-brand-300"
+                                        >
+                                            <span className="truncate">{lesson ? lessonShortTitle(lesson) : src.lessonId}</span>
+                                            <span className="shrink-0 font-mono text-brand-ink">{formatTime(src.start)}</span>
+                                        </Link>
+                                    )
+                                })}
                             </p>
                         </div>
                     ))}

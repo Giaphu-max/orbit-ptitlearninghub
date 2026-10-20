@@ -30,6 +30,7 @@ export const ChoiceQuestionDraft = z.object({
 const buildLessonDraft = <T extends z.ZodType>(time: T) =>
     z.object({
     title: z.string().describe('Tên bài học tiếng Việt, ngắn gọn, nêu đúng chủ đề'),
+    shortTitle: z.string().optional().describe('Tên rút gọn 2–5 từ của bài, dùng ở chip nguồn và chỗ hẹp; chỉ viết hoa chữ đầu'),
     summary: z.string().describe('Tóm tắt 3–4 câu tiếng Việt về những gì bài giảng dạy'),
     transcript: z
         .array(z.object({ start: time, end: time, text: z.string() }))
@@ -87,7 +88,7 @@ export type LessonDraft = z.infer<typeof LessonDraft>
 export const DailyDraft = z.object({
     articles: z.array(
         z.object({
-            title: z.string().describe('Tiêu đề gợi tò mò, dạng câu hỏi hoặc nhận định, tiếng Việt'),
+            title: z.string().describe('Tiêu đề gợi tò mò, dạng câu hỏi hoặc nhận định, tiếng Việt; chỉ viết hoa chữ đầu và tên riêng; chỉ dùng "?" khi là câu hỏi thật'),
             conceptIds: z.array(z.string()).min(2).describe('id khái niệm bài đọc ôn lại, lấy từ danh sách đã cho; gồm khái niệm của ít nhất 2 bài giảng khác nhau'),
             paragraphs: z
                 .array(

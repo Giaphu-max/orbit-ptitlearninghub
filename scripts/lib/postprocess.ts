@@ -8,6 +8,7 @@ import type {
     TranscriptSegment,
 } from '../../src/data/types.js'
 import type { DailyDraft, LessonDraft } from './schemas.js'
+import { normalizeName, normalizeTitle } from './vi-text.js'
 
 // Hậu xử lý đầu ra Gemini thành dữ liệu sạch cho src/data/.
 // Gemini làm tốt phần nội dung nhưng hay lệch ở chi tiết máy móc: mốc giờ chồng nhau,
@@ -126,7 +127,7 @@ export function normalizeLesson(draft: LessonDraft, meta: LessonMeta): { lesson:
         const start = snapToSegmentStart(Math.min(c.segment.start, c.segment.end), transcript)
         let end = snapToSegmentEnd(Math.max(c.segment.start, c.segment.end), transcript)
         if (end <= start) end = snapToSegmentEnd(start + 1, transcript)
-        concepts.push({ id, name: c.name.trim(), definition: c.definition.trim(), segment: { start, end }, prerequisiteIds: c.prerequisiteIds })
+        concepts.push({ id, name: normalizeName(c.name), definition: c.definition.trim(), segment: { start, end }, prerequisiteIds: c.prerequisiteIds })
     }
     // Chỉ giữ khái niệm nền xuất hiện trước trong bài: đảm bảo cây kỹ năng không có vòng
     concepts.forEach((c, idx) => {
@@ -192,7 +193,8 @@ export function normalizeLesson(draft: LessonDraft, meta: LessonMeta): { lesson:
         lesson: {
             id: meta.id,
             courseId: meta.courseId,
-            title: draft.title.trim(),
+            title: normalizeTitle(draft.title),
+            ...(draft.shortTitle?.trim() ? { shortTitle: normalizeName(draft.shortTitle) } : {}),
             youtubeId: meta.youtubeId,
             durationSec,
             summary: draft.summary.trim(),
@@ -253,7 +255,8 @@ export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles
             return
         }
 
-        const id = `daily-${idx + 1}-${slugify(a.title).slice(0, 40)}`
+        // Id theo vị trí trong lượt tạo, không theo tiêu đề: tiêu đề sửa hay chuẩn hóa lại thì link và tiến độ đã lưu không mất
+        const id = `daily-${idx + 1}`
         const checks = a.checks.map((c, i): QuizChoiceQuestion => {
             const qid = `${id}-c${i + 1}`
             return {
@@ -267,7 +270,7 @@ export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles
         const words = paragraphs.reduce((n, p) => n + p.text.split(/\s+/).length, 0)
         articles.push({
             id,
-            title: a.title.trim(),
+            title: normalizeTitle(a.title),
             readingMinutes: Math.min(3, Math.max(1, Math.round(words / 180))),
             conceptIds,
             paragraphs,
@@ -275,5 +278,8 @@ export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles
             origin: 'gemini',
         })
     })
+    const covered = new Set(articles.flatMap((a) => a.conceptIds))
+    const missing = [...knownConcepts].filter((c) => !covered.has(c))
+    if (missing.length) report.warnings.push(`Khái niệm chưa có bài Daily nào: ${missing.join(', ')}`)
     return { articles, report }
 }

@@ -4,7 +4,7 @@ import { dailyArticles } from '@/data'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 import { masteryAfterTest, testXp, type TestAnswerInput } from '@/lib/final-test'
-import { advanceStreak, dailyFor, directorXp, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
+import { advanceStreak, bestTestRatio, dailyFor, directorXp, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
 // Lưu localStorage; mọi thao tác storage bọc try/catch để chế độ ẩn danh
@@ -45,7 +45,7 @@ export interface TestAttempt {
     durationSec: number
     timedOut: boolean
     /** Từng khái niệm được hỏi: đúng/sai và mức nắm vững trước/sau test */
-    concepts: { conceptId: string; correct: boolean; before: number | null; after: number }[]
+    concepts: { conceptId: string; correct: boolean; blank?: boolean; before: number | null; after: number }[]
 }
 
 /** Kỷ lục + lượt gần nhất của một khóa. */
@@ -240,7 +240,7 @@ export const useOrbitStore = create<OrbitState>()(
                         conceptMastery,
                         streak,
                         daily,
-                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults, streak, directorBest: s.directorBest }, s.earnedBadgeIds),
+                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults, streak, directorBest: s.directorBest, testBest: bestTestRatio(s.testRecords) }, s.earnedBadgeIds),
                         lessonProgress: { ...s.lessonProgress, [lessonId]: { ...progress, completed: progress.completed || done } },
                     }
                 })
@@ -254,7 +254,7 @@ export const useOrbitStore = create<OrbitState>()(
                 set((s) => ({
                     xp: s.xp + xp,
                     directorBest: score,
-                    earnedBadgeIds: evaluateBadges({ conceptMastery: s.conceptMastery, quizResults: s.quizResults, streak: s.streak, directorBest: score }, s.earnedBadgeIds),
+                    earnedBadgeIds: evaluateBadges({ conceptMastery: s.conceptMastery, quizResults: s.quizResults, streak: s.streak, directorBest: score, testBest: bestTestRatio(s.testRecords) }, s.earnedBadgeIds),
                 }))
                 return xp
             },
@@ -268,29 +268,28 @@ export const useOrbitStore = create<OrbitState>()(
                     const conceptMastery = { ...s.conceptMastery }
                     const concepts: TestAttempt['concepts'] = answers.map((a) => {
                         const before = s.conceptMastery[a.conceptId]
-                        const after = masteryAfterTest(before, a.correct)
-                        conceptMastery[a.conceptId] = after
-                        return { conceptId: a.conceptId, correct: a.correct, before: before ?? null, after }
+                        const after = masteryAfterTest(before, a)
+                        // Chưa có dữ liệu về khái niệm và bỏ trống: không có bằng chứng gì để ghi vào cây kỹ năng
+                        if (before !== undefined || !a.blank) conceptMastery[a.conceptId] = after
+                        return { conceptId: a.conceptId, correct: a.correct, blank: a.blank, before: before ?? null, after }
                     })
                     const { froze: _froze, ...streak } = advanceStreak(s.streak)
                     const today = dailyFor(s.daily)
                     const last: TestAttempt = { at: new Date().toISOString(), correct, total: answers.length, durationSec, timedOut, concepts }
                     const bestBetter = !prev || correct / answers.length > prev.bestCorrect / prev.bestTotal
+                    const bestCorrect = bestBetter ? correct : prev.bestCorrect
+                    const bestTotal = bestBetter ? answers.length : prev.bestTotal
+                    const testRecords = {
+                        ...s.testRecords,
+                        [courseId]: { bestCorrect, bestTotal, attempts: (prev?.attempts ?? 0) + 1, last },
+                    }
                     return {
                         xp: s.xp + xp,
                         conceptMastery,
                         streak,
-                        daily: { ...today, answered: today.answered + correct },
-                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults: s.quizResults, streak, directorBest: s.directorBest }, s.earnedBadgeIds),
-                        testRecords: {
-                            ...s.testRecords,
-                            [courseId]: {
-                                bestCorrect: bestBetter || !prev ? correct : prev.bestCorrect,
-                                bestTotal: bestBetter || !prev ? answers.length : prev.bestTotal,
-                                attempts: (prev?.attempts ?? 0) + 1,
-                                last,
-                            },
-                        },
+                        daily: { ...today, answered: today.answered + correct, testsTaken: today.testsTaken + 1 },
+                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults: s.quizResults, streak, directorBest: s.directorBest, testBest: bestTestRatio(testRecords) }, s.earnedBadgeIds),
+                        testRecords,
                     }
                 })
                 return xp

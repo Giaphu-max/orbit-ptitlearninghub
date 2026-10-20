@@ -1,5 +1,5 @@
 {
-  "note": "Dữ liệu mẫu cho bản demo: lớp 32 sinh viên. Bản triển khai thật tổng hợp từ kết quả quiz trên server.",
+  "note": "Dữ liệu mẫu cho bản demo: lớp 32 sinh viên. Bản triển khai thật tổng hợp từ kết quả quiz và test trên server.",
   "classSize": 32,
   "concepts": {
     "dung-tuyen-tinh": {
@@ -22,10 +22,50 @@
       "wrongFirstTry": 11,
       "corrected": 9
     },
+    "tu-duy-dung": {
+      "answered": 26,
+      "wrongFirstTry": 7,
+      "corrected": 6
+    },
+    "vai-tro-nguoi-xem": {
+      "answered": 25,
+      "wrongFirstTry": 6,
+      "corrected": 5
+    },
+    "muc-tieu-giao-tiep": {
+      "answered": 22,
+      "wrongFirstTry": 7,
+      "corrected": 5
+    },
     "tai-tri-tue": {
       "answered": 18,
       "wrongFirstTry": 10,
       "corrected": 6
+    },
+    "cong-cu-dan-dat-chu-y": {
+      "answered": 20,
+      "wrongFirstTry": 8,
+      "corrected": 5
+    },
+    "nhip-hinh": {
+      "answered": 21,
+      "wrongFirstTry": 4,
+      "corrected": 4
+    },
+    "nhip-am": {
+      "answered": 19,
+      "wrongFirstTry": 6,
+      "corrected": 4
+    },
+    "thoi-luong-canh": {
+      "answered": 18,
+      "wrongFirstTry": 6,
+      "corrected": 4
+    },
+    "nen-va-keo-dai-thoi-gian": {
+      "answered": 15,
+      "wrongFirstTry": 7,
+      "corrected": 4
     }
   },
   "questions": {
@@ -50,18 +90,18 @@
     "dung-audio-video-phi-tuyen": {
       "attempted": 30,
       "attempts": 41,
-      "avgCorrectPct": 68,
-      "passed": 9,
+      "avgCorrectPct": 73,
+      "passed": 12,
       "avgDurationSec": 452,
       "timedOut": 3,
       "scoreBuckets": [
         {
           "label": "0–39%",
-          "count": 2
+          "count": 1
         },
         {
           "label": "40–59%",
-          "count": 7
+          "count": 5
         },
         {
           "label": "60–79%",
@@ -69,61 +109,61 @@
         },
         {
           "label": "80–100%",
-          "count": 9
+          "count": 12
         }
       ],
       "concepts": {
         "dung-tuyen-tinh": {
-          "asked": 24,
-          "correct": 21
+          "asked": 32,
+          "correct": 28
         },
         "dung-phi-tuyen": {
-          "asked": 22,
-          "correct": 18
+          "asked": 33,
+          "correct": 27
         },
         "tinh-phi-huy-hoai": {
-          "asked": 25,
-          "correct": 11
+          "asked": 30,
+          "correct": 16
         },
         "quy-trinh-dung-bon-giai-doan": {
-          "asked": 23,
-          "correct": 10
+          "asked": 31,
+          "correct": 20
         },
         "tu-duy-dung": {
-          "asked": 21,
-          "correct": 16
+          "asked": 32,
+          "correct": 26
         },
         "vai-tro-nguoi-xem": {
-          "asked": 22,
-          "correct": 15
+          "asked": 31,
+          "correct": 25
         },
         "muc-tieu-giao-tiep": {
-          "asked": 24,
-          "correct": 17
+          "asked": 32,
+          "correct": 24
         },
         "tai-tri-tue": {
-          "asked": 23,
-          "correct": 9
+          "asked": 31,
+          "correct": 17
         },
         "cong-cu-dan-dat-chu-y": {
-          "asked": 22,
-          "correct": 14
+          "asked": 32,
+          "correct": 22
         },
         "nhip-hinh": {
-          "asked": 25,
-          "correct": 19
+          "asked": 31,
+          "correct": 27
         },
         "nhip-am": {
-          "asked": 23,
-          "correct": 15
+          "asked": 32,
+          "correct": 24
         },
         "thoi-luong-canh": {
-          "asked": 24,
-          "correct": 16
+          "asked": 31,
+          "correct": 23
         },
         "nen-va-keo-dai-thoi-gian": {
-          "asked": 22,
-          "correct": 12
+          "asked": 32,
+          "correct": 20
         }
       }
     }

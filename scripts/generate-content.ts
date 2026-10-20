@@ -139,6 +139,9 @@ Xem toàn bộ video bài giảng đính kèm và tạo học liệu theo schema
 
 Yêu cầu:
 - Mọi nội dung phải bám sát những gì giảng viên nói và trình chiếu trong video. Không thêm kiến thức ngoài video; chỗ nào không chắc thì bỏ qua.
+- Tên bài và tên khái niệm viết kiểu tiếng Việt: chỉ viết hoa chữ đầu và tên riêng, KHÔNG viết hoa từng chữ (đúng: "Nhịp điệu dựng phim"; sai: "Nhịp Điệu Dựng Phim"). Thuật ngữ nước ngoài trong ngoặc viết thường, trừ từ viết tắt (NLE).
+- shortTitle: tên rút gọn 2–5 từ của bài (ví dụ "Dựng phi tuyến", "Nhịp điệu dựng phim").
+- Câu hỏi quiz và câu biến thể phải tự đứng được, hiểu được khi tách khỏi video: không dùng "đoạn video vừa xem", "ở trên", "như vừa nói"; nêu rõ tình huống thay vì dẫn chiếu tới khoảnh khắc trong video.
 - Viết bằng tiếng Việt. Nếu video không nói tiếng Việt, transcript dịch sang tiếng Việt tự nhiên, giữ nguyên thuật ngữ chuyên ngành quen dùng (ví dụ: timeline, clip, transition).
 - Mọi mốc thời gian viết dạng MM:SS đúng như đồng hồ của trình phát video (ví dụ 03:47), tính từ đầu video, khớp thời điểm thực tế câu đó được nói/hiện ra. Không vượt quá độ dài video.
 - transcript: phủ từ đầu tới cuối video, mỗi đoạn 15–45 giây, cắt ở ranh giới câu; bỏ tiếng ậm ừ, lặp từ.
@@ -146,7 +149,7 @@ Yêu cầu:
 - quiz: 4–6 câu, mỗi khái niệm quan trọng một câu, pauseAt ngay sau khi giảng xong khái niệm đó; answerSegment là đoạn video giảng viên nói ra đáp án (thường trùng đoạn giảng khái niệm, 10–60 giây). Câu hỏi kiểm tra hiểu và vận dụng (tình huống dựng phim thực tế, chọn thao tác phù hợp…), không hỏi chi tiết vụn vặt. 4 phương án, phương án sai là những hiểu lầm sinh viên hay mắc. Mỗi câu kèm đúng 1 câu biến thể cùng khái niệm, cùng độ khó, khác tình huống.`
 
 /** Đổi khi sửa prompt Daily để cache cũ không bị dùng lại. */
-const DAILY_PROMPT_VERSION = 'cross-lesson-v2'
+const DAILY_PROMPT_VERSION = 'cross-lesson-v3'
 
 function dailyPrompt(lessons: Lesson[], count: number) {
     const context = lessons
@@ -161,7 +164,8 @@ function dailyPrompt(lessons: Lesson[], count: number) {
 Viết ${count} bài đọc. Yêu cầu:
 - BẮT BUỘC mỗi bài lấy kiến thức từ ít nhất 2 bài giảng KHÁC NHAU (lessonId khác nhau): lấy một ý ở bài này đặt cạnh, so sánh hoặc nối với một ý ở bài kia. Bài nào chỉ dùng một bài giảng là không đạt.
 - Giữa ${count} bài, các cặp bài giảng được nối nên khác nhau; cố gắng phủ cả ${lessons.length} bài giảng.
-- Mỗi bài gắn 2–4 khái niệm, trong đó có khái niệm của ít nhất 2 bài giảng khác nhau.
+- Mỗi bài gắn 3–5 khái niệm, trong đó có khái niệm của ít nhất 2 bài giảng khác nhau. Chia sao cho MỌI khái niệm trong danh sách đều được ít nhất một bài gắn và bàn tới thật sự trong nội dung (không gắn cho có).
+- Tiêu đề viết kiểu tiếng Việt: chỉ viết hoa chữ đầu và tên riêng, KHÔNG viết hoa từng chữ. Chỉ kết thúc bằng dấu "?" khi tiêu đề thật sự là câu hỏi; tiêu đề nhận định thì không có dấu "?".
 - Tổng 350–500 chữ (đọc 2–3 phút): 4–5 đoạn, mỗi đoạn 80–110 chữ, giọng gần gũi, có ví dụ tình huống thực tế trong chủ đề của video. Đoạn nào nối hai bài thì nói rõ ý nào đến từ bài nào.
 - Chỉ dùng kiến thức có trong transcript, không thêm ngoài. Mỗi đoạn có ít nhất một nguồn {lessonId, start}; đoạn nối nhiều bài thì ghi nguồn của từng bài. lessonId và start phải lấy ĐÚNG giá trị trong ngoặc vuông của đoạn transcript chứa ý đó (đừng tự đoán mốc).
 - conceptIds lấy đúng id trong danh sách khái niệm.
@@ -175,6 +179,9 @@ ${context}`
 class QuotaExhausted extends Error {}
 
 let usedModel = ''
+
+/** Script chạy một lần nên chờ lâu được, và không chạy dự phòng song song để khỏi tốn hạn mức. */
+const SCRIPT_FALLBACK = { perModelTimeoutMs: 240_000, totalTimeoutMs: 1_200_000, hedgeMs: 3_600_000 }
 
 async function generateJson<T>(schema: z.ZodType<T>, parts: object[], extraConfig: object = {}): Promise<T> {
     const gemini = getGemini()
@@ -191,7 +198,7 @@ async function generateJson<T>(schema: z.ZodType<T>, parts: object[], extraConfi
                 ...extraConfig,
             },
         })
-    }).catch((err) => {
+    }, SCRIPT_FALLBACK).catch((err) => {
         if (err instanceof ApiError && (err.status === 429 || err.status === 503)) {
             const models = [...new Set([gemini.model, ...gemini.fallbackModels])].join(', ')
             throw new QuotaExhausted(`Gemini trả ${err.status} ở tất cả model (${models}).`)

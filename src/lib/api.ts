@@ -7,9 +7,19 @@ import type { ExplainRequest, ExplainResponse } from './quiz'
 
 const TIMEOUT_MS = 45_000
 // Chấm ảnh gửi ảnh lên và chạy model suy luận hình ảnh nên cho chờ lâu hơn
-const GRADE_TIMEOUT_MS = 100_000
+const GRADE_TIMEOUT_MS = 35_000
 
-export class ApiRequestError extends Error {}
+export class ApiRequestError extends Error {
+    /** Mã trạng thái HTTP nếu lỗi đến từ phản hồi của máy chủ */
+    readonly status?: number
+    constructor(message: string, status?: number) {
+        super(message)
+        this.status = status
+    }
+}
+
+/** AI từ chối vì nội dung nhập không phải mô tả ánh sáng: là gợi ý nhẹ, không phải lỗi. */
+export const isNotLightingError = (err: unknown): err is ApiRequestError => err instanceof ApiRequestError && err.status === 422
 
 async function postJson<T>(path: string, body: unknown, opts: { timeoutMs?: number; timeoutMessage?: string; fallbackMessage?: string } = {}): Promise<T> {
     const controller = new AbortController()
@@ -41,7 +51,7 @@ async function postJson<T>(path: string, body: unknown, opts: { timeoutMs?: numb
     const message = data && typeof data === 'object' && 'error' in data
         ? (data as ApiErrorBody).error
         : (opts.fallbackMessage ?? 'Trợ giảng AI chưa trả lời được lúc này. Bạn thử lại nhé.')
-    throw new ApiRequestError(message)
+    throw new ApiRequestError(message, res.status)
 }
 
 export const askTutor = (req: ChatRequest) => postJson<ChatResponse>('/api/chat', req)
@@ -55,7 +65,7 @@ export const gradePhoto = (req: GradePhotoRequest) => postJson<GradePhotoRespons
 /** Prompt-to-Environment: mô tả ánh sáng → thông số đèn. JSON được kiểm tra lại ở trình duyệt trước khi trả về. */
 export async function generateEnvironment(req: EnvironmentRequest): Promise<EnvironmentSpec> {
     const raw = await postJson<unknown>('/api/environment', req, {
-        timeoutMs: 60_000,
+        timeoutMs: 30_000,
         timeoutMessage: 'AI nghĩ lâu quá, cảnh được giữ nguyên. Bạn thử lại nhé.',
         fallbackMessage: 'AI chưa tạo được ánh sáng lúc này, cảnh được giữ nguyên. Bạn thử lại nhé.',
     })

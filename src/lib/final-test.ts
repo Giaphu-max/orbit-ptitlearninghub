@@ -1,5 +1,6 @@
 import { dailyArticles, lessons } from '@/data'
 import type { DailyArticle, Lesson, QuizChoiceQuestion } from '@/data/types'
+import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { OUTCOME_MASTERY } from '@/lib/quiz'
 
 // Test tổng hợp cuối chương: lấy câu từ ngân hàng câu hỏi của khóa (câu quiz trong video,
@@ -22,6 +23,23 @@ export interface TestQuestion extends BankQuestion {
     correctIndex: number
 }
 
+/** Câu hỏi dựa vào khoảnh khắc đang xem ("đoạn video vừa rồi", "ở trên"…) thì mất nghĩa khi đứng riêng trong test. */
+const DEICTIC = /vừa (xem|nghe|thấy|rồi)|bạn (vừa|đã) (xem|nghe|thấy)|đoạn (video|clip|phim) (này|vừa|trên|đó)|(video|clip) (này|vừa|trên)|ở trên|phía trên|như (đã|vừa) (nói|nêu|thấy)/i
+
+/**
+ * Chuẩn bị câu hỏi để đứng riêng trong test: loại câu có ngữ cảnh khoảnh khắc xem video,
+ * và bỏ các cụm "theo bài giảng/bài học" vì test gom cả khóa, không có bài cụ thể làm mốc.
+ * Trả về null nếu không cứu được.
+ */
+export function standaloneQuestion<T extends QuizChoiceQuestion>(q: T): T | null {
+    if (DEICTIC.test(q.prompt) || q.options.some((o) => DEICTIC.test(o))) return null
+    let prompt = q.prompt
+        .replace(/^(theo|trong) (nội dung )?bài (giảng|học),?\s*/i, '')
+        .replace(/,?\s+(theo|trong) (nội dung )?bài (giảng|học)(?=[\s,?.])/gi, '')
+    prompt = prompt.charAt(0).toUpperCase() + prompt.slice(1)
+    return prompt === q.prompt ? q : { ...q, prompt }
+}
+
 /** Ngân hàng câu hỏi của một khóa: mọi câu gốc, câu biến thể và câu kiểm tra Daily có khái niệm thuộc khóa. */
 export function buildQuestionBank(lessons: Lesson[], daily: DailyArticle[] = dailyArticles): BankQuestion[] {
     const conceptLesson = new Map(lessons.flatMap((l) => l.concepts.map((c) => [c.id, l.id] as const)))
@@ -29,14 +47,17 @@ export function buildQuestionBank(lessons: Lesson[], daily: DailyArticle[] = dai
     for (const l of lessons) {
         for (const q of l.quiz) {
             const { variants, pauseAt: _p, answerSegment: _a, ...root } = q
-            bank.push({ ...root, lessonId: l.id })
-            for (const v of variants) bank.push({ ...v, lessonId: l.id })
+            for (const item of [root, ...variants]) {
+                const ok = standaloneQuestion(item)
+                if (ok) bank.push({ ...ok, lessonId: l.id })
+            }
         }
     }
     for (const a of daily) {
         for (const c of a.checks) {
             const lessonId = conceptLesson.get(c.conceptId)
-            if (lessonId) bank.push({ ...c, lessonId })
+            const ok = standaloneQuestion(c)
+            if (lessonId && ok) bank.push({ ...ok, lessonId })
         }
     }
     return bank
@@ -82,12 +103,24 @@ export function testXp(correct: number, total: number, best: { correct: number; 
 export interface TestAnswerInput {
     conceptId: string
     correct: boolean
+    /** Câu bỏ trống hoặc hết giờ chưa kịp trả lời: trừ nhẹ hơn câu trả lời sai */
+    blank?: boolean
 }
 
-/** Mức nắm vững mới của khái niệm sau test: trung bình giữa mức cũ (nếu có) và điểm trong test. */
-export function masteryAfterTest(before: number | undefined, correct: boolean) {
-    const test = correct ? 1 : OUTCOME_MASTERY.missed
-    return before === undefined ? test : (before + test) / 2
+/** Trọng số của mức cũ khi gộp với kết quả test; mỗi khái niệm chỉ có 1 câu nên test chỉ được xê dịch mức nắm vững. */
+export const TEST_MASTERY_KEEP = 0.7
+
+/**
+ * Mức nắm vững mới sau test = 70% mức cũ + 30% kết quả (đúng = 1, sai = mức "chưa đúng" của quiz).
+ * Câu bỏ trống không phải bằng chứng hiểu sai nên chỉ trừ một nửa mức trừ của câu sai.
+ * Khái niệm đã đạt ngưỡng mở khóa thì không tụt dưới ngưỡng vì một câu test, để không khóa lại khái niệm nâng cao.
+ */
+export function masteryAfterTest(before: number | undefined, answer: { correct: boolean; blank?: boolean }) {
+    const target = answer.correct ? 1 : OUTCOME_MASTERY.missed
+    if (before === undefined) return answer.blank ? 0 : target
+    let after = TEST_MASTERY_KEEP * before + (1 - TEST_MASTERY_KEEP) * target
+    if (answer.blank) after = (after + before) / 2
+    return before >= UNLOCK_THRESHOLD ? Math.max(after, UNLOCK_THRESHOLD) : after
 }
 
 export interface ReviewStep {

@@ -60,10 +60,26 @@ export interface DirectorSetup {
     keyAngleDeg: number
 }
 
+/** Ý đồ ánh sáng sinh viên đã chọn, để AI chấm theo ý đồ thay vì một đề cố định. */
+export interface LightingIntent {
+    /** Mô tả sinh viên nhập cho Prompt-to-Environment; không có nếu chỉ dùng thanh trượt */
+    prompt?: string
+    /** Lời giải thích AI đã đưa ra khi tạo ánh sáng */
+    explanation?: string
+    /** Màu phông (#RRGGBB) và độ sương 0–1 của cảnh lúc chụp */
+    background: string
+    fogDensity: number
+    /** Sinh viên đã chỉnh tay thanh trượt sau khi AI tạo ánh sáng */
+    tweaked?: boolean
+}
+
+export const INTENT_LIMITS = { textMaxChars: 500 } as const
+
 export interface GradePhotoRequest {
     /** JPEG base64, không kèm tiền tố data: */
     imageBase64: string
     setup: DirectorSetup
+    intent?: LightingIntent
 }
 
 /** Vùng cần chỉnh, toạ độ 0–1 so với khung ảnh (gốc ở góc trên trái). */

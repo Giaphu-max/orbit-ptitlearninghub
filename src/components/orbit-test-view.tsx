@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronLeft, Clock, PlayCircle, RotateCcw, Target, TriangleAlert, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, ChevronLeft, Clock, PlayCircle, RotateCcw, Target, TriangleAlert, X } from 'lucide-react'
 import { getConcept, getCourse } from '@/data'
 import { announceRewards } from '@/lib/gamification'
 import {
@@ -47,7 +47,7 @@ export function OrbitTestView() {
     const submit = (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => {
         const limit = testTimeLimit(questions.length)
         const durationSec = Math.min(limit, Math.round(limit - (deadline - Date.now()) / 1000))
-        const answers = questions.map((q) => ({ conceptId: q.conceptId, correct: picks[q.id] === q.correctIndex }))
+        const answers = questions.map((q) => ({ conceptId: q.conceptId, correct: picks[q.id] === q.correctIndex, blank: picks[q.id] === undefined }))
         const before = useOrbitStore.getState()
         const prev = before.testRecords[courseId]
         const xp = recordTestResult({ courseId, answers, durationSec, timedOut })
@@ -106,7 +106,7 @@ function Intro({ courseTitle, bankSize, conceptCount, last, onStart, onShowLast 
             <dl className="mt-8 grid gap-4 sm:grid-cols-3">
                 <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`Chọn ngẫu nhiên từ ngân hàng ${bankSize} câu, ${conceptCount} khái niệm`} />
                 <Fact icon={<Clock size={18} />} label="Thời gian" value={clock(testTimeLimit(count))} note="Hết giờ bài tự nộp" />
-                <Fact icon={<BookOpen size={18} />} label="Phần thưởng" value={`+${TEST_XP_PER_CORRECT} XP / câu đúng`} note={`Thêm ${TEST_PASS_BONUS_XP} XP khi đạt ${Math.round(TEST_PASS_RATIO * 100)}%`} />
+                <Fact icon={<BookOpen size={18} />} label="Phần thưởng" value={`+${TEST_XP_PER_CORRECT} XP/câu`} note={`Mỗi câu đúng vượt kỷ lục. Thêm ${TEST_PASS_BONUS_XP} XP khi đạt ${Math.round(TEST_PASS_RATIO * 100)}%`} />
             </dl>
 
             <ul className="mt-6 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
@@ -137,12 +137,12 @@ function Intro({ courseTitle, bankSize, conceptCount, last, onStart, onShowLast 
 
 function Fact({ icon, label, value, note }: { icon: React.ReactNode; label: string; value: string; note: string }) {
     return (
-        <div className="rounded-card border border-border bg-card p-5 shadow-card">
+        <div className="flex flex-col rounded-card border border-border bg-card p-5 shadow-card">
             <dt className="flex items-center gap-2 text-eyebrow uppercase text-muted-foreground">
                 {icon}
                 {label}
             </dt>
-            <dd className="mt-3 font-mono text-xl font-bold text-foreground">{value}</dd>
+            <dd className="mt-3 whitespace-nowrap font-mono text-xl font-bold text-foreground">{value}</dd>
             <dd className="mt-1 text-xs leading-relaxed text-muted-foreground">{note}</dd>
         </div>
     )
@@ -167,6 +167,16 @@ function Running({
     useEffect(() => {
         picksRef.current = picks
     }, [picks])
+
+    // Đóng tab hoặc tải lại giữa chừng sẽ mất bài và không tính kết quả: hỏi lại trước khi rời trang
+    useEffect(() => {
+        const warn = (e: BeforeUnloadEvent) => {
+            e.preventDefault()
+            e.returnValue = ''
+        }
+        window.addEventListener('beforeunload', warn)
+        return () => window.removeEventListener('beforeunload', warn)
+    }, [])
 
     // Đếm ngược theo mốc giờ tuyệt đối, nên tab bị treo hay chạy nền vẫn không lệch giờ
     useEffect(() => {
@@ -266,7 +276,13 @@ function Running({
                 >
                     Nộp bài{unanswered > 0 ? ` (còn ${unanswered} câu chưa trả lời)` : ''}
                 </button>
-                <button type="button" onClick={onQuit} className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline">
+                <button
+                    type="button"
+                    onClick={() => {
+                        if (answered === 0 || window.confirm('Thoát giữa chừng sẽ mất bài đang làm và không tính kết quả. Bạn chắc chứ?')) onQuit()
+                    }}
+                    className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
+                >
                     Thoát, không tính kết quả
                 </button>
             </div>
@@ -281,6 +297,7 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
     const pctScore = Math.round((attempt.correct / attempt.total) * 100)
     const passed = attempt.correct / attempt.total >= TEST_PASS_RATIO
     const gaps = attempt.concepts.filter((c) => !c.correct)
+    const passedConcepts = attempt.concepts.filter((c) => c.correct)
     const wrong = questions?.filter((q) => picks?.[q.id] !== q.correctIndex) ?? []
 
     return (
@@ -311,22 +328,22 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                 <h2 id="mastery-title" className="text-title text-foreground">Mức nắm vững từng khái niệm</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Thanh là mức sau test, đã gộp với kết quả học trước đó. Cây kỹ năng được cập nhật theo đây.</p>
                 <ul className="mt-5 flex flex-col gap-3">
-                    {attempt.concepts.map((c) => {
+                    {gaps.map((c) => {
                         const after = Math.round(c.after * 100)
                         return (
-                            <li key={c.conceptId} className="rounded-card border border-border bg-card p-5 shadow-card">
+                            <li key={c.conceptId} className="rounded-card border border-brand-200 bg-card p-5 shadow-card">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <span className="font-bold text-foreground">{getConcept(c.conceptId)?.name ?? c.conceptId}</span>
                                     <span className="flex items-center gap-3">
-                                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${c.correct ? 'bg-success/15 text-success' : 'bg-brand-soft text-brand-ink'}`}>
-                                            {c.correct ? <Check size={12} /> : <TriangleAlert size={12} />}
-                                            {c.correct ? 'Trả lời đúng' : 'Còn hổng'}
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-ink">
+                                            <TriangleAlert size={12} />
+                                            {c.blank ? 'Chưa trả lời' : 'Còn hổng'}
                                         </span>
                                         <span className="font-mono text-xl font-bold text-foreground">{after}%</span>
                                     </span>
                                 </div>
                                 <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`Nắm vững ${after}%`}>
-                                    <div className={`h-full rounded-full ${c.correct ? 'bg-success' : 'bg-brand-600'}`} style={{ width: `${after}%` }} />
+                                    <div className="h-full rounded-full bg-brand-600" style={{ width: `${after}%` }} />
                                 </div>
                                 {c.before !== null && (
                                     <p className="mt-2 text-xs text-muted-foreground">
@@ -337,6 +354,28 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                         )
                     })}
                 </ul>
+                {passedConcepts.length > 0 && (
+                    <details className="group mt-4 rounded-card border border-border bg-card shadow-card" open={gaps.length === 0}>
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-foreground">
+                            <span className="inline-flex items-center gap-2">
+                                <Check size={16} className="text-success" />
+                                Đã nắm chắc {passedConcepts.length} khái niệm
+                            </span>
+                            <ChevronDown size={16} className="text-muted-foreground transition group-open:rotate-180" aria-hidden />
+                        </summary>
+                        <ul className="divide-y divide-border border-t border-border">
+                            {passedConcepts.map((c) => (
+                                <li key={c.conceptId} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+                                    <span className="min-w-0 flex-1 truncate text-foreground">{getConcept(c.conceptId)?.name ?? c.conceptId}</span>
+                                    <span className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-muted" aria-hidden>
+                                        <span className="block h-full rounded-full bg-success" style={{ width: `${Math.round(c.after * 100)}%` }} />
+                                    </span>
+                                    <span className="w-10 shrink-0 text-right font-mono font-bold text-foreground">{Math.round(c.after * 100)}%</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </details>
+                )}
             </section>
 
             <section className="mt-10" aria-labelledby="plan-title">

@@ -124,11 +124,13 @@ export interface DailyState {
     completedLessons: number
     /** Số bài Orbit Daily đã đọc xong trong ngày */
     readArticles: number
+    /** Số lượt test cuối chương đã nộp trong ngày */
+    testsTaken: number
     /** id nhiệm vụ đã nhận thưởng */
     claimed: string[]
 }
 
-export const emptyDaily = (date = localDate()): DailyState => ({ date, answered: 0, corrected: 0, completedLessons: 0, readArticles: 0, claimed: [] })
+export const emptyDaily = (date = localDate()): DailyState => ({ date, answered: 0, corrected: 0, completedLessons: 0, readArticles: 0, testsTaken: 0, claimed: [] })
 
 /** Trạng thái hôm nay; sang ngày mới thì bắt đầu lại từ 0. */
 export const dailyFor = (d: DailyState | undefined, today = localDate()): DailyState =>
@@ -147,6 +149,7 @@ export const MISSIONS: Mission[] = [
     { id: 'daily', title: 'Đọc một bài Orbit Daily', hint: 'Đọc xong và trả lời đúng câu kiểm tra nhanh', target: 1, rewardXp: 15, progress: (d) => d.readArticles },
     { id: 'fix', title: 'Sửa đúng một câu sau khi sai', hint: 'Xem lại đoạn video rồi làm câu biến thể', target: 1, rewardXp: 30, progress: (d) => d.corrected },
     { id: 'finish', title: 'Hoàn thành một bài giảng', hint: 'Làm hết các câu hỏi trong bài', target: 1, rewardXp: 20, progress: (d) => d.completedLessons },
+    { id: 'test', title: 'Làm một bài test cuối chương', hint: 'Nộp bài test để biết khái niệm nào còn hổng', target: 1, rewardXp: 25, progress: (d) => d.testsTaken },
 ]
 
 // ─── Cây kỹ năng ───────────────────────────────────────────────────────────
@@ -191,7 +194,13 @@ export interface BadgeContext {
     streak: StreakState
     /** Điểm tổng cao nhất ở Virtual Director */
     directorBest: number
+    /** Tỉ lệ đúng cao nhất trong các lượt test cuối chương, 0–1 */
+    testBest: number
 }
+
+/** Tỉ lệ đúng tốt nhất trong mọi khóa (0 nếu chưa làm test). */
+export const bestTestRatio = (records: Record<string, { bestCorrect: number; bestTotal: number }>) =>
+    Math.max(0, ...Object.values(records).map((r) => (r.bestTotal > 0 ? r.bestCorrect / r.bestTotal : 0)))
 
 export function badgeProgress(badge: Badge, ctx: BadgeContext): { current: number; target: number } {
     const c = badge.criterion
@@ -206,6 +215,8 @@ export function badgeProgress(badge: Badge, ctx: BadgeContext): { current: numbe
             return { current: Math.min(c.days, ctx.streak.count), target: c.days }
         case 'director-score':
             return { current: ctx.directorBest >= c.minScore ? 1 : 0, target: 1 }
+        case 'test-score':
+            return { current: ctx.testBest >= c.minRatio ? 1 : 0, target: 1 }
     }
 }
 

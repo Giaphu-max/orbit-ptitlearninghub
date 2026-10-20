@@ -30,23 +30,112 @@ export function getGemini(): GeminiSetup {
     }
 }
 
+/** Model đã trả 429 trong instance này, và thời điểm được thử lại (hạn mức free tính theo ngày nên nghỉ lâu). */
+const exhaustedUntil = new Map<string, number>()
+const EXHAUSTED_COOLDOWN_MS = 15 * 60_000
+/** Model trả lời quá chậm (bị model khác vượt qua hoặc quá hạn): nghỉ ngắn hơn vì thường chỉ là quá tải tạm thời. */
+const slowUntil = new Map<string, number>()
+const SLOW_COOLDOWN_MS = 3 * 60_000
+
+export interface FallbackOptions {
+    /** Thời gian chờ tối đa cho mỗi model (mặc định GEMINI_MODEL_TIMEOUT_MS hoặc 10 giây) */
+    perModelTimeoutMs?: number
+    /** Tổng thời gian chờ tối đa qua cả chuỗi (mặc định GEMINI_TOTAL_TIMEOUT_MS hoặc 20 giây) */
+    totalTimeoutMs?: number
+    /** Sau chừng này mà model đang chạy chưa trả lời thì chạy thêm model dự phòng song song (mặc định GEMINI_HEDGE_MS hoặc 3,5 giây) */
+    hedgeMs?: number
+}
+
+class ModelTimeout extends Error {}
+
+const envMs = (name: string, fallback: number) => {
+    const n = Number(process.env[name])
+    return Number.isFinite(n) && n > 0 ? n : fallback
+}
+
+const isQuota = (err: unknown) => err instanceof ApiError && err.status === 429
+const isRetryable = (err: unknown) => err instanceof ModelTimeout || (err instanceof ApiError && (err.status === 503 || err.status === 429))
+
+/** Các model sẽ thử, theo thứ tự ưu tiên: bỏ model đang nghỉ (hết hạn mức / quá chậm); nếu hết thì lấy model sắp hết nghỉ nhất. */
+function usableModels(all: string[]): string[] {
+    const now = Date.now()
+    const until = (m: string) => Math.max(exhaustedUntil.get(m) ?? 0, slowUntil.get(m) ?? 0)
+    const ready = all.filter((m) => until(m) <= now)
+    return ready.length ? ready : [all.reduce((a, b) => (until(a) <= until(b) ? a : b))]
+}
+
 /**
- * Gọi model chính; nếu Gemini báo quá tải tạm thời (503, hay gặp giờ cao điểm) hoặc
- * hết hạn mức (429; gói miễn phí tính hạn mức riêng cho từng model, ví dụ 20 lượt/ngày)
- * thì thử lần lượt các model dự phòng để buổi demo không bị gián đoạn.
+ * Gọi model chính và tự chuyển sang model dự phòng để buổi demo không bị gián đoạn:
+ * - 429 (hết hạn mức) hoặc 503: chuyển ngay sang model kế; model 429 được nhớ trong instance và bị bỏ qua 15 phút.
+ * - Model chưa trả lời sau vài giây: chạy thêm model kế song song (lấy kết quả nào về trước), model chậm bị bỏ qua 3 phút.
+ * - Mỗi model có timeout riêng và cả chuỗi có hạn chót, quá hạn thì báo lỗi thân thiện thay vì treo.
+ * Thứ tự model đọc từ GEMINI_MODEL + GEMINI_FALLBACK_MODELS (đổi sang key trả phí chỉ cần sửa biến môi trường).
  */
-export async function withFallback<T>(setup: GeminiSetup, call: (model: string) => Promise<T>): Promise<T> {
-    const models = [...new Set([setup.model, ...setup.fallbackModels])]
-    for (let i = 0; ; i++) {
-        try {
-            return await call(models[i])
-        } catch (err) {
-            const retryable = err instanceof ApiError && (err.status === 503 || err.status === 429)
-            if (!retryable || i === models.length - 1) throw err
-            const reason = err.status === 429 ? 'hết hạn mức' : 'quá tải'
-            console.warn(`[api] ${models[i]} ${reason}, chuyển sang ${models[i + 1]}`)
+export function withFallback<T>(setup: GeminiSetup, call: (model: string) => Promise<T>, opts: FallbackOptions = {}): Promise<T> {
+    const perModel = opts.perModelTimeoutMs ?? envMs('GEMINI_MODEL_TIMEOUT_MS', 10_000)
+    const total = opts.totalTimeoutMs ?? envMs('GEMINI_TOTAL_TIMEOUT_MS', 20_000)
+    const hedge = opts.hedgeMs ?? envMs('GEMINI_HEDGE_MS', 3_500)
+    const models = usableModels([...new Set([setup.model, ...setup.fallbackModels])])
+
+    return new Promise<T>((resolve, reject) => {
+        const startedAt = Date.now()
+        const pending = new Set<string>()
+        let next = 0
+        let settled = false
+        let lastErr: unknown
+        let hedgeTimer: ReturnType<typeof setTimeout> | undefined
+        let deadlineTimer: ReturnType<typeof setTimeout> | undefined
+
+        const finish = (fn: () => void) => {
+            if (settled) return
+            settled = true
+            clearTimeout(hedgeTimer)
+            clearTimeout(deadlineTimer)
+            fn()
         }
-    }
+
+        const launch = () => {
+            if (settled || next >= models.length) return
+            const model = models[next++]
+            pending.add(model)
+            clearTimeout(hedgeTimer)
+            if (next < models.length) hedgeTimer = setTimeout(launch, hedge)
+
+            const remaining = total - (Date.now() - startedAt)
+            let timer: ReturnType<typeof setTimeout>
+            const timeout = new Promise<never>((_, rej) => {
+                timer = setTimeout(() => rej(new ModelTimeout()), Math.min(perModel, remaining))
+            })
+            Promise.race([call(model), timeout]).then(
+                (value) => {
+                    clearTimeout(timer)
+                    pending.delete(model)
+                    // Model chạy trước mà vẫn chưa trả lời khi model khác đã xong: coi là chậm
+                    for (const slow of pending) slowUntil.set(slow, Date.now() + SLOW_COOLDOWN_MS)
+                    finish(() => resolve(value))
+                },
+                (err) => {
+                    clearTimeout(timer)
+                    pending.delete(model)
+                    lastErr = err
+                    if (!isRetryable(err)) return finish(() => reject(err))
+                    if (isQuota(err)) exhaustedUntil.set(model, Date.now() + EXHAUSTED_COOLDOWN_MS)
+                    else if (err instanceof ModelTimeout) slowUntil.set(model, Date.now() + SLOW_COOLDOWN_MS)
+                    const reason = isQuota(err) ? 'hết hạn mức' : err instanceof ModelTimeout ? 'trả lời quá chậm' : 'quá tải'
+                    console.warn(`[api] ${model} ${reason}${models[next] ? `, thử ${models[next]}` : ''}`)
+                    if (next < models.length) launch()
+                    else if (pending.size === 0) {
+                        finish(() => reject(lastErr instanceof ApiError ? lastErr : new HttpError(504, 'AI đang phản hồi chậm hoặc quá tải. Bạn thử lại sau ít phút nhé.')))
+                    }
+                },
+            )
+        }
+
+        deadlineTimer = setTimeout(() => {
+            finish(() => reject(lastErr instanceof ApiError && lastErr.status === 429 ? lastErr : new HttpError(504, 'AI đang phản hồi chậm hoặc quá tải. Bạn thử lại sau ít phút nhé.')))
+        }, total)
+        launch()
+    })
 }
 
 /** Lỗi đã có thông báo tiếng Việt, an toàn để trả thẳng cho trình duyệt. */
