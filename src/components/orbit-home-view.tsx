@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Camera, Check, ChevronDown, Play, Sparkles } from 'lucide-react'
 import { getConcept, getCourse, lessons } from '@/data'
 import { dailyFor, DAILY_ARTICLE_XP, MISSIONS } from '@/lib/gamification'
 import { CourseArt } from '@/components/courses/course-cover'
-import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
+import { BUILDING_COURSE_IDS, courseStops } from '@/lib/campus-courses'
+import type { CourseStops } from '@/components/home/campus-scene'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { DAILY_LIMIT, gapScore, todaysDaily } from '@/lib/next-step'
 import { useScrollStage, useStageMode } from '@/hooks/useScrollStage'
@@ -21,12 +22,13 @@ export function OrbitHomeView() {
     const { staticMode, reduce } = useStageMode()
     const barRef = useRef<HTMLDivElement>(null)
     const { stage, scrolled } = useScrollStage({ staticMode, barRef })
-    const { liftNames, coursePct } = useBuildingCourses()
+    const { stopNames, summaryOf, coursePct } = useBuildingCourses()
+    const stops = useCourseStops(stopNames)
     const dailyLit = useDailyLit()
 
     return (
         <div className="relative w-full bg-stage text-ink-foreground">
-            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} liftNames={liftNames} dailyLit={dailyLit} coursePct={coursePct} />
+            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} stops={stops} dailyLit={dailyLit} coursePct={coursePct} />
             <div aria-hidden className="stage-glow pointer-events-none fixed inset-0 z-[1]" />
             <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
             <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
@@ -39,8 +41,8 @@ export function OrbitHomeView() {
                 <Chapter id="daily" index={1} staticMode={staticMode}>
                     <DailyChapter />
                 </Chapter>
-                <Chapter id="courses" index={2} staticMode={staticMode}>
-                    <CoursesChapter />
+                <Chapter id="courses" index={2} staticMode={staticMode} tall>
+                    <CoursesChapter stopNames={stopNames} summaryOf={summaryOf} staticMode={staticMode} />
                 </Chapter>
                 <Chapter id="studio" index={3} staticMode={staticMode}>
                     <StudioChapter />
@@ -60,7 +62,7 @@ export function OrbitHomeView() {
     )
 }
 
-/** Tòa nhấc lên ở chương Khóa học (tòa có khóa đang học; chưa học khóa nào thì mọi tòa có khóa) và % tiến độ trên nhãn. */
+/** Các tòa có khóa theo thứ tự điểm dừng của máy quay, và % tiến độ khóa của từng tòa (hiện trên nhãn). */
 function useBuildingCourses() {
     const summaries = useCourseSummaries()
     return useMemo(() => {
@@ -68,12 +70,44 @@ function useBuildingCourses() {
             const sum = id ? summaries.find((x) => x.course.id === id) : undefined
             return sum ? [{ name, sum }] : []
         })
-        const doing = withCourse.filter((x) => x.sum.status === 'doing')
+        const stopNames = courseStops(withCourse.map((x) => x.name))
         return {
-            liftNames: new Set((doing.length ? doing : withCourse).map((x) => x.name)) as ReadonlySet<string>,
+            stopNames,
+            summaryOf: (name: string) => withCourse.find((x) => x.name === name)?.sum,
             coursePct: Object.fromEntries(withCourse.map((x) => [x.name, x.sum.pct])) as Readonly<Record<string, number>>,
         }
     }, [summaries])
+}
+
+/**
+ * Điểm dừng của máy quay: tên tòa theo thứ tự thẻ + S tại tâm từng thẻ. S tuyến tính theo cuộn trong chương
+ * (chương i: S = i − 0.5 → i + 0.5 từ lúc đỉnh chương chạm giữa màn hình tới lúc đáy chạm), nên đo thẳng từ DOM.
+ */
+function useCourseStops(names: string[]) {
+    const ref = useRef<CourseStops>({ names, times: [] })
+    useLayoutEffect(() => {
+        ref.current.names = names
+        const measure = () => {
+            const sec = document.getElementById('courses')
+            if (!sec) return
+            const top = sec.getBoundingClientRect().top + window.scrollY
+            ref.current.times = [...document.querySelectorAll<HTMLElement>('[data-stop]')].map((el) => {
+                const r = el.getBoundingClientRect()
+                const p = (r.top + window.scrollY + r.height / 2 - top) / sec.offsetHeight
+                return COURSE_CHAPTER - 0.5 + Math.min(1, Math.max(0, p))
+            })
+        }
+        measure()
+        const ro = new ResizeObserver(measure)
+        const sec = document.getElementById('courses')
+        if (sec) ro.observe(sec)
+        window.addEventListener('resize', measure)
+        return () => {
+            ro.disconnect()
+            window.removeEventListener('resize', measure)
+        }
+    }, [names])
+    return ref
 }
 
 /** Bài Daily hôm nay (đúng thứ tự danh sách) đã đọc chưa → ref cho cảnh 3D, mỗi bài một tầng cửa sổ A2. Ghi ref, không render lại cảnh. */
@@ -89,12 +123,12 @@ function useDailyLit() {
 // ─── Khung chương ──────────────────────────────────────────────────────────
 
 /** Mỗi chương cao tối thiểu 100vh; cột chữ bên trái (desktop) hoặc nằm dưới canvas (màn hẹp). */
-function Chapter({ id, index, staticMode, wide, children }: { id: string; index: number; staticMode: boolean; wide?: boolean; children: ReactNode }) {
+function Chapter({ id, index, staticMode, wide, tall, children }: { id: string; index: number; staticMode: boolean; wide?: boolean; tall?: boolean; children: ReactNode }) {
     return (
         <section
             id={id}
             data-chapter={index}
-            className={`section-anchor container-page flex min-h-[100svh] pb-16 ${staticMode ? 'scroll-mt-0 items-start' : 'items-center pt-24'}`}
+            className={`section-anchor container-page flex min-h-[100svh] pb-16 ${staticMode ? 'scroll-mt-0 items-start' : tall ? 'items-start pt-24' : 'items-center pt-24'}`}
             style={staticMode ? { paddingTop: 'calc(55svh + 1.5rem)' } : undefined}
         >
             <div className={`pointer-events-auto w-full ${wide ? 'max-w-[600px]' : 'max-w-[520px]'}`}>{children}</div>
@@ -302,34 +336,71 @@ function MiniMissions() {
 
 // ─── Chương 2: Khóa học ────────────────────────────────────────────────────
 
-const MAX_COURSES = 3
+const COURSE_CHAPTER = 2
 
-function CoursesChapter() {
+function CoursesChapter({ stopNames, summaryOf, staticMode }: { stopNames: string[]; summaryOf: (name: string) => CourseSummary | undefined; staticMode: boolean }) {
     const summaries = useCourseSummaries()
-    const cards = [...summaries].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]).slice(0, MAX_COURSES)
+    const [active, setActive] = useState(0)
+    const cards = stopNames.map((n) => ({ name: n, sum: summaryOf(n)! })).filter((c) => c.sum)
+    const extra = summaries.filter((s) => !cards.some((c) => c.sum.course.id === s.course.id)).sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
+
+    // Thẻ nằm gần giữa màn hình nhất là thẻ ứng với camera (state chỉ đổi khi sang thẻ khác)
+    useEffect(() => {
+        if (staticMode) return
+        let raf = 0
+        const pick = () => {
+            const mid = window.innerHeight / 2
+            let best = 0
+            let bd = Infinity
+            document.querySelectorAll<HTMLElement>('[data-stop]').forEach((el, i) => {
+                const r = el.getBoundingClientRect()
+                const d = Math.abs(r.top + r.height / 2 - mid)
+                if (d < bd) {
+                    bd = d
+                    best = i
+                }
+            })
+            setActive(best)
+        }
+        const onScroll = () => {
+            cancelAnimationFrame(raf)
+            raf = requestAnimationFrame(pick)
+        }
+        pick()
+        window.addEventListener('scroll', onScroll, { passive: true })
+        return () => {
+            cancelAnimationFrame(raf)
+            window.removeEventListener('scroll', onScroll)
+        }
+    }, [staticMode, cards.length])
 
     return (
-        <Reveal>
-            <Eyebrow>02 · Khóa học</Eyebrow>
-            <Title id="courses-title">{'Mỗi tòa nhà\nlà một khóa học.'}</Title>
-            <Lead>Tòa nào bạn đang học sẽ nhấc lên. Bấm vào tòa trên mô hình hoặc một khóa bên dưới để vào bản đồ chặng.</Lead>
-            {cards.length === 0 ? (
-                <p className={`${darkCard} p-5 text-ink-foreground/80`}>Chưa có khóa học nào được giảng viên xuất bản.</p>
-            ) : (
-                <ul className="flex flex-col gap-3">
-                    {cards.map((c) => (
-                        <li key={c.course.id}>
-                            <CourseRow summary={c} />
-                        </li>
+        <>
+            <Reveal>
+                <Eyebrow>02 · Khóa học</Eyebrow>
+                <Title id="courses-title">{'Mỗi tòa nhà\nlà một khóa học.'}</Title>
+                <Lead>Máy quay đi qua từng tòa. Tòa đang được nhìn nhấc lên kèm tên khóa và tiến độ. Bấm vào tòa hoặc thẻ để vào bản đồ chặng.</Lead>
+                {cards.length === 0 && <p className={`${darkCard} p-5 text-ink-foreground/80`}>Chưa có khóa học nào được giảng viên xuất bản.</p>}
+            </Reveal>
+            {cards.map((c, i) => (
+                <div key={c.name} data-stop={c.name} className={`flex ${staticMode ? 'mt-4' : 'min-h-[60svh] items-center'} transition-opacity duration-slow ${staticMode || i === active ? 'opacity-100' : 'opacity-30'}`}>
+                    <div className="w-full">
+                        <p className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-light">{c.name}</p>
+                        <CourseRow summary={c.sum} />
+                    </div>
+                </div>
+            ))}
+            {(extra.length > 0 || cards.length > 0) && (
+                <div className="flex min-h-[30svh] flex-col justify-center gap-3">
+                    {extra.map((c) => (
+                        <CourseRow key={c.course.id} summary={c} />
                     ))}
-                </ul>
+                    <Link to="/learning" className="inline-flex items-center gap-2 self-start rounded-xl border border-ink-foreground/20 px-4 py-2.5 text-sm font-extrabold transition hover:bg-ink-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70">
+                        Xem tất cả khóa học <ArrowRight size={15} />
+                    </Link>
+                </div>
             )}
-            {summaries.length > 0 && (
-                <Link to="/learning" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-ink-foreground/20 px-4 py-2.5 text-sm font-extrabold transition hover:bg-ink-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70">
-                    Xem tất cả khóa học <ArrowRight size={15} />
-                </Link>
-            )}
-        </Reveal>
+        </>
     )
 }
 

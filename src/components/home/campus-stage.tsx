@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
+import type { CourseStops } from './campus-scene'
 import { CAMPUS } from './campus-palette'
 import { useNavigate } from 'react-router-dom'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -45,7 +46,7 @@ interface CampusStageProps {
     staticMode: boolean
     reduce: boolean
     /** Các tòa nhấc lên ở chương Khóa học */
-    liftNames: ReadonlySet<string>
+    stops: React.MutableRefObject<CourseStops>
     dailyLit: React.MutableRefObject<boolean[]>
     coursePct: Readonly<Record<string, number>>
 }
@@ -55,7 +56,7 @@ interface CampusStageProps {
  * Màn hẹp: sân khấu nằm trên cùng (cao 55svh) và nội dung trượt bên dưới nó.
  * Nền (màu trời đỏ PTIT) luôn có sẵn bên dưới để lúc tải hoặc khi không có WebGL trang vẫn đúng tông.
  */
-export function CampusStage({ stage, staticMode, reduce, liftNames, dailyLit, coursePct }: CampusStageProps) {
+export function CampusStage({ stage, staticMode, reduce, stops, dailyLit, coursePct }: CampusStageProps) {
     const navigate = useNavigate()
     const night = useThemeStore((s) => s.theme === 'dark')
     const [enabled] = useState(canRender3D)
@@ -65,7 +66,7 @@ export function CampusStage({ stage, staticMode, reduce, liftNames, dailyLit, co
             <div className="pointer-events-auto absolute inset-0">
                 {enabled ? (
                     <Suspense fallback={null}>
-                        <CampusScene night={night} reduce={reduce} staticMode={staticMode} stage={stage} liftNames={liftNames} dailyLit={dailyLit} coursePct={coursePct} onOpenCourse={(id) => navigate(`/learning?course=${id}`)} />
+                        <CampusScene night={night} reduce={reduce} staticMode={staticMode} stage={stage} stops={stops} dailyLit={dailyLit} coursePct={coursePct} onOpenCourse={(id) => navigate(`/learning?course=${id}`)} />
                     </Suspense>
                 ) : (
                     <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`}>

@@ -1,4 +1,4 @@
-import { courseOfBuilding } from '@/lib/campus-courses'
+import { BUILDING_FACE_AZ, courseOfBuilding } from '@/lib/campus-courses'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
@@ -584,6 +584,12 @@ const MORPH_TO_S = 2.95
 /** Máy chỉ di chuyển trong [0.2, 0.8] của mỗi đoạn S∈[i, i+1]; hai đầu đứng yên cho người xem đọc chữ chương. Match cut chạy đúng trong khoảng máy di chuyển của đoạn Khóa học → Studio. */
 const MOVE_FROM = 0.2
 const MOVE_TO = 0.8
+/** Điểm dừng ở từng tòa: góc nâng, tiêu cự và độ nhấc của tòa đang được nhìn */
+const STOP_EL = 20
+const STOP_FOV = 30
+const STOP_LIFT = 1.6
+/** Cường độ đèn nhấn (cd) ở khoảng cách 70: bù cho phần nắng bị giảm 30% */
+const FOCUS_I = 4200
 const SWAY = 0.12 // r tăng tới 12% giữa đường
 /** Đèn Studio mặc định; đèn viền (mặc định 0) bật nhẹ để thấy viền đỏ. Cường độ ×K² vì ánh sáng điểm giảm theo bình phương khoảng cách. */
 const RIM_ON = 30
@@ -610,6 +616,12 @@ const CHAPTER_CAMS: CamKey[] = [
     studioCam(), // 03 Studio: đúng góc máy mặc định của trang Studio
 ]
 /** Một đầu của đoạn quỹ đạo đang nội suy */
+export interface CourseStops {
+    names: string[]
+    /** S tại tâm từng thẻ khóa học, cùng thứ tự với names */
+    times: number[]
+}
+
 interface CamOut {
     t: THREE.Vector3
     az: number
@@ -643,7 +655,8 @@ interface SceneProps {
     /** S liên tục 0..3 do useScrollStage cung cấp (ref, không phải state) */
     stage: React.MutableRefObject<number>
     /** Các tòa nhấc lên ở chương Khóa học */
-    liftNames: ReadonlySet<string>
+    /** Điểm dừng chương Khóa học: tên tòa (đúng thứ tự thẻ ở cột trái) và S tại tâm từng thẻ (đo từ DOM) */
+    stops: React.MutableRefObject<CourseStops>
     /** Bài Daily hôm nay (theo thứ tự) đã đọc chưa: mỗi bài = một tầng cửa sổ A2 */
     dailyLit: React.MutableRefObject<boolean[]>
     /** % tiến độ khóa theo tên tòa, hiện trên nhãn */
@@ -658,7 +671,7 @@ interface SceneProps {
  * (nửa phải trên màn rộng) bằng view offset của camera; camera hero lùi đủ xa để khối cầu bao khuôn viên nằm gọn
  * trong vùng đó. Các chương sau dùng keyframe, kéo giãn theo tỉ lệ vùng trống.
  */
-function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>) {
+function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>, regionAspect: React.MutableRefObject<number>) {
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const size = useThree((s) => s.size)
 
@@ -672,6 +685,7 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
         const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / tanHalf
         const distance = Math.max(fitW, fitH)
         fitScale.current = Math.max(1, REF_ASPECT / ra)
+        regionAspect.current = ra
 
         camera.aspect = w / h
         // Cắt khung từ vị trí âm = đẩy cảnh sang phải
@@ -688,7 +702,7 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
             controls.current?.update()
         }
         return () => camera.clearViewOffset()
-    }, [camera, size, controls, staticMode, heroPos, fitScale, stage])
+    }, [camera, size, controls, staticMode, heroPos, fitScale, stage, regionAspect])
 }
 
 const _anchor = new THREE.Vector3()
@@ -738,7 +752,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, coursePct, pointer, onOpenCourse }: SceneProps) {
+function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, coursePct, pointer, onOpenCourse }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -782,6 +796,13 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
     const lowRef = useRef(false)
     const heroPos = useRef(START_POS.clone())
     const fitScale = useRef(1)
+    const regionAspect = useRef(1)
+    // Chương Khóa học: hộp bao thật của từng tòa có khóa, tòa đang được nhìn, đèn nhấn và tỉ lệ làm tối khung cảnh
+    const boxes = useRef(new Map<string, { c: THREE.Vector3; H: number; W: number }>())
+    const boxTmp = useMemo(() => new THREE.Box3(), [])
+    const activeName = useRef('')
+    const focusL = useRef<THREE.SpotLight>(null)
+    const focusAt = useMemo(() => new THREE.Vector3(), [])
     const [hovered, setHovered] = useState<BuildingName | null>(null)
     const [visibleLabels, setVisibleLabels] = useState<ReadonlySet<string>>(() => new Set())
     const labelKey = useRef('')
@@ -799,7 +820,7 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
     const domElement = useThree((s) => s.gl.domElement)
     const scene = useThree((s) => s.scene)
 
-    useStageFit(controls, staticMode, heroPos, fitScale, stage)
+    useStageFit(controls, staticMode, heroPos, fitScale, stage, regionAspect)
 
     // Đưa camera về góc nhìn ban đầu (OrbitControls lấy vị trí camera làm điểm xuất phát)
     useLayoutEffect(() => {
@@ -923,6 +944,41 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
                 updateCursor()
             }
         }
+        // ── Điểm dừng chương Khóa học: hộp bao thật của tòa (đo một lần, lúc chưa nhấc/biến hình) ──
+        for (const n of stops.current.names) {
+            const g = registry.current.get(n)
+            if (!g || boxes.current.has(n)) continue
+            boxTmp.setFromObject(g)
+            const c = boxTmp.getCenter(new THREE.Vector3())
+            c.y -= g.position.y
+            const sz = boxTmp.getSize(new THREE.Vector3())
+            boxes.current.set(n, { c, H: sz.y, W: Math.max(sz.x, sz.z) })
+        }
+        const stopNames = (staticMode ? stops.current.names.slice(0, 1) : stops.current.names).filter((n) => boxes.current.has(n))
+        const nStops = stopNames.length
+        // Mốc S của các key: hero 0, Hôm nay 1, từng tòa (tâm thẻ), Studio 3. Không có tòa nào: một key chung ở S=2.
+        const sTimes = nStops ? (staticMode ? [2] : stops.current.times.slice(0, nStops)) : [2]
+        const T = [0, 1, ...sTimes, 3]
+        const lastA = T[T.length - 2]
+        const legL = 3 - lastA
+        // Match cut chạy đúng trong lúc máy lướt từ tòa cuối tới Studio
+        const mvFrom = lastA + MOVE_FROM * legL
+        const mvTo = lastA + MOVE_TO * legL
+        let activeIdx = -1
+        if (nStops && S > 1.3 && S < mvFrom + 0.1 * legL) {
+            let best = Infinity
+            sTimes.forEach((t, k) => {
+                const d = Math.abs(S - t)
+                if (d < best) {
+                    best = d
+                    activeIdx = k
+                }
+            })
+        }
+        activeName.current = activeIdx >= 0 ? stopNames[activeIdx] : ''
+        // Chương Khóa học: 0→1 khi máy rời Hôm nay, về 0 khi máy rời tòa cuối
+        const courseAmt = band(S, 1.3, 1.7) * (1 - band(S, mvFrom - 0.1 * legL, mvFrom + 0.1 * legL))
+
         if (!live) {
             if (touch && !reduce) heroPos.current.applyAxisAngle(Y_AXIS, -delta * 0.12) // cảm ứng: chỉ tự xoay
             else heroPos.current.copy(camera.position)
@@ -935,14 +991,16 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
                 camera.updateProjectionMatrix()
             }
         } else {
-            // Một vòng quỹ đạo liên tục, một chiều: nội suy az/el/r/fov/target rồi mới tính vị trí từ tọa độ cầu.
+            // Một vòng quỹ đạo liên tục, một chiều: nội suy az/el/r/fov/target riêng rẽ rồi mới tính vị trí từ tọa độ cầu.
             // heroPos đứng yên từ lúc rời hero nên cuộn ngược về hero quay đúng az lúc rời đi.
             const hv = camHero.v.copy(heroPos.current).sub(TARGET)
             const hr = hv.length()
             const hAz = Math.atan2(hv.x, hv.z) / RAD
             const hEl = Math.asin(hv.y / hr) / RAD
-            // Hero → Hôm nay: unwrap về az gần nhất; các keyframe sau cộng cùng độ lệch để az luôn tăng
+            // Hero → Hôm nay: unwrap về az gần nhất; các key sau cộng cùng độ lệch để az luôn tăng
             const off = hAz + wrapDeg(CHAPTER_CAMS[0].az - hAz) - CHAPTER_CAMS[0].az
+            // Az của các tòa: mặt đẹp + 35°, nhưng luôn lớn hơn key trước ít nhất `step` và nhỏ hơn Studio
+            const step = Math.min(30, (CHAPTER_CAMS[2].az - CHAPTER_CAMS[0].az) / (nStops + 2))
             const key = (n: number, out: CamOut) => {
                 if (n === 0) {
                     out.t.copy(TARGET)
@@ -952,17 +1010,41 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
                     out.fov = FOV
                     return
                 }
-                const k = CHAPTER_CAMS[n - 1]
-                out.t.set(...k.t)
-                out.az = k.az + off
-                out.el = k.el
-                out.r = k.r * fitScale.current
-                out.fov = k.fov
+                let k: CamKey | null = null
+                let r = 0
+                if (n === 1) k = CHAPTER_CAMS[0]
+                else if (n === T.length - 1) k = CHAPTER_CAMS[2]
+                else if (!nStops) k = CHAPTER_CAMS[1]
+                if (k) {
+                    out.t.set(...k.t)
+                    out.az = k.az + off
+                    out.el = k.el
+                    out.r = k.r * fitScale.current
+                    out.fov = k.fov
+                    return
+                }
+                // Tòa thứ n-2: target = tâm thân tòa (+ độ nhấc), r để tòa chiếm ~55% chiều cao vùng trống và ≤ 75% bề rộng
+                const idx = n - 2
+                const name = stopNames[idx]
+                const bx = boxes.current.get(name)!
+                let az = CHAPTER_CAMS[0].az
+                for (let q = 0; q <= idx; q++) az = Math.max((BUILDING_FACE_AZ[stopNames[q]] ?? 0) + 35, az + step)
+                const el = STOP_EL
+                const fov = STOP_FOV
+                const tanH = Math.tan((fov / 2) * RAD)
+                const hProj = bx.H * Math.cos(el * RAD) + bx.W * 0.6 * Math.sin(el * RAD)
+                r = Math.max(hProj / (2 * tanH * 0.55), bx.W / (2 * tanH * regionAspect.current * 0.75))
+                out.t.set(bx.c.x, bx.c.y + STOP_LIFT, bx.c.z)
+                out.az = az + off
+                out.el = el
+                out.r = r
+                out.fov = fov
             }
-            const i = Math.min(Math.floor(S), CHAPTER_CAMS.length - 1)
-            const f = smoothstep(band(S - i, MOVE_FROM, MOVE_TO))
-            key(i, camA)
-            key(i + 1, camB)
+            let j = 0
+            while (j < T.length - 2 && S >= T[j + 1]) j++
+            const f = smoothstep(band((S - T[j]) / (T[j + 1] - T[j]), MOVE_FROM, MOVE_TO))
+            key(j, camA)
+            key(j + 1, camB)
             const az = camA.az + (camB.az - camA.az) * f
             const el = camA.el + (camB.el - camA.el) * f
             const r = (camA.r + (camB.r - camA.r) * f) * (1 + SWAY * Math.sin(Math.PI * f))
@@ -975,11 +1057,11 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
                 camera.updateProjectionMatrix()
             }
             camera.lookAt(camA.t)
-            if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, az, el, r, f }
+            if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, az, el, r, f, stop: activeName.current, T }
         }
 
         // ── Nền trời và sương theo chương: đỏ PTIT → đỏ sẫm → gần đen ──
-        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 2.2, 2.8)))
+        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, mvFrom, mvTo)))
         if (scene.background instanceof THREE.Color) scene.background.copy(colors.now)
         if (scene.fog) {
             const d = camera.position.distanceTo(TARGET)
@@ -987,10 +1069,20 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
             ;(scene.fog as THREE.Fog).near = d * 1.1
             ;(scene.fog as THREE.Fog).far = d * 3.2
         }
-        const moodNext = band(S, 1.2, 3)
+        const moodNext = courseAmt // chương Khóa học: nền và tòa "Sắp mở" giảm sáng ~30%
         if (Math.abs(moodNext - mood.current) > 0.002) {
             mood.current = moodNext
             applyLights(nightRef.current)
+        }
+
+        // Đèn nhấn vào tòa đang được nhìn (bù phần sáng bị giảm 30% của cả cảnh)
+        if (focusL.current) {
+            const bx = activeName.current ? boxes.current.get(activeName.current) : undefined
+            if (bx) focusAt.lerp(bx.c, reduce ? 1 : 0.12)
+            focusL.current.target.position.copy(focusAt)
+            focusL.current.target.updateMatrixWorld()
+            focusL.current.position.set(-26, 38, 22).normalize().multiplyScalar(70).add(focusAt)
+            focusL.current.intensity = FOCUS_I * courseAmt
         }
 
         // ── Hover ──
@@ -1009,23 +1101,21 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
             updateCursor()
             setHovered(hb)
         }
-        // Chương Khóa học: các tòa có khóa nhấc lên (rồi hạ xuống khi sang Studio)
-        // Nhấc lên khi máy tới chương Khóa học (dừng ở S 1.8–2.2), hạ xuống khi máy rời đi
-        const courseLift = easeInOutCubic(band(S, 1.5, 1.9)) * (1 - easeInOutCubic(band(S, 2.2, 2.5)))
+        // Chương Khóa học: chỉ tòa đang được nhìn nhấc lên, các tòa khác hạ về vị trí gốc
         registry.current.forEach((grp, name) => {
             const lift = lifts.current.get(name) ?? 0
-            const want = Math.max(name === hb ? 0.9 : 0, liftNames.has(name) ? courseLift * 1.6 : 0)
+            const want = Math.max(name === hb ? 0.9 : 0, name === activeName.current ? STOP_LIFT * courseAmt : 0)
             const next = lift + (want - lift) * (reduce ? 1 : 0.12)
             lifts.current.set(name, next)
             grp.position.y = next
         })
 
         // ── Match cut khuôn viên → phòng chụp Studio (S 2.15 → 2.95; cuộn ngược thì chạy ngược) ──
-        // Máy chỉ di chuyển ở S ∈ [2.2, 2.8]: match cut được co đúng vào khoảng đó (Sm chạy 2.1 → 3.0 theo các mốc bên dưới)
-        const Sm = 2.1 + band(S, 2 + MOVE_FROM, 2 + MOVE_TO) * 0.9
+        // Máy chỉ lướt tới Studio ở S ∈ [mvFrom, mvTo]: match cut được co đúng vào khoảng đó (Sm chạy 2.1 → 3.0 theo các mốc bên dưới)
+        const Sm = 2.1 + band(S, mvFrom, mvTo) * 0.9
         const m = easeInOutCubic(band(Sm, MORPH_FROM, MORPH_TO_S))
-        if (S > 2.05 || morphed.current) {
-            morphed.current = S > 2.05
+        if (S > mvFrom - 0.2 || morphed.current) {
+            morphed.current = S > mvFrom - 0.2
             if (Math.abs(m - morph.current) > 0.0005 || !morphed.current) {
                 morph.current = m
                 applyLights(nightRef.current)
@@ -1102,8 +1192,8 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
 
         // Nhãn: chỉ ở hero và chương Khóa học; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
         if (frame.current++ % 6 === 0) {
-            const gate = S < 0.2 || (S > 1.75 && S < 2.22)
-            const key = gate ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : ''
+            // Hero: mọi nhãn không bị che; chương Khóa học: chỉ nhãn của tòa đang được nhìn (tên khóa + %)
+            const key = S < 0.2 ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : S > 1.3 && S < mvFrom ? activeName.current : ''
             if (key !== labelKey.current) {
                 labelKey.current = key
                 setVisibleLabels(new Set(key ? key.split('|') : []))
@@ -1157,6 +1247,7 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
                 shadow-bias={-0.0006}
             />
             <directionalLight ref={rim} color={CAMPUS.rimLight} intensity={0.35 * Math.PI} position={[30, 14, -30]} />
+            <spotLight ref={focusL} color={CAMPUS.sunlight} intensity={0} angle={0.45} penumbra={0.9} />
             {/* Bộ đèn 3 điểm của Studio (thông số mặc định), tắt cho tới chương Studio */}
             <spotLight ref={keyL} position={KEY_POS} color={LOOK.keyColor} intensity={0} angle={0.6} penumbra={0.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
             <pointLight ref={fillL} position={FILL_POS} color={LOOK.fillColor} intensity={0} />
@@ -1197,13 +1288,13 @@ export interface CampusSceneProps {
     reduce: boolean
     staticMode: boolean
     stage: React.MutableRefObject<number>
-    liftNames: ReadonlySet<string>
+    stops: React.MutableRefObject<CourseStops>
     dailyLit: React.MutableRefObject<boolean[]>
     coursePct: Readonly<Record<string, number>>
     onOpenCourse?: (courseId: string) => void
 }
 
-export default function CampusScene({ night, reduce, staticMode, stage, liftNames, dailyLit, coursePct, onOpenCourse }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, stage, stops, dailyLit, coursePct, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -1258,7 +1349,7 @@ export default function CampusScene({ night, reduce, staticMode, stage, liftName
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} liftNames={liftNames} dailyLit={dailyLit} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
+                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} stops={stops} dailyLit={dailyLit} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}
         </div>
