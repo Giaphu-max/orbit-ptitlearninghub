@@ -25,36 +25,60 @@ export function OrbitDailyView() {
     const closeConcept = useCallback(() => setConcept(null), [])
     const openConcept = useCallback((id: string, anchor: HTMLElement) => setConcept((c) => (c?.id === id && c.anchor === anchor ? null : { id, anchor })), [])
 
-    // Thanh tiến độ trên cùng + khối đang đọc rõ nét, khối khác mờ dần theo vị trí cuộn (bỏ mờ khi giảm chuyển động)
+    // Đọc tập trung: khối active là khối có tâm gần dòng đọc (42% chiều cao màn hình) nhất; chỉ đổi khi khối mới gần hơn ít nhất 24px.
+    // Một listener scroll passive + rAF; trạng thái ghi thẳng vào data-active của khung (không qua React).
     useEffect(() => {
+        const root = articleRef.current
+        if (!root) return
         const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        const frames = [...root.querySelectorAll<HTMLElement>('[data-focus]')]
+        const HYSTERESIS = 24
+        let active = -1
         let raf = 0
+        const line = () => window.innerHeight * 0.42
+        const dist = (el: HTMLElement) => {
+            const r = el.getBoundingClientRect()
+            return Math.abs(r.top + r.height / 2 - line())
+        }
         const update = () => {
             raf = 0
-            const root = articleRef.current
-            if (!root) return
-            const rect = root.getBoundingClientRect()
-            const total = rect.height - window.innerHeight * 0.6
-            const ratio = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 1
-            if (barRef.current) barRef.current.style.transform = `scaleX(${ratio})`
-            if (calm) return
-            const mid = window.innerHeight * 0.45
-            root.querySelectorAll<HTMLElement>('[data-block]').forEach((el) => {
-                if (el.dataset.block === 'check') return
-                const r = el.getBoundingClientRect()
-                const dist = r.top > mid ? r.top - mid : r.bottom < mid ? mid - r.bottom : 0
-                el.style.opacity = String(Math.max(0.3, 1 - dist / (window.innerHeight * 0.55)))
-            })
+            const d = frames.map(dist)
+            const best = d.indexOf(Math.min(...d))
+            if (active < 0 || (best !== active && d[active] - d[best] >= HYSTERESIS)) {
+                active = best
+                frames.forEach((f, i) => f.setAttribute('data-active', String(i === active)))
+            }
+            if (barRef.current) barRef.current.style.transform = `scaleX(${frames.length > 1 ? active / (frames.length - 1) : 1})`
         }
         const schedule = () => {
             if (!raf) raf = requestAnimationFrame(update)
         }
+        const scrollTo = (i: number) => {
+            const f = frames[Math.max(0, Math.min(frames.length - 1, i))]
+            const r = f.getBoundingClientRect()
+            window.scrollTo({ top: window.scrollY + r.top + r.height / 2 - line(), behavior: calm ? 'auto' : 'smooth' })
+        }
+        const onKey = (e: KeyboardEvent) => {
+            if (!['ArrowDown', 'ArrowUp', 'j', 'k'].includes(e.key) || e.metaKey || e.ctrlKey || e.altKey) return
+            if (e.target instanceof Element && e.target.closest('button, a, input, textarea, [role=dialog]')) return
+            scrollTo(active + (e.key === 'ArrowDown' || e.key === 'j' ? 1 : -1))
+            e.preventDefault()
+        }
+        const onClick = (e: MouseEvent) => {
+            if (e.target instanceof Element && e.target.closest('button, a')) return
+            const i = frames.findIndex((f) => f.contains(e.target as Node))
+            if (i >= 0 && i !== active) scrollTo(i)
+        }
         update()
         window.addEventListener('scroll', schedule, { passive: true })
         window.addEventListener('resize', schedule)
+        window.addEventListener('keydown', onKey)
+        root.addEventListener('click', onClick)
         return () => {
             window.removeEventListener('scroll', schedule)
             window.removeEventListener('resize', schedule)
+            window.removeEventListener('keydown', onKey)
+            root.removeEventListener('click', onClick)
             if (raf) cancelAnimationFrame(raf)
         }
     }, [article?.id])
@@ -95,11 +119,11 @@ export function OrbitDailyView() {
     }
 
     return (
-        <div className="w-full">
-            <div aria-hidden className="fixed inset-x-0 top-0 z-[60] h-1 bg-transparent">
+        <div className="w-full overflow-x-clip">
+            <div aria-hidden className="fixed inset-x-0 top-[var(--nav-h)] z-40 h-[3px] bg-border">
                 <div ref={barRef} className="h-full origin-left bg-brand-600" style={{ transform: 'scaleX(0)' }} />
             </div>
-            <article ref={articleRef} className="mx-auto max-w-2xl px-5 py-8 lg:py-12">
+            <article ref={articleRef} className="mx-auto max-w-[720px] px-5 pb-[40vh] pt-8 lg:pt-12">
                 <Link to="/#daily" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
                     <ChevronLeft size={16} /> Orbit Daily
                 </Link>
@@ -108,20 +132,25 @@ export function OrbitDailyView() {
                 </p>
                 <h1 className="mt-3 text-headline text-foreground">{article.title}</h1>
 
-                <div className="mt-10 flex flex-col gap-10 sm:gap-12">
+                <div className="flex flex-col gap-10 pt-[24vh] sm:gap-12">
                     {article.blocks.map((block, i) => (
-                        <div key={i} data-block={block.type} className="transition-opacity duration-fast">
-                            {block.type === 'check' ? (
-                                <CheckBlock
-                                    block={block}
-                                    pick={chosen[block.question.id]}
-                                    locked={read !== undefined}
-                                    onPick={(n, el) => pick(block.question, n, el)}
-                                />
-                            ) : (
-                                <BlockBody block={block} onConcept={openConcept} />
-                            )}
-                            {block.type !== 'check' && <SourceChip sources={block.sources} />}
+                        <div key={i} data-block={block.type}>
+                            <div data-focus className={`fb ${FRAME[block.type]}`}>
+                                {CARD_TYPES.has(block.type) && <span aria-hidden className="fb-bar" />}
+                                {block.type === 'check' ? (
+                                    <CheckBlock
+                                        block={block}
+                                        pick={chosen[block.question.id]}
+                                        locked={read !== undefined}
+                                        onPick={(n, el) => pick(block.question, n, el)}
+                                    />
+                                ) : (
+                                    <>
+                                        <BlockBody block={block} onConcept={openConcept} />
+                                        <SourceChip sources={block.sources} />
+                                    </>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -149,6 +178,10 @@ export function OrbitDailyView() {
     )
 }
 
+/** Loại khối nâng lên thành thẻ có thanh đỏ khi đang đọc (quote, điểm cốt lõi, câu kiểm tra có kiểu riêng). */
+const CARD_TYPES = new Set<DailyBlock['type']>(['hook', 'paragraph', 'bullets', 'example'])
+const FRAME: Record<DailyBlock['type'], string> = { hook: 'fb-card', paragraph: 'fb-card', bullets: 'fb-card', example: 'fb-card', quote: '', keypoint: '', check: '' }
+
 type TextBlock = Exclude<DailyBlock, { type: 'check' }>
 
 function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: string, el: HTMLElement) => void }) {
@@ -161,21 +194,20 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
             )
         case 'paragraph':
             return (
-                <p className="text-[18px] leading-8 text-foreground">
+                <p className="text-[clamp(19px,1.6vw,22px)] leading-[1.7] text-foreground">
                     <InlineText text={block.text} onConcept={onConcept} />
                 </p>
             )
         case 'quote':
             return (
                 <blockquote>
-                    <p className="text-[clamp(1.5rem,4.6vw,2.125rem)] font-semibold italic leading-snug tracking-tight text-foreground">“{block.text}”</p>
-                    <span aria-hidden className="mt-4 block h-1 w-12 rounded-full bg-brand-600" />
+                    <p className="fb-qtext text-[clamp(1.5rem,4.6vw,2.125rem)] font-semibold italic leading-snug tracking-tight text-foreground">“{block.text}”</p>
+                    <span aria-hidden className="fb-uline mt-4 block h-1 w-[120px] rounded-full bg-brand-600" />
                 </blockquote>
             )
         case 'keypoint':
             return (
-                <section className="relative overflow-hidden rounded-panel border border-border bg-card p-6 shadow-card sm:p-7">
-                    <span aria-hidden className="absolute inset-y-0 left-0 w-1.5 bg-brand-600" />
+                <section className="fb-kp rounded-panel border border-border bg-card p-6 shadow-card sm:p-7">
                     <p className="text-eyebrow uppercase text-brand-ink">Điểm cốt lõi</p>
                     <p className="mt-3 text-xl font-bold leading-snug text-foreground">
                         <InlineText text={block.text} onConcept={onConcept} />
@@ -186,7 +218,7 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
             return (
                 <ul className="flex flex-col gap-3">
                     {block.items.map((item, i) => (
-                        <li key={i} className="flex gap-3 text-[17px] leading-7 text-foreground">
+                        <li key={i} className="flex gap-3 text-[clamp(19px,1.6vw,22px)] leading-[1.6] text-foreground">
                             <span aria-hidden className="mt-3 h-2 w-2 shrink-0 rounded-full bg-brand-600" />
                             <span>
                                 <InlineText text={item} onConcept={onConcept} />
@@ -197,9 +229,9 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
             )
         case 'example':
             return (
-                <section className="rounded-panel bg-muted p-6 sm:p-7">
+                <section>
                     <p className="text-eyebrow uppercase text-muted-foreground">Ví dụ áp dụng</p>
-                    <p className="mt-3 text-[17px] leading-8 text-foreground">
+                    <p className="mt-3 text-[clamp(19px,1.6vw,22px)] leading-[1.7] text-foreground">
                         <InlineText text={block.text} onConcept={onConcept} />
                     </p>
                 </section>

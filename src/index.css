@@ -391,3 +391,62 @@
     padding-inline: var(--gutter);
   }
 }
+
+/* Đọc tập trung (Orbit Daily): mỗi khối nằm trong một khung riêng nhận trạng thái mờ/rõ, tách khỏi mọi animation của phần tử cha.
+   Khung có padding + margin âm bù nhau nên chữ không xê dịch khi khung nâng lên thành thẻ. */
+@layer components {
+  .fb {
+    --fb-px: 16px;
+    --fb-py: 20px;
+    --fb-scale: 1.02;
+    position: relative;
+    margin: calc(var(--fb-py) * -1) calc(var(--fb-px) * -1);
+    padding: var(--fb-py) var(--fb-px);
+    border-radius: 20px;
+    transform-origin: left center;
+    transform: scale(0.97);
+    opacity: 0.2;
+    filter: blur(1.5px);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s, filter 0.35s, background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
+  }
+  @media (min-width: 640px) {
+    .fb { --fb-px: 28px; --fb-py: 24px; --fb-scale: 1.05; }
+  }
+  .fb[data-active='true'] {
+    opacity: 1;
+    filter: none;
+    transform: scale(var(--fb-scale));
+  }
+  /* Thẻ nổi cho khối văn bản đang đọc */
+  .fb-card[data-active='true'] {
+    background-color: hsl(var(--card));
+    box-shadow: 0 24px 60px -30px hsl(var(--brand) / 0.35);
+  }
+  .fb-bar {
+    position: absolute;
+    left: 12px;
+    top: var(--fb-py);
+    bottom: var(--fb-py);
+    width: 4px;
+    border-radius: 4px;
+    background-color: hsl(var(--brand));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .fb[data-active='true'] .fb-bar { transform: scaleY(1); }
+  /* Trích dẫn: không thẻ, chữ đỏ PTIT, gạch dưới dài ra */
+  .fb-qtext { transition: color 0.35s; }
+  .fb[data-active='true'] .fb-qtext { color: hsl(var(--brand-ink)); }
+  .fb-uline { transform: scaleX(0.4667); transform-origin: left; transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+  .fb[data-active='true'] .fb-uline { transform: scaleX(1); }
+  /* Điểm cốt lõi: viền đỏ + bóng đỏ đậm hơn */
+  .fb-kp { transition: box-shadow 0.3s, border-color 0.3s; }
+  .fb[data-active='true'] .fb-kp {
+    border-color: hsl(var(--brand));
+    box-shadow: 0 0 0 0.5px hsl(var(--brand)), 0 30px 70px -28px hsl(var(--brand) / 0.55);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fb, .fb-bar, .fb-uline, .fb-kp, .fb-qtext { transition: none !important; }
+}
