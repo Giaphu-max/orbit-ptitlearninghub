@@ -1,3 +1,4 @@
+import { courseOfBuilding } from '@/lib/campus-courses'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
@@ -120,7 +121,6 @@ const T_GATE: TextOpts = { size: [96, 56], h: 300 }
 
 interface BuildingProps {
     name: string
-    sub: string
     anchorY: number
     position: Vec3
     hovered: boolean
@@ -130,7 +130,7 @@ interface BuildingProps {
     children: ReactNode
 }
 
-function Building({ name, sub, anchorY, position, hovered, labelVisible, registry, children }: BuildingProps) {
+function Building({ name, anchorY, position, hovered, labelVisible, registry, children }: BuildingProps) {
     const ref = useRef<THREE.Group>(null)
     useLayoutEffect(() => {
         const g = ref.current
@@ -138,6 +138,7 @@ function Building({ name, sub, anchorY, position, hovered, labelVisible, registr
         const map = registry.current
         g.userData.buildingName = name
         g.userData.anchorY = anchorY
+        g.userData.labelSub = courseOfBuilding(name)?.title ?? 'Sắp mở'
         map.set(name, g)
         return () => {
             map.delete(name)
@@ -145,6 +146,7 @@ function Building({ name, sub, anchorY, position, hovered, labelVisible, registr
     }, [name, anchorY, registry])
 
     const hidden = !labelVisible && !hovered
+    const course = courseOfBuilding(name)
     return (
         <group ref={ref} position={position}>
             {children}
@@ -159,8 +161,10 @@ function Building({ name, sub, anchorY, position, hovered, labelVisible, registr
                         }`}
                     >
                         {name}
-                        {/* Mặc định chỉ hiện tên (chip co theo chữ); dòng phụ chỉ có mặt khi rê chuột vào tòa */}
-                        {hovered && <small className="mt-0.5 block text-[11px] font-medium text-ink-foreground/85">{sub}</small>}
+                        {/* Dòng phụ: khóa học thật của tòa, hoặc "Sắp mở" nếu chưa có khóa */}
+                        <small className={`mt-0.5 block text-[11px] font-medium ${hovered ? 'text-ink-foreground/85' : 'text-muted-foreground'}`}>
+                            {course ? (hovered ? `${course.title} · bấm để vào khóa` : course.title) : 'Sắp mở'}
+                        </small>
                     </div>
                     <div className="h-4 w-0.5 bg-ink-foreground/80" />
                 </div>
@@ -338,7 +342,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
             ))}
 
             {/* Tòa A2 */}
-            <Building {...b('Tòa A2')} sub="Thiết kế đồ họa · UX/UI" anchorY={17.6} position={[2, 0, 1]}>
+            <Building {...b('Tòa A2')} anchorY={17.6} position={[2, 0, 1]}>
                 <Box s={[11, 2.8, 7.4]} c={C.granite} />
                 {Array.from({ length: 5 }, (_, i) => (
                     <Box key={i} s={[1.5, 1, 0.1]} c={C.win} at={[-4.2 + i * 1.9, 1.4, 3.72]} />
@@ -380,7 +384,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
             </Building>
 
             {/* Tòa A3: khối vàng, mái chóp đỏ */}
-            <Building {...b('Tòa A3')} sub="Dựng phim · Quay phim" anchorY={7.6} position={[12.5, 0, -9.5]}>
+            <Building {...b('Tòa A3')} anchorY={7.6} position={[12.5, 0, -9.5]}>
                 <Box s={[13, 4.6, 4.4]} c={C.yellow} />
                 {Array.from({ length: 10 }, (_, i) => (
                     <Box key={i} s={[0.7, 3.4, 0.1]} c={C.win} at={[-5.4 + i * 1.2, 0.6, 2.23]} />
@@ -391,7 +395,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
             </Building>
 
             {/* Hội trường A1: dài, trắng, mái đầu hồi đỏ */}
-            <Building {...b('Hội trường A1')} sub="Sự kiện · Seminar" anchorY={6.2} position={[-11, 0, -9]}>
+            <Building {...b('Hội trường A1')} anchorY={6.2} position={[-11, 0, -9]}>
                 <Box s={[12, 3.6, 5]} c={C.white} />
                 {Array.from({ length: 8 }, (_, i) => (
                     <Box key={i} s={[0.8, 1.6, 0.1]} c={CAMPUS.hallWindow} at={[-4.9 + i * 1.4, 1, 2.53]} />
@@ -402,7 +406,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
             </Building>
 
             {/* Tòa A1: khối trắng thấp có dải ngang */}
-            <Building {...b('Tòa A1')} sub="Lý thuyết · Phòng học" anchorY={6.4} position={[-11.5, 0, 3.5]}>
+            <Building {...b('Tòa A1')} anchorY={6.4} position={[-11.5, 0, 3.5]}>
                 <Box s={[7.5, 5.2, 6]} c={C.white} />
                 {Array.from({ length: 5 }, (_, r) => (
                     <Box key={r} s={[7.6, 0.18, 6.1]} c={C.stripe} at={[0, 0.7 + r * 0.95, 0]} />
@@ -410,12 +414,12 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
                 <Box s={[7.6, 0.9, 0.1]} c={CAMPUS.bandGreen} at={[0, 0.2, 3.05]} />
             </Building>
 
-            <Building {...b('Canteen')} sub="Góc nghỉ" anchorY={4.2} position={[-1.5, 0, -11]}>
+            <Building {...b('Canteen')} anchorY={4.2} position={[-1.5, 0, -11]}>
                 <Box s={[5.5, 2.2, 3.4]} c={C.white} />
                 <HipRoof w={6.4} h={1.4} d={4.2} c={C.roofRed} at={[0, 2.2, 0]} />
             </Building>
 
-            <Building {...b('Cổng trường')} sub="Học viện Công nghệ BCVT" anchorY={5.6} position={[2, 0, 13.2]}>
+            <Building {...b('Cổng trường')} anchorY={5.6} position={[2, 0, 13.2]}>
                 {[-3.4, 3.4].map((x) => (
                     <Box key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
                 ))}
@@ -471,6 +475,8 @@ interface SceneProps {
     /** Màn cảm ứng: không cho kéo xoay (nhường thao tác cuộn trang), chỉ tự xoay */
     touch: boolean
     pointer: React.MutableRefObject<{ x: number; y: number; inside: boolean }>
+    /** Bấm vào tòa có khóa học thì mở khóa đó */
+    onOpenCourse?: (courseId: string) => void
 }
 
 /**
@@ -536,8 +542,8 @@ function computeVisibleLabels(
     const shown: string[] = []
     for (const it of items) {
         // Hộp nhãn ước lượng: chip (tên) + cọc 16px phía trên điểm neo, rộng theo độ dài chữ
-        const w = it.name.length * 7.6 + 30
-        const rect = { l: it.x - w / 2, r: it.x + w / 2, t: it.y - 16 - 32, b: it.y }
+        const w = Math.max(it.name.length, String(it.grp.userData.labelSub ?? '').length * 0.85) * 7.6 + 30
+        const rect = { l: it.x - w / 2, r: it.x + w / 2, t: it.y - 16 - 48, b: it.y }
         if (it.behind || rect.l < 4 || rect.r > size.width - 4 || rect.t < 4 || rect.b > size.height - 4) continue
         if (it.name !== hovered) {
             if (taken.some((o) => rect.l < o.r + 6 && rect.r > o.l - 6 && rect.t < o.b + 6 && rect.b > o.t - 6)) continue
@@ -555,7 +561,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, pointer }: SceneProps) {
+function Scene({ night, reduce, touch, pointer, onOpenCourse }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -610,7 +616,7 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
     }, [night, reduce, frozen])
 
     const updateCursor = () => {
-        domElement.style.cursor = hoverRef.current ? 'pointer' : touch ? 'default' : dragging.current ? 'grabbing' : 'grab'
+        domElement.style.cursor = hoverRef.current && courseOfBuilding(hoverRef.current) ? 'pointer' : touch ? 'default' : dragging.current ? 'grabbing' : 'grab'
     }
     useEffect(() => {
         domElement.style.touchAction = touch ? 'pan-y' : 'none'
@@ -618,6 +624,30 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
         return () => window.clearTimeout(resumeTimer.current)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [domElement, touch])
+
+    // Bấm (không phải kéo) vào tòa có khóa học: mở khóa đó. Tia lấy theo điểm bấm nên cảm ứng cũng dùng được.
+    useEffect(() => {
+        let down: { x: number; y: number } | null = null
+        const onDown = (e: PointerEvent) => {
+            down = { x: e.clientX, y: e.clientY }
+        }
+        const onClick = (e: MouseEvent) => {
+            if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return
+            const r = domElement.getBoundingClientRect()
+            const ray = new THREE.Raycaster()
+            ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1)), camera)
+            let o: THREE.Object3D | null = ray.intersectObjects([...registry.current.values()], true)[0]?.object ?? null
+            while (o && !o.userData.buildingName) o = o.parent
+            const course = o ? courseOfBuilding(o.userData.buildingName as string) : undefined
+            if (course) onOpenCourse?.(course.id)
+        }
+        domElement.addEventListener('pointerdown', onDown)
+        domElement.addEventListener('click', onClick)
+        return () => {
+            domElement.removeEventListener('pointerdown', onDown)
+            domElement.removeEventListener('click', onClick)
+        }
+    }, [domElement, camera, onOpenCourse])
 
     // Kéo thì dừng tự xoay; buông tay chờ 3 giây rồi xoay tiếp
     const onStart = () => {
@@ -733,9 +763,10 @@ function Scene({ night, reduce, touch, pointer }: SceneProps) {
 export interface CampusSceneProps {
     night: boolean
     reduce: boolean
+    onOpenCourse?: (courseId: string) => void
 }
 
-export default function CampusScene({ night, reduce }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -798,7 +829,7 @@ export default function CampusScene({ night, reduce }: CampusSceneProps) {
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} touch={touch} pointer={pointer} />
+                    <Scene night={night} reduce={reduce} touch={touch} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}
         </div>

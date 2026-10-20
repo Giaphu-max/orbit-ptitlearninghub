@@ -1,6 +1,6 @@
 {
   "$comment": "Danh sách video để scripts/generate-content.ts tạo nội dung. Mỗi video thành một bài học; id dùng làm đường dẫn nên viết không dấu, nối gạch ngang.",
-  "dailyCount": 3,
+  "dailyCount": 5,
   "status": "published",
   "courses": [
     {
@@ -21,6 +21,27 @@
         {
           "id": "nhip-dieu-to-chuc-thoi-gian",
           "url": "https://www.youtube.com/watch?v=x0KOqBHDJ98"
+        }
+      ]
+    },
+    {
+      "id": "nhiep-anh-va-anh-sang",
+      "title": "Nhiếp ảnh và ánh sáng",
+      "subject": "Nhiếp ảnh",
+      "instructor": "Khoa Đa phương tiện, PTIT",
+      "description": "Ba loại ánh sáng cơ bản, nguyên lý màu sắc và tư duy của người chụp ảnh.",
+      "lessons": [
+        {
+          "id": "ba-loai-anh-sang-co-ban",
+          "url": "https://www.youtube.com/watch?v=qyu4pWB4L8g"
+        },
+        {
+          "id": "nguyen-ly-mau-sac",
+          "url": "https://www.youtube.com/watch?v=tbERKd_t4So"
+        },
+        {
+          "id": "tu-duy-nhiep-anh",
+          "url": "https://www.youtube.com/watch?v=WQGLhZu2lnw"
         }
       ]
     }

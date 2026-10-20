@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check, ClipboardCheck, Play } from 'lucide-react'
 import { courses } from '@/data'
@@ -8,7 +9,8 @@ import { SectionHeading } from '@/components/section-heading'
 
 /** Khóa học thật từ src/data: thẻ lớn của khóa (tiến độ, vào học, test) + thẻ từng bài kèm tiến độ. */
 export function CoursesSection() {
-    const course = courses[0]
+    const [selectedId, setSelectedId] = useState(courses[0]?.id)
+    const course = courses.find((c) => c.id === selectedId) ?? courses[0]
     const lessons = useCourseLessons(course?.id)
     const progress = useOrbitStore((s) => s.lessonProgress)
     const record = useOrbitStore((s) => (course ? s.testRecords[course.id] : undefined))
@@ -20,6 +22,25 @@ export function CoursesSection() {
                     Xem tất cả khóa học <ArrowRight size={15} />
                 </Link>
             </SectionHeading>
+
+            {courses.length > 1 && (
+                <ul className="mt-6 flex flex-wrap gap-2" aria-label="Chọn khóa học">
+                    {courses.map((c) => (
+                        <li key={c.id}>
+                            <button
+                                type="button"
+                                aria-pressed={c.id === course?.id}
+                                onClick={() => setSelectedId(c.id)}
+                                className={`rounded-full border px-4 py-2 text-sm font-bold transition ${
+                                    c.id === course?.id ? 'border-brand-600 bg-brand-600 text-ink-foreground' : 'border-border bg-card text-foreground hover:border-brand-300'
+                                }`}
+                            >
+                                {c.title}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
 
             {!course || lessons.length === 0 ? (
                 <p className="mt-7 rounded-card border border-border bg-card p-6 text-muted-foreground">Chưa có khóa học nào được giảng viên xuất bản.</p>

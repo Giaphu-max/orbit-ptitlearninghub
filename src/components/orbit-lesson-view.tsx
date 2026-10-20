@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { ChevronLeft, ClipboardCheck, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
+import { Camera, ChevronLeft, ClipboardCheck, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
 import { getCourse, getLessonsOfCourse, lessons } from '@/data'
 import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { useLessonQuiz } from '@/hooks/useLessonQuiz'
+import { getStudioBrief } from '@/lib/studio-briefs'
 import { formatTime } from '@/lib/youtube'
 import { levelFromXp } from '@/lib/gamification'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
@@ -74,6 +75,9 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     const canPlay = player.status === 'ready'
     const quiz = useLessonQuiz(lesson, { currentTime, isPlaying: player.isPlaying, canPlay, seekTo, pause: player.pause })
     const { phase } = quiz
+    // Khái niệm có đề bài Studio: ưu tiên khái niệm đang giảng, không thì khái niệm đầu tiên có đề bài
+    const practiceConcept =
+        lesson.concepts.find((c) => currentTime >= c.segment.start && currentTime < c.segment.end && getStudioBrief(c.id)) ?? lesson.concepts.find((c) => getStudioBrief(c.id))
     const quizOpen = phase.kind === 'asking' || phase.kind === 'answered'
 
     // Mở quiz từ danh sách hay dải khái niệm ở dưới: cuộn lên để thấy thẻ câu hỏi
@@ -250,6 +254,20 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                     ))}
                                 </dl>
                             </section>
+
+                            {practiceConcept && (
+                                <Link
+                                    to={`/studio?concept=${practiceConcept.id}`}
+                                    className="flex items-center justify-between gap-3 rounded-card border border-border bg-card p-5 shadow-card transition hover:border-brand-300"
+                                >
+                                    <span>
+                                        <span className="block text-eyebrow uppercase text-brand-ink">Studio 3D</span>
+                                        <span className="mt-1 block font-bold text-foreground">Thực hành trong Studio</span>
+                                        <span className="mt-0.5 block text-xs text-muted-foreground">Đề bài: {practiceConcept.name}</span>
+                                    </span>
+                                    <Camera size={22} className="shrink-0 text-brand-ink" />
+                                </Link>
+                            )}
 
                             <Link
                                 to={`/test/${lesson.courseId}`}

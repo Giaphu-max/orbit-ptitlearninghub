@@ -1,17 +1,18 @@
 [
   {
     "id": "daily-1",
-    "title": "Kỹ thuật dựng phi tuyến giải phóng tư duy dẫn đường khán giả",
-    "readingMinutes": 2,
+    "title": "Dựng phim phi tuyến và bài toán giảm tải trí tuệ người xem",
+    "readingMinutes": 3,
     "conceptIds": [
       "dung-tuyen-tinh",
       "dung-phi-tuyen",
       "tinh-phi-huy-hoai",
-      "tu-duy-dung"
+      "tu-duy-dung",
+      "tai-tri-tue"
     ],
     "paragraphs": [
       {
-        "text": "Thời kỳ đầu của điện ảnh, người dựng phải dùng dao rọc phim và dán các đoạn băng dính lại với nhau trên một lớp duy nhất. Cách làm thủ công này được gọi là dựng tuyến tính, nơi việc cắt nối diễn ra tuần tự từng clip một. Nguy hiểm lớn nhất là người dựng thay đổi trực tiếp trên file gốc, khiến mọi sai sót đều không thể cứu vãn và triệt tiêu khả năng thử nghiệm sáng tạo.",
+        "text": "Nhiều bạn mới bước vào nghề dựng video thường bị choáng ngợp bởi hàng tá công cụ trên màn hình. Trong bài học về bản chất dựng phi tuyến, chúng ta biết rằng thời xưa người ta phải dùng dao dọc phim nhựa và dán băng dính theo cách dựng tuyến tính, thao tác trực tiếp trên cuộn phim gốc nên sai một nhát là mất trắng. Ngày nay, công nghệ dựng phi tuyến hay NLE mang lại tính phi hủy hoại, giúp bạn tự do thử nghiệm, cắt ghép nhiều lớp hình ảnh và âm thanh mà không sợ làm tổn hại đến file dữ liệu gốc ban đầu.",
         "sources": [
           {
             "lessonId": "ban-chat-dung-phi-tuyen",
@@ -19,29 +20,12 @@
           },
           {
             "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 53
-          }
-        ]
-      },
-      {
-        "text": "Sự xuất hiện của dựng phi tuyến trên nền tảng kỹ thuật số đã lật ngược hoàn toàn giới hạn ấy. Với tính năng truy cập ngẫu nhiên tới bất kỳ khung hình nào và làm việc trên vô số lớp hình ảnh lẫn âm thanh, người dựng được tự do sáng tạo. Điểm mấu chốt nhất chính là tính phi hủy hoại, giúp bạn thử nghiệm cắt ghép thoải mái mà không bao giờ làm mất hay thay đổi dữ liệu gốc.",
-        "sources": [
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 70
-          },
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
             "start": 97
-          },
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 113
           }
         ]
       },
       {
-        "text": "Tuy nhiên, công cụ kỹ thuật số mạnh mẽ không tự động tạo ra một tác phẩm hay nếu người dựng thiếu đi tư duy dựng cốt lõi. Trong bài giảng về tiếp nhận, việc dựng phim không chỉ đơn thuần là ghép nối các cảnh quay lại với nhau. Bản chất sâu xa của nó là tổ chức chiến lược thông tin, vạch ra lộ trình giúp người xem tiếp nhận câu chuyện một cách có hệ thống.",
+        "text": "Tuy nhiên, công cụ hiện đại không tự động biến một video trở nên cuốn hút. Bài học về tư duy dựng chỉ ra rằng việc cắt ghép chỉ là lớp vỏ bề ngoài, còn bản chất thực sự của dựng phim là tổ chức chiến lược thông tin. Cùng một nguồn tư liệu quay thô giống nhau, một người dựng giỏi sẽ biết tạo ra lộ trình nhận thức mạch lạc để người xem thấu hiểu thông điệp từ điểm mở đầu đến kết luận cuối cùng. Bạn không chỉ sắp xếp các đoạn clip trên dòng thời gian, mà bạn đang thực sự dẫn dắt bộ não của khán giả.",
         "sources": [
           {
             "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
@@ -54,15 +38,32 @@
         ]
       },
       {
-        "text": "Khi kết hợp cả hai yếu tố, tính phi hủy hoại của dựng phi tuyến trở thành bệ phóng hoàn hảo cho tư duy dựng. Bạn có thể tự do hoán đổi các cảnh quay trên timeline nhằm tìm ra trật tự kể chuyện tối ưu nhất. Người dựng không chỉ đơn thuần sắp đặt tư liệu theo kỹ thuật mà đang thực sự dẫn dắt hành trình nhận thức của não bộ người xem xuyên suốt toàn bộ video.",
+        "text": "Điểm giao thoa đắt giá giữa hai bài học nằm ở việc kiểm soát sự tự do kỹ thuật. Dựng phi tuyến cho phép bạn nhồi nhét vô số hiệu ứng chuyển cảnh và âm thanh chồng lớp, nhưng bài giảng tư duy nhận thức cảnh báo về giới hạn tải trí tuệ của khán giả. Bộ não người xem giống như một chiếc bàn làm việc nhỏ, chỉ tiếp nhận được từ bốn đến bảy đơn vị thông tin cùng lúc. Nếu lạm dụng sự tiện lợi của phần mềm để phô diễn kỹ xảo rối rắm, bạn sẽ làm tăng tải ngoại sinh vô ích, khiến người xem mệt mỏi và nhanh chóng bấm bỏ qua video.",
         "sources": [
           {
             "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 97
+            "start": 70
           },
           {
             "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
-            "start": 50
+            "start": 187
+          },
+          {
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 217
+          }
+        ]
+      },
+      {
+        "text": "Chính vì vậy, sự kết hợp giữa kỹ thuật dựng phi tuyến và tư duy định hướng nhận thức là chìa khóa tạo nên một tác phẩm xuất sắc. Khi ngồi trước phần mềm dựng, thay vì mải mê thử nghiệm các tính năng ngẫu nhiên chỉ vì nó không làm hỏng file gốc, bạn hãy tự hỏi từng nhát cắt có giúp người xem hiểu sâu hơn hay không. Một biên tập viên chuyên nghiệp là người biết dùng công nghệ NLE hiện đại để phục vụ mục tiêu giao tiếp chiến lược, biến mọi cảnh quay phức tạp thành trải nghiệm mượt mà và dễ tiếp thu cho khán giả.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 143
+          },
+          {
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 319
           }
         ]
       }
@@ -70,47 +71,124 @@
     "checks": [
       {
         "id": "daily-1-c1",
-        "conceptId": "tinh-phi-huy-hoai",
-        "prompt": "Đặc tính phi hủy hoại (non-destructive) trong dựng phi tuyến đem lại lợi ích cốt lõi nào cho người biên tập?",
+        "conceptId": "tai-tri-tue",
+        "prompt": "Khi tận dụng sự tiện lợi của phần mềm dựng phi tuyến (NLE), người dựng phim cần lưu ý điều gì về tải trí tuệ của khán giả?",
         "options": [
-          "Cho phép thử nghiệm sáng tạo thoải mái mà không làm mất hay thay đổi file gốc",
-          "Tự động sắp xếp các clip theo đúng trật tự kịch bản",
-          "Thay thế hoàn toàn vai trò của đạo diễn và biên tập viên",
-          "Giảm thiểu kích thước file video xuất ra ở giai đoạn cuối"
+          "Tránh lạm dụng kỹ xảo và lớp âm thanh rối rắm gây tăng tải ngoại sinh vượt quá khả năng xử lý của não bộ",
+          "Tự do chèn tối đa hiệu ứng chuyển cảnh vì tính phi hủy hoại giúp file gốc không bị mất dữ liệu",
+          "Tăng tải nội tại lên mức tối đa bằng cách chia nhỏ video thành hàng chục khung hình đồng thời",
+          "Cắt phim trực tiếp theo thứ tự tuyến tính để giảm bớt độ phân giải và dung lượng tệp xuất ra"
         ],
         "correctIndex": 0,
-        "explanation": "Tính phi hủy hoại đảm bảo mọi thao tác cắt ghép không tác động trực tiếp lên dữ liệu gốc, giúp người dựng tự do thử nghiệm nhiều phương án dựng khác nhau."
-      },
-      {
-        "id": "daily-1-c2",
-        "conceptId": "tu-duy-dung",
-        "prompt": "Khi ứng dụng tư duy dựng trên phần mềm phi tuyến, mục tiêu cốt lõi của người dựng là gì?",
-        "options": [
-          "Đẩy nhanh tốc độ dựng phim để hoàn thành trước thời hạn",
-          "Chèn càng nhiều lớp hiệu ứng chuyển cảnh phức tạp càng tốt",
-          "Tổ chức chiến lược thông tin để định hướng hành trình nhận thức của người xem",
-          "Cắt nối cơ học các clip theo đúng trình tự quay trên hiện trường"
-        ],
-        "correctIndex": 2,
-        "explanation": "Theo bài giảng, dựng không chỉ là ghép nối cảnh quay mà là tổ chức chiến lược thông tin nhằm dẫn dắt nhận thức của khán giả."
+        "explanation": "Dựng phi tuyến giúp thử nghiệm dễ dàng, nhưng nếu nhồi nhét quá nhiều hiệu ứng lộn xộn sẽ làm tăng tải ngoại sinh vô ích, vượt quá giới hạn xử lý 4–7 đơn vị thông tin của não người xem."
       }
     ],
     "origin": "gemini"
   },
   {
     "id": "daily-2",
-    "title": "Kiểm soát tải trí tuệ bằng nhịp điệu và công cụ chú ý",
+    "title": "Kiểm soát nhịp điệu và thời gian qua bốn giai đoạn dựng phim",
     "readingMinutes": 2,
     "conceptIds": [
-      "tai-tri-tue",
-      "cong-cu-dan-dat-chu-y",
-      "muc-tieu-giao-tiep",
-      "vai-tro-nguoi-xem",
-      "thoi-luong-canh"
+      "quy-trinh-dung-bon-giai-doan",
+      "nhip-hinh",
+      "nhip-am",
+      "thoi-luong-canh",
+      "nen-va-keo-dai-thoi-gian"
     ],
     "paragraphs": [
       {
-        "text": "Trước khi đặt nhát cắt đầu tiên, người dựng phim phải thấu hiểu vai trò của người xem về tuổi tác, học vấn lẫn nền tảng văn hóa. Kiến thức sẵn có của khán giả sẽ quyết định cách họ tiếp nhận câu chuyện. Đồng thời, xác định rõ mục tiêu giao tiếp như thông tin hay thuyết phục sẽ chỉ dẫn việc lựa chọn phong cách dựng logic rõ ràng hay tạo cao trào cảm xúc mạnh mẽ.",
+        "text": "Trong quy trình làm phim chuyên nghiệp, bài giảng bản chất dựng phi tuyến ví việc dựng phim như một nhà điêu khắc đục tượng qua quy trình bốn giai đoạn. Bắt đầu từ Assembly để chọn lọc các cảnh quay thô tốt nhất xếp thành chuỗi sơ bộ, người dựng bước sang giai đoạn Rough cut để định hình câu chuyện mạch lạc. Ở bản dựng thô này, công việc trọng tâm chính là thiết lập nhịp độ và thời gian cho toàn bộ dự án, dù tổng thời lượng lúc này có thể dài hơn nhiều so với thành phẩm cuối cùng.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 202
+          },
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 272
+          }
+        ]
+      },
+      {
+        "text": "Để tinh chỉnh nhịp độ đó, người dựng phải vận dụng kiến thức từ bài học nhịp điệu. Nhịp điệu được tạo nên từ hai yếu tố song hành như đôi chân của một người: nhịp hình và nhịp âm. Nhịp hình được cảm nhận bằng mắt thông qua các chuyển động trong khung hình và sự đan xen giữa các cảnh quay. Trong khi đó, nhịp âm được thính giác cảm nhận qua tốc độ lời thoại, khoảng nghỉ và tiết tấu âm nhạc. Khi nhịp hình và nhịp âm bước cùng nhau, video sẽ tạo ra cảm xúc vô cùng vững chắc cho khán giả.",
+        "sources": [
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 59
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 95
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 131
+          }
+        ]
+      },
+      {
+        "text": "Khi bước sang giai đoạn Fine cut, sự chính xác đạt tới đỉnh điểm khi người dựng kiểm soát chặt chẽ thời lượng cảnh quay. Bài học về nhịp điệu chỉ ra rằng những cảnh ngắn dưới hai giây tạo ra năng lượng cao và kích thích mạnh, trong khi cảnh dài mang lại sự lắng đọng. Trong giai đoạn Fine cut của bài dựng phi tuyến, người dựng siết từng điểm cắt, lồng ghép nhạc nền chi tiết để tạo dòng chảy mượt mà. Họ có thể chủ động kéo chậm nhịp trước một khoảnh khắc then chốt nhằm nhấn mạnh cảm xúc cao trào trước khi khoá bản dựng.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 315
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 161
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 195
+          }
+        ]
+      },
+      {
+        "text": "Đặc biệt, nhịp điệu còn là công cụ điều khiển thời gian đắc lực thông qua kỹ thuật nén và kéo dài thời gian. Người dựng có thể dùng montage cắt nhanh các cảnh ngắn để nén quãng thời gian vài năm của nhân vật vào vài giây, hoặc dùng cảnh quay dài để kéo giãn khoảnh khắc căng thẳng. Khi mọi cấu trúc nhịp điệu hình ảnh và thời gian đã hoàn hảo, dự án bước vào chặng cuối là Time lock. Dòng thời gian được khóa chặt hoàn toàn để các bộ phận âm thanh và chỉnh màu vào hoàn thiện sản phẩm.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 364
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 240
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-2-c1",
+        "conceptId": "quy-trinh-dung-bon-giai-doan",
+        "prompt": "Giai đoạn nào trong quy trình dựng phim chuyên nghiệp đòi hỏi siết chặt từng điểm cắt, phối hợp nhịp hình và nhịp âm chi tiết trước khi bước vào Time lock?",
+        "options": [
+          "Linear cut",
+          "Rough cut",
+          "Assembly",
+          "Fine cut"
+        ],
+        "correctIndex": 3,
+        "explanation": "Giai đoạn Fine cut là lúc người dựng hoàn thiện độ chính xác từng điểm cắt, siết chặt nhịp độ, đồng bộ nhạc nền, âm thanh và chuyển cảnh trước khi chuyển sang Time lock để khóa timeline."
+      }
+    ],
+    "origin": "gemini"
+  },
+  {
+    "id": "daily-3",
+    "title": "Nghệ thuật điều hướng sự chú ý của người xem bằng màu sắc",
+    "readingMinutes": 2,
+    "conceptIds": [
+      "vai-tro-nguoi-xem",
+      "muc-tieu-giao-tiep",
+      "cong-cu-dan-dat-chu-y",
+      "tam-ly-hoc-mau-sac",
+      "phoi-hop-mau-sac"
+    ],
+    "paragraphs": [
+      {
+        "text": "Trước khi bắt tay vào dàn dựng hay tô màu cho một thước phim, câu hỏi đầu tiên bạn phải trả lời là video này dành cho ai và nhằm mục đích gì. Bài học về tư duy dựng nhấn mạnh rằng vai trò của người xem là yếu tố tiên quyết; tuổi tác, học vấn và văn hóa của họ sẽ quyết định cách họ tiếp nhận thông tin. Đồng thời, mục tiêu giao tiếp của video cũng chi phối phong cách thể hiện. Một video mang tính thông tin giáo dục cần sự sáng sủa, logic, trong khi video thuyết phục cần tác động mạnh vào cảm xúc.",
         "sources": [
           {
             "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
@@ -123,155 +201,49 @@
         ]
       },
       {
-        "text": "Bộ não người xem chỉ xử lý được từ bốn đến bảy đơn vị thông tin cùng lúc, tương đương một giới hạn tải trí tuệ nhất định. Trong khi tải nội tại phụ thuộc vào độ khó của nội dung, tải ngoại sinh sinh ra từ cách dựng vụng về hoặc lộn xộn. Nếu người dựng nhồi nhét quá nhiều thông tin dồn dập, khán giả sẽ bị quá tải nhận thức và lập tức bỏ dở video.",
-        "sources": [
-          {
-            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
-            "start": 187
-          },
-          {
-            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
-            "start": 217
-          },
-          {
-            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
-            "start": 319
-          }
-        ]
-      },
-      {
-        "text": "Để điều tiết khối lượng tiếp nhận này, việc tính toán thời lượng cảnh quay đóng vai trò vô cùng quyết định. Cảnh ngắn dưới hai giây tạo ra năng lượng cao và kích thích thị giác mạnh, nhưng nếu lạm dụng liên tục sẽ làm bùng nổ tải ngoại sinh. Ngược lại, việc kéo dài thời lượng hoặc tạm dừng trước thời điểm then chốt sẽ tạo khoảng nghỉ cho não bộ kịp xử lý thông tin.",
-        "sources": [
-          {
-            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
-            "start": 217
-          },
-          {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 161
-          },
-          {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 195
-          }
-        ]
-      },
-      {
-        "text": "Người dựng khéo léo kết hợp các công cụ dẫn dắt sự chú ý như bố cục khung hình, chuyển động và độ tương phản màu sắc để mắt người xem luôn tập trung đúng chỗ. Đi kèm với đó, âm thanh và nhạc nền giúp thiết lập bầu không khí cảm xúc. Nhờ phối hợp nhịp nhàng giữa thời lượng cảnh và công cụ hình âm, người xem tiếp thu trọn vẹn thông điệp mà không mệt mỏi.",
+        "text": "Để đạt được mục tiêu giao tiếp đó, người dựng cần sử dụng các công cụ dẫn dắt sự chú ý, trong đó màu sắc là vũ khí thị giác hàng đầu. Bài giảng về nguyên lý màu sắc bổ sung rằng tâm lý học màu sắc tác động trực tiếp đến tiềm thức người xem dù có sự khác biệt văn hóa. Ví dụ, sắc đỏ gợi cảm giác đam mê, quyền lực hoặc may mắn trong văn hóa Á Đông, trong khi màu xanh lam mang lại sự thanh bình và hy vọng. Hiểu tâm lý khán giả giúp bạn chọn bảng màu khơi gợi đúng trạng thái tinh thần cần thiết.",
         "sources": [
           {
             "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
             "start": 255
           },
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 161
-          }
-        ]
-      }
-    ],
-    "checks": [
-      {
-        "id": "daily-2-c1",
-        "conceptId": "tai-tri-tue",
-        "prompt": "Loại tải trí tuệ nào phát sinh do dựng phim lộn xộn mà người biên tập hoàn toàn có thể kiểm soát được?",
-        "options": [
-          "Tải tiếp nhận cảm xúc",
-          "Tải ngoại sinh",
-          "Tải nội tại",
-          "Tải tạo ý nghĩa"
-        ],
-        "correctIndex": 1,
-        "explanation": "Tải ngoại sinh sinh ra do cách tổ chức nội dung và dựng phim lộn xộn, là phần vô ích mà người dựng có thể chủ động kiểm soát và giảm bớt."
-      },
-      {
-        "id": "daily-2-c2",
-        "conceptId": "thoi-luong-canh",
-        "prompt": "Việc sử dụng các cảnh quay ngắn dưới hai giây liên tục có tác động nhận thức như thế nào đối với người xem?",
-        "options": [
-          "Loại bỏ hoàn toàn sự phụ thuộc vào nhịp âm và nhạc nền",
-          "Giảm tải trí tuệ xuống mức thấp nhất và giúp ghi nhớ sâu sắc",
-          "Kích thích thị giác mạnh mẽ nhưng dễ gây quá tải nếu không có khoảng nghỉ hợp lý",
-          "Khiến video bị chậm lại và làm người xem mất kiên nhẫn"
-        ],
-        "correctIndex": 2,
-        "explanation": "Cảnh dưới 2 giây tạo năng lượng cao và nhịp nhanh; nếu lạm dụng mà không điều tiết thời lượng, lượng thông tin dồn dập sẽ làm tăng tải ngoại sinh của khán giả."
-      }
-    ],
-    "origin": "gemini"
-  },
-  {
-    "id": "daily-3",
-    "title": "Nghệ thuật tổ chức thời gian và nhịp điệu trong quy trình bốn giai đoạn",
-    "readingMinutes": 2,
-    "conceptIds": [
-      "quy-trinh-dung-bon-giai-doan",
-      "nhip-hinh",
-      "nhip-am",
-      "nen-va-keo-dai-thoi-gian"
-    ],
-    "paragraphs": [
-      {
-        "text": "Một tác phẩm hậu kỳ chuyên nghiệp không bao giờ được hoàn thiện chỉ sau một lần cắt duy nhất. Nó trải qua quy trình dựng bốn giai đoạn tương tự như cách nhà điêu khắc đẽo gọt bức tượng. Bắt đầu từ Assembly để sắp xếp tư liệu thô, tiến sang Rough cut nhằm dựng nên câu chuyện mạch lạc, trước khi bước vào hai bước tinh chỉnh quyết định là Fine cut và Time lock.",
-        "sources": [
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 202
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 362
           },
           {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 239
-          },
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 272
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 397
           }
         ]
       },
       {
-        "text": "Ngay từ giai đoạn Rough cut, người dựng đã phải tính toán kỹ thuật nén và kéo dài thời gian để điều khiển cảm xúc. Một chuỗi montage cắt cảnh nhanh giúp nén sự trôi qua của thời gian một cách cô đọng. Ngược lại, kỹ thuật làm chậm hoặc giữ cảnh quay dài sẽ kéo giãn khoảnh khắc nhằm khuấy động sự hồi hộp và xây dựng cao trào kịch tính cho câu chuyện.",
+        "text": "Không dừng lại ở ý nghĩa của từng màu đơn lẻ, bài học màu sắc cung cấp các quy tắc phối hợp màu sắc như tương đồng, đơn sắc và tương phản bổ túc. Sự kết hợp tương phản giữa hai màu đối diện trên vòng tròn màu sắc, tiêu biểu như tông cam và xanh mòng két, tạo nên độ tương phản thị giác vô cùng nổi bật. Khi kết hợp với nguyên tắc dẫn dắt ánh nhìn trong bài tư duy dựng, sự đối lập màu sắc này ngay lập tức tách chủ thể khỏi hậu cảnh và thu hút nhãn quan khán giả vào đúng điểm nhấn chính.",
         "sources": [
           {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 272
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 442
           },
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 195
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 529
           },
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 240
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 607
           }
         ]
       },
       {
-        "text": "Bước sang giai đoạn Fine cut, sự chuẩn xác tuyệt đối được đặt lên hàng đầu thông qua việc cân chỉnh nhịp hình. Người dựng siết chặt từng điểm cắt, đan xen khéo léo các cảnh quay dài ngắn để mắt người xem cảm nhận được tiết tấu liền mạch. Cùng lúc đó, việc tích hợp nhạc nền, tiếng động và lời thoại sẽ định hình nên nhịp âm rõ nét trên timeline.",
+        "text": "Áp dụng thực tế, nếu bạn quay một nhân vật đi dạo trong công viên có hàng cây xanh mướt, hãy chủ động cho nhân vật đội một chiếc nón đỏ hoặc mặc áo màu ấm. Đây là sự phối hợp hoàn hảo giữa kỹ thuật tương phản màu sắc và công cụ định hướng thị giác nhằm phục vụ mục tiêu dẫn dắt nhận thức. Người sáng tạo nội dung không chỉnh màu ngẫu nhiên theo trào lưu, mà luôn dùng màu sắc có chủ đích chiến lược, biến mọi khung hình trở thành công cụ truyền thông thị giác chính xác và đầy sức thuyết phục.",
         "sources": [
           {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 315
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 319
           },
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 59
-          },
-          {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 95
-          }
-        ]
-      },
-      {
-        "text": "Khi nhịp hình và nhịp âm hòa quyện vững chãi như hai chân bước đều, bản dựng đạt đến sự hoàn chỉnh và tiến tới Time lock. Khi timeline đã khóa, mọi thứ tự và thời gian của video không còn thay đổi. Lúc này, đội ngũ âm thanh và chỉnh màu bắt đầu thực hiện khâu hoàn thiện cuối cùng trên một nền tảng nhịp điệu đã được khóa chặt.",
-        "sources": [
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 364
-          },
-          {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 131
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 648
           }
         ]
       }
@@ -279,29 +251,200 @@
     "checks": [
       {
         "id": "daily-3-c1",
-        "conceptId": "quy-trinh-dung-bon-giai-doan",
-        "prompt": "Giai đoạn nào trong quy trình dựng đánh dấu việc timeline được khóa hoàn toàn và chuyển giao cho các khâu âm thanh, chỉnh màu chuyên sâu?",
+        "conceptId": "cong-cu-dan-dat-chu-y",
+        "prompt": "Khi muốn làm nổi bật nhân vật chính đi giữa hàng cây xanh lá để dẫn dắt sự chú ý của khán giả, người dựng nên vận dụng cách phối màu tương phản nào?",
         "options": [
-          "Assembly",
-          "Rough cut",
-          "Time lock",
-          "Fine cut"
-        ],
-        "correctIndex": 2,
-        "explanation": "Ở giai đoạn Time lock, timeline được khóa lại, không còn thay đổi thời gian hay thứ tự video để các bộ phận âm thanh và chỉnh màu làm việc."
-      },
-      {
-        "id": "daily-3-c2",
-        "conceptId": "nen-va-keo-dai-thoi-gian",
-        "prompt": "Phương thức nào sau đây được sử dụng để nén thời gian hiệu quả trong quá trình dựng phim?",
-        "options": [
-          "Khóa timeline ở giai đoạn Assembly trước khi chọn take",
-          "Sử dụng kỹ thuật montage cắt nhanh để thể hiện sự trôi qua của thời gian",
-          "Dùng kỹ thuật slow-motion để kéo dài chi tiết khung hình",
-          "Giữ nguyên một cảnh quay dài trên năm giây không cắt"
+          "Cho nhân vật mặc trang phục màu xanh lá đậm để tạo sự tương đồng với cây cỏ",
+          "Sử dụng trang phục hoặc phụ kiện màu đỏ hoặc tông ấm đối diện trên vòng tròn màu",
+          "Xóa bỏ hoàn toàn nhạc nền để khán giả chỉ tập trung vào chuyển động nhân vật",
+          "Chuyển toàn bộ khung cảnh về hệ màu in ấn CMYK để giảm độ rực rỡ của cảnh"
         ],
         "correctIndex": 1,
-        "explanation": "Bài giảng nêu rõ montage cắt nhanh là công cụ nén thời gian hiệu quả để thể hiện sự trôi qua của thời gian."
+        "explanation": "Phối màu bổ túc tương phản (đỏ - xanh lá) tạo ra sự đối lập mạnh mẽ trên vòng tròn màu sắc, đóng vai trò như công cụ hình ảnh định hướng ánh nhìn của khán giả thẳng vào chủ thể."
+      }
+    ],
+    "origin": "gemini"
+  },
+  {
+    "id": "daily-4",
+    "title": "Bố trí ánh sáng ba điểm và nguyên lý kiểm soát màu sắc",
+    "readingMinutes": 2,
+    "conceptIds": [
+      "key-light",
+      "fill-light",
+      "back-light",
+      "cac-thuat-ngu-mau-sac",
+      "he-mau-rgb-va-cmyk"
+    ],
+    "paragraphs": [
+      {
+        "text": "Khi thiết lập ánh sáng trong quay chụp, bài học về ba loại ánh sáng cơ bản giới thiệu mô hình kinh điển gồm ánh sáng chủ, ánh sáng phụ và đèn ven. Ánh sáng chủ hay key light là nguồn sáng căn bản nhất để làm rõ chủ thể, nếu thiếu nó đối tượng sẽ chìm vào bóng tối. Do key light đặt lệch bên tạo bóng đổ sâu, bạn cần fill light đặt phía đối diện để làm dịu các vùng tối này. Cuối cùng, back light đặt phía sau chiếu vào lưng và tóc, tạo đường viền sáng tách chủ thể ra khỏi phông nền.",
+        "sources": [
+          {
+            "lessonId": "ba-loai-anh-sang-co-ban",
+            "start": 45
+          },
+          {
+            "lessonId": "ba-loai-anh-sang-co-ban",
+            "start": 73
+          },
+          {
+            "lessonId": "ba-loai-anh-sang-co-ban",
+            "start": 106
+          }
+        ]
+      },
+      {
+        "text": "Sự tương tác của hệ thống đèn chiếu sáng liên quan mật thiết đến các thuật ngữ màu sắc trong bài học nguyên lý màu sắc. Ánh sáng mạnh từ key light và fill light trực tiếp thay đổi độ sáng hay luminosity của vật thể, đồng thời ảnh hưởng đến độ đậm tức saturation dưới mắt người nhìn. Hơn nữa, việc chọn bóng đèn ánh sáng ấm hay lạnh còn gắn liền với nhiệt độ màu hay temperature. Màu sắc của da người và trang phục chỉ thể hiện đúng họ màu hay hue vốn có khi nguồn sáng được cung cấp với cường độ và nhiệt độ chuẩn xác.",
+        "sources": [
+          {
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 135
+          },
+          {
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 190
+          },
+          {
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 221
+          }
+        ]
+      },
+      {
+        "text": "Toàn bộ ánh sáng phản xạ từ chủ thể sau đó được máy quay ghi nhận và tái tạo qua các hệ màu chuyên biệt. Bài học màu sắc phân biệt rõ hai không gian: hệ trừ màu CMYK dùng trong ngành in ấn giấy tờ và hệ cộng màu RGB dành cho không gian kỹ thuật số. Khi ánh sáng đèn chiếu rọi vào khung cảnh, cảm biến kỹ thuật số chuyển đổi thành các điểm ảnh pixel gồm ba màu đỏ, lục, lam. Hiểu được cơ chế phát quang của hệ RGB giúp bạn kiểm soát được dải sáng tối trên màn hình máy tính mà không làm cháy sáng hay bết màu.",
+        "sources": [
+          {
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 252
+          },
+          {
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 286
+          },
+          {
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 325
+          }
+        ]
+      },
+      {
+        "text": "Trong thực tế sản xuất, một người làm hình ảnh thông minh sẽ tính toán ánh sáng và màu sắc song hành. Bạn không thể dựa vào việc áp LUT hay chỉnh màu hậu kỳ trên hệ RGB để cứu vãn một cảnh quay thiếu key light hoặc mất viền back light. Việc điều chỉnh tỉ lệ công suất giữa key light và fill light ngay tại hiện trường cho phép bạn ấn định giá trị độ sáng chính xác cho chủ thể. Nhờ đó, hình ảnh kỹ thuật số khi xuất ra các màn hình hiển thị luôn giữ được sự trung thực, tách bạch và giàu chiều sâu.",
+        "sources": [
+          {
+            "lessonId": "ba-loai-anh-sang-co-ban",
+            "start": 171
+          },
+          {
+            "lessonId": "nguyen-ly-mau-sac",
+            "start": 72
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-4-c1",
+        "conceptId": "fill-light",
+        "prompt": "Vai trò chính của nguồn sáng phụ (fill light) khi kết hợp cùng nguồn sáng chính (key light) trong việc kiểm soát độ sáng của chủ thể là gì?",
+        "options": [
+          "Đặt đối diện nguồn sáng chính để làm mềm và giảm độ sâu của bóng tối trên khuôn mặt",
+          "Tạo đường viền phát sáng bao quanh tóc để tách chủ thể khỏi hậu cảnh",
+          "Hoán đổi không gian màu kỹ thuật số từ hệ RGB sang hệ in ấn CMYK",
+          "Thay thế hoàn toàn nguồn sáng chính để tránh hiện tượng cháy sáng các điểm ảnh pixel"
+        ],
+        "correctIndex": 0,
+        "explanation": "Khi key light đặt lệch bên tạo bóng đổ gắt, fill light hoặc tấm hắt sáng được đặt ở phía đối diện nhằm làm dịu và giảm độ sâu của bóng tối, cân bằng độ sáng trên chủ thể."
+      }
+    ],
+    "origin": "gemini"
+  },
+  {
+    "id": "daily-5",
+    "title": "Nuôi dưỡng tư duy nhiếp ảnh qua ánh sáng và ngôn ngữ điện ảnh",
+    "readingMinutes": 2,
+    "conceptIds": [
+      "practical-light",
+      "dong-luc-nhiep-anh-noi-tai",
+      "tu-duy-tai-tao-hinh-anh",
+      "ngon-ngu-thi-giac-dien-anh",
+      "kho-du-lieu-tiem-thuc"
+    ],
+    "paragraphs": [
+      {
+        "text": "Nhiều người bước vào nhiếp ảnh chỉ vì phong trào hội nhóm đông vui hoặc áp lực kiếm tiền nhanh, nhưng bài học về tư duy nhiếp ảnh khẳng định điều đó không bền vững. Sự tiến bộ thực sự phải bắt nguồn từ động lực nhiếp ảnh nội tại, tức niềm say mê tự thân và khát khao sáng tạo không vụ lợi. Người chụp có động lực nội tại mạnh mẽ sẽ không tin vào quan niệm bấm máy thật nhiều là sẽ lên tay. Thay vào đó, họ luôn chủ động tư duy về khung hình, hiểu rõ lý do tại sao mình chụp và mình muốn truyền tải điều gì.",
+        "sources": [
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 110
+          },
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 155
+          },
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 372
+          }
+        ]
+      },
+      {
+        "text": "Để nâng tầm khung hình, nhiếp ảnh gia cần học hỏi ngôn ngữ thị giác điện ảnh. Xem các bộ phim kinh điển như dòng phim noir đen trắng giúp ta thấu hiểu cách các đạo diễn hình ảnh sử dụng tiêu cự, góc máy và bóng tối để diễn đạt tâm lý nhân vật. Liên hệ với bài giảng ánh sáng, các nhà làm phim thường khéo léo cài cắm nguồn sáng thực tế trong khung cảnh hay practical light, như một ngọn đèn bàn ấm áp hay chiếc đèn ngủ phía xa. Nguồn sáng có thật này vừa tạo điểm nhấn cho hậu cảnh vừa tăng chiều sâu điện ảnh.",
+        "sources": [
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 512
+          },
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 555
+          },
+          {
+            "lessonId": "ba-loai-anh-sang-co-ban",
+            "start": 136
+          }
+        ]
+      },
+      {
+        "text": "Thay vì học vặt các mẹo chụp trên mạng, phương pháp hiệu quả nhất là rèn luyện tư duy phân tích và tái tạo hình ảnh. Bạn hãy chủ động quan sát những bức ảnh kinh điển, mổ xẻ cách bố trí ánh sáng và góc nhìn rồi tự thực hành chụp lại theo phong cách riêng của mình. Quá trình thưởng thức phim ảnh và tái hiện liên tục này sẽ xây dựng một kho dữ liệu thị giác trong tiềm thức. Khi bạn tiếp xúc với nghệ thuật thị giác thường xuyên, bộ não sẽ tự động lưu trữ các khuôn mẫu thẩm mỹ đỉnh cao một cách vô thức.",
+        "sources": [
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 292
+          },
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 609
+          }
+        ]
+      },
+      {
+        "text": "Nhờ kho dữ liệu tiềm thức phong phú kết hợp với hiểu biết về ánh sáng thực tế, khi bước ra hiện trường chụp ảnh đời thực, bạn sẽ hình thành phản xạ bố cục rất nhanh mà không cần gượng ép dàn dựng. Nhìn vào một căn phòng mộc mạc, mắt bạn sẽ lập tức nhận ra nên tận dụng chiếc đèn bàn làm practical light để tạo chiều sâu và chọn góc máy nào để tôn vinh chủ thể. Đó chính là cảnh giới nơi tư duy nhiếp ảnh bài bản hòa quyện cùng kỹ thuật ánh sáng, giúp bạn tự tin sáng tạo mọi tác phẩm nghệ thuật.",
+        "sources": [
+          {
+            "lessonId": "tu-duy-nhiep-anh",
+            "start": 654
+          },
+          {
+            "lessonId": "ba-loai-anh-sang-co-ban",
+            "start": 136
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-5-c1",
+        "conceptId": "kho-du-lieu-tiem-thuc",
+        "prompt": "Theo tác giả bài tư duy nhiếp ảnh, việc tích cực xem phim điện ảnh chất lượng cao và phân tích cách dùng ánh sáng giúp người chụp đạt được lợi ích gì khi ra hiện trường?",
+        "options": [
+          "Thay thế hoàn toàn sự cần thiết của các nguồn sáng như key light hay fill light ngoài đời",
+          "Cho phép sao chép nguyên xi 100% kịch bản của Hollywood mà không cần sáng tạo thêm",
+          "Đảm bảo kiếm được nhiều tiền ngay lập tức từ việc tham gia các hội nhóm nhiếp ảnh phong trào",
+          "Giúp tích lũy kho dữ liệu thị giác trong tiềm thức để phản xạ góc máy và bố cục nhanh nhạy"
+        ],
+        "correctIndex": 3,
+        "explanation": "Xem phim ảnh nghệ thuật giúp bồi đắp kho dữ liệu thị giác trong tiềm thức, giúp người chụp khi ra bối cảnh thực tế có thể tự động phản xạ và phát hiện góc máy, ánh sáng phù hợp một cách tự nhiên."
       }
     ],
     "origin": "gemini"

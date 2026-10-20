@@ -1,9 +1,12 @@
 import { lazy, Suspense, useCallback, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Camera, Grid3x3, Info, Loader2, RotateCcw, Sparkles } from 'lucide-react'
 import type { GradePhotoResponse, LightingIntent } from '@/lib/api-types'
 import { ApiRequestError, generateEnvironment, gradePhoto, isNotLightingError } from '@/lib/api'
 import { ENV_LIMITS } from '@/lib/environment'
 import { announceRewards, directorScreen, DIRECTOR_MIN_SCORE } from '@/lib/gamification'
+import { getStudioBrief, studioBriefsWithConcept } from '@/lib/studio-briefs'
+import { getConcept, lessons } from '@/data'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup } from '@/lib/studio-setup'
 import type { CaptureFn } from '@/components/studio/studio-scene'
@@ -38,6 +41,9 @@ export function OrbitStudioView() {
     const directorBest = useOrbitStore((s) => s.directorBest)
     const [webgl] = useState(canRender3D)
     const [envPrompt, setEnvPrompt] = useState('')
+    const [searchParams, setSearchParams] = useSearchParams()
+    const brief = getStudioBrief(searchParams.get('concept'))
+    const briefConcept = brief ? getConcept(brief.conceptId) : undefined
     const [envLoading, setEnvLoading] = useState(false)
     // Ý đồ ánh sáng đã áp dụng (giữ lại khi lần sau bị từ chối hoặc lỗi) và thông báo của lần gọi gần nhất
     const [applied, setApplied] = useState<{ prompt: string; explanation: string; setup: CameraSetup } | null>(null)
@@ -170,6 +176,50 @@ export function OrbitStudioView() {
                             <Slider label="Khoảng cách" unit="m" min={3} max={10} step={0.1} value={setup.distance} onChange={set('distance')} />
                             <Slider label="Dịch khung ngang" min={-0.4} max={0.4} step={0.01} value={setup.shiftX} onChange={set('shiftX')} format={(v) => `${Math.round(v * 100)}%`} />
                             <Slider label="Dịch khung dọc" min={-0.4} max={0.4} step={0.01} value={setup.shiftY} onChange={set('shiftY')} format={(v) => `${Math.round(v * 100)}%`} />
+                        </Panel>
+                        <Panel title="Đề bài theo khái niệm">
+                            {brief && briefConcept && (
+                                <div className="rounded-card border border-brand-100 bg-brand-50 px-4 py-3">
+                                    <p className="text-eyebrow uppercase text-brand-ink">{briefConcept.name}</p>
+                                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">{brief.task}</p>
+                                    <button
+                                        type="button"
+                                        disabled={envLoading}
+                                        onClick={() => {
+                                            setEnvPrompt(brief.lighting)
+                                            void applyEnvironment(brief.lighting)
+                                        }}
+                                        className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-[13px] font-bold text-ink-foreground transition hover:bg-brand-700 disabled:opacity-50"
+                                    >
+                                        <Sparkles size={14} /> Tạo ánh sáng gợi ý
+                                    </button>
+                                    {(() => {
+                                        const src = lessons.find((l) => l.concepts.some((c) => c.id === brief.conceptId))
+                                        return src ? (
+                                            <Link to={`/lesson/${src.id}?t=${briefConcept.segment.start}`} className="mt-2 block text-xs font-semibold text-brand-ink hover:underline">
+                                                Xem lại đoạn giảng trong bài
+                                            </Link>
+                                        ) : null
+                                    })()}
+                                </div>
+                            )}
+                            <ul className="flex flex-wrap gap-2" aria-label="Chọn khái niệm để thực hành">
+                                {studioBriefsWithConcept().map((b) => (
+                                    <li key={b.conceptId}>
+                                        <button
+                                            type="button"
+                                            aria-pressed={brief?.conceptId === b.conceptId}
+                                            onClick={() => setSearchParams({ concept: b.conceptId }, { replace: true })}
+                                            className={`rounded-full border px-3 py-1.5 text-left text-[12px] font-semibold transition ${
+                                                brief?.conceptId === b.conceptId ? 'border-brand-600 bg-brand-50 text-brand-ink' : 'border-border bg-card text-foreground hover:border-brand-300'
+                                            }`}
+                                        >
+                                            {b.conceptName}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                            {!brief && <p className="text-xs text-muted-foreground">Chọn một khái niệm của khóa Nhiếp ảnh và ánh sáng để nhận đề bài và gợi ý ánh sáng.</p>}
                         </Panel>
                         <Panel title="Mô tả ánh sáng bằng lời">
                             <form

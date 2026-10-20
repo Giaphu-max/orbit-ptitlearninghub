@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import { CAMPUS } from './campus-palette'
+import { useNavigate } from 'react-router-dom'
 import { useThemeStore } from '@/store/useThemeStore'
 
 // Phần 3D tải riêng (three.js + R3F nặng), chỉ kéo về khi hero được dựng.
@@ -41,6 +42,7 @@ function StaticCampus() {
 
 /** Sân khấu 3D của hero: cảnh khuôn viên đổi hoàng hôn ↔ buổi tối theo giao diện của cả web. */
 export function CampusHero() {
+    const navigate = useNavigate()
     const night = useThemeStore((s) => s.theme === 'dark')
     const [enabled] = useState(canRender3D)
     const [reduce] = useState(prefersReducedMotion)
@@ -50,7 +52,7 @@ export function CampusHero() {
             <div className="absolute inset-0">
                 {enabled ? (
                     <Suspense fallback={<div className="h-full w-full animate-pulse rounded-panel bg-ink-foreground/5" aria-hidden />}>
-                        <CampusScene night={night} reduce={reduce} />
+                        <CampusScene night={night} reduce={reduce} onOpenCourse={(id) => navigate(`/learning#course-${id}`)} />
                     </Suspense>
                 ) : (
                     <div className="absolute inset-x-4 bottom-4 top-[45%] lg:left-[40%] lg:top-8">

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Check, Play } from 'lucide-react'
 import { dailyArticles, getConcept, getCourse, getLesson, lessons } from '@/data'
 import type { DailyArticle } from '@/data/types'
-import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, MISSIONS, UNLOCK_THRESHOLD } from '@/lib/gamification'
+import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, localDate, MISSIONS, UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusHero } from '@/components/home/campus-hero'
@@ -149,7 +149,12 @@ function DailySection() {
     const today = new Date()
     const dateLabel = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}`
 
-    const articles = dailyArticles.slice(0, DAILY_LIMIT)
+    // 3 bài mỗi ngày: bài đã đọc hôm nay, rồi bài chưa đọc ưu tiên theo lỗ hổng kiến thức (bài đã đọc từ ngày trước không quay lại)
+    const todayStr = localDate()
+    const articles = [
+        ...dailyArticles.filter((a) => read[a.id] === todayStr),
+        ...dailyArticles.filter((a) => !read[a.id]).sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery)),
+    ].slice(0, DAILY_LIMIT)
     const readCount = articles.filter((a) => read[a.id]).length
     const unread = articles.filter((a) => !read[a.id])
     const priority = [...unread].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]

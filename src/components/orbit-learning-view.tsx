@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { Check, ClipboardCheck, Play } from 'lucide-react'
 import { courses } from '@/data'
 import type { Course } from '@/data/types'
@@ -9,6 +10,13 @@ import { SiteFooter } from '@/components/site-footer'
 
 /** /learning – khóa học thật từ src/data: tiến độ, danh sách bài, vào từng bài và làm test cuối chương. */
 export function OrbitLearningView() {
+    const { hash } = useLocation()
+    // Vào từ mô hình khuôn viên (/learning#course-<id>): cuộn tới đúng khóa
+    useEffect(() => {
+        if (!hash) return
+        const el = document.getElementById(decodeURIComponent(hash.slice(1)))
+        el?.scrollIntoView({ block: 'start' })
+    }, [hash])
     return (
         <div className="w-full">
             <div className="container-page flex flex-col gap-10 py-8 lg:py-12">
@@ -46,7 +54,7 @@ function CourseBlock({ course }: { course: Course }) {
         <article aria-labelledby={`course-${course.id}`} className="overflow-hidden rounded-[28px] border border-border bg-card shadow-card">
             <div className="p-7 lg:p-9">
                 <span className="inline-flex rounded-full bg-brand-soft px-3.5 py-1.5 text-xs font-extrabold text-brand-ink">{course.subject}</span>
-                <h2 id={`course-${course.id}`} className="mt-5 max-w-3xl text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight text-foreground">
+                <h2 id={`course-${course.id}`} className="section-anchor mt-5 max-w-3xl text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight text-foreground">
                     {course.title}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">Giảng viên: {course.instructor}</p>

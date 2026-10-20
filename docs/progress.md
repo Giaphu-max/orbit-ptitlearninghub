@@ -2,6 +2,15 @@
 
 Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗi" là danh sách để sửa ở bước sau (chưa sửa gì ngoài chức năng).
 
+## Đợt 4 (21/10): khóa "Nhiếp ảnh và ánh sáng", liên kết Studio, nhãn khuôn viên
+
+- Khóa thứ hai `nhiep-anh-va-anh-sang` (3 video: 3 loại ánh sáng cơ bản, nguyên lý màu sắc, tư duy nhiếp ảnh) tạo bằng `scripts/generate-content.ts`; khóa cũ lấy từ cache, không gọi lại Gemini. 12 khái niệm, 12 câu quiz.
+- Daily: `dailyCount` tăng lên 5 nên cả bộ Daily được tạo lại (3 bài cũ thay bằng 5 bài mới, đủ 25 khái niệm của hai khóa). Chỉ 1 bài (`daily-3`) nối chéo hai khóa (màu sắc ↔ điều hướng sự chú ý của người xem). Trang chủ chọn 3 bài/ngày: bài đã đọc hôm nay, rồi bài chưa đọc ưu tiên theo lỗ hổng.
+- Trang học bài có thẻ "Thực hành trong Studio" (`/studio?concept=<id>`); Studio có panel "Đề bài theo khái niệm" (8 đề bài trong `src/lib/studio-briefs.ts`), nút "Tạo ánh sáng gợi ý" gọi Prompt-to-Environment.
+- Nhãn tòa nhà (`src/lib/campus-courses.ts`): Tòa A2 → Nhiếp ảnh và ánh sáng, Tòa A3 → Dựng audio và video phi tuyến, các tòa còn lại "Sắp mở". Bấm tòa có khóa thì mở `/learning#course-<id>`.
+- Trang chủ, phần Khóa học: chọn khóa bằng nút. `class-stats.json` có số liệu mẫu cho khóa mới.
+- Chưa làm: ảnh Studio ở trang chủ chưa theo đề bài; tòa nhãn "Sắp mở" chưa có trang riêng; chưa xem trên điện thoại.
+
 ## Đợt 3 (21/10): sửa lỗi Studio, Test, dữ liệu và giao diện
 
 Các mục đã sửa được đánh dấu "**→ Đã sửa (đợt 3)**" ngay trên dòng lỗi bên dưới. Ngoài danh sách:

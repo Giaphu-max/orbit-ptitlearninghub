@@ -797,5 +797,821 @@
     ],
     "origin": "gemini",
     "status": "published"
+  },
+  {
+    "id": "ba-loai-anh-sang-co-ban",
+    "courseId": "nhiep-anh-va-anh-sang",
+    "title": "Ba loại ánh sáng cơ bản trong quay phim và chụp ảnh",
+    "shortTitle": "Ánh sáng cơ bản",
+    "youtubeId": "qyu4pWB4L8g",
+    "durationSec": 194,
+    "summary": "Bài giảng giới thiệu và phân biệt các nguồn sáng thiết yếu trong studio gồm ánh sáng chủ (key light), ánh sáng phụ (fill light) và đèn ven (back light). Giảng viên giải thích nguyên lý thiết lập, công dụng thực tế của từng loại đèn trong việc chiếu sáng và tách biệt chủ thể. Ngoài ra, bài học còn bổ sung khái niệm practical light để tạo điểm nhấn trực quan cho hậu cảnh mà không làm lu mờ chủ thể.",
+    "concepts": [
+      {
+        "id": "key-light",
+        "name": "Ánh sáng chủ (key light)",
+        "definition": "Nguồn sáng chính chịu trách nhiệm cung cấp độ sáng căn bản và chủ đạo để làm rõ chủ thể trong khung hình.",
+        "segment": {
+          "start": 45,
+          "end": 73
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "fill-light",
+        "name": "Ánh sáng phụ (fill light)",
+        "definition": "Nguồn sáng bổ trợ (hoặc tấm hắt sáng) đặt đối diện với nguồn sáng chính nhằm làm mềm và giảm độ sâu của bóng đổ trên chủ thể.",
+        "segment": {
+          "start": 73,
+          "end": 106
+        },
+        "prerequisiteIds": [
+          "key-light"
+        ]
+      },
+      {
+        "id": "back-light",
+        "name": "Đèn ven (back light)",
+        "definition": "Nguồn sáng đặt phía sau chủ thể nhằm tạo đường viền sáng xung quanh, giúp tách biệt chủ thể khỏi phông nền mà không phụ thuộc vào xóa phông.",
+        "segment": {
+          "start": 106,
+          "end": 136
+        },
+        "prerequisiteIds": [
+          "key-light"
+        ]
+      },
+      {
+        "id": "practical-light",
+        "name": "Nguồn sáng thực tế trong khung cảnh (practical light)",
+        "definition": "Nguồn sáng có thực và nhìn thấy rõ ràng bên trong bối cảnh khung hình (như đèn bàn, đèn ngủ) nhằm tạo chiều sâu và điểm nhấn cho hậu cảnh.",
+        "segment": {
+          "start": 136,
+          "end": 171
+        },
+        "prerequisiteIds": [
+          "key-light"
+        ]
+      }
+    ],
+    "transcript": [
+      {
+        "start": 0,
+        "end": 24,
+        "text": "Xin chào các bạn và chào mừng quay trở lại với series Nhiếp ảnh cơ bản. Hôm nay chúng ta sẽ cùng tìm hiểu về ba vị trí ánh sáng cơ bản, những tên gọi ánh sáng mà người mới bắt đầu thường hay nhầm lẫn và bỡ ngỡ khi nghe nhắc tới."
+      },
+      {
+        "start": 24,
+        "end": 45,
+        "text": "Ngày xưa khi mới đi làm ở studio, nghe nhắc đến key light, back light hay fill light thì người mới rất sợ vì không hiểu đèn đổ đầy là gì. Hôm nay mình sẽ giải thích thật đơn giản, dễ hiểu bằng những từ ngữ đời thường và ít học thuật nhất."
+      },
+      {
+        "start": 45,
+        "end": 73,
+        "text": "Đầu tiên là key light, còn gọi là ánh sáng chủ. Đây là nguồn sáng chính dùng để chiếu sáng chủ thể. Nếu không có ánh sáng này, chủ thể trong khung hình sẽ hoàn toàn chìm vào bóng tối và không thể nhìn rõ được chi tiết."
+      },
+      {
+        "start": 73,
+        "end": 106,
+        "text": "Tiếp theo là fill light, tiếng Việt gọi là ánh sáng phụ. Khi đặt key light lệch sang một bên, khuôn mặt sẽ bị tương phản và đổ bóng tối (shadow) rất nhiều. Ta dùng fill light hoặc tấm hắt sáng đặt ở phía đối diện để làm dịu và giảm bớt bóng tối đó."
+      },
+      {
+        "start": 106,
+        "end": 136,
+        "text": "Thứ ba là back light, tức đèn ven. Đèn này được đặt phía sau chủ thể nhằm tạo ra một đường viền sáng bao quanh cơ thể, giúp tách tách biệt chủ thể ra khỏi phông nền. Nếu đèn đặt chếch cao chiếu sáng phần tóc thì còn được gọi là hair light."
+      },
+      {
+        "start": 136,
+        "end": 171,
+        "text": "Bổ sung thêm một loại đèn thú vị là practical light, tức nguồn sáng có thật xuất hiện trực tiếp trong khung hình, ví dụ như chiếc đèn bàn làm việc. Ánh sáng này tạo điểm nhấn cho hậu cảnh nhưng lưu ý không được sáng mạnh hơn key light."
+      },
+      {
+        "start": 171,
+        "end": 194,
+        "text": "Đó là những thuật ngữ ánh sáng cơ bản giúp bạn tự tin hơn khi setup ánh sáng quay chụp trong studio hoặc ngoài đời. Nếu có câu hỏi hoặc thuật ngữ nào chưa rõ, hãy để lại bình luận để cùng trao đổi nhé."
+      }
+    ],
+    "quiz": [
+      {
+        "id": "q-key-light-1",
+        "conceptId": "key-light",
+        "prompt": "Trong thiết lập ánh sáng cơ bản cho một buổi ghi hình, vai trò quan trọng nhất của đèn key light là gì?",
+        "options": [
+          "Là nguồn sáng chính chiếu sáng trực tiếp để làm rõ diện mạo của chủ thể",
+          "Làm sáng đều toàn bộ căn phòng để máy quay không bị nhiễu hạt",
+          "Tạo đường viền phát sáng xung quanh mép tóc và vai của nhân vật",
+          "Chiếu sáng nền phía sau để tạo hiệu ứng chuyển màu rực rỡ"
+        ],
+        "correctIndex": 0,
+        "explanation": "Key light là ánh sáng chủ, đóng vai trò nguồn sáng chính cung cấp ánh sáng trực tiếp lên chủ thể trong khung hình.",
+        "pauseAt": 73,
+        "answerSegment": {
+          "start": 45,
+          "end": 73
+        },
+        "variants": [
+          {
+            "id": "q-key-light-1-v1",
+            "conceptId": "key-light",
+            "prompt": "Nếu một người quay phim tắt hoàn toàn đèn key light trong trường quay tối, điều gì sẽ xảy ra với chủ thể?",
+            "options": [
+              "Chủ thể trở nên nổi bật hơn nhờ phông nền sáng rực",
+              "Độ tương phản của chủ thể được cân bằng hoàn hảo",
+              "Chủ thể mất đi nguồn sáng chính và chìm vào bóng tối",
+              "Khuôn mặt chủ thể sẽ tự động được làm mềm các bóng đổ"
+            ],
+            "correctIndex": 2,
+            "explanation": "Key light là nguồn sáng chính; nếu không có đèn này, chủ thể sẽ không được chiếu sáng và bị tối đen."
+          }
+        ]
+      },
+      {
+        "id": "q-fill-light-1",
+        "conceptId": "fill-light",
+        "prompt": "Khi đèn chính (key light) đặt chếch một bên khiến nửa khuôn mặt nhân vật bị tối đen với bóng đổ quá gắt, giải pháp phù hợp nhất là gì?",
+        "options": [
+          "Bố trí thêm một đèn phụ (fill light) hoặc tấm hắt sáng ở phía đối diện để làm dịu bóng đổ",
+          "Đặt thêm một đèn ven (back light) chiếu thẳng từ trên đỉnh đầu xuống",
+          "Tăng cường độ sáng của đèn chính lên gấp đôi để phủ đều mặt",
+          "Dịch chuyển máy quay lại gần hơn để tránh vùng bóng tối"
+        ],
+        "correctIndex": 0,
+        "explanation": "Fill light (hoặc tấm hắt sáng) được đặt ở phía đối diện nguồn sáng chính để bù sáng và làm giảm bớt bóng tối (shadow) ở phía bị khuất.",
+        "pauseAt": 106,
+        "answerSegment": {
+          "start": 73,
+          "end": 106
+        },
+        "variants": [
+          {
+            "id": "q-fill-light-1-v1",
+            "conceptId": "fill-light",
+            "prompt": "Trong trường hợp không có đèn thứ hai để làm nguồn sáng phụ (fill light), người quay có thể dùng thiết bị nào để đạt hiệu quả tương tự?",
+            "options": [
+              "Tăng tốc độ màn trập để cân bằng vùng tối trên gương mặt",
+              "Dùng một đèn công suất cực lớn đặt ngay sau lưng nhân vật",
+              "Hạ khẩu độ máy ảnh xuống mức nhỏ nhất để bù sáng tự nhiên",
+              "Dùng một tấm hắt sáng đặt phía đối diện để phản chiếu ánh sáng từ đèn chính vào vùng tối"
+            ],
+            "correctIndex": 3,
+            "explanation": "Ánh sáng phụ không bắt buộc phải là một chiếc đèn điện mà có thể sử dụng tấm hắt sáng đón ánh sáng từ key light phản xạ lại."
+          }
+        ]
+      },
+      {
+        "id": "q-back-light-1",
+        "conceptId": "back-light",
+        "prompt": "Tác dụng cốt lõi của việc bố trí đèn ven (back light) phía sau chủ thể là gì?",
+        "options": [
+          "Khử hoàn toàn các bóng đổ do đèn chính tạo ra dưới cằm nhân vật",
+          "Tạo đường viền sáng bao quanh giúp tách biệt chủ thể rõ ràng khỏi phông nền",
+          "Tạo nguồn sáng chính cho toàn bộ khung hình thay thế cho key light",
+          "Chiếu sáng trực diện để làm sáng rõ hai bên gò má của diễn viên"
+        ],
+        "correctIndex": 1,
+        "explanation": "Back light đặt đằng sau chủ thể tạo viền sáng ven theo cơ thể hoặc tóc, giúp chủ thể tách bạch khỏi nền mà không nhất thiết phải xóa phông.",
+        "pauseAt": 136,
+        "answerSegment": {
+          "start": 106,
+          "end": 136
+        },
+        "variants": [
+          {
+            "id": "q-back-light-1-v1",
+            "conceptId": "back-light",
+            "prompt": "Khi đèn ven (back light) được treo chếch cao ở phía sau và chiếu rọi lên phần đỉnh đầu của nhân vật, nó thường được gọi là gì?",
+            "options": [
+              "Hair light (đèn tóc)",
+              "Fill light (đèn phụ)",
+              "Ambient light (ánh sáng môi trường)",
+              "Key light (đèn chủ)"
+            ],
+            "correctIndex": 0,
+            "explanation": "Khi ánh sáng ven được đặt cao hơn để tạo viền sáng nổi bật trên tóc của chủ thể, người ta gọi đó là hair light."
+          }
+        ]
+      },
+      {
+        "id": "q-practical-light-1",
+        "conceptId": "practical-light",
+        "prompt": "Khi sử dụng một chiếc đèn bàn làm practical light trong khung hình ghi hình người nói chuyện, người dựng bối cảnh cần lưu ý nguyên tắc nào?",
+        "options": [
+          "Công suất của đèn bàn phải luôn cao gấp đôi đèn ven để làm nổi bật nền",
+          "Cường độ sáng của đèn bàn không được mạnh hơn nguồn sáng chính (key light)",
+          "Đèn bàn bắt buộc phải luôn chiếu sáng thẳng vào mặt diễn viên",
+          "Phải tắt hết các đèn studio khác để đèn bàn chiếu sáng toàn bộ cảnh"
+        ],
+        "correctIndex": 1,
+        "explanation": "Practical light là nguồn sáng phụ kiện tạo điểm nhấn cho hậu cảnh, cường độ sáng của nó không nên mạnh hơn ánh sáng chủ (key light) để tránh tranh chấp thị giác.",
+        "pauseAt": 171,
+        "answerSegment": {
+          "start": 136,
+          "end": 171
+        },
+        "variants": [
+          {
+            "id": "q-practical-light-1-v1",
+            "conceptId": "practical-light",
+            "prompt": "Khái niệm 'practical light' trong quay phim được hiểu chính xác là gì?",
+            "options": [
+              "Tấm tản sáng lớn dùng để giảm độ gắt của ánh sáng mặt trời",
+              "Đèn studio công suất lớn được giấu kỹ phía sau máy quay",
+              "Nguồn sáng có thực và nhìn thấy rõ nguồn phát bên trong khung hình (như đèn bàn, nến, bóng đèn trần)",
+              "Thiết bị đo sáng chuyên dụng dùng để kiểm tra độ phơi sáng"
+            ],
+            "correctIndex": 2,
+            "explanation": "Practical light là các nguồn sáng thực tế nằm trong bối cảnh và xuất hiện trực tiếp trước ống kính máy quay."
+          }
+        ]
+      }
+    ],
+    "origin": "gemini",
+    "status": "published"
+  },
+  {
+    "id": "nguyen-ly-mau-sac",
+    "courseId": "nhiep-anh-va-anh-sang",
+    "title": "Nguyên lý màu sắc cơ bản trong nhiếp ảnh và điện ảnh",
+    "shortTitle": "Nguyên lý màu sắc",
+    "youtubeId": "tbERKd_t4So",
+    "durationSec": 812,
+    "summary": "Bài giảng cung cấp nền tảng toàn diện về lý thuyết màu sắc ứng dụng trong nhiếp ảnh, quay phim và thiết kế thị giác. Người học được làm quen với các thuộc tính cơ bản của màu như tông màu, độ sáng, độ bão hòa cùng hai mô hình màu RGB và CMYK. Bên cạnh đó, video phân tích ý nghĩa tâm lý của từng gam màu và hướng dẫn ba nguyên tắc phối màu kinh điển nhằm tạo nên khung hình hài hòa, có chiều sâu.",
+    "concepts": [
+      {
+        "id": "cac-thuat-ngu-mau-sac",
+        "name": "Các thuật ngữ màu sắc",
+        "definition": "Bốn yếu tố cốt lõi mô tả một màu sắc gồm họ màu (hue), độ sáng (luminosity/brightness), độ bão hòa (saturation) và nhiệt độ màu (temperature).",
+        "segment": {
+          "start": 135,
+          "end": 252
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "he-mau-rgb-va-cmyk",
+        "name": "Hệ màu RGB và CMYK",
+        "definition": "Hai mô hình biểu diễn màu cơ bản: RGB là hệ cộng màu dựa trên ánh sáng kỹ thuật số (đỏ, xanh lá, xanh dương), còn CMYK là hệ trừ màu dựa trên chất liệu in ấn (xanh lơ, hồng sẫm, vàng, đen).",
+        "segment": {
+          "start": 252,
+          "end": 362
+        },
+        "prerequisiteIds": [
+          "cac-thuat-ngu-mau-sac"
+        ]
+      },
+      {
+        "id": "tam-ly-hoc-mau-sac",
+        "name": "Tâm lý học màu sắc",
+        "definition": "Sự tác động của màu sắc đến cảm xúc, suy nghĩ và nhận thức của người xem, chịu ảnh hưởng bởi yếu tố văn hóa và trải nghiệm cá nhân.",
+        "segment": {
+          "start": 362,
+          "end": 442
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "phoi-hop-mau-sac",
+        "name": "Phối hợp màu sắc (color harmony)",
+        "definition": "Nguyên tắc kết hợp các gam màu trên vòng tròn màu sắc để tạo nên cảm giác thị giác hài hòa, bao gồm ba dạng kinh điển: tương đồng (analogous), đơn sắc (monochromatic) và bổ túc tương phản (complementary).",
+        "segment": {
+          "start": 442,
+          "end": 648
+        },
+        "prerequisiteIds": [
+          "cac-thuat-ngu-mau-sac"
+        ]
+      }
+    ],
+    "transcript": [
+      {
+        "start": 0,
+        "end": 27,
+        "text": "Nếu như các bạn đang tìm kiếm một công thức màu ở trên mạng với hy vọng giúp cho hình ảnh hoặc video trở nên đẹp hơn thì hãy dừng ngay việc đó lại. Hãy cùng tìm hiểu về các nguyên lý màu sắc cơ bản trong nhiếp ảnh và điện ảnh, từ đó tạo ra tác phẩm hài hòa như mong muốn mà không cần công thức màu nào cả."
+      },
+      {
+        "start": 27,
+        "end": 72,
+        "text": "Trong nhiếp ảnh và điện ảnh, chúng ta có rất nhiều cách để tạo ra một khung ảnh đẹp bao gồm góc máy, bố cục, ánh sáng và một phần rất quan trọng không thể thiếu là màu sắc. Nhiều bạn từng tải về các bộ LUT hoặc preset với hy vọng có sản phẩm tương tự nhưng kết quả lại không như mong muốn do chưa hiểu rõ nguyên lý màu sắc."
+      },
+      {
+        "start": 72,
+        "end": 109,
+        "text": "Sau nhiều phản hồi từ các bạn, hôm nay mình chia sẻ về các nguyên lý màu sắc cơ bản, các thuật ngữ giúp hiểu cách sử dụng phần mềm chỉnh màu, chỉnh ảnh, cùng ảnh hưởng tâm lý của màu sắc đối với mắt người xem để lựa chọn màu sắc phù hợp với câu chuyện muốn truyền tải."
+      },
+      {
+        "start": 109,
+        "end": 135,
+        "text": "Những lý thuyết này không chỉ áp dụng trong nhiếp ảnh và điện ảnh mà còn hữu ích trong mọi ngành nghề sáng tạo như vẽ, thiết kế, dàn dựng bối cảnh hay phối hợp màu sắc trang phục. Trước tiên, chúng ta cùng tìm hiểu các thuật ngữ về màu sắc."
+      },
+      {
+        "start": 135,
+        "end": 168,
+        "text": "Để diễn tả về một màu sắc, chúng ta có các thuật ngữ: thứ nhất là hue (tông màu hay họ màu); thứ hai là value, luminosity hoặc brightness (độ sáng của màu); thứ ba là saturation (độ đậm của màu); và cuối cùng là temperature (nhiệt độ màu)."
+      },
+      {
+        "start": 168,
+        "end": 190,
+        "text": "Đầu tiên về hue, dịch chính xác hơn là họ màu. Đó là tổ hợp của 12 họ màu đậm nhạt khác nhau xuất phát từ 12 màu gốc trên vòng tròn màu sắc cơ bản. Ví dụ màu đỏ có nhiều tông như đỏ burgundy, garnet, ruby, rose, tất cả đều có chung họ màu gốc là màu đỏ."
+      },
+      {
+        "start": 190,
+        "end": 221,
+        "text": "Luminosity, value hay brightness là độ sáng của màu, cho biết mức độ sáng tối của một màu sắc. Chúng ta thay đổi chỉ số này bằng cách thêm màu trắng để làm màu sáng và nhạt đi, hoặc thêm màu đen để làm cho màu trở nên tối hơn."
+      },
+      {
+        "start": 221,
+        "end": 252,
+        "text": "Saturation là độ đậm của màu, thể hiện mức độ đậm nhạt của màu sắc dưới các điều kiện ánh sáng khác nhau. Temperature là nhiệt độ màu, dùng để diễn tả cảm giác nóng hay lạnh. Các màu thiên về sắc cam được xem là màu nóng, còn thiên về xanh dương được xem là màu lạnh."
+      },
+      {
+        "start": 252,
+        "end": 286,
+        "text": "Tiếp theo là các hệ màu (color models). Khi pha trộn màu sắc trong in ấn, việc kết hợp các màu cơ bản làm màu đậm và tối dần đi, đó là hệ màu CMYK gồm cyan, magenta, yellow và black. Đây là hệ màu dùng phổ biến trong ngành in ấn."
+      },
+      {
+        "start": 286,
+        "end": 325,
+        "text": "Đối với không gian kỹ thuật số, chúng ta sử dụng hệ màu RGB gồm red, green và blue, hoạt động trái ngược với CMYK. Màn hình kỹ thuật số hiển thị màu bằng các điểm ảnh pixel, mỗi pixel gồm ba bóng đèn đỏ, xanh lá và xanh dương; khi cả ba bóng đèn phát sáng tối đa sẽ tạo ra ánh sáng trắng."
+      },
+      {
+        "start": 325,
+        "end": 362,
+        "text": "Là người làm hình ảnh, chúng ta làm việc chủ yếu trên không gian màu RGB qua màn hình điện thoại, máy tính, TV. Nắm rõ các thuật ngữ giúp bạn dễ tiếp cận mọi phần mềm chỉnh màu để tạo ra phong cách mong muốn. Tiếp theo, chúng ta nghiên cứu về tâm lý học màu sắc tác động đến người xem."
+      },
+      {
+        "start": 362,
+        "end": 397,
+        "text": "Nghiên cứu tâm lý học màu sắc mang tính tương đối vì phụ thuộc vào văn hóa, trải nghiệm cá nhân và học vấn. Tuy nhiên, màu sắc đã được chứng minh có tác động rõ rệt tới tâm lý người xem. Ví dụ màu đỏ tượng trưng cho quyền lực, đam mê, tình yêu và sự may mắn trong văn hóa Á Đông."
+      },
+      {
+        "start": 397,
+        "end": 442,
+        "text": "Màu hồng thể hiện sự mềm mại, nữ tính; màu tím mang nét huyền bí, quý phái; xanh lam biểu thị trí tuệ, hy vọng, hòa bình; xanh lá gợi sự tăng trưởng, tươi mát của thiên nhiên; màu vàng tượng trưng cho niềm vui, sự nguy hiểm; màu cam đem lại sự ấm áp; màu trắng đại diện cho sự thuần khiết; màu đen biểu hiện sự sang trọng và huyền bí."
+      },
+      {
+        "start": 442,
+        "end": 481,
+        "text": "Khi đã hiểu ý nghĩa từng màu sắc, làm thế nào để kết hợp chúng nhằm tạo nên bức ảnh hài hòa, nổi bật chủ thể so với hậu cảnh? Khái niệm phối màu (color harmony) chính là sự liên kết giữa các màu sắc khác nhau để giúp tác phẩm thu hút hơn về mặt thị giác."
+      },
+      {
+        "start": 481,
+        "end": 529,
+        "text": "Ba quy tắc phối màu phổ biến nhất gồm: tương đồng (analogous), đơn sắc (monochromatic) và bổ túc tương phản (complementary). Để hỗ trợ việc này, bạn có thể sử dụng trang web color.adobe.com giúp phân tích bảng màu từ một bức ảnh hoặc tìm kiếm các kiểu phối màu khác nhau."
+      },
+      {
+        "start": 529,
+        "end": 567,
+        "text": "Phối màu tương đồng (analogous) là kết hợp các màu nằm liền kề nhau theo hình cánh quạt trên vòng tròn màu sắc dựa trên một màu chủ đạo. Bạn dễ dàng bắt gặp sự kết hợp này trong tự nhiên như cảnh bầu trời lúc hoàng hôn hoặc bình minh."
+      },
+      {
+        "start": 567,
+        "end": 607,
+        "text": "Phối màu đơn sắc (monochromatic) sử dụng một màu chủ đạo với các mức độ đậm nhạt và sáng tối khác nhau. Đây là cách phối màu cực kỳ đơn giản và hiệu quả, thường thấy trong ảnh phong cảnh hoặc các tác phẩm điện ảnh như phim Ma Trận. Tiếp theo là phối màu tương phản (complementary), kết hợp hai màu đối diện nhau trên vòng tròn màu sắc."
+      },
+      {
+        "start": 607,
+        "end": 648,
+        "text": "Sự kết hợp tương phản tạo nên độ tương phản mạnh mẽ, giúp tách chủ thể ra khỏi hậu cảnh rõ nét, tiêu biểu là cặp màu cam và xanh mòng két (orange and teal) xuất hiện dày đặc trên poster phim điện ảnh. Ngoài ra còn nhiều kiểu phối màu khác tùy theo ý đồ sáng tạo của bạn."
+      },
+      {
+        "start": 648,
+        "end": 691,
+        "text": "Để áp dụng vào thực tế, trước khi bấm máy bạn nên tự hỏi: chụp khi nào và tại sao chụp bức ảnh đó. Hãy sử dụng màu sắc có chủ đích, ví dụ khi thấy một hàng cây xanh, thay vì chụp ngẫu nhiên, bạn có thể kiên nhẫn đợi một người đội nón đỏ hoặc mặc áo đỏ đi qua để tận dụng độ tương phản xanh - đỏ giúp chủ thể nổi bật."
+      },
+      {
+        "start": 691,
+        "end": 732,
+        "text": "Vào một ngày trời trong xanh, bạn có thể gợi ý người mẫu mặc trang phục tông ấm như vàng hoặc cam để tạo điểm nhấn. Hoặc trong buổi chiều thu, kết hợp sắc vàng của nắng cùng sắc đỏ, cam của lá cây sẽ tạo nên một bức ảnh phối màu tương đồng tuyệt đẹp."
+      },
+      {
+        "start": 732,
+        "end": 768,
+        "text": "Để thành thục, bạn cần ra ngoài thực hành chụp ảnh nhiều hơn và biến các nguyên lý màu sắc thành phản xạ tự nhiên trong tiềm thức. Khi nhìn bất kỳ bối cảnh nào, bạn sẽ lập tức chọn được hậu cảnh và thời điểm bấm máy phù hợp nhất."
+      },
+      {
+        "start": 768,
+        "end": 812,
+        "text": "Bên cạnh màu sắc, bố cục và kỹ thuật điều khiển máy ảnh cũng là những yếu tố thiết yếu để nâng cao chất lượng tác phẩm. Cảm ơn các bạn đã theo dõi video, hãy like, đăng ký kênh và để lại bình luận để cùng nhau phát triển trên con đường sáng tạo hình ảnh."
+      }
+    ],
+    "quiz": [
+      {
+        "id": "q-cac-thuat-ngu-mau-sac-1",
+        "conceptId": "cac-thuat-ngu-mau-sac",
+        "prompt": "Khi một người chỉnh ảnh muốn làm cho màu đỏ của chiếc áo trong ảnh chuyển từ màu rực rỡ sang màu nhạt hơn nhưng vẫn giữ nguyên họ màu đỏ và độ sáng, người đó cần can thiệp vào thông số nào?",
+        "options": [
+          "Nhiệt độ màu (temperature)",
+          "Độ sáng của màu (luminosity)",
+          "Họ màu gốc (hue)",
+          "Độ bão hòa màu (saturation)"
+        ],
+        "correctIndex": 3,
+        "explanation": "Saturation phản ánh độ đậm nhạt và mức độ no màu của một sắc độ dưới các điều kiện ánh sáng, giảm saturation giúp màu nhạt bớt mà không làm đổi tông màu sang màu khác.",
+        "pauseAt": 252,
+        "answerSegment": {
+          "start": 190,
+          "end": 221
+        },
+        "variants": [
+          {
+            "id": "q-cac-thuat-ngu-mau-sac-1-v1",
+            "conceptId": "cac-thuat-ngu-mau-sac",
+            "prompt": "Thao tác pha thêm màu trắng hoặc màu đen vào một màu gốc nhằm thay đổi mức độ sáng tối của màu sắc đó tương ứng với việc điều chỉnh thông số nào?",
+            "options": [
+              "Độ sáng (luminosity / value / brightness)",
+              "Độ bão hòa (saturation)",
+              "Tông màu cơ bản (hue)",
+              "Cân bằng trắng (white balance)"
+            ],
+            "correctIndex": 0,
+            "explanation": "Luminosity/value cho biết mức độ sáng và tối của một màu sắc, đạt được bằng cách cộng thêm màu trắng (làm sáng) hoặc màu đen (làm tối)."
+          }
+        ]
+      },
+      {
+        "id": "q-he-mau-rgb-va-cmyk-1",
+        "conceptId": "he-mau-rgb-va-cmyk",
+        "prompt": "Tại sao các thiết bị hiển thị kỹ thuật số như màn hình điện thoại hay máy tính lại sử dụng hệ màu RGB thay vì CMYK?",
+        "options": [
+          "Vì màn hình phát quang bằng cách kết hợp ánh sáng từ các bóng đèn điểm ảnh màu đỏ, xanh lá và xanh lam",
+          "Vì hệ màu RGB là hệ trừ màu giúp tiết kiệm điện năng cho màn hình",
+          "Vì hệ màu CMYK không thể hiển thị được màu đen chuẩn xác",
+          "Vì tệp tin định dạng RGB luôn có dung lượng nhỏ hơn nhiều so với CMYK"
+        ],
+        "correctIndex": 0,
+        "explanation": "Trên thiết bị kỹ thuật số, mỗi pixel chứa ba bóng đèn đỏ, xanh lá cây và xanh dương; việc điều tiết độ sáng của ba bóng đèn này sẽ tổng hợp nên mọi màu sắc, bao gồm ánh sáng trắng khi đạt cực đại.",
+        "pauseAt": 362,
+        "answerSegment": {
+          "start": 286,
+          "end": 325
+        },
+        "variants": [
+          {
+            "id": "q-he-mau-rgb-va-cmyk-1-v1",
+            "conceptId": "he-mau-rgb-va-cmyk",
+            "prompt": "Trong hệ màu hiển thị kỹ thuật số RGB, khi cả ba bóng đèn pixel màu đỏ (red), xanh lá (green) và xanh dương (blue) cùng phát sáng ở cường độ tối đa, mắt người xem sẽ nhìn thấy màu gì?",
+            "options": [
+              "Màu đen",
+              "Màu trắng",
+              "Màu xám trung tính",
+              "Màu vàng sáng"
+            ],
+            "correctIndex": 1,
+            "explanation": "Hệ RGB là hệ cộng màu dựa trên ánh sáng; khi ba nguồn sáng cơ bản đạt độ sáng cao nhất cùng lúc sẽ hòa thành ánh sáng trắng."
+          }
+        ]
+      },
+      {
+        "id": "q-tam-ly-hoc-mau-sac-1",
+        "conceptId": "tam-ly-hoc-mau-sac",
+        "prompt": "Trong thiết kế nhận diện thương hiệu hoặc bối cảnh phim ảnh, gam màu xanh lá cây thường được ưu tiên sử dụng để truyền tải thông điệp và cảm giác nào đến người xem?",
+        "options": [
+          "Sự ấm áp, thiện lành và hoài niệm",
+          "Sự sinh sôi, tươi mát và gắn liền với thiên nhiên",
+          "Sự quyền lực, đam mê mãnh liệt và nguy hiểm",
+          "Sự sang trọng, huyền bí và quý phái"
+        ],
+        "correctIndex": 1,
+        "explanation": "Màu xanh lá cây mang ý nghĩa gắn với thiên nhiên, sự phát triển và tươi mát nên thường xuyên được dùng cho các thương hiệu thân thiện với môi trường.",
+        "pauseAt": 481,
+        "answerSegment": {
+          "start": 397,
+          "end": 442
+        },
+        "variants": [
+          {
+            "id": "q-tam-ly-hoc-mau-sac-1-v1",
+            "conceptId": "tam-ly-hoc-mau-sac",
+            "prompt": "Gam màu nào thường được sử dụng cho các biển báo cảnh báo nguy hiểm hoặc tạo cảm giác phấn chấn, hy vọng và niềm vui trong thị giác?",
+            "options": [
+              "Màu vàng",
+              "Màu hồng",
+              "Màu tím",
+              "Màu xanh lam"
+            ],
+            "correctIndex": 0,
+            "explanation": "Màu vàng vừa biểu thị niềm vui và hy vọng, vừa kích thích sự cảnh giác nên thường dùng làm biển báo cảnh báo nguy hiểm."
+          }
+        ]
+      },
+      {
+        "id": "q-phoi-hop-mau-sac-1",
+        "conceptId": "phoi-hop-mau-sac",
+        "prompt": "Để làm nổi bật người mẫu mặc trang phục màu vàng cam trên nền trời xanh ngắt vào ban ngày, nhiếp ảnh gia đang áp dụng quy tắc phối màu nào?",
+        "options": [
+          "Phối màu đơn sắc (monochromatic)",
+          "Phối màu tương đồng (analogous)",
+          "Phối màu bổ túc tương phản (complementary)",
+          "Phối màu tam giác (triadic)"
+        ],
+        "correctIndex": 2,
+        "explanation": "Cam/vàng ấm đối lập với xanh lam trên vòng tròn màu sắc, tạo ra sự tương phản mạnh mẽ (complementary) giúp chủ thể tách bạch hoàn toàn khỏi phông nền.",
+        "pauseAt": 648,
+        "answerSegment": {
+          "start": 567,
+          "end": 607
+        },
+        "variants": [
+          {
+            "id": "q-phoi-hop-mau-sac-1-v1",
+            "conceptId": "phoi-hop-mau-sac",
+            "prompt": "Một bức ảnh chụp bầu trời lúc hoàng hôn kết hợp liền mạch giữa các dải màu tím, đỏ và cam nằm liền kề nhau trên vòng tròn màu sắc là minh chứng tiêu biểu cho quy tắc phối màu nào?",
+            "options": [
+              "Phối màu đa sắc không quy luật",
+              "Phối màu đơn sắc (monochromatic)",
+              "Phối màu tương phản (complementary)",
+              "Phối màu tương đồng (analogous)"
+            ],
+            "correctIndex": 3,
+            "explanation": "Phối màu tương đồng (analogous) là sự kết hợp của các màu phân bổ liền kề nhau theo hình cánh quạt trên vòng tròn màu sắc dựa trên một màu chủ đạo, rất phổ biến ở cảnh hoàng hôn hoặc bình minh."
+          }
+        ]
+      }
+    ],
+    "origin": "gemini",
+    "status": "published"
+  },
+  {
+    "id": "tu-duy-nhiep-anh",
+    "courseId": "nhiep-anh-va-anh-sang",
+    "title": "Phát triển tư duy nhiếp ảnh từ động lực nội tại đến thị giác điện ảnh",
+    "shortTitle": "Phát triển tư duy nhiếp ảnh",
+    "youtubeId": "WQGLhZu2lnw",
+    "durationSec": 830,
+    "summary": "Bài giảng chia sẻ các yếu tố cốt lõi giúp người làm nhiếp ảnh phát triển tư duy nghệ thuật một cách bền vững. Giảng viên nhấn mạnh tầm quan trọng của động lực cá nhân xuất phát từ đam mê tự thân thay vì phong trào số đông. Đồng thời, bài học hướng dẫn cách nâng cao trình độ thông qua việc học tập có hệ thống, tiếp cận các hình tượng chuẩn mực và bồi dưỡng nhãn quan thị giác từ nghệ thuật điện ảnh.",
+    "concepts": [
+      {
+        "id": "dong-luc-nhiep-anh-noi-tai",
+        "name": "Động lực nhiếp ảnh nội tại",
+        "definition": "Niềm đam mê và khao khát sáng tạo tự thân xuất phát từ bên trong người chụp, không phụ thuộc vào phong trào hội nhóm hay áp lực kiếm tiền.",
+        "segment": {
+          "start": 69,
+          "end": 252
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "tu-duy-tai-tao-hinh-anh",
+        "name": "Tư duy phân tích và tái tạo hình ảnh",
+        "definition": "Phương pháp chủ động quan sát, mổ xẻ cấu trúc các tác phẩm kinh điển rồi tự thực hành chụp lại theo cách của mình nhằm thấu hiểu bản chất kỹ thuật thay vì bấm máy vô thức.",
+        "segment": {
+          "start": 292,
+          "end": 466
+        },
+        "prerequisiteIds": [
+          "dong-luc-nhiep-anh-noi-tai"
+        ]
+      },
+      {
+        "id": "ngon-ngu-thi-giac-dien-anh",
+        "name": "Ngôn ngữ thị giác điện ảnh",
+        "definition": "Cách thức sử dụng khung hình, tương phản ánh sáng, tiêu cự và góc máy trong điện ảnh để truyền tải cảm xúc và diễn đạt tâm lý nhân vật.",
+        "segment": {
+          "start": 466,
+          "end": 654
+        },
+        "prerequisiteIds": []
+      },
+      {
+        "id": "kho-du-lieu-tiem-thuc",
+        "name": "Kho dữ liệu thị giác trong tiềm thức",
+        "definition": "Tập hợp những trải nghiệm thẩm mỹ và khuôn mẫu hình ảnh được tích lũy tự nhiên qua quá trình xem phim ảnh nghệ thuật, giúp người chụp phản xạ bố cục nhanh khi tác nghiệp.",
+        "segment": {
+          "start": 609,
+          "end": 705
+        },
+        "prerequisiteIds": [
+          "ngon-ngu-thi-giac-dien-anh"
+        ]
+      }
+    ],
+    "transcript": [
+      {
+        "start": 0,
+        "end": 31,
+        "text": "Tôi không tưởng tượng được một người làm nhiếp ảnh, chơi nhiếp ảnh mà không chịu coi phim ảnh hay thưởng thức nghệ thuật. Đối với tôi, điều gần gũi nhất với nhiếp ảnh chính là điện ảnh."
+      },
+      {
+        "start": 31,
+        "end": 69,
+        "text": "Hôm nay có một vấn đề các bạn hay trao đổi với mình là làm cách nào để phát triển tư duy nhiếp ảnh. Có một số bạn sau khi đi chụp hình về thì thắc mắc không biết mình đã chụp cái gì, hoặc nghĩ rằng cứ chụp thật nhiều thì sẽ lên tay. Tôi muốn các bạn hiểu đúng để không mắc sai lầm."
+      },
+      {
+        "start": 69,
+        "end": 110,
+        "text": "Tôi tin rằng mọi chuyện bắt đầu quan trọng nhất là từ bản thân mình, từ con người mình. Rất lạ là mình yêu nhiếp ảnh không vì lý do gì hết. Hiện nay các bạn chơi nhiếp ảnh có phong trào, hội nhóm đông vui hơn tôi ngày xưa rất nhiều, có workshop và hội đoàn đầy đủ."
+      },
+      {
+        "start": 110,
+        "end": 155,
+        "text": "Cho nên tôi muốn các bạn tự cảnh giác xem mình có thực thụ yêu và chơi nhiếp ảnh hay không, hay chỉ vì thấy bạn bè vui quá thì làm theo. Lúc tôi bắt đầu, tôi rất cô đơn, không trao đổi hay nói chuyện được với ai. Bạn bè đi chơi với nhau, còn tôi chỉ tự nhủ trong bụng là mình làm nhiếp ảnh và cứ thế miệt mài làm."
+      },
+      {
+        "start": 155,
+        "end": 198,
+        "text": "Tôi có động lực rất mạnh mẽ khi làm nhiếp ảnh. Bạn phải có động lực cá nhân, nỗ lực tự thân và tự nhiên cảm thấy thích thú với nghệ thuật. Lúc đó, sự yêu thích nhiếp ảnh của tôi mạnh gấp nhiều lần so với chuyện kiếm tiền, dù tôi cũng từng nghĩ đến vấn đề mưu sinh."
+      },
+      {
+        "start": 198,
+        "end": 252,
+        "text": "Điều đầu tiên tôi khuyên bạn là phải có một động lực nhiếp ảnh mạnh mẽ. Điều kế tiếp là khi đã có một mầm mống đam mê và tiềm năng, bạn cần tìm được con đường định hướng đúng đắn. Đi đúng cách và đúng đường thì bạn vừa giữ được đam mê, vừa tiến bộ nhanh và đạt hiệu quả cao."
+      },
+      {
+        "start": 252,
+        "end": 292,
+        "text": "Thời điểm chơi ảnh bên Mỹ, tôi gặp những nhiếp ảnh gia rất giỏi. Khi tiếp xúc, tôi thấy mình yếu kém hơn họ nhưng không hề tự ti mặc cảm, vì người ta giỏi hơn mình là chuyện bình thường. Tôi quan sát cách họ làm và may mắn được tiếp cận những người chụp đẹp, có kỹ thuật cao và sẵn sàng chia sẻ."
+      },
+      {
+        "start": 292,
+        "end": 333,
+        "text": "Tuy nhiên, thay vì chỉ hỏi thẳng, tôi tự quan sát những bức ảnh kinh điển mình thích rồi tự tái tạo lại theo cách của mình. Đó có thể là các góc máy kinh điển trong kho tàng nhiếp ảnh phương Tây, những khung hình mang tính biểu tượng xuất phát từ phim ảnh. Tôi tự chụp lại rồi nhờ họ đánh giá giùm."
+      },
+      {
+        "start": 333,
+        "end": 372,
+        "text": "Phần lớn tôi nhận được lời khen, nhưng văn hóa phương Tây rất rộng rãi lời khen để tránh làm người khác buồn lòng. Lời khen là con dao hai lưỡi: một mặt tạo động lực, nhưng mặt khác dễ khiến mình ảo tưởng là đã chụp tốt. Vì vậy tôi luôn lặp đi lặp lại việc thử nghiệm để rèn luyện."
+      },
+      {
+        "start": 372,
+        "end": 427,
+        "text": "Ngoài động lực, bạn cần môi trường phát triển đúng cách. Tôi không tin vào quan niệm cứ chụp nhiều là lên tay. Chụp nhiều nhưng phải biết mình chụp cái gì, phải tư duy về bức hình, hiểu rõ những gì mình đã làm, đang làm và sẽ làm để khắc phục nhược điểm."
+      },
+      {
+        "start": 427,
+        "end": 466,
+        "text": "Nếu tham gia một hội nhóm, người dẫn dắt phải là người bạn thực sự ngưỡng mộ về mặt chuyên môn và tác phẩm. Trong nghệ thuật không thể nói suông được, bạn phải đánh giá dựa trên tác phẩm thực tế. Người ta chụp ảnh đẹp, bạn yêu thích hình của họ thì mới lấy đó làm tiêu chuẩn để vươn tới."
+      },
+      {
+        "start": 466,
+        "end": 512,
+        "text": "Yếu tố thứ ba là nuôi dưỡng động lực và tư duy bằng cách thưởng thức nghệ thuật, đặc biệt là điện ảnh. Điện ảnh là bộ môn gần gũi nhất với nhiếp ảnh. Trong các đoàn làm phim xuất sắc luôn có vị trí đạo diễn hình ảnh rất quan trọng và đáng tin cậy."
+      },
+      {
+        "start": 512,
+        "end": 555,
+        "text": "Phim điện ảnh Hollywood được đầu tư kinh phí rất lớn nên từng khung hình, góc máy đều được trau chuốt kỹ lưỡng. Nếu muốn học nhiếp ảnh kinh điển, bạn có thể xem dòng phim noir đen trắng thập niên 40-50 để học cách xử lý ánh sáng sáng tối, độ tương phản và cách đo sáng."
+      },
+      {
+        "start": 555,
+        "end": 609,
+        "text": "Bên cạnh đó, các phim kỹ thuật số hiện đại cũng mang lại nhiều bài học giá trị. Việc xem phim không phải để nghe hiểu ngoại ngữ mà là để quan sát hình ảnh. Trong phim ảnh, hình ảnh là ngôn ngữ trực tiếp diễn đạt tâm lý nhân vật, thể hiện ý đồ bố cục, tiêu cự và vị trí đặt góc máy."
+      },
+      {
+        "start": 609,
+        "end": 654,
+        "text": "Xem phim giúp bạn tiếp nhận một cách tự nhiên. Dần dần kho dữ liệu hình ảnh sẽ lưu trữ trong tiềm thức của bạn. Khi ra hiện trường tác nghiệp, nhìn vào bối cảnh hay người mẫu, tiềm thức sẽ tự động quét và gợi mở góc máy, bố cục phù hợp mà không cần phải gượng ép dàn dựng."
+      },
+      {
+        "start": 654,
+        "end": 705,
+        "text": "Kinh nghiệm bố cục nhanh của tôi có được là nhờ xem phim nhiều. Khi giơ máy lên, tôi lập tức nhận ra khung hình cần bố cục như thế nào. Ngoài ra, việc xem tạp chí thời trang, tạo dáng người mẫu, hay đọc sách về lịch sử mỹ thuật cũng giúp ta xây dựng một hệ sinh thái nghệ thuật phong phú bao quanh mình."
+      },
+      {
+        "start": 705,
+        "end": 750,
+        "text": "Tóm lại, bạn cần có động lực nội tại mạnh mẽ và chơi tới cùng. Chơi tới cùng nghĩa là chấp nhận khó khăn, tìm mọi cách để thỏa mãn ước mơ nghệ thuật của bản thân. Tiếp theo là phải có tinh thần học hỏi bài bản, có sự định hướng rõ ràng."
+      },
+      {
+        "start": 750,
+        "end": 825,
+        "text": "Đừng tin vào việc học chắp vá mẹo vặt trên mạng. Học tập cần có ngữ cảnh, hiểu được sự phát triển của kỹ thuật và mối liên hệ giữa các khái niệm. Học bài bản giúp bạn tiết kiệm nhiều năm mò mẫm sai lầm và xây dựng môi trường bồi dưỡng thị giác nghệ thuật lâu dài."
+      }
+    ],
+    "quiz": [
+      {
+        "id": "q-dong-luc-nhiep-anh-noi-tai-1",
+        "conceptId": "dong-luc-nhiep-anh-noi-tai",
+        "prompt": "Theo bài giảng, yếu tố nào đóng vai trò tiên quyết nhất khi một người bắt đầu bước vào con đường nhiếp ảnh?",
+        "options": [
+          "Khả năng đầu tư trang thiết bị máy ảnh và ống kính hiện đại ngay từ đầu",
+          "Mục tiêu kiếm được thu nhập nhanh chóng từ việc chụp ảnh dịch vụ",
+          "Động lực tự thân và tình yêu nhiếp ảnh thuần khiết từ chính bản thân",
+          "Sự hào hứng tham gia vào các câu lạc bộ, hội nhóm đông người để giao lưu"
+        ],
+        "correctIndex": 2,
+        "explanation": "Giảng viên nhấn mạnh mọi sự tiến bộ đều bắt đầu từ việc bản thân có tình yêu tự nhiên với nhiếp ảnh và động lực cá nhân mạnh mẽ, vượt lên trên sự cô đơn hay áp lực tài chính.",
+        "pauseAt": 252,
+        "answerSegment": {
+          "start": 69,
+          "end": 110
+        },
+        "variants": [
+          {
+            "id": "q-dong-luc-nhiep-anh-noi-tai-1-v1",
+            "conceptId": "dong-luc-nhiep-anh-noi-tai",
+            "prompt": "Một người tham gia chụp ảnh vì thấy bạn bè rủ rê đi workshop đông vui nhưng thiếu động lực tự thân thì thường gặp nguy cơ gì?",
+            "options": [
+              "Khó duy trì niềm đam mê bền bỉ khi đối mặt với sự đơn độc và khó khăn trong nghề",
+              "Bị các thành viên khác trong câu lạc bộ phê bình gay gắt về tác phẩm",
+              "Không thể học được các thao tác kỹ thuật cơ bản trên máy ảnh số",
+              "Không bao giờ mua được các thiết bị máy ảnh chuyên nghiệp"
+            ],
+            "correctIndex": 0,
+            "explanation": "Nếu chỉ đi theo phong trào mà thiếu ngọn lửa đam mê tự thân, người chụp sẽ nhanh chóng nản lòng khi không còn đám đông hỗ trợ hoặc khi gặp trở ngại."
+          }
+        ]
+      },
+      {
+        "id": "q-tu-duy-tai-tao-hinh-anh-1",
+        "conceptId": "tu-duy-tai-tao-hinh-anh",
+        "prompt": "Quan điểm nào sau đây về quá trình rèn luyện kỹ năng chụp ảnh bị giảng viên phản đối?",
+        "options": [
+          "Phân tích kỹ lưỡng những gì mình đã làm và cần cải thiện trong từng bức ảnh",
+          "Chỉ cần bấm máy chụp thật nhiều là tay nghề sẽ tự động nâng cao",
+          "Tìm kiếm người dẫn dắt có năng lực chuyên môn thực tế để học hỏi",
+          "Tự mình tái tạo lại các khung hình kinh điển để hiểu bản chất kỹ thuật"
+        ],
+        "correctIndex": 1,
+        "explanation": "Giảng viên chỉ ra ngộ nhận 'chụp nhiều lên tay' là sai lầm nếu người chụp không tư duy, không hiểu mình đang làm gì và chụp mà thiếu định hướng.",
+        "pauseAt": 466,
+        "answerSegment": {
+          "start": 372,
+          "end": 427
+        },
+        "variants": [
+          {
+            "id": "q-tu-duy-tai-tao-hinh-anh-1-v1",
+            "conceptId": "tu-duy-tai-tao-hinh-anh",
+            "prompt": "Để kiểm tra và nâng cao năng lực nhiếp ảnh từ các tác phẩm xuất sắc của người đi trước, phương pháp học tập hiệu quả được khuyên dùng là gì?",
+            "options": [
+              "Chỉ xin thông số khẩu độ, tốc độ chụp của bức ảnh đó rồi sao chép nguyên văn",
+              "Đăng ảnh của mình lên mạng xã hội để thu thập càng nhiều lượt thích càng tốt",
+              "Hỏi xin ảnh gốc định dạng RAW của tác giả để về chỉnh sửa màu sắc",
+              "Tự phân tích ánh sáng, bố cục rồi chụp tái tạo lại tác phẩm theo cảm nhận của mình"
+            ],
+            "correctIndex": 3,
+            "explanation": "Việc chủ động phân tích và tái tạo lại các góc chụp kinh điển giúp người học nắm bắt sâu sắc tư duy tạo hình và làm chủ kỹ thuật."
+          }
+        ]
+      },
+      {
+        "id": "q-ngon-ngu-thi-giac-dien-anh-1",
+        "conceptId": "ngon-ngu-thi-giac-dien-anh",
+        "prompt": "Theo giảng viên, người học nhiếp ảnh có thể học được bài học quan trọng nào nhất khi thưởng thức dòng phim noir kinh điển?",
+        "options": [
+          "Cách đạo diễn điều hành diễn viên diễn xuất trên phim trường",
+          "Cách lựa chọn micro thu âm và kỹ thuật hậu kỳ âm thanh phim",
+          "Kỹ thuật xử lý tương phản sáng tối và kiểm soát ánh sáng trong khung hình",
+          "Phương pháp phối hợp màu sắc rực rỡ giữa trang phục và bối cảnh"
+        ],
+        "correctIndex": 2,
+        "explanation": "Phim noir đen trắng thập niên 40-50 tập trung vào việc xử lý ánh sáng sáng tối, độ tương phản và kỹ thuật đo sáng, vốn là nền tảng cốt lõi của nhiếp ảnh.",
+        "pauseAt": 654,
+        "answerSegment": {
+          "start": 512,
+          "end": 609
+        },
+        "variants": [
+          {
+            "id": "q-ngon-ngu-thi-giac-dien-anh-1-v1",
+            "conceptId": "ngon-ngu-thi-giac-dien-anh",
+            "prompt": "Mục đích chính của người làm nhiếp ảnh khi xem phim điện ảnh theo gợi ý trong bài giảng là gì?",
+            "options": [
+              "Theo dõi cốt truyện và lời thoại để nâng cao vốn từ vựng ngoại ngữ",
+              "Đánh giá độ phân giải màn hình và kỹ xảo đồ họa máy tính 3D",
+              "Quan sát cách sử dụng góc máy, tiêu cự và ánh sáng để biểu đạt tâm lý nhân vật",
+              "Ghi nhớ tên tuổi các diễn viên và đạo diễn nổi tiếng thế giới"
+            ],
+            "correctIndex": 2,
+            "explanation": "Người làm nhiếp ảnh xem phim để học ngôn ngữ hình ảnh, tức cách góc máy, ánh sáng và bố cục được sử dụng để kể chuyện và diễn đạt nội tâm."
+          }
+        ]
+      },
+      {
+        "id": "q-kho-du-lieu-tiem-thuc-1",
+        "conceptId": "kho-du-lieu-tiem-thuc",
+        "prompt": "Việc thường xuyên xem phim ảnh và nghệ thuật thị giác mang lại lợi ích cụ thể gì cho nhiếp ảnh gia khi ra hiện trường tác nghiệp?",
+        "options": [
+          "Đảm bảo thiết bị máy ảnh không bị lỗi kỹ thuật khi chụp thực tế",
+          "Giúp người chụp thuộc lòng các công thức toán học về độ phơi sáng",
+          "Giúp người mẫu tự động biết tạo dáng mà không cần hướng dẫn",
+          "Giúp người chụp phản xạ định hình bố cục và góc máy nhanh chóng từ tiềm thức"
+        ],
+        "correctIndex": 3,
+        "explanation": "Dữ liệu thị giác tích lũy trong tiềm thức sẽ tự động kích hoạt khi đối diện bối cảnh thực tế, giúp người chụp nhận diện góc máy và bố cục chuẩn xác một cách tự nhiên.",
+        "pauseAt": 705,
+        "answerSegment": {
+          "start": 609,
+          "end": 705
+        },
+        "variants": [
+          {
+            "id": "q-kho-du-lieu-tiem-thuc-1-v1",
+            "conceptId": "kho-du-lieu-tiem-thuc",
+            "prompt": "Hiện tượng một nhiếp ảnh gia giơ máy lên là lập tức chọn được góc máy chuẩn xác mà không cần đắn đo suy tính xuất phát từ điều gì?",
+            "options": [
+              "Thói quen chụp liên tục hàng trăm tấm ảnh ngẫu nhiên để chọn lại sau",
+              "Kho hình ảnh tích lũy từ trước trong tiềm thức tự động đối chiếu và gợi ý giải pháp",
+              "Việc sao chép máy móc một góc chụp cố định từ sách hướng dẫn sử dụng",
+              "Sự hỗ trợ tự động hoàn toàn của các thuật toán lấy nét trên máy ảnh đời mới"
+            ],
+            "correctIndex": 1,
+            "explanation": "Đó là kết quả của việc nạp đầy đủ dữ liệu hình ảnh vào tiềm thức qua quá trình thẩm thấu nghệ thuật, giúp hình thành trực giác bố cục nhạy bén."
+          }
+        ]
+      }
+    ],
+    "origin": "gemini",
+    "status": "published"
   }
 ]

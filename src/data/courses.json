@@ -10,5 +10,17 @@
       "tu-duy-dung-dieu-huong-tiep-nhan",
       "nhip-dieu-to-chuc-thoi-gian"
     ]
+  },
+  {
+    "id": "nhiep-anh-va-anh-sang",
+    "title": "Nhiếp ảnh và ánh sáng",
+    "subject": "Nhiếp ảnh",
+    "instructor": "Khoa Đa phương tiện, PTIT",
+    "description": "Ba loại ánh sáng cơ bản, nguyên lý màu sắc và tư duy của người chụp ảnh.",
+    "lessonIds": [
+      "ba-loai-anh-sang-co-ban",
+      "nguyen-ly-mau-sac",
+      "tu-duy-nhiep-anh"
+    ]
   }
 ]
