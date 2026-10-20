@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Camera, Check, ChevronDown, Play, Sparkles } from 'lucide-react'
 import { getConcept, getCourse, lessons } from '@/data'
-import { DAILY_ARTICLE_XP } from '@/lib/gamification'
+import { dailyFor, DAILY_ARTICLE_XP, MISSIONS } from '@/lib/gamification'
+import { CourseArt } from '@/components/courses/course-cover'
 import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { DAILY_LIMIT, gapScore, todaysDaily } from '@/lib/next-step'
@@ -20,11 +21,12 @@ export function OrbitHomeView() {
     const { staticMode, reduce } = useStageMode()
     const barRef = useRef<HTMLDivElement>(null)
     const { stage, scrolled } = useScrollStage({ staticMode, barRef })
-    const liftNames = useLiftedBuildings()
+    const { liftNames, coursePct } = useBuildingCourses()
+    const dailyLit = useDailyLit()
 
     return (
         <div className="relative w-full bg-stage text-ink-foreground">
-            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} liftNames={liftNames} />
+            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} liftNames={liftNames} dailyLit={dailyLit} coursePct={coursePct} />
             <div aria-hidden className="stage-glow pointer-events-none fixed inset-0 z-[1]" />
             <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
             <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
@@ -58,14 +60,30 @@ export function OrbitHomeView() {
     )
 }
 
-/** Tòa nhấc lên ở chương Khóa học: tòa có khóa đang học; chưa học khóa nào thì mọi tòa có khóa. */
-function useLiftedBuildings() {
+/** Tòa nhấc lên ở chương Khóa học (tòa có khóa đang học; chưa học khóa nào thì mọi tòa có khóa) và % tiến độ trên nhãn. */
+function useBuildingCourses() {
     const summaries = useCourseSummaries()
     return useMemo(() => {
-        const withCourse = Object.entries(BUILDING_COURSE_IDS).filter(([, id]) => id && summaries.some((s) => s.course.id === id))
-        const doing = withCourse.filter(([, id]) => summaries.find((s) => s.course.id === id)?.status === 'doing')
-        return new Set((doing.length ? doing : withCourse).map(([name]) => name))
+        const withCourse = Object.entries(BUILDING_COURSE_IDS).flatMap(([name, id]) => {
+            const sum = id ? summaries.find((x) => x.course.id === id) : undefined
+            return sum ? [{ name, sum }] : []
+        })
+        const doing = withCourse.filter((x) => x.sum.status === 'doing')
+        return {
+            liftNames: new Set((doing.length ? doing : withCourse).map((x) => x.name)) as ReadonlySet<string>,
+            coursePct: Object.fromEntries(withCourse.map((x) => [x.name, x.sum.pct])) as Readonly<Record<string, number>>,
+        }
     }, [summaries])
+}
+
+/** Bài Daily hôm nay (đúng thứ tự danh sách) đã đọc chưa → ref cho cảnh 3D, mỗi bài một tầng cửa sổ A2. Ghi ref, không render lại cảnh. */
+function useDailyLit() {
+    const read = useOrbitStore((s) => s.dailyRead)
+    const mastery = useOrbitStore((s) => s.conceptMastery)
+    const ref = useRef<boolean[]>([])
+    // Ghi trong render (đồng bộ) để cảnh vừa dựng đã có giá trị đúng; ref không gây render
+    ref.current = todaysDaily(read, mastery).map((a) => Boolean(read[a.id]))
+    return ref
 }
 
 // ─── Khung chương ──────────────────────────────────────────────────────────
@@ -103,11 +121,25 @@ function Reveal({ children }: { children: ReactNode }) {
 }
 
 const Eyebrow = ({ children }: { children: ReactNode }) => <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-light">{children}</p>
-const Title = ({ id, children }: { id?: string; children: ReactNode }) => (
-    <h2 id={id} className="mt-3 text-[clamp(1.9rem,3.4vw,2.75rem)] font-extrabold leading-[1.08] tracking-[-0.03em]">
-        {children}
-    </h2>
-)
+/** Tiêu đề tách chữ: mỗi từ trồi lên lần lượt khi chương vào khung nhìn (CSS .split-w, kích hoạt bởi .reveal.in). Dòng mới = "\n". */
+const Title = ({ id, children }: { id?: string; children: string }) => {
+    let i = 0
+    return (
+        <h2 id={id} aria-label={children.replace('\n', ' ')} className="mt-3 text-[clamp(1.9rem,3.4vw,2.75rem)] font-extrabold leading-[1.08] tracking-[-0.03em]">
+            {children.split('\n').map((line, li) => (
+                <span key={li} aria-hidden className="block">
+                    {line.split(' ').map((w) => (
+                        <span key={i}>
+                            <span className="split-w">
+                                <span style={{ ['--i' as string]: i++ }}>{w}</span>
+                            </span>{' '}
+                        </span>
+                    ))}
+                </span>
+            ))}
+        </h2>
+    )
+}
 const Lead = ({ children }: { children: ReactNode }) => <p className="mb-6 mt-4 text-[17px] leading-relaxed text-ink-foreground/80">{children}</p>
 /** Thẻ tối nửa trong suốt, chữ sáng cố định ở cả hai giao diện */
 const darkCard = 'rounded-[20px] border border-ink-foreground/10 bg-ink/85 backdrop-blur-md'
@@ -200,8 +232,8 @@ function DailyChapter() {
     return (
         <Reveal>
             <Eyebrow>01 · Hôm nay</Eyebrow>
-            <Title id="daily-title">{allDone ? 'Hôm nay đủ rồi. Hẹn bạn ngày mai.' : '3 bài đọc. Rồi nghỉ.'}</Title>
-            <Lead>Mỗi ngày AI chọn tối đa {DAILY_LIMIT} bài đọc ngắn theo phần bạn còn hổng. Đọc xong là nghỉ, không có gì để cuộn tiếp.</Lead>
+            <Title id="daily-title">{'Ba ô cửa sáng đèn.\nĐọc xong là nghỉ.'}</Title>
+            <Lead>Mỗi bài Orbit Daily đọc xong thắp sáng một tầng cửa sổ tòa A2. AI chọn bài theo phần bạn còn hổng.</Lead>
             <ul className={`${darkCard} flex flex-col gap-1 p-3`} aria-label={`Đã đọc ${readCount} trên ${DAILY_LIMIT} bài hôm nay`}>
                 {articles.map((a, i) => {
                     const done = Boolean(read[a.id])
@@ -233,7 +265,38 @@ function DailyChapter() {
                     )
                 })}
             </ul>
+            {allDone && <p className="mt-3 text-sm font-semibold text-ink-foreground/80">Hôm nay đủ rồi. Hẹn bạn ngày mai.</p>}
+            <MiniMissions />
         </Reveal>
+    )
+}
+
+/** Nhiệm vụ hôm nay, bản gọn cho nền tối (chỉ đọc; nhận thưởng ở trang Hành trình). */
+function MiniMissions() {
+    const dailyRaw = useOrbitStore((s) => s.daily)
+    useOrbitStore((s) => s.lessonProgress)
+    useOrbitStore((s) => s.dailyRead)
+    const daily = dailyFor(dailyRaw)
+    const doneCount = MISSIONS.filter((m) => m.progress(daily) >= m.target).length
+    return (
+        <div className="mt-4 rounded-[20px] border border-ink-foreground/10 bg-ink/60 px-4 py-3">
+            <p className="flex items-center justify-between text-xs font-extrabold uppercase tracking-[0.12em] text-ink-foreground/70">
+                Nhiệm vụ hôm nay
+                <span className="font-mono">{doneCount}/{MISSIONS.length}</span>
+            </p>
+            <ul className="mt-2 flex flex-col gap-1.5">
+                {MISSIONS.map((m) => {
+                    const done = m.progress(daily) >= m.target
+                    return (
+                        <li key={m.id} className={`flex items-center gap-2 text-sm ${done ? 'text-ink-foreground/70' : 'text-ink-foreground'}`}>
+                            <span aria-hidden className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${done ? 'bg-brand-600' : 'border border-ink-foreground/40'}`}>{done && <Check size={11} />}</span>
+                            <span className={done ? 'line-through decoration-ink-foreground/40' : ''}>{m.title}</span>
+                        </li>
+                    )
+                })}
+            </ul>
+            <Link to="/journey" className="mt-2.5 inline-flex items-center gap-1 text-xs font-extrabold text-brand-light hover:underline">Xem hành trình <ArrowRight size={12} /></Link>
+        </div>
     )
 }
 
@@ -248,11 +311,7 @@ function CoursesChapter() {
     return (
         <Reveal>
             <Eyebrow>02 · Khóa học</Eyebrow>
-            <Title id="courses-title">
-                Mỗi tòa nhà
-                <br />
-                là một khóa học.
-            </Title>
+            <Title id="courses-title">{'Mỗi tòa nhà\nlà một khóa học.'}</Title>
             <Lead>Tòa nào bạn đang học sẽ nhấc lên. Bấm vào tòa trên mô hình hoặc một khóa bên dưới để vào bản đồ chặng.</Lead>
             {cards.length === 0 ? (
                 <p className={`${darkCard} p-5 text-ink-foreground/80`}>Chưa có khóa học nào được giảng viên xuất bản.</p>
@@ -276,23 +335,35 @@ function CoursesChapter() {
 
 function CourseRow({ summary }: { summary: CourseSummary }) {
     const { course, lessons: ls, status, pct, curIndex } = summary
+    const lesson = ls[curIndex] ?? ls[0]
     const sub = status === 'doing' ? `Chặng ${curIndex + 1}/${ls.length}` : status === 'done' ? 'Đã xong' : `${ls.length} bài`
+    const action = status === 'done' ? 'Xem lại' : pct > 0 ? 'Học tiếp' : 'Bắt đầu'
     return (
-        <Link
-            to={`/learning?course=${course.id}`}
-            className={`${darkCard} grid gap-2 p-4 transition duration-base ease-out hover:-translate-y-0.5 hover:border-ink-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70`}
-        >
-            <small className="font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-light">
-                {course.subject} · {sub}
-            </small>
-            <span className="flex items-baseline justify-between gap-3">
-                <b className="text-base leading-snug">{course.title}</b>
-                <span className="font-mono text-xl font-bold">{pct}%</span>
-            </span>
-            <span className="h-1 overflow-hidden rounded bg-ink-foreground/15" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${course.title}`}>
-                <span className="block h-full rounded bg-brand-600" style={{ width: `${pct}%` }} />
-            </span>
-        </Link>
+        <div className={`${darkCard} group relative grid grid-cols-[84px_1fr] gap-3.5 p-3 transition duration-base ease-out focus-within:ring-2 focus-within:ring-ink-foreground/70 hover:-translate-y-0.5 hover:border-ink-foreground/30`}>
+            <Link to={`/learning?course=${course.id}`} aria-label={`Xem khóa ${course.title}`} className="absolute inset-0 rounded-[20px] focus-visible:outline-none" />
+            <div className={`pointer-events-none relative h-[84px] w-[84px] overflow-hidden rounded-2xl ${status === 'new' ? 'saturate-[.5]' : ''}`}>
+                <CourseArt course={course} className="h-full w-full" />
+            </div>
+            <div className="pointer-events-none flex min-w-0 flex-col justify-between gap-1.5">
+                <small className="truncate font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-light">
+                    {course.subject} · {sub}
+                </small>
+                <span className="flex items-baseline justify-between gap-3">
+                    <b className="line-clamp-2 text-[15px] leading-snug">{course.title}</b>
+                    <span className="font-mono text-lg font-bold">{pct}%</span>
+                </span>
+                <span className="flex items-center gap-3">
+                    <span className="h-1 flex-1 overflow-hidden rounded bg-ink-foreground/15" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${course.title}`}>
+                        <span className="block h-full rounded bg-brand-600" style={{ width: `${pct}%` }} />
+                    </span>
+                    {lesson && (
+                        <Link to={`/lesson/${lesson.id}`} data-vt={`lesson-${lesson.id}`} className="pointer-events-auto relative z-10 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-600 px-3 py-1.5 text-xs font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70">
+                            <Play size={11} className="fill-current" /> {action}
+                        </Link>
+                    )}
+                </span>
+            </div>
+        </div>
     )
 }
 
@@ -302,7 +373,7 @@ function StudioChapter() {
     return (
         <Reveal>
             <Eyebrow>03 · Studio 3D</Eyebrow>
-            <Title id="studio-title">Tả ánh sáng. Rồi chụp.</Title>
+            <Title id="studio-title">{'Tả ánh sáng.\nRồi chụp.'}</Title>
             <Lead>Đặt máy, chỉnh tiêu cự và ba đèn trong studio ảo. Bạn đặt máy, AI đặt đèn rồi chấm ảnh.</Lead>
             <div className="flex flex-col gap-4">
                 <Feature icon={<Sparkles size={16} />} title="Prompt-to-Environment">

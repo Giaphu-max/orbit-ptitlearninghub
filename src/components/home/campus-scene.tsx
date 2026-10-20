@@ -126,11 +126,13 @@ interface BuildingProps {
     hovered: boolean
     /** Nhãn đang hiển thị (không bị che, không chồng nhãn khác) */
     labelVisible: boolean
+    /** % tiến độ khóa của tòa (hiện cạnh tên khóa); undefined nếu tòa không có khóa */
+    pct?: number
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     children: ReactNode
 }
 
-function Building({ name, anchorY, position, hovered, labelVisible, registry, children }: BuildingProps) {
+function Building({ name, anchorY, position, hovered, labelVisible, pct, registry, children }: BuildingProps) {
     const ref = useRef<THREE.Group>(null)
     useLayoutEffect(() => {
         const g = ref.current
@@ -163,7 +165,7 @@ function Building({ name, anchorY, position, hovered, labelVisible, registry, ch
                         {name}
                         {/* Dòng phụ: khóa học thật của tòa, hoặc "Sắp mở" nếu chưa có khóa */}
                         <small className={`mt-0.5 block text-[11px] font-medium ${hovered ? 'text-ink-foreground/85' : 'text-muted-foreground'}`}>
-                            {course ? (hovered ? `${course.title} · bấm để vào khóa` : course.title) : 'Sắp mở'}
+                            {course ? (hovered ? `${course.title} · bấm để vào khóa` : `${course.title}${pct === undefined ? '' : ` · ${pct}%`}`) : 'Sắp mở'}
                         </small>
                     </div>
                     <div className="h-4 w-0.5 bg-ink-foreground/80" />
@@ -200,9 +202,18 @@ function setSlot(mesh: THREE.InstancedMesh, i: number, lit: boolean | null) {
     mesh.setMatrixAt(i, dummy.matrix)
 }
 
-function A2Windows({ nightRef, reduce }: { nightRef: React.MutableRefObject<number>; reduce: boolean }) {
+/** 3 tầng cửa sổ A2 = 3 bài Daily hôm nay: slot thuộc tầng nào theo chiều cao (10 tầng nhà chia 3 nhóm, thấp → cao). */
+const TIER_OF_SLOT = WIN_SLOTS.map(([, y]) => Math.min(2, Math.floor(((y - 3.5) / 1.02) / (10 / 3))))
+const TIER_SLOTS = [0, 1, 2].map((t) => WIN_SLOTS.map((_, i) => i).filter((i) => TIER_OF_SLOT[i] === t))
+/** Độ sáng hiện tại của từng tầng (0..1). Để ở module: rời trang chủ rồi quay lại thì tầng mới đọc sáng lên mượt từ giá trị cũ. */
+const tierShown = [0, 0, 0]
+const TIER_EPS_STAGE = 0.7 // chỉ chạy hiệu ứng khi chương Hôm nay đã vào khung nhìn
+
+function A2Windows({ nightRef, reduce, dailyLit, stage }: { nightRef: React.MutableRefObject<number>; reduce: boolean; dailyLit: React.MutableRefObject<boolean[]>; stage: React.MutableRefObject<number> }) {
     const winRef = useRef<THREE.InstancedMesh>(null)
     const litRef = useRef<THREE.InstancedMesh>(null)
+    const tierRefs = useRef<(THREE.InstancedMesh | null)[]>([null, null, null])
+    const tierMats = useRef<(THREE.MeshBasicMaterial | null)[]>([null, null, null])
     const lit = useRef<boolean[]>(new Array(WIN_SLOTS.length).fill(false))
     const flickerT = useRef(0)
 
@@ -216,9 +227,41 @@ function A2Windows({ nightRef, reduce }: { nightRef: React.MutableRefObject<numb
         })
         win.instanceMatrix.needsUpdate = true
         lm.instanceMatrix.needsUpdate = true
+        // Lớp tầng: đặt đúng chỗ, lệch ra 0.04 để nằm trên lớp đèn ngẫu nhiên
+        TIER_SLOTS.forEach((slots, t) => {
+            const m = tierRefs.current[t]
+            if (!m) return
+            slots.forEach((slot, k) => {
+                const [x, y, z, ry] = WIN_SLOTS[slot]
+                dummy.position.set(x + (ry ? 0.04 : 0), y, z + (ry ? 0 : 0.04))
+                dummy.rotation.set(0, ry, 0)
+                dummy.scale.setScalar(1)
+                dummy.updateMatrix()
+                m.setMatrixAt(k, dummy.matrix)
+            })
+            m.instanceMatrix.needsUpdate = true
+        })
     }, [])
 
     useFrame((_, delta) => {
+        // Tầng theo bài Daily đã đọc: chỉ đổi opacity vật liệu, không đụng React
+        const active = stage.current > TIER_EPS_STAGE
+        const gate = Math.min(1, Math.max(0, (stage.current - 0.6) / 0.4))
+        for (let t = 0; t < 3; t++) {
+            if (active) {
+                const want = dailyLit.current[t] ? 1 : 0
+                tierShown[t] = reduce ? want : tierShown[t] + (want - tierShown[t]) * (1 - Math.exp(-delta * 3.2))
+                if (Math.abs(want - tierShown[t]) < 0.002) tierShown[t] = want
+            }
+            const mat = tierMats.current[t]
+            const m = tierRefs.current[t]
+            if (mat && m) {
+                // Sáng dần theo chương (gate), khi sang Studio giữ nguyên
+                mat.opacity = tierShown[t] * gate
+                m.visible = mat.opacity > 0.003
+            }
+        }
+
         const lm = litRef.current
         if (!lm) return
         flickerT.current += Math.min(delta, 0.05)
@@ -243,6 +286,12 @@ function A2Windows({ nightRef, reduce }: { nightRef: React.MutableRefObject<numb
                 <boxGeometry args={[0.5, 0.62, 0.08]} />
                 <meshBasicMaterial color={CAMPUS.windowLit} />
             </instancedMesh>
+            {TIER_SLOTS.map((slots, t) => (
+                <instancedMesh key={t} ref={(m) => void (tierRefs.current[t] = m)} args={[undefined, undefined, slots.length]} visible={false}>
+                    <boxGeometry args={[0.5, 0.62, 0.08]} />
+                    <meshBasicMaterial ref={(m) => void (tierMats.current[t] = m)} color={CAMPUS.windowTier} transparent opacity={0} depthWrite={false} />
+                </instancedMesh>
+            ))}
         </>
     )
 }
@@ -316,10 +365,13 @@ interface WorldProps {
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     nightRef: React.MutableRefObject<number>
     reduce: boolean
+    dailyLit: React.MutableRefObject<boolean[]>
+    stage: React.MutableRefObject<number>
+    coursePct: Readonly<Record<string, number>>
 }
 
-function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldProps) {
-    const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name) })
+function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, coursePct }: WorldProps) {
+    const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name), pct: coursePct[name] })
 
     return (
         <>
@@ -375,7 +427,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
                 <Box s={[0.36, 0.06, 0.04]} c={CAMPUS.ink} at={[0.16, 14.55, 1.74]} />
                 <TextPlane w={2.4} h={0.6} text="PTIT" at={[0, 13.45, 1.62]} opts={T_PTIT} />
 
-                <A2Windows nightRef={nightRef} reduce={reduce} />
+                <A2Windows nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} />
 
                 <TextPlane w={3.2} h={0.8} text="I ♥ PTIT" at={[2.8, 0.45, 6.6]} opts={T_HEART} doubleSide />
                 {([[-5.8, CAMPUS.ptitRed], [-5, CAMPUS.flagYellow], [-4.2, CAMPUS.flagBlue]] as const).map(([x, c], i) => (
@@ -512,6 +564,10 @@ interface SceneProps {
     stage: React.MutableRefObject<number>
     /** Các tòa nhấc lên ở chương Khóa học */
     liftNames: ReadonlySet<string>
+    /** Bài Daily hôm nay (theo thứ tự) đã đọc chưa: mỗi bài = một tầng cửa sổ A2 */
+    dailyLit: React.MutableRefObject<boolean[]>
+    /** % tiến độ khóa theo tên tòa, hiện trên nhãn */
+    coursePct: Readonly<Record<string, number>>
     pointer: React.MutableRefObject<{ x: number; y: number; inside: boolean }>
     /** Bấm vào tòa có khóa học thì mở khóa đó */
     onOpenCourse?: (courseId: string) => void
@@ -602,7 +658,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, staticMode, stage, liftNames, pointer, onOpenCourse }: SceneProps) {
+function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, coursePct, pointer, onOpenCourse }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -882,7 +938,7 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, pointer, on
             />
             <directionalLight ref={rim} color={CAMPUS.rimLight} intensity={0.35 * Math.PI} position={[30, 14, -30]} />
             <group ref={world}>
-                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} />
+                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} coursePct={coursePct} />
             </group>
         </>
     )
@@ -896,10 +952,12 @@ export interface CampusSceneProps {
     staticMode: boolean
     stage: React.MutableRefObject<number>
     liftNames: ReadonlySet<string>
+    dailyLit: React.MutableRefObject<boolean[]>
+    coursePct: Readonly<Record<string, number>>
     onOpenCourse?: (courseId: string) => void
 }
 
-export default function CampusScene({ night, reduce, staticMode, stage, liftNames, onOpenCourse }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, stage, liftNames, dailyLit, coursePct, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -954,7 +1012,7 @@ export default function CampusScene({ night, reduce, staticMode, stage, liftName
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} liftNames={liftNames} pointer={pointer} onOpenCourse={onOpenCourse} />
+                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} liftNames={liftNames} dailyLit={dailyLit} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}
         </div>

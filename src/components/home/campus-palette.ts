@@ -23,6 +23,8 @@ export const CAMPUS = {
     gateSign: '#F3EFEA',
     rimLight: '#FF6B5E',
     windowLit: '#FFD27A',
+    // Tầng cửa sổ A2 đã đọc bài Daily: vàng ấm đậm để nổi cả ban ngày
+    windowTier: '#FFAE1F',
     sunlight: '#FFD9B8',
     pureWhite: '#FFFFFF',
     skyLight: '#FFE9E0',
