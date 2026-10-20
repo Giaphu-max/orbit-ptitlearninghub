@@ -113,4 +113,23 @@ export interface ClassStats {
     concepts: Record<string, { answered: number; wrongFirstTry: number; corrected: number }>
     /** Theo câu gốc: số lượt chọn từng đáp án (cùng thứ tự options) */
     questions: Record<string, { picks: number[] }>
+    /** Kết quả test cuối chương của lớp, theo id khóa */
+    tests: Record<string, ClassTestStats>
+}
+
+export interface ClassTestStats {
+    /** Số sinh viên đã làm test ít nhất một lần */
+    attempted: number
+    /** Tổng số lượt làm (kể cả làm lại) */
+    attempts: number
+    /** Điểm trung bình, % câu đúng */
+    avgCorrectPct: number
+    /** Số sinh viên đạt từ 80% */
+    passed: number
+    avgDurationSec: number
+    /** Số lượt bị tự nộp vì hết giờ */
+    timedOut: number
+    scoreBuckets: { label: string; count: number }[]
+    /** Theo khái niệm: số lần được hỏi và số lần trả lời đúng trong test */
+    concepts: Record<string, { asked: number; correct: number }>
 }

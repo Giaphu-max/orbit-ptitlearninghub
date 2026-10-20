@@ -45,5 +45,87 @@
         2
       ]
     }
+  },
+  "tests": {
+    "dung-audio-video-phi-tuyen": {
+      "attempted": 30,
+      "attempts": 41,
+      "avgCorrectPct": 68,
+      "passed": 9,
+      "avgDurationSec": 452,
+      "timedOut": 3,
+      "scoreBuckets": [
+        {
+          "label": "0–39%",
+          "count": 2
+        },
+        {
+          "label": "40–59%",
+          "count": 7
+        },
+        {
+          "label": "60–79%",
+          "count": 12
+        },
+        {
+          "label": "80–100%",
+          "count": 9
+        }
+      ],
+      "concepts": {
+        "dung-tuyen-tinh": {
+          "asked": 24,
+          "correct": 21
+        },
+        "dung-phi-tuyen": {
+          "asked": 22,
+          "correct": 18
+        },
+        "tinh-phi-huy-hoai": {
+          "asked": 25,
+          "correct": 11
+        },
+        "quy-trinh-dung-bon-giai-doan": {
+          "asked": 23,
+          "correct": 10
+        },
+        "tu-duy-dung": {
+          "asked": 21,
+          "correct": 16
+        },
+        "vai-tro-nguoi-xem": {
+          "asked": 22,
+          "correct": 15
+        },
+        "muc-tieu-giao-tiep": {
+          "asked": 24,
+          "correct": 17
+        },
+        "tai-tri-tue": {
+          "asked": 23,
+          "correct": 9
+        },
+        "cong-cu-dan-dat-chu-y": {
+          "asked": 22,
+          "correct": 14
+        },
+        "nhip-hinh": {
+          "asked": 25,
+          "correct": 19
+        },
+        "nhip-am": {
+          "asked": 23,
+          "correct": 15
+        },
+        "thoi-luong-canh": {
+          "asked": 24,
+          "correct": 16
+        },
+        "nen-va-keo-dai-thoi-gian": {
+          "asked": 22,
+          "correct": 12
+        }
+      }
+    }
   }
 }

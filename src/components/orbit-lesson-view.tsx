@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { ChevronLeft, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
+import { ChevronLeft, ClipboardCheck, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
 import { getCourse, getLessonsOfCourse, lessons } from '@/data'
 import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
@@ -248,6 +248,17 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                     ))}
                                 </dl>
                             </section>
+
+                            <Link
+                                to={`/test/${lesson.courseId}`}
+                                className="flex items-center justify-between gap-3 rounded-card surface-red-deep p-5 shadow-brand transition hover:opacity-95"
+                            >
+                                <span>
+                                    <span className="block text-eyebrow uppercase text-ink-foreground/70">Cuối chương</span>
+                                    <span className="mt-1 block font-bold">Làm test tổng hợp khóa này</span>
+                                </span>
+                                <ClipboardCheck size={22} className="shrink-0" />
+                            </Link>
 
                             {courseLessons.length > 1 && (
                                 <section className="rounded-card border border-border bg-card p-5 shadow-card">

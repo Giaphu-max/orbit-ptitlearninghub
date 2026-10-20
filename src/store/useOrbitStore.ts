@@ -3,6 +3,7 @@ import { persist, createJSONStorage, type StateStorage } from 'zustand/middlewar
 import { dailyArticles } from '@/data'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
+import { masteryAfterTest, testXp, type TestAnswerInput } from '@/lib/final-test'
 import { advanceStreak, dailyFor, directorXp, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
@@ -36,6 +37,25 @@ export interface RecordQuizInput {
     lessonQuestionIds: string[]
 }
 
+/** Kết quả một lượt test cuối chương. */
+export interface TestAttempt {
+    at: string
+    correct: number
+    total: number
+    durationSec: number
+    timedOut: boolean
+    /** Từng khái niệm được hỏi: đúng/sai và mức nắm vững trước/sau test */
+    concepts: { conceptId: string; correct: boolean; before: number | null; after: number }[]
+}
+
+/** Kỷ lục + lượt gần nhất của một khóa. */
+export interface TestRecord {
+    bestCorrect: number
+    bestTotal: number
+    attempts: number
+    last: TestAttempt
+}
+
 /** Phần nội dung AI tạo mà giảng viên được sửa; lưu cả khối để thay thế bản gốc. */
 export type LessonEdits = Pick<Lesson, 'summary' | 'concepts' | 'quiz'>
 
@@ -61,6 +81,8 @@ interface OrbitState {
     quizResults: Record<string, QuizResult>
     /** Điểm tổng cao nhất ở Virtual Director (0 = chưa chụp) */
     directorBest: number
+    /** Test cuối chương theo khóa (id khóa → kết quả) */
+    testRecords: Record<string, TestRecord>
     /** Tiến độ nhiệm vụ trong ngày; sang ngày mới thì tự bắt đầu lại */
     daily: DailyState
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
@@ -83,6 +105,8 @@ interface OrbitState {
     claimMission: (missionId: string) => number
     /** Ghi điểm một lần chụp ở Virtual Director; trả về XP được cộng (0 nếu chưa vượt kỷ lục hoặc dưới 70 điểm) */
     recordDirectorScore: (score: number) => number
+    /** Ghi kết quả test cuối chương, cập nhật mức nắm vững (cây kỹ năng) và XP; trả về số XP được cộng */
+    recordTestResult: (input: { courseId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
     resetDemo: () => void
 }
 
@@ -111,6 +135,7 @@ export function makeDemoProfile() {
         earnedBadgeIds: ['chuoi-7-ngay'],
         quizResults: {} as Record<string, QuizResult>,
         directorBest: 0,
+        testRecords: {} as Record<string, TestRecord>,
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
         lessonReview: {} as Record<string, ReviewStatus>,
         lessonEdits: {} as Record<string, LessonEdits>,
@@ -231,6 +256,43 @@ export const useOrbitStore = create<OrbitState>()(
                     directorBest: score,
                     earnedBadgeIds: evaluateBadges({ conceptMastery: s.conceptMastery, quizResults: s.quizResults, streak: s.streak, directorBest: score }, s.earnedBadgeIds),
                 }))
+                return xp
+            },
+
+            recordTestResult: ({ courseId, answers, durationSec, timedOut }) => {
+                const s0 = get()
+                const correct = answers.filter((a) => a.correct).length
+                const prev = s0.testRecords[courseId]
+                const xp = testXp(correct, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).total
+                set((s) => {
+                    const conceptMastery = { ...s.conceptMastery }
+                    const concepts: TestAttempt['concepts'] = answers.map((a) => {
+                        const before = s.conceptMastery[a.conceptId]
+                        const after = masteryAfterTest(before, a.correct)
+                        conceptMastery[a.conceptId] = after
+                        return { conceptId: a.conceptId, correct: a.correct, before: before ?? null, after }
+                    })
+                    const { froze: _froze, ...streak } = advanceStreak(s.streak)
+                    const today = dailyFor(s.daily)
+                    const last: TestAttempt = { at: new Date().toISOString(), correct, total: answers.length, durationSec, timedOut, concepts }
+                    const bestBetter = !prev || correct / answers.length > prev.bestCorrect / prev.bestTotal
+                    return {
+                        xp: s.xp + xp,
+                        conceptMastery,
+                        streak,
+                        daily: { ...today, answered: today.answered + correct },
+                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults: s.quizResults, streak, directorBest: s.directorBest }, s.earnedBadgeIds),
+                        testRecords: {
+                            ...s.testRecords,
+                            [courseId]: {
+                                bestCorrect: bestBetter || !prev ? correct : prev.bestCorrect,
+                                bestTotal: bestBetter || !prev ? answers.length : prev.bestTotal,
+                                attempts: (prev?.attempts ?? 0) + 1,
+                                last,
+                            },
+                        },
+                    }
+                })
                 return xp
             },
 

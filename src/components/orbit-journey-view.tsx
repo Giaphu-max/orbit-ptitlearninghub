@@ -2,7 +2,7 @@ import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Award, Check, ChevronRight, Flame, Gift, Lock, Snowflake, Zap } from 'lucide-react'
-import { badges, getLesson } from '@/data'
+import { badges, courses, getLesson } from '@/data'
 import {
     announceRewards,
     badgeProgress,
@@ -31,10 +31,43 @@ export function OrbitJourneyView() {
                 </header>
                 <StatusRow />
                 <Missions />
+                <FinalTests />
                 <SkillTree />
                 <Badges />
             </div>
         </div>
+    )
+}
+
+// ─── Test cuối chương ──────────────────────────────────────────────────────
+
+function FinalTests() {
+    const records = useOrbitStore((s) => s.testRecords)
+    return (
+        <section aria-labelledby="tests-title">
+            <h2 id="tests-title" className="text-title text-foreground">Test cuối chương</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Kiểm tra cả khóa, biết khái niệm nào còn hổng và nhận lộ trình ôn tập.</p>
+            <ul className="mt-5 flex flex-col gap-3">
+                {courses.map((c) => {
+                    const r = records[c.id]
+                    return (
+                        <li key={c.id}>
+                            <Link to={`/test/${c.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card p-5 shadow-card transition hover:border-brand-300">
+                                <span>
+                                    <span className="block font-bold text-foreground">{c.title}</span>
+                                    <span className="mt-1 block text-sm text-muted-foreground">
+                                        {r ? `Tốt nhất ${r.bestCorrect}/${r.bestTotal} · ${r.attempts} lượt làm` : 'Chưa làm lần nào'}
+                                    </span>
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-sm font-bold text-brand-ink">
+                                    {r ? 'Làm lại hoặc xem kết quả' : 'Làm test'} <ChevronRight size={16} />
+                                </span>
+                            </Link>
+                        </li>
+                    )
+                })}
+            </ul>
+        </section>
     )
 }
 

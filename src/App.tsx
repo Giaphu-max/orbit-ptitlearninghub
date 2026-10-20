@@ -12,6 +12,7 @@ const OrbitLessonView = lazy(() => import('@/components/orbit-lesson-view').then
 const OrbitTeacherView = lazy(() => import('@/components/orbit-teacher-view').then((m) => ({ default: m.OrbitTeacherView })))
 const OrbitJourneyView = lazy(() => import('@/components/orbit-journey-view').then((m) => ({ default: m.OrbitJourneyView })))
 const OrbitDailyView = lazy(() => import('@/components/orbit-daily-view').then((m) => ({ default: m.OrbitDailyView })))
+const OrbitTestView = lazy(() => import('@/components/orbit-test-view').then((m) => ({ default: m.OrbitTestView })))
 const OrbitStudioView = lazy(() => import('@/components/orbit-studio-view').then((m) => ({ default: m.OrbitStudioView })))
 
 /**
@@ -53,6 +54,7 @@ function App() {
             <Route path="/lesson/:lessonId" element={<OrbitLessonView />} />
             <Route path="/journey" element={<OrbitJourneyView />} />
             <Route path="/daily/:articleId" element={<OrbitDailyView />} />
+            <Route path="/test/:courseId" element={<OrbitTestView />} />
             <Route path="/studio" element={<OrbitStudioView />} />
             <Route path="/teacher" element={<OrbitTeacherView />} />
             <Route path="*" element={<Navigate to="/" replace />} />

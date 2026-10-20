@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { BarChart3, CheckCircle2, ClipboardCheck, Eye, EyeOff, RotateCcw, Save, Sparkles, TriangleAlert } from 'lucide-react'
-import { classStats, lessons } from '@/data'
+import { BarChart3, CheckCircle2, ClipboardCheck, ClipboardList, Eye, EyeOff, RotateCcw, Save, Sparkles, TriangleAlert } from 'lucide-react'
+import { classStats, courses, getConcept, lessons } from '@/data'
 import type { Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
 import { useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
-type Section = 'review' | 'stats'
+type Section = 'review' | 'stats' | 'tests'
 
 const fieldClass =
     'w-full rounded-md border border-input bg-card px-3 py-2 text-[15px] text-foreground transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40'
@@ -34,7 +34,7 @@ export function OrbitTeacherView() {
                     </p>
                 </header>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className={`flex flex-wrap items-center gap-3 ${section === 'tests' ? 'hidden' : ''}`}>
                     <div className="flex flex-wrap gap-2" role="tablist" aria-label="Chọn bài học">
                         {lessons.map((l) => (
                             <button
@@ -62,9 +62,14 @@ export function OrbitTeacherView() {
                     <SectionTab active={section === 'stats'} onClick={() => setSection('stats')} icon={<BarChart3 size={16} />}>
                         Thống kê lớp
                     </SectionTab>
+                    <SectionTab active={section === 'tests'} onClick={() => setSection('tests')} icon={<ClipboardList size={16} />}>
+                        Kết quả test
+                    </SectionTab>
                 </div>
 
-                {!lesson ? (
+                {section === 'tests' ? (
+                    <TestStatsPanel />
+                ) : !lesson ? (
                     <p className="text-muted-foreground">Chưa có bài học nào.</p>
                 ) : section === 'review' ? (
                     // key: đổi bài thì dựng lại form từ nội dung của bài đó
@@ -429,6 +434,96 @@ function StatsPanel({ lesson, onEdit }: { lesson: Lesson; onEdit: () => void }) 
                     })}
                 </div>
             </section>
+        </div>
+    )
+}
+
+// ─── Kết quả test cuối chương của lớp ──────────────────────────────────────
+
+function TestStatsPanel() {
+    return (
+        <div className="flex flex-col gap-12">
+            <p className="rounded-card bg-muted px-4 py-3 text-sm text-muted-foreground">
+                {classStats.note} Số liệu test dưới đây là dữ liệu mẫu cho lớp <span className="font-mono font-bold text-foreground">{classStats.classSize}</span> sinh viên.
+            </p>
+            {courses.map((course) => {
+                const t = classStats.tests[course.id]
+                if (!t) return null
+                const maxBucket = Math.max(...t.scoreBuckets.map((b) => b.count), 1)
+                const conceptRows = Object.entries(t.concepts)
+                    .map(([id, c]) => ({ id, name: getConcept(id)?.name ?? id, ...c, rate: pct(c.correct, c.asked) }))
+                    .sort((a, b) => a.rate - b.rate)
+                const weakest = conceptRows[0]
+                return (
+                    <section key={course.id} aria-label={`Test ${course.title}`} className="flex flex-col gap-6">
+                        <h2 className="text-title text-foreground">{course.title}</h2>
+                        <dl className="grid gap-4 sm:grid-cols-4">
+                            <Stat label="Đã làm test" value={`${t.attempted}/${classStats.classSize}`} note={`${t.attempts} lượt, tính cả làm lại`} />
+                            <Stat label="Điểm trung bình" value={`${t.avgCorrectPct}%`} note="câu đúng" />
+                            <Stat label="Đạt từ 80%" value={`${pct(t.passed, t.attempted)}%`} note={`${t.passed} sinh viên`} />
+                            <Stat label="Thời gian TB" value={fmt(t.avgDurationSec)} note={`${t.timedOut} lượt hết giờ`} />
+                        </dl>
+
+                        {weakest && weakest.rate < 60 && (
+                            <div className="flex flex-wrap items-center gap-4 rounded-panel surface-red-deep p-6 shadow-brand">
+                                <TriangleAlert size={28} className="shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-eyebrow uppercase text-ink-foreground/70">Hổng kiến thức nhiều nhất</p>
+                                    <p className="mt-1 text-xl font-bold">
+                                        {weakest.name}: chỉ {weakest.rate}% trả lời đúng trong test
+                                    </p>
+                                    <p className="mt-1 text-sm text-ink-foreground/80">Nên ôn lại khái niệm này trên lớp trước buổi kiểm tra chính thức.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
+                            <h3 className="font-bold text-foreground">Phân bố điểm</h3>
+                            <ul className="mt-4 flex items-end gap-3" aria-label="Số sinh viên theo khoảng điểm">
+                                {t.scoreBuckets.map((b) => (
+                                    <li key={b.label} className="flex flex-1 flex-col items-center gap-2">
+                                        <span className="font-mono text-sm font-bold text-foreground">{b.count}</span>
+                                        <div className="flex h-28 w-full items-end rounded-md bg-muted">
+                                            <div className="w-full rounded-md bg-brand-600" style={{ height: `${(b.count / maxBucket) * 100}%` }} />
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">{b.label}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 className="font-bold text-foreground">Tỉ lệ trả lời đúng theo khái niệm</h3>
+                            <ul className="mt-4 flex flex-col gap-3">
+                                {conceptRows.map((c) => (
+                                    <li key={c.id} className="rounded-card border border-border bg-card p-5 shadow-card">
+                                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                            <span className="font-bold text-foreground">{c.name}</span>
+                                            <span className="font-mono text-2xl font-bold text-foreground">{c.rate}%</span>
+                                        </div>
+                                        <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`${c.rate}% trả lời đúng`}>
+                                            <div className={`h-full rounded-full ${c.rate < 60 ? 'bg-brand-600' : 'bg-success'}`} style={{ width: `${c.rate}%` }} />
+                                        </div>
+                                        <p className="mt-2 text-sm text-muted-foreground">
+                                            <span className="font-mono">{c.correct}</span>/<span className="font-mono">{c.asked}</span> lượt trả lời đúng
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </section>
+                )
+            })}
+        </div>
+    )
+}
+
+function Stat({ label, value, note }: { label: string; value: string; note: string }) {
+    return (
+        <div className="rounded-card border border-border bg-card p-5 shadow-card">
+            <dt className="text-eyebrow uppercase text-muted-foreground">{label}</dt>
+            <dd className="mt-2 font-mono text-3xl font-bold text-foreground">{value}</dd>
+            <dd className="mt-1 text-xs text-muted-foreground">{note}</dd>
         </div>
     )
 }
