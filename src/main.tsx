@@ -17,6 +17,13 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
 armAudio()
 armFeedback()
 
+// Vòng focus chỉ hiện khi đang dùng bàn phím: html[data-input] = 'key' | 'pointer' (CSS ở index.css). Một số webview coi cú bấm chuột vào link là focus-visible.
+document.documentElement.dataset.input = 'pointer'
+addEventListener('keydown', (e) => {
+  if (e.key === 'Tab' || e.key.startsWith('Arrow') || e.key === 'Enter' || e.key === ' ') document.documentElement.dataset.input = 'key'
+}, true)
+addEventListener('pointerdown', () => (document.documentElement.dataset.input = 'pointer'), true)
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

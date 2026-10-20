@@ -12,6 +12,12 @@
   :focus:not(:focus-visible) {
     outline: none;
   }
+  /* Đang dùng chuột/cảm ứng: bỏ mọi vòng focus (outline và ring Tailwind), giữ đổ bóng khác của phần tử. Bàn phím: giữ nguyên. */
+  html:not([data-input='key']) :focus-visible {
+    outline: none !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+  }
   :root {
     /* Màu thương hiệu: đỏ PTIT #C4161C */
     /* Thang màu theo giao diện, dạng kênh RGB (xem tailwind.config.js) */
