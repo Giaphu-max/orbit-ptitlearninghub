@@ -28,3 +28,6 @@ dist-ssr
 
 # Cache kết quả thô của Gemini khi tạo nội dung
 scripts/.cache
+
+# Claude Code
+.claude/

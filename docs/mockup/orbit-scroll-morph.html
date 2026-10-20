@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbit Scroll Morph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one fixed WebGL stage on the right; four chapters scroll on the left; the campus model morphs chapter by chapter and match-cuts into the studio set */
+:root{
+  --bg:#120D0E;--card:rgba(30,24,25,.86);--line:rgba(255,255,255,.09);--fg:#F4EEEA;--muted:#A79C97;
+  --red:#C4161C;--red-ink:#FF8A84;--ok:#5FD08F;--gold:#FFC56B;
+  --sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+#stage{position:fixed;inset:0;z-index:0;display:block;width:100vw;height:100vh}
+.glowbg{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(60% 70% at 70% 30%,rgba(255,80,80,.18),transparent 60%)}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(26,6,8,.9) 0%,rgba(40,6,9,.5) 38%,rgba(40,6,9,0) 58%)}
+.prog{position:fixed;left:0;top:0;height:3px;width:100%;background:var(--red);transform-origin:left;transform:scaleX(0);z-index:30}
+nav{position:fixed;top:0;left:0;right:0;z-index:20;height:64px;display:flex;align-items:center;gap:24px;padding:0 max(24px,4vw);background:rgba(18,13,14,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+nav b{display:flex;gap:10px;align-items:center}
+nav b i{width:34px;height:34px;border-radius:9px;background:#fff;color:var(--red);display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:900}
+nav .links{display:flex;gap:4px;font-size:14px;font-weight:600}
+nav .links a{padding:7px 12px;border-radius:999px;color:var(--muted);transition:color .2s,background .2s}
+nav .links a.on{background:rgba(255,255,255,.1);color:var(--fg)}
+nav .chips{margin-left:auto;display:flex;gap:8px;font-family:var(--mono);font-size:12px}
+nav .chips span{border:1px solid var(--line);border-radius:999px;padding:6px 10px}
+
+main{position:relative;z-index:2}
+.ch{min-height:100vh;display:flex;align-items:center;padding:96px max(24px,4vw) 64px}
+.ch.hero{min-height:100vh}
+.col{width:min(520px,100%)}
+.eb{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--red-ink);text-transform:uppercase}
+h1{margin:12px 0 0;font-size:clamp(46px,6vw,84px);line-height:1;letter-spacing:-.04em;font-weight:900}
+h1 em{font-style:normal;color:#FFB4AE}
+h2{margin:10px 0 0;font-size:clamp(30px,3.4vw,44px);line-height:1.08;letter-spacing:-.03em;font-weight:800}
+.lead{margin:16px 0 24px;font-size:17px;line-height:1.6;color:#D6CBC6}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.resume{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#fff;color:#1A1412;border-radius:18px;padding:14px 14px 14px 18px}
+.resume small{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--red)}
+.resume b{display:block;margin:4px 0 8px;font-size:15px}
+.bar{display:block;height:5px;border-radius:5px;background:#EFE9E3;overflow:hidden}.bar i{display:block;height:100%;width:46%;background:var(--red)}
+.play{width:46px;height:46px;border-radius:50%;background:var(--red);display:grid;place-items:center}
+.play::before{content:"";border-left:13px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:4px}
+.list{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center}
+.row .n{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.06)}
+.row.lit .n{background:var(--gold);color:#3A2408;box-shadow:0 0 18px rgba(255,197,107,.6)}
+.row b{font-size:15px}.row small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.row .go{font-size:12px;font-weight:800;color:var(--red-ink)}
+.row.done{opacity:.55}.row.done .go{color:var(--ok)}
+.btn{display:inline-flex;gap:8px;align-items:center;background:var(--red);color:#fff;border-radius:12px;padding:12px 18px;font-weight:800;font-size:14px;margin-top:20px}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.course{display:grid;gap:8px}
+.course .t{display:flex;justify-content:space-between;align-items:baseline}
+.course b{font-size:16px}.course .p{font-family:var(--mono);font-size:22px;font-weight:700}
+.course small{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--red-ink);text-transform:uppercase}
+.track{height:4px;border-radius:4px;background:rgba(255,255,255,.1)}.track i{display:block;height:100%;border-radius:4px;background:var(--red)}
+.feat{display:grid;gap:10px;margin-top:6px}
+.feat div{display:grid;grid-template-columns:30px 1fr;gap:10px;font-size:14px;color:#D6CBC6}
+.feat i{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-style:normal;background:rgba(255,197,107,.14);color:var(--gold)}
+.feat b{color:#fff}
+.prompt{display:flex;gap:10px;align-items:center;margin-top:14px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.4);border:1px solid var(--line);font-size:13px}
+.prompt span{width:26px;height:26px;border-radius:8px;background:var(--red);display:grid;place-items:center;flex:none}
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .9s cubic-bezier(.22,1,.36,1)}
+.reveal.in{opacity:1;transform:none}
+.labels{position:fixed;inset:0;z-index:3;pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-100%);background:rgba(18,13,14,.85);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .3s}
+.lbl b{display:block;font-size:13px}.lbl span{color:var(--muted)}
+.lbl em{font-style:normal;font-family:var(--mono);color:var(--red-ink);margin-left:6px}
+.hint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:5;font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;transition:opacity .4s}
+.hint i{width:18px;height:28px;border:1.5px solid var(--muted);border-radius:10px;position:relative}
+.hint i::after{content:"";position:absolute;left:50%;top:5px;width:3px;height:6px;margin-left:-1.5px;border-radius:2px;background:var(--muted);animation:wheel 1.4s infinite}
+@keyframes wheel{to{transform:translateY(8px);opacity:0}}
+.cap{position:fixed;right:max(24px,4vw);bottom:24px;z-index:5;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+.cap b{color:var(--fg)}
+footer{position:relative;z-index:2;padding:80px max(24px,4vw) 48px;background:var(--bg);border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+@media (max-width:860px){
+  #stage{height:55vh}
+  .glowbg{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(60% 70% at 70% 30%,rgba(255,80,80,.18),transparent 60%)}
+.veil{background:linear-gradient(180deg,rgba(18,13,14,0) 0%,rgba(18,13,14,.2) 40%,rgba(18,13,14,.95) 60%)}
+  .ch{align-items:flex-end;padding-top:50vh}
+  nav .links,nav .chips{display:none}
+  .labels{display:none}
+}
+@media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none}.hint i::after{animation:none}}
+</style>
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+</head>
+<body>
+<canvas id="stage" aria-hidden="true"></canvas>
+<div class="glowbg"></div>
+<div class="veil"></div>
+<div class="prog" id="prog"></div>
+<div class="labels" id="labels"></div>
+<nav><b><i>PTIT</i>Orbit</b><div class="links"><a class="on" href="#c0">Trang chủ</a><a href="#c1">Hôm nay</a><a href="#c2">Khóa học</a><a href="#c3">Studio 3D</a></div><div class="chips"><span>🔥 12 ngày</span><span>Cấp 7 · 2.505 XP</span></div></nav>
+
+<main>
+  <section class="ch hero" id="c0" data-i="0"><div class="col">
+    <div class="eb">Orbit · PTIT</div>
+    <h1>Chào Phú.<br>Hôm nay chỉ cần<br><em>25 phút.</em></h1>
+    <p class="lead">Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.</p>
+    <a class="resume" href="#"><span><small>HỌC TIẾP · DỰNG PHIM</small><b>Bản chất của dựng audio và video phi tuyến</b><span class="bar"><i></i></span></span><span class="play"></span></a>
+  </div></section>
+
+  <section class="ch" id="c1" data-i="1"><div class="col reveal">
+    <div class="eb">01 · Hôm nay</div>
+    <h2>Ba ô cửa sáng đèn.<br>Đọc xong là nghỉ.</h2>
+    <p class="lead">Mỗi bài Orbit Daily đọc xong thắp sáng một ô cửa tòa A2. AI chọn bài theo phần bạn còn hổng.</p>
+    <div class="card list">
+      <div class="row done lit"><span class="n">01</span><span><b>Bản chất dựng phi tuyến</b><small>Đã đọc · +20 XP</small></span><span class="go">✓</span></div>
+      <div class="row"><span class="n">02</span><span><b>Tổ chức cấu trúc và điều hướng tiếp nhận</b><small>Ưu tiên · “Nhịp hình” mới nắm 25%</small></span><a class="go" href="#" data-light="1">Đọc →</a></div>
+      <div class="row"><span class="n">03</span><span><b>Nhịp hình và nhịp âm</b><small>1 phút · +20 XP</small></span><a class="go" href="#" data-light="2">Đọc →</a></div>
+    </div>
+  </div></section>
+
+  <section class="ch" id="c2" data-i="2"><div class="col reveal">
+    <div class="eb">02 · Khóa học</div>
+    <h2>Mỗi tòa nhà<br>là một khóa học.</h2>
+    <p class="lead">Tòa nào bạn đang học sẽ nhấc lên. Học hết chặng, tòa sáng đèn.</p>
+    <div class="list">
+      <a class="card course" href="#"><small>Dựng phim · Tòa A3</small><span class="t"><b>Dựng audio và video phi tuyến</b><span class="p">15%</span></span><span class="track"><i style="width:15%"></i></span></a>
+      <a class="card course" href="#"><small>Nhiếp ảnh · Tòa A2</small><span class="t"><b>Nhiếp ảnh và ánh sáng</b><span class="p">0%</span></span><span class="track"><i style="width:0"></i></span></a>
+    </div>
+  </div></section>
+
+  <section class="ch" id="c3" data-i="3"><div class="col reveal">
+    <div class="eb">03 · Studio 3D</div>
+    <h2>Rồi cả khuôn viên<br>thành phòng chụp.</h2>
+    <p class="lead">Khối vàng của A3 thành chủ thể, dải kính xanh thành đạo cụ. Bạn đặt máy, AI đặt đèn.</p>
+    <div class="feat">
+      <div><i>✦</i><span><b>Prompt-to-Environment:</b> mô tả ánh sáng bằng lời, AI dựng đèn và giải thích.</span></div>
+      <div><i>◎</i><span><b>Virtual Director:</b> chụp rồi để AI chấm bố cục, ánh sáng.</span></div>
+    </div>
+    <div class="prompt"><span>✦</span>“Studio tối, đèn chính vàng ấm từ trái, viền sáng phía sau”</div>
+    <a class="btn" href="#">Vào Studio →</a>
+  </div></section>
+</main>
+<footer>Orbit · Học viện Công nghệ Bưu chính Viễn thông · Bản mẫu chuyển cảnh 3D theo cuộn (khối dựng giản lược, trong app dùng mô hình khuôn viên và Studio thật)</footer>
+<div class="hint" id="hint"><i></i>Cuộn để xem khuôn viên biến đổi</div>
+<div class="cap" id="cap"></div>
+
+<script type="module">
+import * as THREE from 'three';
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, .1, 400);
+const world = new THREE.Group(); scene.add(world);
+
+// ---------- helpers ----------
+const M = (c, o={}) => new THREE.MeshStandardMaterial(Object.assign({color:c, roughness:.82, metalness:0, flatShading:true}, o));
+const mesh = (geo, mat, x=0,y=0,z=0) => { const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=m.receiveShadow=true; return m; };
+const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const band=(s,a,b)=>clamp((s-a)/(b-a));   // 0→1 while s goes a→b
+const C = { ground:'#E7E1DA', path:'#FFFFFF', white:'#F3EFE8', glass:'#2E9C78', yellow:'#E9B949', roof:'#C4161C', beige:'#D9D2CB', tree:'#6E9A5B', blue:'#3554A5', dark:'#2A2324', pedestal:'#8E1218', backdrop:'#2B2223' };
+
+// ---------- campus ----------
+const plate = mesh(new THREE.BoxGeometry(44,1,40), M(C.ground), 0,-.5,0); world.add(plate);
+const path = mesh(new THREE.BoxGeometry(4,.05,26), M(C.path), 2,.03,4); world.add(path);
+
+// A2: tall white tower + green glass strip + window rows (3 Daily windows)
+const A2 = new THREE.Group(); A2.position.set(2,0,1); world.add(A2);
+const a2body = mesh(new THREE.BoxGeometry(6,15,4.4), M(C.white), 0,7.5,0); A2.add(a2body);
+const a2glass = mesh(new THREE.BoxGeometry(1.6,14,.3), M(C.glass,{roughness:.3,metalness:.2}), 0,7.4,2.3); A2.add(a2glass);
+const a2clock = mesh(new THREE.CylinderGeometry(1,1,.3,24), M('#FFFFFF'), 0,13.6,2.5); a2clock.rotation.x=Math.PI/2; A2.add(a2clock);
+const winMat = [0,1,2].map(()=>new THREE.MeshStandardMaterial({color:'#2A2A30',emissive:'#FFC56B',emissiveIntensity:0,roughness:.4}));
+const wins=[];
+[0,1,2].forEach(r=>{ [-1.9,1.9].forEach(x=>{ for(let k=0;k<2;k++){ const w=mesh(new THREE.BoxGeometry(1.3,1.6,.15),winMat[r], x+(k?0:0), 4+r*3.2+k*1.6, 2.25); w.scale.y=.85; A2.add(w); wins.push(w);} }); });
+// A3: yellow block + red pyramid roof
+const A3 = new THREE.Group(); A3.position.set(12.5,0,-9.5); world.add(A3);
+const a3body = mesh(new THREE.BoxGeometry(8,6,6), M(C.yellow), 0,3,0); A3.add(a3body);
+const a3roof = mesh(new THREE.ConeGeometry(5.6,3,4), M(C.roof), 0,7.5,0); a3roof.rotation.y=Math.PI/4; A3.add(a3roof);
+// Hall, A1, canteen, gate
+const hall = mesh(new THREE.BoxGeometry(8,5,6), M(C.beige), -11,2.5,-9); world.add(hall);
+const hallRoof = mesh(new THREE.BoxGeometry(8.6,.6,6.6), M(C.roof), -11,5.3,-9); world.add(hallRoof);
+const A1 = mesh(new THREE.BoxGeometry(6,6.5,5), M(C.white), -11.5,3.25,3.5); world.add(A1);
+const canteen = mesh(new THREE.BoxGeometry(6,3,4), M(C.beige), -1.5,1.5,-11); world.add(canteen);
+const gate = new THREE.Group(); gate.position.set(2,0,13.2); world.add(gate);
+[-3,3].forEach(x=>gate.add(mesh(new THREE.BoxGeometry(1,5,1),M(C.white),x,2.5,0))); gate.add(mesh(new THREE.BoxGeometry(7.6,1,1.2),M(C.roof),0,5.4,0));
+const trees=new THREE.Group(); world.add(trees);
+for(let i=0;i<22;i++){ const a=i/22*Math.PI*2, r=17+(i%3)*1.6; const t=new THREE.Group(); t.position.set(Math.cos(a)*r*1.05, 0, Math.sin(a)*r*.92);
+  t.add(mesh(new THREE.CylinderGeometry(.2,.25,1.4,6),M('#6B4B33'),0,.7,0)); t.add(mesh(new THREE.IcosahedronGeometry(1.2+(i%2)*.3,0),M(i%3?C.tree:'#577F49'),0,2.1,0)); trees.add(t); }
+
+// ---------- studio targets (match cut) ----------
+const pedestal = mesh(new THREE.CylinderGeometry(5,5.4,.6,48), M(C.pedestal,{flatShading:false,roughness:.6}), 0,.3,0); pedestal.scale.setScalar(.001); world.add(pedestal);
+const backdrop = mesh(new THREE.CylinderGeometry(22,22,30,48,1,true,Math.PI*.75,Math.PI*1.5), new THREE.MeshStandardMaterial({color:C.backdrop,side:THREE.BackSide,roughness:1}), 0,14,0); backdrop.receiveShadow=true; backdrop.castShadow=false; backdrop.scale.set(1,.001,1); world.add(backdrop);
+const sphere = mesh(new THREE.SphereGeometry(2.4,48,32), M(C.yellow,{flatShading:false,roughness:.45}), 0,0,0); sphere.scale.setScalar(.001); world.add(sphere);
+const cyl = mesh(new THREE.CylinderGeometry(1.5,1.5,9,32), M(C.glass,{flatShading:false,roughness:.5}), 0,0,0); cyl.scale.setScalar(.001); world.add(cyl);
+const cube = mesh(new THREE.BoxGeometry(4,4,4), M(C.blue,{roughness:.6}), 0,0,0); cube.scale.setScalar(.001); world.add(cube);
+const figure = new THREE.Group(); world.add(figure);
+const fBody = mesh(new THREE.CylinderGeometry(1.1,1.5,6,8), M(C.dark), 0,3.6,0); figure.add(fBody);
+const fHead = mesh(new THREE.IcosahedronGeometry(1.15,1), M('#D9B08C'), 0,7.6,0); figure.add(fHead);
+const fScarf = mesh(new THREE.TorusGeometry(1,.3,8,16), M(C.roof), 0,6.7,0); fScarf.rotation.x=Math.PI/2; figure.add(fScarf);
+figure.scale.setScalar(.001);
+
+// ---------- lights ----------
+const hemi = new THREE.HemisphereLight('#FFE3E0','#4A1A1D',1.0); scene.add(hemi);
+const sun = new THREE.DirectionalLight('#FFF1EA',2.2); sun.position.set(-30,26,22); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-30,right:30,top:30,bottom:-30,near:1,far:120}); scene.add(sun);
+const key = new THREE.SpotLight('#FFC77A',0,80,Math.PI/7,.5,1.2); key.position.set(-14,18,12); key.castShadow=true; key.shadow.mapSize.set(1024,1024); scene.add(key); scene.add(key.target);
+const fill = new THREE.SpotLight('#8FB4FF',0,80,Math.PI/6,.7,1.2); fill.position.set(16,12,14); scene.add(fill); scene.add(fill.target);
+const rim = new THREE.PointLight('#FF6A4E',0,40,1.5); rim.position.set(4,12,-8); scene.add(rim);
+const skyA = new THREE.Color('#9E1218'), skyB = new THREE.Color('#130D0E'), skyMid = new THREE.Color('#4A0A0E');
+scene.fog = new THREE.Fog('#9E1218', 70, 170);
+
+// ---------- camera keyframes per chapter ----------
+const CAM = [
+  {p:[38,30,42], t:[0,4,0], fov:32},     // 0 hero: whole campus
+  {p:[16,13,32], t:[2,8,1], fov:30},      // 1 today: close on A2 windows
+  {p:[40,28,34], t:[7,5,-4], fov:32},     // 2 courses: A2 + A3 lifted
+  {p:[2,10,34], t:[0,4.2,0], fov:34},      // 3 studio: frontal studio set
+];
+const v3=a=>new THREE.Vector3(...a);
+function camAt(s){ const i=Math.min(Math.floor(s),CAM.length-2), f=ease(clamp(s-i)); const A=CAM[i],B=CAM[i+1];
+  return {p:v3(A.p).lerp(v3(B.p),f), t:v3(A.t).lerp(v3(B.t),f), fov:lerp(A.fov,B.fov,f)}; }
+
+// ---------- labels ----------
+const labelsEl=document.getElementById('labels');
+const mkLabel=(html)=>{const d=document.createElement('div');d.className='lbl';d.innerHTML=html;labelsEl.appendChild(d);return d;};
+const L2=mkLabel('<b>Tòa A2</b><span>Nhiếp ảnh và ánh sáng</span><em>0%</em>');
+const L3=mkLabel('<b>Tòa A3</b><span>Dựng audio và video phi tuyến</span><em>15%</em>');
+const tmp=new THREE.Vector3();
+function place(el, obj, y, op){ tmp.set(0,y,0); obj.localToWorld(tmp); tmp.project(camera);
+  el.style.left=((tmp.x+1)/2*innerWidth)+'px'; el.style.top=((1-tmp.y)/2*innerHeight)+'px'; el.style.opacity=op; }
+
+// ---------- scroll → stage value ----------
+const secs=[...document.querySelectorAll('.ch')];
+let S=0, Starget=0, lit=1, litShown=0;
+function readScroll(){
+  const mid=innerHeight*.5; let s=0;
+  secs.forEach((el,i)=>{ const r=el.getBoundingClientRect(); const p=clamp((mid-r.top)/r.height); if(r.top<mid) s=i+p; });
+  Starget=clamp(s-.5,0,3);  // chapter i fully "arrived" when its middle reaches viewport middle
+  const max=document.documentElement.scrollHeight-innerHeight;
+  document.getElementById('prog').style.transform=`scaleX(${max?scrollY/max:0})`;
+  document.getElementById('hint').style.opacity=scrollY>40?0:1;
+  document.querySelectorAll('nav .links a').forEach((a,i)=>a.classList.toggle('on',Math.round(Starget)===i));
+}
+addEventListener('scroll',readScroll,{passive:true}); readScroll();
+document.querySelectorAll('[data-light]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();lit=Math.max(lit,+a.dataset.light+1);a.closest('.row').classList.add('lit','done');a.textContent='✓';}));
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.25});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// ---------- per-frame scene state ----------
+const P = {a2:new THREE.Vector3(2,0,1), a3:new THREE.Vector3(12.5,0,-9.5), a1:new THREE.Vector3(-11.5,3.25,3.5), hall:new THREE.Vector3(-11,2.5,-9)};
+const T = {fig:new THREE.Vector3(0,.6,0), sphere:new THREE.Vector3(6.5,2.4,4.5), cyl:new THREE.Vector3(9.5,4.5,-5), cube:new THREE.Vector3(-8,2,3.5), col:new THREE.Vector3(-9,7,-7)};
+const col = mesh(new THREE.CylinderGeometry(1.6,1.6,14,32), M('#E8E1D6',{flatShading:false}), 0,0,0); col.scale.setScalar(.001); world.add(col);
+const sky=new THREE.Color();
+function apply(s, time){
+  const m = ease(band(s,2.15,2.95));        // match-cut progress courses → studio
+  const lift = band(s,1.4,2) * (1-band(s,2.15,2.5)); // A2/A3 lifted during courses chapter
+  const spin = reduce?0: time*.00004*(1-band(s,0,.6)); // idle rotation only on hero
+  world.rotation.y = -.35 + spin*6.28 + lerp(0,.35,band(s,2.2,3));
+  // daily windows: rows light up as chapter 1 arrives (count = lit)
+  const dayOn = band(s,.6,1);
+  litShown = lerp(litShown, lit, .08);
+  winMat.forEach((mt,r)=>{ mt.emissiveIntensity = (r < litShown ? 1.8 : .06) * dayOn * (1-m) + (r<litShown? .25:0)*(1-dayOn)*(1-m); });
+  // campus fades/shrinks into studio pieces
+  const shrink = 1-m, sh = Math.max(shrink,.001);
+  [trees,gate,canteen,hallRoof,a3roof,a2clock,path].forEach(o=>o.scale.setScalar(Math.max(1-ease(band(s,2.1,2.5)),.001)));
+  // A2 → figure on pedestal (tower slides to centre and compresses)
+  A2.position.lerpVectors(P.a2, new THREE.Vector3(0,0,0), m); A2.position.y = lift*2;
+  A2.scale.set(lerp(1,.35,m), lerp(1,.45,m), lerp(1,.35,m)); A2.visible = m<.98;
+  a2glass.scale.setScalar(sh);
+  figure.scale.setScalar(Math.max(ease(band(s,2.6,3)),.001)); figure.position.copy(T.fig);
+  // glass strip → green cylinder
+  cyl.position.lerpVectors(new THREE.Vector3(2,7.4,3.3), T.cyl, m); cyl.scale.setScalar(Math.max(ease(band(s,2.3,2.9)),.001));
+  // A3 yellow block → yellow sphere
+  A3.position.lerpVectors(P.a3, T.sphere, m); A3.position.y += lift*2.4;
+  A3.scale.setScalar(Math.max(1-ease(band(s,2.35,2.8)),.001));
+  sphere.position.copy(T.sphere); sphere.scale.setScalar(Math.max(ease(band(s,2.45,2.95)),.001));
+  // A1 white block → blue cube (colour + size)
+  A1.position.lerpVectors(P.a1, T.cube, m); A1.scale.setScalar(lerp(1,.66,m));
+  A1.material.color.set(C.white).lerp(new THREE.Color(C.blue), m);
+  cube.visible=false;
+  // hall → white column
+  hall.position.lerpVectors(P.hall, T.col, m); hall.scale.set(lerp(1,.001,m),lerp(1,.001,m),lerp(1,.001,m));
+  col.position.copy(T.col); col.scale.setScalar(Math.max(ease(band(s,2.4,2.95)),.001));
+  // ground → dark floor + red pedestal + curved backdrop
+  plate.material.color.set(C.ground).lerp(new THREE.Color('#3A3030'), m);
+  pedestal.scale.setScalar(Math.max(ease(band(s,2.3,2.8)),.001));
+  backdrop.scale.set(1,Math.max(ease(band(s,2.4,3)),.001),1); backdrop.position.y = 14*backdrop.scale.y;
+  // lights: sunset campus → studio three-point
+  sun.intensity = lerp(2.2,.15,m) * lerp(1,.75,dayOn*(1-m));
+  hemi.intensity = lerp(1.0,.18,m);
+  key.intensity = lerp(0,900,m); key.target.position.set(0,3,0);
+  fill.intensity = lerp(0,220,m); fill.target.position.set(0,3,0);
+  rim.intensity = lerp(0,260,m);
+  // sky colour
+  sky.copy(skyA).lerp(skyMid, band(s,.4,1.2)).lerp(skyB, m);
+  scene.background = sky; scene.fog.color.copy(sky);
+  // labels
+  place(L3, A3, 10, lift); place(L2, A2, 17.5, lift);
+  // caption
+  document.getElementById('cap').innerHTML = ['<b>Khuôn viên PTIT</b> · kéo cuộn','<b>Tòa A2</b> · 3 ô cửa = 3 bài Daily','<b>Khóa học</b> = tòa nhà','<b>Match cut</b> · A3 → quả cầu, kính A2 → trụ xanh, A1 → khối xanh'][Math.round(s)];
+}
+
+function resize(){ const w=innerWidth, h=innerWidth>860?innerHeight:innerHeight*.55; renderer.setSize(w,h,false); camera.aspect=w/h;
+  // on desktop shift the subject to the right half
+  camera.setViewOffset(w*1.0, h, innerWidth>860?-w*.18:0, 0, w, h); camera.updateProjectionMatrix(); }
+addEventListener('resize',resize); resize();
+
+let last=performance.now();
+function loop(now){
+  const dt=Math.min((now-last)/1000,.05); last=now;
+  S += (Starget-S) * (reduce?1:1-Math.pow(.0009,dt));   // smoothed follow
+  const c=camAt(S); camera.position.copy(c.p); camera.fov=c.fov; camera.updateProjectionMatrix(); camera.lookAt(c.t);
+  apply(S, now);
+  renderer.render(scene,camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
