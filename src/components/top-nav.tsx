@@ -4,8 +4,9 @@ import { Flame, Menu, RotateCcw, Repeat, X, Zap } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { levelFromXp, visibleStreak } from '@/lib/gamification'
+import { centerOf, enterRole } from '@/lib/role-switch'
 import { scrollToSection } from '@/lib/scroll'
-import { useOrbitStore } from '@/store/useOrbitStore'
+import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
 export type NavTone = 'hero' | 'plain'
 
@@ -16,6 +17,8 @@ interface NavItem {
     section?: string
     /** Mục đang chọn khi ở các trang khác trang chủ */
     match: (pathname: string) => boolean
+    /** Mục của trang giảng viên (?tab=) */
+    tab?: 'review' | 'stats' | 'tests'
 }
 
 const BASE_ITEMS: NavItem[] = [
@@ -23,6 +26,16 @@ const BASE_ITEMS: NavItem[] = [
     { label: 'Orbit Daily', to: '/#daily', section: 'daily', match: (p) => p.startsWith('/daily') },
     { label: 'Khóa học', to: '/#courses', section: 'courses', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') },
     { label: 'Studio 3D', to: '/#studio', section: 'studio', match: (p) => p.startsWith('/studio') },
+]
+
+// Giảng viên: nav dẫn tới các mục của trang giảng viên (?tab=) thay cho các phần học tập của sinh viên
+const teacherTab = (tab: string | null, id: 'review' | 'stats' | 'tests') => (id === 'review' ? tab !== 'stats' && tab !== 'tests' : tab === id)
+const TEACHER_ITEMS: NavItem[] = [
+    { label: 'Trang chủ', to: '/', section: 'top', match: () => false },
+    { label: 'Duyệt nội dung', to: '/teacher', match: () => false, tab: 'review' },
+    { label: 'Thống kê lớp', to: '/teacher?tab=stats', match: () => false, tab: 'stats' },
+    { label: 'Kết quả test', to: '/teacher?tab=tests', match: () => false, tab: 'tests' },
+    { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' },
 ]
 
 /** Các phần trên trang chủ theo thứ tự từ trên xuống; phần cuối (progress) không có mục nav. */
@@ -135,7 +148,8 @@ export function TopNav() {
     const activeSection = useActiveSection(onHome)
     const tone: NavTone = onHome && !pastHero ? 'hero' : 'plain'
     const t = TONE[tone]
-    const isActive = (it: NavItem) => (onHome ? it.section === activeSection : it.match(pathname))
+    const tabParam = new URLSearchParams(useLocation().search).get('tab')
+    const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : onHome ? it.section === activeSection : it.match(pathname))
     const goTo = (e: ReactMouseEvent, it: NavItem) => {
         setMenuOpen(false)
         if (!onHome || !it.section) return
@@ -147,13 +161,14 @@ export function TopNav() {
     const xp = useOrbitStore((s) => s.xp)
     const streakState = useOrbitStore((s) => s.streak)
 
-    const items = role === 'teacher' ? [...BASE_ITEMS, { label: 'Giảng viên', to: '/teacher', match: (p: string) => p.startsWith('/teacher') } as NavItem] : BASE_ITEMS
+    const items = role === 'teacher' ? TEACHER_ITEMS : BASE_ITEMS
     const streak = visibleStreak(streakState).count
 
     // Đóng menu khi đổi trang
     useEffect(() => setMenuOpen(false), [pathname, hash])
 
-    const chips = (
+    // Giảng viên không có chuỗi ngày/XP
+    const chips = role === 'teacher' ? null : (
         <>
             <Link to="/journey" className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition duration-fast ${t.chip}`}>
                 <Flame size={14} className={streak > 0 ? 'fill-current' : ''} />
@@ -226,9 +241,9 @@ export function TopNav() {
                             </Link>
                         ))}
                     </nav>
-                    <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3 [&_a]:border-border [&_a]:bg-card [&_a]:text-foreground">{chips}</div>
+                    {chips && <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3 [&_a]:border-border [&_a]:bg-card [&_a]:text-foreground">{chips}</div>}
                     <div className="mt-3 border-t border-border pt-3">
-                        <AccountPanel />
+                        <AccountPanel onClose={() => setMenuOpen(false)} />
                     </div>
                 </div>
             )}
@@ -268,21 +283,21 @@ function AccountMenu({ tone }: { tone: NavTone }) {
             </button>
             {open && (
                 <div className="absolute right-0 top-full z-50 mt-3 w-72 rounded-card border border-border bg-card p-4 text-foreground shadow-raised">
-                    <AccountPanel />
+                    <AccountPanel onClose={() => setOpen(false)} />
                 </div>
             )}
         </div>
     )
 }
 
-function AccountPanel() {
+function AccountPanel({ onClose }: { onClose?: () => void }) {
     const role = useOrbitStore((s) => s.role)
     const name = useOrbitStore((s) => s.learnerName)
     const setName = useOrbitStore((s) => s.setLearnerName)
-    const setRole = useOrbitStore((s) => s.setRole)
     const resetDemo = useOrbitStore((s) => s.resetDemo)
     const navigate = useNavigate()
     const [draft, setDraft] = useState(name)
+    const other: Role = role === 'teacher' ? 'student' : 'teacher'
 
     return (
         <div className="flex flex-col gap-3">
@@ -303,8 +318,16 @@ function AccountPanel() {
             <p className="text-sm text-muted-foreground">
                 Vai trò: <span className="font-semibold text-foreground">{role === 'teacher' ? 'Giảng viên' : 'Sinh viên'}</span>
             </p>
-            <button type="button" onClick={() => { setRole(null); navigate('/') }} className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-foreground transition hover:bg-muted">
-                <Repeat size={16} /> Đổi vai trò
+            <button
+                type="button"
+                onClick={(e) => {
+                    const origin = centerOf(e.currentTarget)
+                    onClose?.()
+                    void enterRole(other, { origin, navigate })
+                }}
+                className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+                <Repeat size={16} /> Chuyển sang vai {other === 'teacher' ? 'giảng viên' : 'sinh viên'}
             </button>
             <button
                 type="button"

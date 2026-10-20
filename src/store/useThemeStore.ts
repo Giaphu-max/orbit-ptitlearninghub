@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { curtainReady, playCurtain } from '@/lib/theme-switch'
+import { curtainPlaying, curtainReady, playCurtain } from '@/lib/theme-switch'
 
 // Giao diện sáng/tối. Lưu riêng khỏi trạng thái demo để "Đặt lại dữ liệu demo" không đổi giao diện.
 // Class `dark` trên <html> do script trong index.html đặt trước khi vẽ; store chỉ đồng bộ và cập nhật.
@@ -43,7 +43,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => {
         frozen: false,
         setTheme: (theme, origin) => {
             const { busy, theme: cur } = get()
-            if (busy || theme === cur) return
+            if (busy || theme === cur || curtainPlaying()) return
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
             if (reduce || !curtainReady()) {
                 apply(theme)

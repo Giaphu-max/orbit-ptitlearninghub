@@ -9,6 +9,8 @@ import {
     reviewStepFor,
     testTimeLimit,
     testXp,
+    MASTERED_RATIO,
+    TEST_MIN_XP_RATIO,
     TEST_PASS_BONUS_XP,
     TEST_PASS_RATIO,
     TEST_XP_PER_CORRECT,
@@ -112,7 +114,7 @@ function Intro({ courseTitle, bankSize, conceptCount, last, onStart, onShowLast 
             <ul className="mt-6 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
                 <li>Không hiện đáp án trong lúc làm. Bạn có thể quay lại sửa câu trước khi nộp.</li>
                 <li>Mỗi khái niệm tối đa một câu; thứ tự câu và đáp án được trộn, mỗi lần làm là một bộ khác.</li>
-                <li>XP chỉ cộng khi bạn vượt kết quả tốt nhất trước đó, nên làm lại để ôn chứ không để cày điểm.</li>
+                <li>XP chỉ cộng khi đúng từ {TEST_MIN_XP_RATIO * 100}% số câu và vượt kết quả tốt nhất trước đó, nên làm lại để ôn chứ không để cày điểm.</li>
             </ul>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -296,8 +298,10 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
     const { attempt, questions, picks, xp } = phase
     const pctScore = Math.round((attempt.correct / attempt.total) * 100)
     const passed = attempt.correct / attempt.total >= TEST_PASS_RATIO
-    const gaps = attempt.concepts.filter((c) => !c.correct)
-    const passedConcepts = attempt.concepts.filter((c) => c.correct)
+    // Đã nắm chắc = mức sau test từ 80%, kể cả khi câu test vừa rồi sai; còn lại hiện đầy đủ, chỉ khái niệm trả lời sai/bỏ trống mới vào lộ trình ôn
+    const passedConcepts = attempt.concepts.filter((c) => c.after >= MASTERED_RATIO)
+    const openConcepts = attempt.concepts.filter((c) => c.after < MASTERED_RATIO)
+    const gaps = openConcepts.filter((c) => !c.correct)
     const wrong = questions?.filter((q) => picks?.[q.id] !== q.correctIndex) ?? []
 
     return (
@@ -319,7 +323,7 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                         </p>
                     </div>
                     {xp !== undefined && (
-                        <p className="ml-auto inline-flex items-center rounded-full bg-ink-foreground/15 px-4 py-2 font-mono text-sm font-bold">{xp > 0 ? `+${xp} XP` : 'Chưa vượt kỷ lục, không cộng XP'}</p>
+                        <p className="ml-auto inline-flex items-center rounded-full bg-ink-foreground/15 px-4 py-2 font-mono text-sm font-bold">{xp > 0 ? `+${xp} XP` : pctScore < TEST_MIN_XP_RATIO * 100 ? `Dưới ${TEST_MIN_XP_RATIO * 100}% số câu đúng, chưa cộng XP` : 'Chưa vượt kỷ lục, không cộng XP'}</p>
                     )}
                 </div>
             </section>
@@ -328,22 +332,22 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                 <h2 id="mastery-title" className="text-title text-foreground">Mức nắm vững từng khái niệm</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Thanh là mức sau test, đã gộp với kết quả học trước đó. Cây kỹ năng được cập nhật theo đây.</p>
                 <ul className="mt-5 flex flex-col gap-3">
-                    {gaps.map((c) => {
+                    {openConcepts.map((c) => {
                         const after = Math.round(c.after * 100)
                         return (
-                            <li key={c.conceptId} className="rounded-card border border-brand-200 bg-card p-5 shadow-card">
+                            <li key={c.conceptId} className={`rounded-card border bg-card p-5 shadow-card ${c.correct ? 'border-border' : 'border-brand-200'}`}>
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <span className="font-bold text-foreground">{getConcept(c.conceptId)?.name ?? c.conceptId}</span>
                                     <span className="flex items-center gap-3">
-                                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-ink">
-                                            <TriangleAlert size={12} />
-                                            {c.blank ? 'Chưa trả lời' : 'Còn hổng'}
+                                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${c.correct ? 'bg-muted text-muted-foreground' : 'bg-brand-soft text-brand-ink'}`}>
+                                            {c.correct ? <Check size={12} /> : <TriangleAlert size={12} />}
+                                            {c.correct ? 'Đúng, cần củng cố' : c.blank ? 'Chưa trả lời' : 'Còn hổng'}
                                         </span>
                                         <span className="font-mono text-xl font-bold text-foreground">{after}%</span>
                                     </span>
                                 </div>
                                 <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={`Nắm vững ${after}%`}>
-                                    <div className="h-full rounded-full bg-brand-600" style={{ width: `${after}%` }} />
+                                    <div className={`h-full rounded-full ${c.correct ? 'bg-foreground/40' : 'bg-brand-600'}`} style={{ width: `${after}%` }} />
                                 </div>
                                 {c.before !== null && (
                                     <p className="mt-2 text-xs text-muted-foreground">
@@ -355,7 +359,7 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                     })}
                 </ul>
                 {passedConcepts.length > 0 && (
-                    <details className="group mt-4 rounded-card border border-border bg-card shadow-card" open={gaps.length === 0}>
+                    <details className="group mt-4 rounded-card border border-border bg-card shadow-card" open={openConcepts.length === 0}>
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-bold text-foreground">
                             <span className="inline-flex items-center gap-2">
                                 <Check size={16} className="text-success" />

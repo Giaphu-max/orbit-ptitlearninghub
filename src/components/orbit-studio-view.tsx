@@ -26,6 +26,13 @@ function canRender3D() {
 const ENV_COOLDOWN_MS = 1500
 const ENV_SUGGESTIONS = ['Hoàng hôn gắt, bóng đổ dài', 'Ánh sáng studio mềm chụp chân dung', 'Đêm có sương, đèn viền lạnh', 'Nắng trưa gắt từ trên cao']
 
+interface Shot {
+    image: string
+    result: GradePhotoResponse
+    at: number
+}
+const HISTORY_MAX = 6
+
 type Phase =
     | { kind: 'live' }
     | { kind: 'grading'; image: string }
@@ -37,6 +44,8 @@ export function OrbitStudioView() {
     const [setup, setSetup] = useState<CameraSetup>(DEFAULT_SETUP)
     const [grid, setGrid] = useState(true)
     const [phase, setPhase] = useState<Phase>({ kind: 'live' })
+    // Ảnh đã chụp trong phiên này (không lưu lại), mới nhất ở đầu
+    const [shots, setShots] = useState<Shot[]>([])
     const captureRef = useRef<CaptureFn | null>(null)
     const directorBest = useOrbitStore((s) => s.directorBest)
     const [webgl] = useState(canRender3D)
@@ -69,6 +78,7 @@ export function OrbitStudioView() {
             const xp = before.recordDirectorScore(result.overall)
             const after = useOrbitStore.getState()
             announceRewards(before, after, xp > 0 ? directorScreen(result.overall, result.composition, result.lighting) : undefined)
+            setShots((list) => [{ image: dataUrl, result, at: Date.now() }, ...list].slice(0, HISTORY_MAX))
             setPhase({ kind: 'result', image: dataUrl, result })
         } catch (err) {
             setPhase({ kind: 'error', message: err instanceof ApiRequestError ? err.message : 'AI chưa chấm được lúc này. Bạn thử lại nhé.' })
@@ -162,10 +172,49 @@ export function OrbitStudioView() {
                             )}
                         </div>
 
+                        {/* Thanh thao tác dính ở đáy khung nhìn khi khung 3D dài hơn màn hình: nút chụp luôn nhìn thấy */}
+                        <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-3 rounded-card border border-border bg-card/95 p-3 shadow-raised backdrop-blur">
+                            {showing ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setPhase({ kind: 'live' })}
+                                    disabled={phase.kind === 'grading'}
+                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:opacity-50 sm:flex-none"
+                                >
+                                    <RotateCcw size={16} /> Chụp lại
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={shoot}
+                                    disabled={!webgl}
+                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:opacity-50 sm:flex-none"
+                                >
+                                    <Camera size={16} /> Chụp và chấm điểm
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                aria-pressed={grid}
+                                onClick={() => setGrid((g) => !g)}
+                                className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted"
+                            >
+                                <Grid3x3 size={15} /> Lưới 1/3 {grid ? 'bật' : 'tắt'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSetup(DEFAULT_SETUP)}
+                                className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted"
+                            >
+                                <RotateCcw size={15} /> Đặt lại
+                            </button>
+                        </div>
+
                         {phase.kind === 'error' && (
                             <p role="alert" className="rounded-card border border-border bg-muted px-4 py-3 text-sm text-foreground">{phase.message}</p>
                         )}
                         {phase.kind === 'result' && <Result result={phase.result} />}
+                        <ShotHistory shots={shots} activeImage={phase.kind === 'result' ? phase.image : null} onOpen={(shot) => setPhase({ kind: 'result', image: shot.image, result: shot.result })} />
                     </div>
 
                     <aside className="grid min-w-0 gap-5 md:grid-cols-2 xl:flex xl:flex-col">
@@ -289,44 +338,6 @@ export function OrbitStudioView() {
                             <Slider label="Đèn viền (tách khỏi phông)" unit="%" min={0} max={100} step={1} value={setup.rim} onChange={set('rim')} />
                         </Panel>
 
-                        <div className="flex flex-col gap-3 md:col-span-2 xl:col-span-1">
-                            {showing ? (
-                                <button
-                                    type="button"
-                                    onClick={() => setPhase({ kind: 'live' })}
-                                    disabled={phase.kind === 'grading'}
-                                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:opacity-50"
-                                >
-                                    <RotateCcw size={16} /> Chụp lại
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={shoot}
-                                    disabled={!webgl}
-                                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:opacity-50"
-                                >
-                                    <Camera size={16} /> Chụp và chấm điểm
-                                </button>
-                            )}
-                            <div className="flex gap-3">
-                                <button
-                                    type="button"
-                                    aria-pressed={grid}
-                                    onClick={() => setGrid((g) => !g)}
-                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted"
-                                >
-                                    <Grid3x3 size={15} /> Lưới 1/3 {grid ? 'bật' : 'tắt'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setSetup(DEFAULT_SETUP)}
-                                    className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted"
-                                >
-                                    <RotateCcw size={15} /> Đặt lại
-                                </button>
-                            </div>
-                        </div>
                     </aside>
                 </div>
             </div>
@@ -341,6 +352,40 @@ function buildIntent(setup: CameraSetup, applied: { prompt: string; explanation:
     const a = applied.setup
     const tweaked = a.key !== setup.key || a.fill !== setup.fill || a.rim !== setup.rim || a.keyAngleDeg !== setup.keyAngleDeg
     return { ...base, prompt: applied.prompt, explanation: applied.explanation, tweaked }
+}
+
+/** Ảnh đã chụp trong phiên: bấm để xem lại ảnh và nhận xét. Khi chưa có ảnh thì hiện chỗ trống có hướng dẫn. */
+function ShotHistory({ shots, activeImage, onOpen }: { shots: Shot[]; activeImage: string | null; onOpen: (shot: Shot) => void }) {
+    return (
+        <section aria-labelledby="shots-title" className="rounded-card border border-border bg-card p-5 shadow-card">
+            <div className="flex items-baseline justify-between gap-3">
+                <h2 id="shots-title" className="text-sm font-bold text-foreground">Ảnh đã chụp</h2>
+                <p className="font-mono text-xs text-muted-foreground">{shots.length}/{HISTORY_MAX}</p>
+            </div>
+            {shots.length === 0 ? (
+                <p className="mt-3 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                    Chưa có ảnh nào. Mỗi lần chụp và chấm, ảnh cùng điểm sẽ nằm ở đây để bạn so sánh giữa các lần chỉnh đèn.
+                </p>
+            ) : (
+                <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {shots.map((shot, i) => (
+                        <li key={shot.at}>
+                            <button
+                                type="button"
+                                onClick={() => onOpen(shot)}
+                                aria-label={`Xem lại ảnh chụp lần ${shots.length - i}, ${shot.result.overall} điểm`}
+                                aria-pressed={activeImage === shot.image}
+                                className={`group relative block w-full overflow-hidden rounded-xl border-2 transition ${activeImage === shot.image ? 'border-brand-600' : 'border-transparent hover:border-brand-300'}`}
+                            >
+                                <img src={shot.image} alt="" className="aspect-[3/2] w-full object-cover" />
+                                <span className="absolute bottom-1.5 right-1.5 rounded-full bg-ink/80 px-2 py-0.5 font-mono text-xs font-bold text-ink-foreground">{shot.result.overall}</span>
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </section>
+    )
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {

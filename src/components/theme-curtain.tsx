@@ -23,6 +23,7 @@ export function ThemeCurtain() {
     const ring = useRef<SVGCircleElement>(null)
     const sat = useRef<SVGGElement>(null)
     const stars = useRef<HTMLDivElement>(null)
+    const greeting = useRef<HTMLDivElement>(null)
     const marks = useRef<(SVGElement | null)[]>([])
 
     const starPos = useMemo(
@@ -36,7 +37,7 @@ export function ThemeCurtain() {
     )
 
     useEffect(() => {
-        if (!curtain.current || !emblem.current || !ring.current || !sat.current || !stars.current) return
+        if (!curtain.current || !emblem.current || !ring.current || !sat.current || !stars.current || !greeting.current) return
         bindCurtain({
             curtain: curtain.current,
             emblem: emblem.current,
@@ -44,6 +45,7 @@ export function ThemeCurtain() {
             sat: sat.current,
             marks: marks.current.filter((m): m is SVGElement => m !== null),
             stars: stars.current,
+            greeting: greeting.current,
         })
         return () => bindCurtain(null)
     }, [])
@@ -126,6 +128,8 @@ export function ThemeCurtain() {
                     </text>
                 </svg>
             </div>
+            {/* Lời chào khi chọn/đổi vai trò (nội dung do lib/role-switch.ts đặt) */}
+            <div ref={greeting} className="theme-curtain-greeting" />
         </div>
     )
 }

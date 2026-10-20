@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Navigate } from 'react-router-dom'
 import { BarChart3, CheckCircle2, ClipboardCheck, ClipboardList, Eye, EyeOff, RotateCcw, Save, Sparkles, TriangleAlert } from 'lucide-react'
 import { classStats, courses, getConcept, lessons } from '@/data'
@@ -18,7 +19,11 @@ const pct = (part: number, total: number) => (total > 0 ? Math.round((part / tot
 export function OrbitTeacherView() {
     const role = useOrbitStore((s) => s.role)
     const [lessonId, setLessonId] = useState(lessons[0]?.id)
-    const [section, setSection] = useState<Section>('review')
+    // Mục đang mở nằm trong ?tab= để thanh điều hướng của giảng viên trỏ thẳng tới từng mục
+    const [searchParams, setSearchParams] = useSearchParams()
+    const tab = searchParams.get('tab')
+    const section: Section = tab === 'stats' || tab === 'tests' ? tab : 'review'
+    const setSection = (next: Section) => setSearchParams(next === 'review' ? {} : { tab: next }, { replace: true })
     const lesson = useEffectiveLesson(lessonId)
 
     if (role !== 'teacher') return <Navigate to="/" replace />

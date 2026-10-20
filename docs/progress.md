@@ -2,6 +2,14 @@
 
 Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗi" là danh sách để sửa ở bước sau (chưa sửa gì ngoài chức năng).
 
+## Đợt 5 (21/10): chuyển cảnh vai trò, Studio, nav giảng viên, kết quả test
+
+- Chọn/đổi vai trò có màn đỏ lan từ thẻ/nút vừa bấm (tái dùng theme-curtain: `playRoleCurtain` trong `src/lib/theme-switch.ts`, `src/lib/role-switch.ts`), logo + vòng quỹ đạo + "Chào Phú" / "Chào thầy/cô", đổi vai và về trang chủ phía sau màn, mở màn từ tâm logo, các phần trang chủ trồi lên lần lượt. Menu avatar có "Chuyển sang vai …" dùng cùng hiệu ứng. Reduced-motion thì đổi ngay. Chưa đo thời gian chạy trên tab đang hiển thị (trong khung xem trước bị làm chậm); thiết kế ~1,4 giây.
+- Studio: thanh thao tác (Chụp và chấm điểm, Lưới, Đặt lại) dính dưới khung 3D; thêm "Ảnh đã chụp" (tối đa 6, bấm để xem lại ảnh và nhận xét) lấp chỗ trống; nhân vật low-poly (đầu, tóc, mặt, cổ, vai, tay, thân) thay khối trụ.
+- Giảng viên: nav ẩn chip chuỗi ngày/XP; mục nav: Trang chủ, Duyệt nội dung, Thống kê lớp, Kết quả test (`/teacher?tab=`), Khóa học.
+- Test: khái niệm đạt từ 80% sau test không ghi "Còn hổng", không vào lộ trình ôn; "Đã nắm chắc N" đếm đúng; dưới 50% số câu đúng thì không cộng XP.
+- Chưa làm: hero trang chủ vẫn dùng lời chào của sinh viên cho cả giảng viên.
+
 ## Đợt 4 (21/10): khóa "Nhiếp ảnh và ánh sáng", liên kết Studio, nhãn khuôn viên
 
 - Khóa thứ hai `nhiep-anh-va-anh-sang` (3 video: 3 loại ánh sáng cơ bản, nguyên lý màu sắc, tư duy nhiếp ảnh) tạo bằng `scripts/generate-content.ts`; khóa cũ lấy từ cache, không gọi lại Gemini. 12 khái niệm, 12 câu quiz.

@@ -1,6 +1,9 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { GraduationCap, Presentation, ArrowRight, type LucideIcon } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { useOrbitStore, type Role } from '@/store/useOrbitStore'
+import { centerOf, enterRole } from '@/lib/role-switch'
+import type { Role } from '@/store/useOrbitStore'
 
 const ROLES: { role: Role; title: string; description: string; icon: LucideIcon }[] = [
     {
@@ -19,7 +22,9 @@ const ROLES: { role: Role; title: string; description: string; icon: LucideIcon 
 
 // Màn chọn vai trò thay cho đăng nhập (bản demo không có tài khoản thật).
 export function OrbitRoleSelect() {
-    const setRole = useOrbitStore((s) => s.setRole)
+    const navigate = useNavigate()
+    // Thẻ vừa bấm phóng nhẹ, các thẻ khác mờ đi trong lúc màn đỏ lan ra từ thẻ đó
+    const [picked, setPicked] = useState<Role | null>(null)
 
     return (
         <div className="min-h-screen w-full bg-surface px-6 py-16 lg:px-12">
@@ -36,8 +41,14 @@ export function OrbitRoleSelect() {
                         <button
                             key={role}
                             type="button"
-                            onClick={() => setRole(role)}
-                            className="group flex flex-col items-start rounded-panel border border-border bg-card p-8 text-left shadow-card transition duration-base ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                            disabled={picked !== null}
+                            onClick={(e) => {
+                                setPicked(role)
+                                void enterRole(role, { origin: centerOf(e.currentTarget), navigate })
+                            }}
+                            className={`group flex flex-col items-start rounded-panel border border-border bg-card p-8 text-left shadow-card transition duration-base ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
+                                picked === null ? '' : picked === role ? 'scale-[1.03] border-brand-300' : 'opacity-30'
+                            }`}
                         >
                             <span className="flex h-14 w-14 items-center justify-center rounded-card bg-brand-soft text-brand-ink transition duration-base group-hover:bg-brand-600 group-hover:text-ink-foreground">
                                 <Icon size={28} strokeWidth={2} />

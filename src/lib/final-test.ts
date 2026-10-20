@@ -10,6 +10,8 @@ export const TEST_QUESTION_COUNT = 10
 export const TEST_SECONDS_PER_QUESTION = 60
 /** Đạt từ mức này thì được thưởng thêm. */
 export const TEST_PASS_RATIO = 0.8
+/** Dưới mức này thì không cộng XP (tránh bấm bừa lấy điểm). */
+export const TEST_MIN_XP_RATIO = 0.5
 export const TEST_XP_PER_CORRECT = 10
 export const TEST_PASS_BONUS_XP = 30
 
@@ -91,14 +93,17 @@ export function pickTestQuestions(bank: BankQuestion[], count = TEST_QUESTION_CO
 
 export const testTimeLimit = (questionCount: number) => questionCount * TEST_SECONDS_PER_QUESTION
 
-/** XP: mỗi câu đúng vượt kỷ lục cũ + thưởng một lần khi lần đầu đạt mức cao. Làm lại không đạt kỷ lục thì không có XP. */
+/** XP: dưới 50% số câu đúng thì không có; còn lại mỗi câu đúng vượt kỷ lục cũ + thưởng một lần khi lần đầu đạt mức cao. Làm lại không đạt kỷ lục thì không có XP. */
 export function testXp(correct: number, total: number, best: { correct: number; total: number } | undefined) {
+    if (total === 0 || correct / total < TEST_MIN_XP_RATIO) return { base: 0, bonus: 0, total: 0 }
     const bestCorrect = best?.correct ?? 0
     const base = Math.max(0, correct - bestCorrect) * TEST_XP_PER_CORRECT
     const passedBefore = best ? best.correct / best.total >= TEST_PASS_RATIO : false
     const bonus = total > 0 && correct / total >= TEST_PASS_RATIO && !passedBefore ? TEST_PASS_BONUS_XP : 0
     return { base, bonus, total: base + bonus }
 }
+
+export const MASTERED_RATIO = UNLOCK_THRESHOLD
 
 export interface TestAnswerInput {
     conceptId: string
