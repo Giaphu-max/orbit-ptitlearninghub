@@ -6,6 +6,7 @@ import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, MISSIONS, UNLOCK_THRESHOLD 
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusHero } from '@/components/home/campus-hero'
+import { SiteFooter } from '@/components/site-footer'
 import { SectionHeading } from '@/components/section-heading'
 import { CoursesSection } from '@/components/home/courses-section'
 import { StudioSection } from '@/components/home/studio-section'
@@ -23,12 +24,7 @@ export function OrbitHomeView() {
                 <StudioSection />
                 <ProgressSection />
             </div>
-            <footer className="border-t border-border bg-card">
-                <div className="container-page flex flex-wrap items-center justify-between gap-2 py-5 text-sm text-muted-foreground">
-                    <span>Orbit · Nền tảng học tập ứng dụng AI cho sinh viên PTIT</span>
-                    <span>Nội dung AI được giảng viên duyệt trước khi hiển thị</span>
-                </div>
-            </footer>
+            <SiteFooter />
         </div>
     )
 }
