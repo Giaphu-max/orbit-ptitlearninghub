@@ -454,64 +454,105 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce }: WorldPro
     )
 }
 
-// ─── Cảnh: camera, đèn, xoay theo chuột, hover, ngày/đêm ───────────────────
+// ─── Cảnh: camera theo chương, đèn, xoay theo chuột, hover, ngày/đêm ───────
 
 const SUN_DAY = new THREE.Color(CAMPUS.sunlight)
 const SUN_NIGHT = new THREE.Color(CAMPUS.moonlight)
 const TARGET = new THREE.Vector3(0, 3, 0)
 const START_POS = new THREE.Vector3(52, 40, 58)
+const Y_AXIS = new THREE.Vector3(0, 1, 0)
 
 /** Phạm vi cần nằm gọn trong khung ở mọi góc xoay (đơn vị cảnh): bán kính ngang (đế + mây) và nửa chiều cao (tính cả nhãn). */
-const BOUND_RADIUS = 34
-const BOUND_HALF_HEIGHT = 22
+const BOUND_RADIUS = 28
+const BOUND_HALF_HEIGHT = 20
 const FIT_MARGIN = 1.05
 const FOV = 28
 /** Sau khi buông tay, chờ chừng này rồi mới tự xoay tiếp. */
 const RESUME_AUTOROTATE_MS = 3000
+/** S ≤ ngưỡng này là còn ở hero: OrbitControls và tự xoay hoạt động; vượt ngưỡng thì camera chạy theo keyframe. */
+const HERO_EPS = 0.05
+/** Màn rộng: chủ thể nằm ở nửa phải. Vùng trống rộng ~62% khung, tâm dịch sang phải 18% bề rộng. */
+const DESKTOP_REGION = 0.62
+const DESKTOP_SHIFT = 0.18
+/** Tỉ lệ rộng/cao của vùng trống mà các keyframe được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
+const REF_ASPECT = 1.05
+
+interface CamKey {
+    p: Vec3
+    t: Vec3
+    fov: number
+}
+/** Máy quay theo chương 1..3 (chương 0 là góc nhìn hero do OrbitControls điều khiển). */
+const CHAPTER_CAMS: CamKey[] = [
+    { p: [24, 16, 50], t: [3, 8.5, 1], fov: 30 }, // 01 Hôm nay: sát tòa A2
+    { p: [58, 36, 52], t: [6, 7, -3], fov: 32 }, // 02 Khóa học: A2 + A3 nhấc lên
+    { p: [3, 13, 64], t: [2, 6, 0], fov: 34 }, // 03 Studio: chính diện
+]
+
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
+const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+/** 0→1 khi s đi từ a tới b */
+const band = (s: number, a: number, b: number) => clamp01((s - a) / (b - a))
+
+/** Màu token CSS dạng "H S% L%" → THREE.Color (canvas chạy legacy nên không chuyển không gian màu). */
+function tokenColor(name: string, fallback: string) {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    const [h, s, l] = raw.split(/\s+/).map((v) => parseFloat(v))
+    return Number.isFinite(h + s + l) ? new THREE.Color().setHSL(h / 360, s / 100, l / 100) : new THREE.Color(fallback)
+}
 
 interface SceneProps {
     night: boolean
     reduce: boolean
     /** Màn cảm ứng: không cho kéo xoay (nhường thao tác cuộn trang), chỉ tự xoay */
     touch: boolean
+    /** Không chuyển cảnh (màn hẹp / giảm chuyển động): mỗi chương một khung máy cố định, canvas cao 55vh */
+    staticMode: boolean
+    /** S liên tục 0..3 do useScrollStage cung cấp (ref, không phải state) */
+    stage: React.MutableRefObject<number>
+    /** Các tòa nhấc lên ở chương Khóa học */
+    liftNames: ReadonlySet<string>
     pointer: React.MutableRefObject<{ x: number; y: number; inside: boolean }>
     /** Bấm vào tòa có khóa học thì mở khóa đó */
     onOpenCourse?: (courseId: string) => void
 }
 
 /**
- * Canvas phủ cả hero, chữ nằm đè lên. Mô hình được đặt vào "vùng trống" (nửa phải trên màn rộng,
- * nửa dưới trên màn hẹp) bằng view offset của camera, và camera lùi đủ xa để khối cầu bao
- * khuôn viên nằm gọn trong vùng đó, chừa lề.
+ * Canvas cố định phủ cả màn hình, nội dung các chương nằm đè lên ở cột trái. Chủ thể được đặt vào "vùng trống"
+ * (nửa phải trên màn rộng) bằng view offset của camera; camera hero lùi đủ xa để khối cầu bao khuôn viên nằm gọn
+ * trong vùng đó. Các chương sau dùng keyframe, kéo giãn theo tỉ lệ vùng trống.
  */
-function useFitCamera(controls: React.RefObject<OrbitControlsImpl | null>) {
+function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>) {
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const size = useThree((s) => s.size)
 
     useEffect(() => {
         const { width: w, height: h } = size
-        // Canvas nằm trọn trong cột mô hình của hero (cạnh phải = lề phải trang), cả khung là vùng trống
-        const region = { w, h, cx: w / 2, cy: h / 2 }
+        const regionW = staticMode ? w : w * DESKTOP_REGION
+        const ra = regionW / h
         const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
-        // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang, vùng trống chiếm một phần của nó
-        const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * (region.w / h))
-        const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / (tanHalf * (region.h / h))
+        // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang
+        const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * ra)
+        const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / tanHalf
         const distance = Math.max(fitW, fitH)
+        fitScale.current = Math.max(1, REF_ASPECT / ra)
 
-        camera.fov = FOV
         camera.aspect = w / h
-        // Dịch ảnh để tâm vùng trống trùng tâm mô hình: cắt khung từ vị trí âm = đẩy cảnh sang phải/xuống
-        camera.setViewOffset(w, h, -(region.cx - w / 2), -(region.cy - h / 2), w, h)
-        camera.far = distance * 3
+        // Cắt khung từ vị trí âm = đẩy cảnh sang phải
+        camera.setViewOffset(w, h, staticMode ? 0 : -w * DESKTOP_SHIFT, 0, w, h)
+        camera.far = Math.max(400, distance * 4)
         camera.updateProjectionMatrix()
 
-        // Giữ nguyên hướng nhìn hiện tại, chỉ đổi khoảng cách
-        const offset = camera.position.clone().sub(TARGET)
+        // Giữ nguyên hướng nhìn hiện tại của hero, chỉ đổi khoảng cách
+        const offset = heroPos.current.clone().sub(TARGET)
         if (offset.lengthSq() < 1e-6) offset.copy(START_POS).sub(TARGET)
-        camera.position.copy(TARGET).add(offset.setLength(distance))
-        controls.current?.update()
+        heroPos.current.copy(TARGET).add(offset.setLength(distance))
+        if (stage.current <= HERO_EPS) {
+            camera.position.copy(heroPos.current)
+            controls.current?.update()
+        }
         return () => camera.clearViewOffset()
-    }, [camera, size, controls])
+    }, [camera, size, controls, staticMode, heroPos, fitScale, stage])
 }
 
 const _anchor = new THREE.Vector3()
@@ -561,7 +602,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, pointer, onOpenCourse }: SceneProps) {
+function Scene({ night, reduce, touch, staticMode, stage, liftNames, pointer, onOpenCourse }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -574,31 +615,44 @@ function Scene({ night, reduce, touch, pointer, onOpenCourse }: SceneProps) {
     const resumeTimer = useRef<number>(0)
     const nightRef = useRef(reduce && night ? 1 : 0)
     const nightTarget = useRef(night ? 1 : 0)
+    const mood = useRef(0)
+    const ctlOn = useRef(true)
+    const heroPos = useRef(START_POS.clone())
+    const fitScale = useRef(1)
     const [hovered, setHovered] = useState<BuildingName | null>(null)
     const [visibleLabels, setVisibleLabels] = useState<ReadonlySet<string>>(() => new Set())
     const labelKey = useRef('')
     const frame = useRef(0)
     const raycaster = useMemo(() => new THREE.Raycaster(), [])
     const ndc = useMemo(() => new THREE.Vector2(-9, -9), [])
+    // Màu trời lấy từ token CSS (--stage-*), đọc một lần khi dựng cảnh
+    const colors = useMemo(() => ({ sky: tokenColor('--stage-sky', '#9E1218'), mid: tokenColor('--stage-mid', '#4A0A0E'), deep: tokenColor('--stage-deep', '#130D0E'), now: new THREE.Color() }), [])
+    const camA = useMemo(() => ({ p: new THREE.Vector3(), t: new THREE.Vector3() }), [])
+    const camB = useMemo(() => ({ p: new THREE.Vector3(), t: new THREE.Vector3() }), [])
 
     const size = useThree((s) => s.size)
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const domElement = useThree((s) => s.gl.domElement)
+    const scene = useThree((s) => s.scene)
 
-    useFitCamera(controls)
+    useStageFit(controls, staticMode, heroPos, fitScale, stage)
 
     // Đưa camera về góc nhìn ban đầu (OrbitControls lấy vị trí camera làm điểm xuất phát)
     useLayoutEffect(() => {
         camera.position.copy(START_POS)
         camera.lookAt(TARGET)
-    }, [camera])
+        scene.background = colors.now.copy(colors.sky)
+        scene.fog = new THREE.Fog(colors.sky, 100, 400)
+    }, [camera, scene, colors])
 
     const applyLights = (n: number) => {
+        // Về cuối trang chủ (chương Studio) ánh sáng dịu bớt cho hợp nền gần đen
+        const dim = 1 - 0.3 * mood.current
         if (sun.current) {
-            sun.current.intensity = (1.05 - n * 0.75) * Math.PI
+            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * dim
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
-        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI
+        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * dim
         if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI
     }
 
@@ -616,7 +670,7 @@ function Scene({ night, reduce, touch, pointer, onOpenCourse }: SceneProps) {
     }, [night, reduce, frozen])
 
     const updateCursor = () => {
-        domElement.style.cursor = hoverRef.current && courseOfBuilding(hoverRef.current) ? 'pointer' : touch ? 'default' : dragging.current ? 'grabbing' : 'grab'
+        domElement.style.cursor = hoverRef.current && courseOfBuilding(hoverRef.current) ? 'pointer' : touch || !ctlOn.current ? 'default' : dragging.current ? 'grabbing' : 'grab'
     }
     useEffect(() => {
         domElement.style.touchAction = touch ? 'pan-y' : 'none'
@@ -669,10 +723,82 @@ function Scene({ night, reduce, touch, pointer, onOpenCourse }: SceneProps) {
         const g = world.current
         if (!g) return
         const p = pointer.current
+        const S = stage.current
+        const live = S > HERO_EPS // đã rời hero: camera chạy theo keyframe, hero tắt kéo xoay và tự xoay
 
-        // Màn cảm ứng không có OrbitControls: tự xoay mô hình
-        if (touch && !reduce) g.rotation.y += delta * 0.12
+        // ── Máy quay ──
+        const ctl = controls.current
+        if (ctl) {
+            if (live && ctl.enabled) {
+                ctl.enabled = false
+                ctl.autoRotate = false
+                window.clearTimeout(resumeTimer.current)
+                dragging.current = false
+                ctlOn.current = false
+                updateCursor()
+            } else if (!live && !ctl.enabled) {
+                // Về hero: camera đang ở (gần) đúng góc hero, bật lại kéo xoay + tự xoay
+                ctl.enabled = true
+                ctl.target.copy(TARGET)
+                ctl.autoRotate = !reduce && !dragging.current
+                ctl.update()
+                ctlOn.current = true
+                updateCursor()
+            }
+        }
+        if (!live) {
+            if (touch && !reduce) heroPos.current.applyAxisAngle(Y_AXIS, -delta * 0.12) // cảm ứng: chỉ tự xoay
+            else heroPos.current.copy(camera.position)
+            if (touch) {
+                camera.position.copy(heroPos.current)
+                camera.lookAt(TARGET)
+            }
+            if (camera.fov !== FOV) {
+                camera.fov = FOV
+                camera.updateProjectionMatrix()
+            }
+        } else {
+            const i = Math.min(Math.floor(S), CHAPTER_CAMS.length - 1)
+            const f = easeInOutCubic(clamp01(S - i))
+            const key = (n: number, out: { p: THREE.Vector3; t: THREE.Vector3 }) => {
+                if (n === 0) {
+                    out.p.copy(heroPos.current)
+                    out.t.copy(TARGET)
+                    return FOV
+                }
+                const k = CHAPTER_CAMS[n - 1]
+                out.t.set(...k.t)
+                out.p.set(...k.p).sub(out.t).multiplyScalar(fitScale.current).add(out.t)
+                return k.fov
+            }
+            const fa = key(i, camA)
+            const fb = key(Math.min(i + 1, CHAPTER_CAMS.length), camB)
+            camera.position.lerpVectors(camA.p, camB.p, f)
+            camA.t.lerp(camB.t, f)
+            const fov = fa + (fb - fa) * f
+            if (camera.fov !== fov) {
+                camera.fov = fov
+                camera.updateProjectionMatrix()
+            }
+            camera.lookAt(camA.t)
+        }
 
+        // ── Nền trời và sương theo chương: đỏ PTIT → đỏ sẫm → gần đen ──
+        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 2.15, 2.95)))
+        if (scene.background instanceof THREE.Color) scene.background.copy(colors.now)
+        if (scene.fog) {
+            const d = camera.position.distanceTo(TARGET)
+            scene.fog.color.copy(colors.now)
+            ;(scene.fog as THREE.Fog).near = d * 1.1
+            ;(scene.fog as THREE.Fog).far = d * 3.2
+        }
+        const moodNext = band(S, 1.2, 3)
+        if (Math.abs(moodNext - mood.current) > 0.002) {
+            mood.current = moodNext
+            applyLights(nightRef.current)
+        }
+
+        // ── Hover ──
         // Tia từ con trỏ: tòa nào bị trúng thì được nâng lên (không nâng khi đang kéo)
         ndc.set(p.inside && !dragging.current ? p.x : -9, p.inside && !dragging.current ? p.y : -9)
         raycaster.setFromCamera(ndc, camera)
@@ -688,16 +814,20 @@ function Scene({ night, reduce, touch, pointer, onOpenCourse }: SceneProps) {
             updateCursor()
             setHovered(hb)
         }
+        // Chương Khóa học: các tòa có khóa nhấc lên (rồi hạ xuống khi sang Studio)
+        const courseLift = easeInOutCubic(band(S, 1.4, 2)) * (1 - easeInOutCubic(band(S, 2.2, 2.7)))
         registry.current.forEach((grp, name) => {
             const lift = lifts.current.get(name) ?? 0
-            const next = lift + ((name === hb ? 0.9 : 0) - lift) * (reduce ? 1 : 0.12)
+            const want = Math.max(name === hb ? 0.9 : 0, liftNames.has(name) ? courseLift * 1.6 : 0)
+            const next = lift + (want - lift) * (reduce ? 1 : 0.12)
             lifts.current.set(name, next)
             grp.position.y = next
         })
 
-        // Nhãn: mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
+        // Nhãn: chỉ ở hero và chương Khóa học; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
         if (frame.current++ % 6 === 0) {
-            const key = computeVisibleLabels(registry.current, camera, size, raycaster, hb)
+            const gate = S < 0.45 || (S > 1.55 && S < 2.45)
+            const key = gate ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : ''
             if (key !== labelKey.current) {
                 labelKey.current = key
                 setVisibleLabels(new Set(key ? key.split('|') : []))
@@ -763,24 +893,18 @@ function Scene({ night, reduce, touch, pointer, onOpenCourse }: SceneProps) {
 export interface CampusSceneProps {
     night: boolean
     reduce: boolean
+    staticMode: boolean
+    stage: React.MutableRefObject<number>
+    liftNames: ReadonlySet<string>
     onOpenCourse?: (courseId: string) => void
 }
 
-export default function CampusScene({ night, reduce, onOpenCourse }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, stage, liftNames, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
-    const wrapRef = useRef<HTMLDivElement>(null)
-    const [inView, setInView] = useState(true)
+    const canvasWrap = useRef<HTMLDivElement>(null)
     const frozen = useThemeStore((s) => s.frozen)
-
-    useEffect(() => {
-        const el = wrapRef.current
-        if (!el || typeof IntersectionObserver === 'undefined') return
-        const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { rootMargin: '120px' })
-        io.observe(el)
-        return () => io.disconnect()
-    }, [])
 
     // Chờ font Be Vietnam Pro (tối đa 1,5 giây) để chữ trên biển hiệu không bị font dự phòng
     useEffect(() => {
@@ -794,42 +918,43 @@ export default function CampusScene({ night, reduce, onOpenCourse }: CampusScene
         }
     }, [])
 
-    // Con trỏ theo dõi trên cả hero (chữ nằm đè lên canvas nên canvas không nhận được sự kiện ở đó)
+    // Con trỏ theo dõi toàn trang; chỉ tính là "trên cảnh" khi đang ở trên canvas (chữ và thẻ nằm đè nên không nhận hover của cảnh)
     useEffect(() => {
-        const el = wrapRef.current?.parentElement
-        if (!el) return
         const move = (e: PointerEvent) => {
-            const r = el.getBoundingClientRect()
+            const cv = canvasWrap.current?.querySelector('canvas')
+            if (!cv || e.target !== cv) {
+                pointer.current.inside = false
+                return
+            }
+            const r = cv.getBoundingClientRect()
             pointer.current = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -(((e.clientY - r.top) / r.height) * 2 - 1), inside: true }
         }
         const leave = () => {
             pointer.current.inside = false
         }
-        el.addEventListener('pointermove', move)
-        el.addEventListener('pointerleave', leave)
+        window.addEventListener('pointermove', move, { passive: true })
+        document.documentElement.addEventListener('pointerleave', leave)
         return () => {
-            el.removeEventListener('pointermove', move)
-            el.removeEventListener('pointerleave', leave)
+            window.removeEventListener('pointermove', move)
+            document.documentElement.removeEventListener('pointerleave', leave)
         }
     }, [])
 
     return (
-        <div ref={wrapRef} className="absolute inset-0">
+        <div ref={canvasWrap} className="absolute inset-0">
             {fontsReady && (
                 <Canvas
-                    // Hero cuộn khỏi màn hình thì dừng vẽ: nhẹ GPU và tránh lỗi ghép lớp khi cuộn
-                    frameloop={inView && !frozen ? 'always' : 'never'}
+                    frameloop={frozen ? 'never' : 'always'}
                     legacy
                     flat
                     shadows="soft"
                     dpr={[1, 2]}
                     camera={{ fov: FOV, position: START_POS.toArray(), near: 1, far: 400 }}
                     gl={{ antialias: true, alpha: true }}
-                    // Sự kiện lấy từ cả hero để kéo xoay được kể cả khi bắt đầu kéo từ vùng có chữ
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} touch={touch} pointer={pointer} onOpenCourse={onOpenCourse} />
+                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} liftNames={liftNames} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}
         </div>

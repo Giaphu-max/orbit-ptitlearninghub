@@ -46,6 +46,13 @@
     --hero-glow: 358 80% 43%;
     --hero-glow-deep: 358 83% 27%;
     --hero-top: 358 40% 12%;
+    /* Sân khấu trang chủ (cuộn kể chuyện): trời đỏ PTIT → đỏ sẫm → gần đen ở Studio, giữ nguyên ở cả hai giao diện.
+       Cảnh 3D đọc các giá trị này (sky/mid/deep) để lerp màu nền và sương. */
+    --stage-sky: 357 81% 35%;
+    --stage-mid: 356 76% 17%;
+    --stage-deep: 353 19% 6%;
+    --stage-veil: 355 63% 6%;
+    --stage-glow: 0 100% 66%;
     --reward-from: 358 67% 51%;
     --reward-mid: 358 80% 43%;
     --reward-to: 358 78% 21%;
@@ -202,6 +209,35 @@
       radial-gradient(90% 80% at 85% 15%, hsl(var(--hero-glow)) 0%, transparent 60%),
       radial-gradient(70% 70% at 5% 100%, hsl(var(--hero-glow-deep)) 0%, transparent 65%),
       linear-gradient(160deg, hsl(var(--hero-top)) 0%, hsl(var(--hero-base)) 100%);
+  }
+  /* Trang chủ kể chuyện: nền sân khấu, lớp gradient sau cột chữ, vệt sáng và hiện dần từng chương */
+  .bg-stage {
+    background-color: hsl(var(--stage-sky));
+  }
+  .stage-glow {
+    background: radial-gradient(60% 70% at 70% 30%, hsl(var(--stage-glow) / 0.18), transparent 60%);
+  }
+  .stage-veil {
+    background: linear-gradient(90deg, hsl(var(--stage-veil) / 0.9) 0%, hsl(var(--stage-veil) / 0.5) 38%, hsl(var(--stage-veil) / 0) 58%);
+  }
+  .stage-veil[data-static='true'] {
+    background: linear-gradient(180deg, hsl(var(--stage-veil) / 0.5) 0%, hsl(var(--stage-veil) / 0.95) 55%);
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
   .bg-reward {
     color: hsl(var(--ink-foreground));

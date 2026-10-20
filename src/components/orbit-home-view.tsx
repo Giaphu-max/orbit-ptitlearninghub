@@ -1,37 +1,120 @@
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, Play } from 'lucide-react'
-import { getConcept, getCourse, getLesson, lessons } from '@/data'
-import type { DailyArticle } from '@/data/types'
-import { MissionList } from '@/components/missions'
-import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, MISSIONS, UNLOCK_THRESHOLD } from '@/lib/gamification'
+import { ArrowRight, Camera, Check, ChevronDown, Play, Sparkles } from 'lucide-react'
+import { getConcept, getCourse, lessons } from '@/data'
+import { DAILY_ARTICLE_XP } from '@/lib/gamification'
+import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
+import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { DAILY_LIMIT, gapScore, todaysDaily } from '@/lib/next-step'
-import { formatTime } from '@/lib/youtube'
+import { useScrollStage, useStageMode } from '@/hooks/useScrollStage'
 import { useOrbitStore } from '@/store/useOrbitStore'
-import { CampusHero } from '@/components/home/campus-hero'
+import { CampusStage } from '@/components/home/campus-stage'
 import { SiteFooter } from '@/components/site-footer'
-import { SectionHeading } from '@/components/section-heading'
-import { CoursesSection } from '@/components/home/courses-section'
-import { StudioSection } from '@/components/home/studio-section'
 
-/** Trang chủ 3 tầng theo mockup: hero tối (nav trong suốt, lời chào, thẻ Học tiếp, mô hình 3D) → Orbit Daily → Tiến độ của bạn. */
+/**
+ * Trang chủ kể chuyện theo cuộn, 4 chương: Hero → 01 Hôm nay → 02 Khóa học → 03 Studio, rồi footer.
+ * Một Canvas 3D cố định phía sau dùng chung cho cả trang; nội dung ở cột trái (desktop). Mọi chương nền đỏ PTIT ở cả hai giao diện.
+ * Màn hẹp hoặc giảm chuyển động: không chuyển cảnh, canvas cao 55vh phía trên và mỗi chương dùng một khung máy cố định.
+ */
 export function OrbitHomeView() {
+    const { staticMode, reduce } = useStageMode()
+    const barRef = useRef<HTMLDivElement>(null)
+    const { stage, scrolled } = useScrollStage({ staticMode, barRef })
+    const liftNames = useLiftedBuildings()
+
     return (
-        <div className="w-full bg-surface">
-            <Hero />
-            <div className="container-page flex flex-col gap-16 pb-16 pt-6">
-                <DailySection />
-                <CoursesSection />
-                <StudioSection />
-                <ProgressSection />
+        <div className="relative w-full bg-stage text-ink-foreground">
+            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} liftNames={liftNames} />
+            <div aria-hidden className="stage-glow pointer-events-none fixed inset-0 z-[1]" />
+            <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
+            <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
+
+            {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
+            <div className="pointer-events-none relative z-10">
+                <Chapter id="top" index={0} staticMode={staticMode} wide>
+                    <HeroChapter />
+                </Chapter>
+                <Chapter id="daily" index={1} staticMode={staticMode}>
+                    <DailyChapter />
+                </Chapter>
+                <Chapter id="courses" index={2} staticMode={staticMode}>
+                    <CoursesChapter />
+                </Chapter>
+                <Chapter id="studio" index={3} staticMode={staticMode}>
+                    <StudioChapter />
+                </Chapter>
             </div>
-            <SiteFooter />
+
+            {!staticMode && (
+                <p aria-hidden className={`pointer-events-none fixed bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 text-xs text-ink-foreground/70 transition-opacity duration-slow ${scrolled ? 'opacity-0' : 'opacity-100'}`}>
+                    <ChevronDown size={16} className="motion-safe:animate-bounce" /> Cuộn để xem khuôn viên đổi theo từng chương
+                </p>
+            )}
+
+            <div className="relative z-10">
+                <SiteFooter />
+            </div>
         </div>
     )
 }
 
-// ─── Tầng 1: hero ──────────────────────────────────────────────────────────
+/** Tòa nhấc lên ở chương Khóa học: tòa có khóa đang học; chưa học khóa nào thì mọi tòa có khóa. */
+function useLiftedBuildings() {
+    const summaries = useCourseSummaries()
+    return useMemo(() => {
+        const withCourse = Object.entries(BUILDING_COURSE_IDS).filter(([, id]) => id && summaries.some((s) => s.course.id === id))
+        const doing = withCourse.filter(([, id]) => summaries.find((s) => s.course.id === id)?.status === 'doing')
+        return new Set((doing.length ? doing : withCourse).map(([name]) => name))
+    }, [summaries])
+}
 
-function Hero() {
+// ─── Khung chương ──────────────────────────────────────────────────────────
+
+/** Mỗi chương cao tối thiểu 100vh; cột chữ bên trái (desktop) hoặc nằm dưới canvas (màn hẹp). */
+function Chapter({ id, index, staticMode, wide, children }: { id: string; index: number; staticMode: boolean; wide?: boolean; children: ReactNode }) {
+    return (
+        <section
+            id={id}
+            data-chapter={index}
+            className={`section-anchor container-page flex min-h-[100svh] pb-16 ${staticMode ? 'scroll-mt-0 items-start' : 'items-center pt-24'}`}
+            style={staticMode ? { paddingTop: 'calc(55svh + 1.5rem)' } : undefined}
+        >
+            <div className={`pointer-events-auto w-full ${wide ? 'max-w-[600px]' : 'max-w-[520px]'}`}>{children}</div>
+        </section>
+    )
+}
+
+/** Hiện dần khi vào khung nhìn (tắt khi prefers-reduced-motion nhờ CSS .reveal). */
+function Reveal({ children }: { children: ReactNode }) {
+    const ref = useRef<HTMLDivElement>(null)
+    const [shown, setShown] = useState(false)
+    useEffect(() => {
+        const el = ref.current
+        if (!el || typeof IntersectionObserver === 'undefined') return setShown(true)
+        const io = new IntersectionObserver(([e]) => e.isIntersecting && (setShown(true), io.disconnect()), { threshold: 0.25 })
+        io.observe(el)
+        return () => io.disconnect()
+    }, [])
+    return (
+        <div ref={ref} className={`reveal ${shown ? 'in' : ''}`}>
+            {children}
+        </div>
+    )
+}
+
+const Eyebrow = ({ children }: { children: ReactNode }) => <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-light">{children}</p>
+const Title = ({ id, children }: { id?: string; children: ReactNode }) => (
+    <h2 id={id} className="mt-3 text-[clamp(1.9rem,3.4vw,2.75rem)] font-extrabold leading-[1.08] tracking-[-0.03em]">
+        {children}
+    </h2>
+)
+const Lead = ({ children }: { children: ReactNode }) => <p className="mb-6 mt-4 text-[17px] leading-relaxed text-ink-foreground/80">{children}</p>
+/** Thẻ tối nửa trong suốt, chữ sáng cố định ở cả hai giao diện */
+const darkCard = 'rounded-[20px] border border-ink-foreground/10 bg-ink/85 backdrop-blur-md'
+
+// ─── Chương 0: hero ────────────────────────────────────────────────────────
+
+function HeroChapter() {
     const role = useOrbitStore((s) => s.role)
     const name = useOrbitStore((s) => s.learnerName)
     const review = useOrbitStore((s) => s.lessonReview)
@@ -45,79 +128,45 @@ function Hero() {
     const pct = resume ? Math.min(100, Math.round((resumeAt / resume.durationSec) * 100)) : 0
 
     return (
-        <section id="top" className="relative isolate overflow-hidden bg-hero pt-[var(--nav-h)] text-ink-foreground">
-            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-stripes" />
-            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots mask-fade-b" />
-            {/* Đốm sáng trôi + sao lấp lánh (mockup Main): chỉ transform và opacity */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-                <div className="absolute -left-[10%] top-[30%] h-[520px] w-[520px] animate-blob-a rounded-full bg-[hsl(var(--hero-glow))] opacity-45 blur-[110px]" />
-                <div className="absolute -right-[6%] -top-[18%] h-[600px] w-[600px] animate-blob-b rounded-full bg-[hsl(var(--reward-from))] opacity-35 blur-[130px]" />
-                <span className="absolute left-[56%] top-[20%] h-1 w-1 animate-twinkle-a rounded-full bg-ink-foreground" />
-                <span className="absolute left-[80%] top-[12%] h-[3px] w-[3px] animate-twinkle-b rounded-full bg-ink-foreground" />
-                <span className="absolute left-[62%] top-[78%] h-1 w-1 animate-twinkle-c rounded-full bg-warning" />
-            </div>
+        <div className="flex min-w-0 flex-col gap-6">
+            <h1 className="animate-rise-1 text-[clamp(2.75rem,4.6vw,4.75rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
+                Chào {name}.
+                <br />
+                Hôm nay chỉ cần
+                <br />
+                <span className="text-brand-light">25 phút.</span>
+            </h1>
+            <p className="max-w-xl animate-rise-2 text-lg leading-relaxed text-ink-foreground/80">Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.</p>
 
-            <div className="container-page relative z-10 grid items-center gap-8 pb-24 pt-4 lg:min-h-[clamp(560px,78svh,740px)] lg:grid-cols-2 lg:gap-12 lg:pb-24">
-                <div className="flex min-w-0 flex-col gap-6">
-                    <h1 className="animate-rise-1 text-[clamp(2.75rem,8vw,4.5rem)] lg:text-[clamp(2.75rem,5.2vw,6rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
-                        Chào {name}.
-                        <br />
-                        Hôm nay chỉ cần
-                        <br />
-                        <span className="text-brand-light">25 phút.</span>
-                    </h1>
-                    <p className="max-w-xl animate-rise-2 text-lg leading-relaxed text-ink-foreground/75">
-                        Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.
-                    </p>
-
-                    {resume ? (
-                        <Link
-                            to={`/lesson/${resume.id}`}
-                            data-vt={`lesson-${resume.id}`}
-                            className="group pointer-events-auto relative mt-1 flex animate-rise-3 items-center gap-4 overflow-hidden rounded-[22px] bg-card p-3 pr-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
-                        >
-                            <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-[40%] animate-sheen bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
-                            <GridThumb />
-                            <span className="min-w-0 flex-1">
-                                <span className="block truncate text-eyebrow uppercase text-brand-ink">
-                                    {resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu'} · {getCourse(resume.courseId)?.title ?? 'Khóa học'}
-                                </span>
-                                <span className="mt-1.5 line-clamp-2 text-lg font-bold leading-snug">{resume.title}</span>
-                                <span className="mt-3 flex items-center gap-3">
-                                    <span
-                                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
-                                        role="progressbar"
-                                        aria-valuenow={pct}
-                                        aria-valuemin={0}
-                                        aria-valuemax={100}
-                                        aria-label="Tiến độ bài đang học"
-                                    >
-                                        <span className="block h-full rounded-full bg-brand-600" style={{ width: `${pct}%` }} />
-                                    </span>
-                                    <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
-                                </span>
+            {resume ? (
+                <Link
+                    to={`/lesson/${resume.id}`}
+                    data-vt={`lesson-${resume.id}`}
+                    className="group relative mt-1 flex animate-rise-3 items-center gap-4 overflow-hidden rounded-[22px] bg-card p-3 pr-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
+                >
+                    <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-[40%] animate-sheen bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
+                    <GridThumb />
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate text-eyebrow uppercase text-brand-ink">
+                            {resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu'} · {getCourse(resume.courseId)?.title ?? 'Khóa học'}
+                        </span>
+                        <span className="mt-1.5 line-clamp-2 text-lg font-bold leading-snug">{resume.title}</span>
+                        <span className="mt-3 flex items-center gap-3">
+                            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ bài đang học">
+                                <span className="block h-full rounded-full bg-brand-600" style={{ width: `${pct}%` }} />
                             </span>
-                            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground shadow-brand transition duration-base group-hover:scale-105">
-                                <Play size={20} className="ml-0.5 fill-current" />
-                            </span>
-                        </Link>
-                    ) : (
-                        <p className="max-w-md rounded-card bg-ink-foreground/10 p-4 text-sm text-ink-foreground/80">Chưa có bài nào được giảng viên xuất bản.</p>
-                    )}
-                    <span className="hidden text-sm text-ink-foreground/60 lg:block">Kéo để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
-                </div>
-
-                {/* Cột mô hình: cạnh phải trùng lề phải trang, cạnh trái chữ trùng lề trái; canvas nằm gọn trong cột */}
-                <div className="relative h-[400px] min-w-0 sm:h-[460px] lg:h-[clamp(460px,62svh,640px)]">
-                    <CampusHero />
-                </div>
-            </div>
-
-            {/* Đáy hero là đường cong mềm */}
-            <svg aria-hidden viewBox="0 0 1440 90" preserveAspectRatio="none" className="pointer-events-none absolute -bottom-px left-0 z-20 h-12 w-full fill-surface lg:h-20">
-                <path d="M0,58 C220,8 470,6 720,42 C980,80 1220,78 1440,26 L1440,90 L0,90 Z" />
-            </svg>
-        </section>
+                            <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
+                        </span>
+                    </span>
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground shadow-brand transition duration-base group-hover:scale-105">
+                        <Play size={20} className="ml-0.5 fill-current" />
+                    </span>
+                </Link>
+            ) : (
+                <p className="max-w-md rounded-card bg-ink-foreground/10 p-4 text-sm text-ink-foreground/80">Chưa có bài nào được giảng viên xuất bản.</p>
+            )}
+            <span className="hidden text-sm text-ink-foreground/70 lg:block">Kéo vào khoảng trống bên phải để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
+        </div>
     )
 }
 
@@ -128,8 +177,7 @@ function GridThumb() {
             <span
                 className="absolute inset-0 bg-[length:33.333%_33.333%] opacity-100"
                 style={{
-                    backgroundImage:
-                        'linear-gradient(hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px)',
                 }}
             />
             <span className="absolute left-[66.66%] top-[33.33%] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink-foreground shadow-card" />
@@ -137,209 +185,153 @@ function GridThumb() {
     )
 }
 
-// ─── Tầng 2: Orbit Daily ───────────────────────────────────────────────────
+// ─── Chương 1: Hôm nay (Orbit Daily) ───────────────────────────────────────
 
-function DailySection() {
+function DailyChapter() {
     const read = useOrbitStore((s) => s.dailyRead)
     const mastery = useOrbitStore((s) => s.conceptMastery)
-    const today = new Date()
-    const dateLabel = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}`
 
     // 3 bài mỗi ngày (bài đã đọc từ ngày trước không quay lại)
     const articles = todaysDaily(read, mastery)
     const readCount = articles.filter((a) => read[a.id]).length
-    const unread = articles.filter((a) => !read[a.id])
-    const priority = [...unread].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
-    const side = (priority ? articles.filter((a) => a.id !== priority.id) : articles).slice(0, 2)
+    const priority = [...articles.filter((a) => !read[a.id])].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
+    const allDone = articles.length > 0 && !priority
 
     return (
-        <section id="daily" aria-labelledby="daily-title" className="section-anchor">
-            <SectionHeading id="daily-title" eyebrow={`Orbit Daily · ${dateLabel}`} title="3 bài đọc. Rồi nghỉ.">
-                <div className="flex items-center gap-3" role="img" aria-label={`Đã đọc ${readCount} trên ${DAILY_LIMIT} bài hôm nay`}>
-                    <div className="flex gap-1.5">
-                        {Array.from({ length: DAILY_LIMIT }, (_, i) => (
-                            <span key={i} className={`h-1.5 w-11 rounded-full transition-colors duration-slow ${i < readCount ? 'bg-brand-600' : 'bg-border'}`} />
-                        ))}
-                    </div>
-                    <span className="font-mono text-sm font-semibold text-muted-foreground">
-                        {readCount}/{DAILY_LIMIT}
-                    </span>
-                </div>
-            </SectionHeading>
-
-            <div className="mt-7 grid gap-5 lg:grid-cols-3 lg:grid-rows-2">
-                {priority ? <PriorityCard article={priority} /> : <DoneCard articles={articles} />}
-                {side.map((a) => (
-                    <SmallCard key={a.id} article={a} index={articles.indexOf(a)} done={Boolean(read[a.id])} />
-                ))}
-            </div>
-        </section>
+        <Reveal>
+            <Eyebrow>01 · Hôm nay</Eyebrow>
+            <Title id="daily-title">{allDone ? 'Hôm nay đủ rồi. Hẹn bạn ngày mai.' : '3 bài đọc. Rồi nghỉ.'}</Title>
+            <Lead>Mỗi ngày AI chọn tối đa {DAILY_LIMIT} bài đọc ngắn theo phần bạn còn hổng. Đọc xong là nghỉ, không có gì để cuộn tiếp.</Lead>
+            <ul className={`${darkCard} flex flex-col gap-1 p-3`} aria-label={`Đã đọc ${readCount} trên ${DAILY_LIMIT} bài hôm nay`}>
+                {articles.map((a, i) => {
+                    const done = Boolean(read[a.id])
+                    const weakest = [...a.conceptIds].sort((x, y) => (mastery[x] ?? 0.5) - (mastery[y] ?? 0.5))[0]
+                    const concept = getConcept(weakest)
+                    const m = mastery[weakest]
+                    const note = done
+                        ? `Đã đọc · +${DAILY_ARTICLE_XP} XP`
+                        : a.id === priority?.id && concept
+                          ? m === undefined
+                              ? `Ưu tiên · bạn chưa làm quiz “${concept.name}”`
+                              : `Ưu tiên · “${concept.name}” mới nắm ${Math.round(m * 100)}%`
+                          : `${a.readingMinutes} phút · +${DAILY_ARTICLE_XP} XP`
+                    return (
+                        <li key={a.id}>
+                            <Link
+                                to={`/daily/${a.id}`}
+                                data-vt={`daily-${a.id}`}
+                                className={`group grid grid-cols-[36px_1fr_auto] items-center gap-3 rounded-2xl p-2.5 transition duration-fast hover:bg-ink-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70 ${done ? 'opacity-70' : ''}`}
+                            >
+                                <span className={`flex h-9 w-9 items-center justify-center rounded-[10px] font-mono text-xs ${done ? 'bg-brand-600 text-ink-foreground' : 'bg-ink-foreground/10'}`}>{done ? <Check size={16} /> : String(i + 1).padStart(2, '0')}</span>
+                                <span className="min-w-0">
+                                    <b className="block text-[15px] leading-snug">{a.title}</b>
+                                    <small className="mt-0.5 block text-xs text-ink-foreground/70">{note}</small>
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-xs font-extrabold text-brand-light">{done ? 'Đọc lại' : 'Đọc'} <ArrowRight size={13} className="transition group-hover:translate-x-0.5" /></span>
+                            </Link>
+                        </li>
+                    )
+                })}
+            </ul>
+        </Reveal>
     )
 }
 
-function PriorityCard({ article }: { article: DailyArticle }) {
-    const mastery = useOrbitStore((s) => s.conceptMastery)
-    const weakest = [...article.conceptIds].sort((a, b) => (mastery[a] ?? 0.5) - (mastery[b] ?? 0.5))[0]
-    const concept = getConcept(weakest)
-    const m = mastery[weakest]
-    const reason = concept ? (m === undefined ? `Ưu tiên · bạn chưa làm quiz “${concept.name}”` : `Ưu tiên · “${concept.name}” mới nắm ${Math.round(m * 100)}%`) : 'Ưu tiên cho bạn hôm nay'
-    const src = article.blocks.find((b) => b.sources.length)?.sources[0]
-    const lesson = src ? getLesson(src.lessonId) : undefined
+// ─── Chương 2: Khóa học ────────────────────────────────────────────────────
+
+const MAX_COURSES = 3
+
+function CoursesChapter() {
+    const summaries = useCourseSummaries()
+    const cards = [...summaries].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]).slice(0, MAX_COURSES)
 
     return (
-        <Link
-            to={`/daily/${article.id}`}
-            data-vt={`daily-${article.id}`}
-            className="group relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] surface-red p-7 shadow-brand transition duration-base ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 lg:col-span-2 lg:row-span-2 lg:p-9"
-        >
-            <span aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[440px] w-[440px] rounded-full border border-ink-foreground/25" />
-            <span aria-hidden className="pointer-events-none absolute -bottom-5 -right-5 h-[200px] w-[200px] animate-spin-24 rounded-full border border-ink-foreground/20">
-                <span className="absolute -top-[5px] left-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-ink-foreground" />
-            </span>
-            <div className="relative">
-                <span className="on-red-chip inline-flex rounded-full px-3.5 py-1.5 text-xs font-extrabold">{reason}</span>
-                <h3 className="mt-6 max-w-xl text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight">{article.title}</h3>
-                {lesson && src && (
-                    <p className="mt-4 text-[15px] on-red-muted">
-                        Tổng hợp từ {lesson.title} (<span className="font-mono">{formatTime(src.start)}</span>).
-                    </p>
-                )}
-            </div>
-            <div className="relative mt-10 flex flex-wrap items-center gap-4">
-                <span className="on-red-btn inline-flex items-center gap-2 rounded-2xl px-6 py-3.5 text-[15px] font-extrabold shadow-raised transition duration-base group-hover:gap-3">
-                    Đọc ngay <ArrowRight size={16} />
-                </span>
-                <span className="on-red-muted text-sm">
-                    {article.readingMinutes} phút · +{DAILY_ARTICLE_XP} XP
-                </span>
-            </div>
-        </Link>
-    )
-}
-
-/** Đã đọc cả 3 bài: màn "Hôm nay đủ rồi" kèm tóm tắt những gì đã học. */
-function DoneCard({ articles }: { articles: DailyArticle[] }) {
-    return (
-        <div className="relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-[28px] surface-red p-7 shadow-brand lg:col-span-2 lg:row-span-2 lg:p-9">
-            <div>
-                <span className="on-red-chip inline-flex rounded-full px-3.5 py-1.5 text-xs font-extrabold">Xong 3/3</span>
-                <h3 className="mt-6 text-[clamp(1.75rem,3.2vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight">Hôm nay đủ rồi. Hẹn bạn ngày mai.</h3>
-                <p className="mt-4 text-[15px] on-red-muted">Hôm nay bạn đã học:</p>
-                <ul className="mt-2 flex flex-col gap-1.5 text-[15px]">
-                    {articles.map((a) => (
-                        <li key={a.id} className="flex items-start gap-2">
-                            <Check size={16} className="mt-1 shrink-0" /> {a.title}
+        <Reveal>
+            <Eyebrow>02 · Khóa học</Eyebrow>
+            <Title id="courses-title">
+                Mỗi tòa nhà
+                <br />
+                là một khóa học.
+            </Title>
+            <Lead>Tòa nào bạn đang học sẽ nhấc lên. Bấm vào tòa trên mô hình hoặc một khóa bên dưới để vào bản đồ chặng.</Lead>
+            {cards.length === 0 ? (
+                <p className={`${darkCard} p-5 text-ink-foreground/80`}>Chưa có khóa học nào được giảng viên xuất bản.</p>
+            ) : (
+                <ul className="flex flex-col gap-3">
+                    {cards.map((c) => (
+                        <li key={c.course.id}>
+                            <CourseRow summary={c} />
                         </li>
                     ))}
                 </ul>
-            </div>
-        </div>
+            )}
+            {summaries.length > 0 && (
+                <Link to="/learning" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-ink-foreground/20 px-4 py-2.5 text-sm font-extrabold transition hover:bg-ink-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70">
+                    Xem tất cả khóa học <ArrowRight size={15} />
+                </Link>
+            )}
+        </Reveal>
     )
 }
 
-function SmallCard({ article, index, done }: { article: DailyArticle; index: number; done: boolean }) {
+function CourseRow({ summary }: { summary: CourseSummary }) {
+    const { course, lessons: ls, status, pct, curIndex } = summary
+    const sub = status === 'doing' ? `Chặng ${curIndex + 1}/${ls.length}` : status === 'done' ? 'Đã xong' : `${ls.length} bài`
     return (
         <Link
-            to={`/daily/${article.id}`}
-            data-vt={`daily-${article.id}`}
-            className={`group flex min-h-[140px] flex-col justify-between rounded-3xl border p-6 transition duration-base ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
-                done ? 'border-transparent bg-muted' : 'border-border bg-card shadow-card hover:-translate-y-1 hover:border-brand-200 hover:shadow-raised'
-            }`}
+            to={`/learning?course=${course.id}`}
+            className={`${darkCard} grid gap-2 p-4 transition duration-base ease-out hover:-translate-y-0.5 hover:border-ink-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70`}
         >
-            <div>
-                <p className="flex items-center justify-between font-mono text-xs text-muted-foreground">
-                    <span>
-                        {String(index + 1).padStart(2, '0')} · {done ? 'Đã đọc' : 'Mở rộng'}
-                    </span>
-                    {done && <Check size={16} className="text-success" />}
-                </p>
-                <h3 className={`mt-3 text-xl font-extrabold leading-snug tracking-tight ${done ? 'text-muted-foreground' : 'text-foreground'}`}>{article.title}</h3>
-            </div>
-            <p className={`mt-5 text-sm ${done ? 'font-semibold text-success' : 'text-muted-foreground'}`}>
-                {done ? `+${DAILY_ARTICLE_XP} XP đã nhận` : `${article.readingMinutes} phút · +${DAILY_ARTICLE_XP} XP`}
-            </p>
+            <small className="font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-light">
+                {course.subject} · {sub}
+            </small>
+            <span className="flex items-baseline justify-between gap-3">
+                <b className="text-base leading-snug">{course.title}</b>
+                <span className="font-mono text-xl font-bold">{pct}%</span>
+            </span>
+            <span className="h-1 overflow-hidden rounded bg-ink-foreground/15" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${course.title}`}>
+                <span className="block h-full rounded bg-brand-600" style={{ width: `${pct}%` }} />
+            </span>
         </Link>
     )
 }
 
-// ─── Tầng 3: Tiến độ của bạn ───────────────────────────────────────────────
+// ─── Chương 3: Studio 3D ───────────────────────────────────────────────────
 
-function ProgressSection() {
-    const mastery = useOrbitStore((s) => s.conceptMastery)
-    const dailyRaw = useOrbitStore((s) => s.daily)
-    const daily = dailyFor(dailyRaw)
-
-    const nodes = buildSkillTree(mastery).sort((a, b) => a.depth - b.depth)
-    const first = nodes[0]
-    const course = first ? getCourse(getLesson(first.lessonId)?.courseId ?? '') : undefined
-    const current = nodes.find((n) => n.unlocked && n.mastery < UNLOCK_THRESHOLD)
-    const locked = nodes.find((n) => !n.unlocked)
-    const missionsDone = MISSIONS.filter((m) => m.progress(daily) >= m.target).length
-
+function StudioChapter() {
     return (
-        <section id="progress" aria-labelledby="progress-title" className="section-anchor">
-            <SectionHeading id="progress-title" eyebrow="Tiến độ của bạn" title="Đi đều, hiểu chắc." />
-            <div className="mt-7 grid gap-5 lg:grid-cols-[1.9fr_1fr]">
-                <div className="min-w-0 rounded-[26px] border border-border bg-card p-6 shadow-card">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h3 className="font-bold text-foreground">Cây kỹ năng · {course?.title ?? 'Chưa có khóa học'}</h3>
-                        <Link to="/journey" className="text-sm font-bold text-brand-ink underline underline-offset-4">
-                            Mở cây kỹ năng
-                        </Link>
-                    </div>
-                    <div className="-mx-2 mt-6 overflow-x-auto px-2 pb-2">
-                    <ol className="flex w-max min-w-full items-center" aria-label="Các khái niệm trong cây kỹ năng">
-                        {nodes.map((n, i) => {
-                            const mastered = n.mastery >= UNLOCK_THRESHOLD
-                            return (
-                                <li key={n.concept.id} className="relative flex items-center" style={{ flex: i < nodes.length - 1 ? '1 1 0' : '0 0 auto' }}>
-                                    <span
-                                        title={`${n.concept.name}: ${Math.round(n.mastery * 100)}%`}
-                                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                                            mastered
-                                                ? 'bg-brand-600 text-ink-foreground'
-                                                : n.unlocked
-                                                  ? 'border-[3px] border-brand-600 bg-brand-soft font-mono text-brand-ink'
-                                                  : 'border-2 border-dashed border-border text-muted-foreground'
-                                        }`}
-                                    >
-                                        {mastered ? <Check size={18} /> : n.unlocked ? `${Math.round(n.mastery * 100)}` : ''}
-                                        <span className="sr-only">{n.concept.name}</span>
-                                    </span>
-                                    {i < nodes.length - 1 && <span className={`mx-1 h-0.5 flex-1 rounded-full ${mastered ? 'bg-brand-600' : 'bg-border'}`} aria-hidden />}
-                                </li>
-                            )
-                        })}
-                    </ol>
-                    </div>
-                    <p className="mt-5 text-[15px] text-muted-foreground">
-                        {current ? (
-                            <>
-                                <b className="text-brand-ink">
-                                    {current.concept.name} · {Math.round(current.mastery * 100)}%.
-                                </b>{' '}
-                                {locked ? <>Đạt {Math.round(UNLOCK_THRESHOLD * 100)}% để mở “{locked.concept.name}”.</> : 'Làm thêm quiz để nắm vững khái niệm này.'}
-                            </>
-                        ) : nodes.length ? (
-                            'Bạn đã nắm vững mọi khái niệm hiện có.'
-                        ) : (
-                            'Chưa có khái niệm nào.'
-                        )}
-                    </p>
-                </div>
-
-                <div className="rounded-[26px] border border-border bg-card p-6 shadow-card">
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-foreground">Nhiệm vụ hôm nay</h3>
-                        <span className="font-mono text-sm text-muted-foreground">
-                            {missionsDone}/{MISSIONS.length}
-                        </span>
-                    </div>
-                    <div className="mt-4">
-                        <MissionList compact />
-                    </div>
-                </div>
+        <Reveal>
+            <Eyebrow>03 · Studio 3D</Eyebrow>
+            <Title id="studio-title">Tả ánh sáng. Rồi chụp.</Title>
+            <Lead>Đặt máy, chỉnh tiêu cự và ba đèn trong studio ảo. Bạn đặt máy, AI đặt đèn rồi chấm ảnh.</Lead>
+            <div className="flex flex-col gap-4">
+                <Feature icon={<Sparkles size={16} />} title="Prompt-to-Environment">
+                    Mô tả ánh sáng bằng lời, AI dựng đèn, màu nền, sương và giải thích theo lý thuyết nhiếp ảnh.
+                </Feature>
+                <Feature icon={<Camera size={16} />} title="Virtual Director">
+                    Chụp rồi để AI chấm bố cục, ánh sáng và khoanh đúng vùng cần chỉnh.
+                </Feature>
             </div>
-        </section>
+            <p className="mt-5 flex items-center gap-2.5 rounded-[14px] border border-ink-foreground/10 bg-ink/60 px-3 py-2.5 text-[13px]">
+                <span aria-hidden className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg bg-brand-600">
+                    <Sparkles size={14} />
+                </span>
+                “Studio tối, đèn chính vàng ấm từ trái, viền sáng phía sau”
+            </p>
+            <Link to="/studio" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70">
+                Vào Studio <ArrowRight size={16} />
+            </Link>
+        </Reveal>
+    )
+}
+
+function Feature({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+    return (
+        <div className="grid grid-cols-[30px_1fr] gap-3 text-sm text-ink-foreground/80">
+            <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-ink-foreground/10 text-brand-light">{icon}</span>
+            <span>
+                <b className="text-ink-foreground">{title}:</b> {children}
+            </span>
+        </div>
     )
 }

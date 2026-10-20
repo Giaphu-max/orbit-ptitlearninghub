@@ -25,7 +25,7 @@ interface NavItem {
 
 const BASE_ITEMS: NavItem[] = [
     { label: 'Trang chủ', to: '/', section: 'top', match: () => false },
-    { label: 'Orbit Daily', to: '/#daily', section: 'daily', match: (p) => p.startsWith('/daily') },
+    { label: 'Hôm nay', to: '/#daily', section: 'daily', match: (p) => p.startsWith('/daily') },
     { label: 'Khóa học', to: '/#courses', section: 'courses', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') },
     { label: 'Studio 3D', to: '/#studio', section: 'studio', match: (p) => p.startsWith('/studio') },
 ]
@@ -40,8 +40,8 @@ const TEACHER_ITEMS: NavItem[] = [
     { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' },
 ]
 
-/** Các phần trên trang chủ theo thứ tự từ trên xuống; phần cuối (progress) không có mục nav. */
-const HOME_SECTIONS = ['top', 'daily', 'courses', 'studio', 'progress']
+/** Các chương trên trang chủ theo thứ tự từ trên xuống (mỗi chương một mục nav). */
+const HOME_SECTIONS = ['top', 'daily', 'courses', 'studio']
 
 /**
  * Phần trang chủ đang nằm ở khoảng 40% chiều cao màn hình (IntersectionObserver).
@@ -153,9 +153,10 @@ export function TopNav() {
     const navigate = useNavigate()
     const [menuOpen, setMenuOpen] = useState(false)
     const onHome = pathname === '/'
-    const { scrolled, past: pastHero } = useNavScroll(onHome)
+    const { scrolled } = useNavScroll(onHome)
     const activeSection = useActiveSection(onHome)
-    const tone: NavTone = onHome && !pastHero ? 'hero' : 'plain'
+    // Trang chủ nền đỏ PTIT suốt chiều dài (cảnh 3D cố định phía sau) nên nav luôn ở tone hero
+    const tone: NavTone = onHome ? 'hero' : 'plain'
     const t = TONE[tone]
     const tabParam = new URLSearchParams(useLocation().search).get('tab')
     const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : onHome ? it.section === activeSection : it.match(pathname))

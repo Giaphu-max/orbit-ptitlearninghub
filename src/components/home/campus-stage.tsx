@@ -6,8 +6,6 @@ import { useThemeStore } from '@/store/useThemeStore'
 // Phần 3D tải riêng (three.js + R3F nặng), chỉ kéo về khi hero được dựng.
 const CampusScene = lazy(() => import('./campus-scene'))
 
-const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
 /** Máy yếu hoặc không có WebGL thì dùng ảnh tĩnh thay cho cảnh 3D. */
 function canRender3D() {
     try {
@@ -40,22 +38,35 @@ function StaticCampus() {
     )
 }
 
-/** Sân khấu 3D của hero: cảnh khuôn viên đổi hoàng hôn ↔ buổi tối theo giao diện của cả web. */
-export function CampusHero() {
+interface CampusStageProps {
+    /** S liên tục 0..3 từ useScrollStage */
+    stage: React.MutableRefObject<number>
+    /** Màn hẹp / giảm chuyển động: không chuyển cảnh, canvas cao 55vh phía trên */
+    staticMode: boolean
+    reduce: boolean
+    /** Các tòa nhấc lên ở chương Khóa học */
+    liftNames: ReadonlySet<string>
+}
+
+/**
+ * Sân khấu 3D dùng chung cho cả trang chủ: một Canvas cố định phía sau nội dung, đổi hoàng hôn ↔ buổi tối theo giao diện của web.
+ * Màn hẹp: sân khấu nằm trên cùng (cao 55svh) và nội dung trượt bên dưới nó.
+ * Nền (màu trời đỏ PTIT) luôn có sẵn bên dưới để lúc tải hoặc khi không có WebGL trang vẫn đúng tông.
+ */
+export function CampusStage({ stage, staticMode, reduce, liftNames }: CampusStageProps) {
     const navigate = useNavigate()
     const night = useThemeStore((s) => s.theme === 'dark')
     const [enabled] = useState(canRender3D)
-    const [reduce] = useState(prefersReducedMotion)
 
     return (
-        <div className="relative h-full w-full">
-            <div className="absolute inset-0">
+        <div aria-hidden={!enabled} className={`bg-stage pointer-events-none fixed left-0 top-0 w-full ${staticMode ? 'z-20 h-[55svh] border-b border-ink-foreground/15 shadow-raised' : 'z-0 h-[100svh]'}`}>
+            <div className="pointer-events-auto absolute inset-0">
                 {enabled ? (
-                    <Suspense fallback={<div className="h-full w-full animate-pulse rounded-panel bg-ink-foreground/5" aria-hidden />}>
-                        <CampusScene night={night} reduce={reduce} onOpenCourse={(id) => navigate(`/learning#course-${id}`)} />
+                    <Suspense fallback={null}>
+                        <CampusScene night={night} reduce={reduce} staticMode={staticMode} stage={stage} liftNames={liftNames} onOpenCourse={(id) => navigate(`/learning?course=${id}`)} />
                     </Suspense>
                 ) : (
-                    <div className="absolute inset-x-4 bottom-4 top-[45%] lg:left-[40%] lg:top-8">
+                    <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`}>
                         <StaticCampus />
                     </div>
                 )}
