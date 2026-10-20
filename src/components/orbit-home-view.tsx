@@ -7,6 +7,9 @@ import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusHero } from '@/components/home/campus-hero'
 import { TopNav } from '@/components/top-nav'
+import { SectionHeading } from '@/components/section-heading'
+import { CoursesSection } from '@/components/home/courses-section'
+import { StudioSection } from '@/components/home/studio-section'
 
 const DAILY_LIMIT = 3
 
@@ -17,6 +20,8 @@ export function OrbitHomeView() {
             <Hero />
             <div className="container-page flex flex-col gap-16 pb-16 pt-6">
                 <DailySection />
+                <CoursesSection />
+                <StudioSection />
                 <ProgressSection />
             </div>
             <footer className="border-t border-border bg-card">
@@ -158,14 +163,8 @@ function DailySection() {
     const side = (priority ? articles.filter((a) => a.id !== priority.id) : articles).slice(0, 2)
 
     return (
-        <section id="daily" aria-labelledby="daily-title" className="scroll-mt-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <p className="text-eyebrow uppercase text-brand-ink">Orbit Daily · {dateLabel}</p>
-                    <h2 id="daily-title" className="mt-2 text-[clamp(2rem,4.6vw,3.25rem)] font-black leading-none tracking-[-0.04em] text-foreground">
-                        3 bài đọc. Rồi nghỉ.
-                    </h2>
-                </div>
+        <section id="daily" aria-labelledby="daily-title" className="section-anchor">
+            <SectionHeading id="daily-title" eyebrow={`Orbit Daily · ${dateLabel}`} title="3 bài đọc. Rồi nghỉ.">
                 <div className="flex items-center gap-3" role="img" aria-label={`Đã đọc ${readCount} trên ${DAILY_LIMIT} bài hôm nay`}>
                     <div className="flex gap-1.5">
                         {Array.from({ length: DAILY_LIMIT }, (_, i) => (
@@ -176,7 +175,7 @@ function DailySection() {
                         {readCount}/{DAILY_LIMIT}
                     </span>
                 </div>
-            </div>
+            </SectionHeading>
 
             <div className="mt-7 grid gap-5 lg:grid-cols-3 lg:grid-rows-2">
                 {priority ? <PriorityCard article={priority} /> : <DoneCard articles={articles} />}
@@ -286,11 +285,9 @@ function ProgressSection() {
     const missionsDone = MISSIONS.filter((m) => m.progress(daily) >= m.target).length
 
     return (
-        <section aria-labelledby="progress-title">
-            <h2 id="progress-title" className="text-2xl font-extrabold tracking-tight text-foreground">
-                Tiến độ của bạn
-            </h2>
-            <div className="mt-5 grid gap-5 lg:grid-cols-[1.9fr_1fr]">
+        <section id="progress" aria-labelledby="progress-title" className="section-anchor">
+            <SectionHeading id="progress-title" eyebrow="Tiến độ của bạn" title="Đi đều, hiểu chắc." />
+            <div className="mt-7 grid gap-5 lg:grid-cols-[1.9fr_1fr]">
                 <div className="rounded-[26px] border border-border bg-card p-6 shadow-card">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <h3 className="font-bold text-foreground">Cây kỹ năng · {course?.title ?? 'Chưa có khóa học'}</h3>

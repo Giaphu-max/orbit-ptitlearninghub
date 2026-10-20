@@ -321,6 +321,10 @@
 
 /* Khung nội dung chung: lề co giãn 24px (điện thoại) đến 96px (màn rộng), không đặt max-width để hero, nav và các section thẳng hàng mép trái */
 @layer components {
+  /* Phần trên trang chủ: cuộn tới không bị thanh điều hướng che */
+  .section-anchor {
+    scroll-margin-top: var(--nav-h, 5rem);
+  }
   .container-page {
     width: 100%;
     padding-inline: var(--gutter);
