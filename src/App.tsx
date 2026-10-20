@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { MotionConfig } from 'motion/react'
 import { MainLayout } from '@/layouts/MainLayout'
 import { ThemeCurtain } from '@/components/theme-curtain'
+import { scrollToSection } from '@/lib/scroll'
 
 // Mỗi trang một chunk riêng: trang chủ không phải tải trình phát, quiz, markdown…
 // (Suspense nằm trong MainLayout để sidebar vẫn hiện khi trang đang tải)
@@ -16,23 +17,22 @@ const OrbitTestView = lazy(() => import('@/components/orbit-test-view').then((m)
 const OrbitStudioView = lazy(() => import('@/components/orbit-studio-view').then((m) => ({ default: m.OrbitStudioView })))
 
 /**
- * Cửa sổ trình duyệt là vùng cuộn duy nhất. Đổi trang thì cuộn về đầu; có #hash thì cuộn tới phần tử đó
- * (trang tải lười nên chờ phần tử xuất hiện tối đa ~1,5 giây).
+ * Cửa sổ trình duyệt là vùng cuộn duy nhất. Đổi trang thì cuộn về đầu ngay; có #hash thì cuộn mượt tới phần tử đó
+ * (trang tải lười nên chờ phần tử xuất hiện tối đa ~3 giây). scroll-margin-top của .section-anchor chừa chỗ cho thanh nav.
+ * Tôn trọng prefers-reduced-motion: khi bật thì nhảy thẳng.
  */
 function ScrollManager() {
   const { pathname, hash } = useLocation()
   useEffect(() => {
-    if (!hash) {
-      window.scrollTo(0, 0)
-      return
-    }
+    window.scrollTo(0, 0)
+  }, [pathname])
+  useEffect(() => {
+    if (!hash) return
     const id = decodeURIComponent(hash.slice(1))
     let tries = 0
     let raf = 0
     const seek = () => {
-      const el = document.getElementById(id)
-      if (el) el.scrollIntoView({ block: 'start' })
-      else if (tries++ < 90) raf = requestAnimationFrame(seek)
+      if (!scrollToSection(id) && tries++ < 180) raf = requestAnimationFrame(seek)
     }
     seek()
     return () => cancelAnimationFrame(raf)

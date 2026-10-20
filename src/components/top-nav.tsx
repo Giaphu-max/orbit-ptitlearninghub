@@ -1,29 +1,96 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Flame, Menu, RotateCcw, Repeat, X, Zap } from 'lucide-react'
+import { BrandLogo } from '@/components/brand-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { levelFromXp, visibleStreak } from '@/lib/gamification'
+import { scrollToSection } from '@/lib/scroll'
 import { useOrbitStore } from '@/store/useOrbitStore'
-
-// Logo thật: đặt file src/assets/brand/logo.(svg|png|webp) là tự dùng; không có thì dùng khối chữ PTIT
-const logoFiles = import.meta.glob('/src/assets/brand/logo.{svg,png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
-const LOGO_URL = Object.values(logoFiles)[0]
 
 export type NavTone = 'hero' | 'plain'
 
 interface NavItem {
     label: string
     to: string
-    /** Đường dẫn bắt đầu bằng các tiền tố này thì mục đang được chọn */
-    match: (pathname: string, hash: string) => boolean
+    /** id phần trên trang chủ mà mục này cuộn tới */
+    section?: string
+    /** Mục đang chọn khi ở các trang khác trang chủ */
+    match: (pathname: string) => boolean
 }
 
 const BASE_ITEMS: NavItem[] = [
-    { label: 'Trang chủ', to: '/', match: (p, h) => p === '/' && h !== '#daily' },
-    { label: 'Orbit Daily', to: '/#daily', match: (p, h) => p.startsWith('/daily') || (p === '/' && h === '#daily') },
-    { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' || p.startsWith('/lesson') },
-    { label: 'Studio 3D', to: '/studio', match: (p) => p.startsWith('/studio') },
+    { label: 'Trang chủ', to: '/', section: 'top', match: () => false },
+    { label: 'Orbit Daily', to: '/#daily', section: 'daily', match: (p) => p.startsWith('/daily') },
+    { label: 'Khóa học', to: '/#courses', section: 'courses', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') },
+    { label: 'Studio 3D', to: '/#studio', section: 'studio', match: (p) => p.startsWith('/studio') },
 ]
+
+/** Các phần trên trang chủ theo thứ tự từ trên xuống; phần cuối (progress) không có mục nav. */
+const HOME_SECTIONS = ['top', 'daily', 'courses', 'studio', 'progress']
+
+/**
+ * Phần trang chủ đang nằm ở khoảng 40% chiều cao màn hình (IntersectionObserver).
+ * Giữa hai phần (khoảng trống) giữ phần trước đó. Trang chủ tải lười nên chờ các phần xuất hiện.
+ */
+function useActiveSection(enabled: boolean) {
+    const [active, setActive] = useState('top')
+    useEffect(() => {
+        if (!enabled) return
+        let observer: IntersectionObserver | undefined
+        let raf = 0
+        let tries = 0
+        const live = new Set<string>()
+        const connect = () => {
+            const els = HOME_SECTIONS.map((id) => document.getElementById(id)).filter((e): e is HTMLElement => Boolean(e))
+            if (els.length < HOME_SECTIONS.length) {
+                if (tries++ < 180) raf = requestAnimationFrame(connect)
+                return
+            }
+            observer = new IntersectionObserver(
+                (entries) => {
+                    for (const e of entries) e.isIntersecting ? live.add(e.target.id) : live.delete(e.target.id)
+                    const current = HOME_SECTIONS.filter((id) => live.has(id)).pop()
+                    if (current) setActive(current)
+                },
+                { rootMargin: '-40% 0px -59% 0px' },
+            )
+            els.forEach((el) => observer!.observe(el))
+        }
+        connect()
+        return () => {
+            cancelAnimationFrame(raf)
+            observer?.disconnect()
+        }
+    }, [enabled])
+    return active
+}
+
+/** Trên trang chủ: thanh nav trong suốt đè hero, đổi sang nền thường khi cuộn qua hết hero. */
+function useScrolledPastHero(enabled: boolean) {
+    const [past, setPast] = useState(false)
+    useEffect(() => {
+        if (!enabled) return
+        let raf = 0
+        const check = () => {
+            const heroH = document.getElementById('top')?.offsetHeight ?? 600
+            const navH = document.querySelector('header')?.getBoundingClientRect().height ?? 80
+            setPast(window.scrollY > heroH - navH)
+        }
+        const onScroll = () => {
+            cancelAnimationFrame(raf)
+            raf = requestAnimationFrame(check)
+        }
+        check()
+        window.addEventListener('scroll', onScroll, { passive: true })
+        window.addEventListener('resize', onScroll)
+        return () => {
+            cancelAnimationFrame(raf)
+            window.removeEventListener('scroll', onScroll)
+            window.removeEventListener('resize', onScroll)
+        }
+    }, [enabled])
+    return past
+}
 
 const initials = (name: string) =>
     name
@@ -59,15 +126,27 @@ const TONE = {
 } as const
 
 /** Thanh điều hướng ngang: logo, mục có chữ, chip streak, chip cấp độ + XP, avatar, nút sáng/tối. Mobile thu thành menu. */
-export function TopNav({ tone }: { tone: NavTone }) {
-    const t = TONE[tone]
+export function TopNav() {
     const { pathname, hash } = useLocation()
+    const navigate = useNavigate()
+    const onHome = pathname === '/'
+    const pastHero = useScrolledPastHero(onHome)
+    const activeSection = useActiveSection(onHome)
+    const tone: NavTone = onHome && !pastHero ? 'hero' : 'plain'
+    const t = TONE[tone]
+    const isActive = (it: NavItem) => (onHome ? it.section === activeSection : it.match(pathname))
+    const goTo = (e: ReactMouseEvent, it: NavItem) => {
+        if (!onHome || !it.section) return
+        e.preventDefault()
+        scrollToSection(it.section)
+        navigate(it.to, { replace: true, preventScrollReset: true })
+    }
     const role = useOrbitStore((s) => s.role)
     const xp = useOrbitStore((s) => s.xp)
     const streakState = useOrbitStore((s) => s.streak)
     const [menuOpen, setMenuOpen] = useState(false)
 
-    const items = role === 'teacher' ? [...BASE_ITEMS, { label: 'Giảng viên', to: '/teacher', match: (p: string) => p.startsWith('/teacher') }] : BASE_ITEMS
+    const items = role === 'teacher' ? [...BASE_ITEMS, { label: 'Giảng viên', to: '/teacher', match: (p: string) => p.startsWith('/teacher') } as NavItem] : BASE_ITEMS
     const streak = visibleStreak(streakState).count
 
     // Đóng menu khi đổi trang
@@ -87,15 +166,10 @@ export function TopNav({ tone }: { tone: NavTone }) {
     )
 
     return (
-        <header className={`relative z-50 ${t.text}`}>
-            <div className="container-page flex items-center gap-4 py-5 lg:gap-6">
+        <header className={`fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] transition-colors duration-base ${t.text} ${tone === 'plain' ? 'border-b border-border bg-background/90 backdrop-blur' : 'border-b border-transparent'}`}>
+            <div className="container-page flex h-full items-center gap-4 lg:gap-6">
                 <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="Orbit, trang chủ">
-                    {LOGO_URL ? (
-                        <img src={LOGO_URL} alt="PTIT" className="logo-mark h-10 w-10 shrink-0 rounded-xl object-contain p-1" />
-                    ) : (
-                        // Khối vuông trắng bo góc, chữ PTIT đỏ: nổi trên nền tối của hero
-                        <span className={`flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${t.logo}`}>PTIT</span>
-                    )}
+                    <BrandLogo />
                     <span className="leading-tight">
                         <span className="block text-[17px] font-extrabold tracking-tight">Orbit</span>
                         <span className={`hidden whitespace-nowrap text-[11px] xl:block ${t.sub}`}>Học viện Công nghệ BCVT</span>
@@ -107,8 +181,9 @@ export function TopNav({ tone }: { tone: NavTone }) {
                         <Link
                             key={it.label}
                             to={it.to}
-                            aria-current={it.match(pathname, hash) ? 'page' : undefined}
-                            className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition duration-fast xl:px-4 ${it.match(pathname, hash) ? t.active : t.link}`}
+                            onClick={(e) => goTo(e, it)}
+                            aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
+                            className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition duration-fast xl:px-4 ${isActive(it) ? t.active : t.link}`}
                         >
                             {it.label}
                         </Link>
@@ -142,8 +217,9 @@ export function TopNav({ tone }: { tone: NavTone }) {
                             <Link
                                 key={it.label}
                                 to={it.to}
-                                aria-current={it.match(pathname, hash) ? 'page' : undefined}
-                                className={`rounded-xl px-4 py-3 text-[15px] font-semibold ${it.match(pathname, hash) ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+                                onClick={(e) => goTo(e, it)}
+                                aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
+                                className={`rounded-xl px-4 py-3 text-[15px] font-semibold ${isActive(it) ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
                             >
                                 {it.label}
                             </Link>

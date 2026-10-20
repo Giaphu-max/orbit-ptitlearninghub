@@ -11,7 +11,7 @@ export function MainLayout() {
 
     const role = useOrbitStore((s) => s.role)
 
-    // Trang chủ tự vẽ thanh điều hướng đè lên hero; các trang khác dùng thanh nền thường phía trên
+    // Thanh điều hướng cố định ở đầu mọi trang; trên trang chủ nó đè lên hero, các trang khác chừa chỗ bằng --nav-h
     const isHome = location.pathname === '/'
 
     if (!role) return <OrbitRoleSelect />
@@ -31,8 +31,8 @@ export function MainLayout() {
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col">
-                {!isHome && <TopNav tone="plain" />}
-                <main className="relative flex min-w-0 flex-1 flex-col">
+                <TopNav />
+                <main className={`relative flex min-w-0 flex-1 flex-col ${isHome ? '' : 'pt-[var(--nav-h)]'}`}>
                 <Suspense
                     fallback={
                         <div className="flex flex-1 items-center justify-center py-32 text-muted-foreground">

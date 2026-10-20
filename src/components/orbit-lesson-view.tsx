@@ -286,7 +286,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                 </div>
 
                 {/* ── Trợ giảng AI: ẩn bằng CSS để giữ lịch sử hỏi đáp khi bật/tắt ── */}
-                <div className={`h-[70vh] min-h-[480px] xl:sticky xl:top-6 xl:self-start xl:h-[calc(100svh-48px)] ${isTutorOpen ? '' : 'hidden'}`}>
+                <div className={`h-[70vh] min-h-[480px] xl:sticky xl:top-[calc(var(--nav-h)+1rem)] xl:self-start xl:h-[calc(100svh-var(--nav-h)-2rem)] ${isTutorOpen ? '' : 'hidden'}`}>
                     <TutorPanel lesson={lesson} getCurrentTime={() => timeRef.current} onSeek={handleSeek} />
                 </div>
             </div>

@@ -86,6 +86,8 @@
 
     /* Motion */
     --gutter: clamp(24px, 4vw, 96px);
+    /* Chiều cao thanh điều hướng cố định (h-10 của nút + 2×20px) */
+    --nav-h: 5rem;
     --duration-fast: 150ms;
     --duration-base: 250ms;
     --duration-slow: 450ms;

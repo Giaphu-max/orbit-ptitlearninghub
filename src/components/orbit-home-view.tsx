@@ -6,7 +6,6 @@ import { buildSkillTree, dailyFor, DAILY_ARTICLE_XP, MISSIONS, UNLOCK_THRESHOLD 
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusHero } from '@/components/home/campus-hero'
-import { TopNav } from '@/components/top-nav'
 import { SectionHeading } from '@/components/section-heading'
 import { CoursesSection } from '@/components/home/courses-section'
 import { StudioSection } from '@/components/home/studio-section'
@@ -50,7 +49,7 @@ function Hero() {
     const pct = resume ? Math.min(100, Math.round((resumeAt / resume.durationSec) * 100)) : 0
 
     return (
-        <section className="relative isolate overflow-hidden bg-hero text-ink-foreground">
+        <section id="top" className="relative isolate overflow-hidden bg-hero pt-[var(--nav-h)] text-ink-foreground">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-stripes" />
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-80 bg-dots mask-fade-b" />
             {/* Đốm sáng trôi + sao lấp lánh (mockup Main): chỉ transform và opacity */}
@@ -61,8 +60,6 @@ function Hero() {
                 <span className="absolute left-[80%] top-[12%] h-[3px] w-[3px] animate-twinkle-b rounded-full bg-ink-foreground" />
                 <span className="absolute left-[62%] top-[78%] h-1 w-1 animate-twinkle-c rounded-full bg-warning" />
             </div>
-
-            <TopNav tone="hero" />
 
             <div className="container-page relative z-10 grid items-center gap-8 pb-24 pt-4 lg:min-h-[clamp(560px,78svh,740px)] lg:grid-cols-2 lg:gap-12 lg:pb-24">
                 <div className="flex min-w-0 flex-col gap-6">

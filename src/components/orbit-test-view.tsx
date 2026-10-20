@@ -195,7 +195,7 @@ function Running({
 
     return (
         <>
-            <div className="sticky top-0 z-10 -mx-5 flex items-center justify-between gap-4 border-b border-border bg-background/90 px-5 py-3 backdrop-blur">
+            <div className="sticky top-[var(--nav-h)] z-10 -mx-5 flex items-center justify-between gap-4 border-b border-border bg-background/90 px-5 py-3 backdrop-blur">
                 <p className="text-sm font-semibold text-muted-foreground">
                     Câu <span className="font-mono font-bold text-foreground">{index + 1}</span>/{questions.length} · đã trả lời <span className="font-mono font-bold text-foreground">{answered}</span>
                 </p>
