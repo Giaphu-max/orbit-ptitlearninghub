@@ -8,6 +8,10 @@
  * Màu viết dạng "H S% L%" để Tailwind ghép được độ trong suốt (bg-primary/80).
  */
 @layer base {
+  /* Vòng focus chỉ hiện khi dùng bàn phím */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
   :root {
     /* Màu thương hiệu: đỏ PTIT #C4161C */
     /* Thang màu theo giao diện, dạng kênh RGB (xem tailwind.config.js) */
@@ -94,6 +98,13 @@
     --duration-base: 250ms;
     --duration-slow: 450ms;
     --duration-reward: 900ms;
+    /* Màu nhấn theo môn học: chỉ dùng cho chip môn và đường chặng mini ở ô khóa học. ink = chữ trên nền nhạt (đã kiểm ≥4.5:1) */
+    --subject-film: 358 80% 43%;
+    --subject-film-ink: 358 80% 43%;
+    --subject-photo: 28 92% 48%;
+    --subject-photo-ink: 24 90% 31%;
+    --subject-default: 25 8% 45%;
+    --subject-default-ink: 25 8% 34%;
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -102,6 +113,12 @@
   /* Giao diện tối: chỉ đổi giá trị token, component không phải sửa */
   .dark {
     color-scheme: dark;
+    --subject-film: 358 80% 52%;
+    --subject-film-ink: 358 90% 68%;
+    --subject-photo: 28 92% 55%;
+    --subject-photo-ink: 28 95% 68%;
+    --subject-default: 25 8% 60%;
+    --subject-default-ink: 25 10% 72%;
 
     --brand-50: 43 15 17;
     --brand-100: 58 20 22;

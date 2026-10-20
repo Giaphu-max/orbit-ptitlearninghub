@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { getCourse, getLesson, getLessonsOfCourse } from '@/data'
+import { courses, getCourse, getLesson, getLessonsOfCourse } from '@/data'
 import type { Lesson, ReviewStatus } from '@/data/types'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -27,4 +27,20 @@ export function useCourseLessons(courseId: string | undefined): Lesson[] {
             .map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
             .filter((l) => role === 'teacher' || (review[l.id] ?? getLesson(l.id)?.status) === 'published')
     }, [courseId, edits, review, role])
+}
+
+/** Bài của mọi khóa (cùng quy tắc ẩn bản nháp với useCourseLessons), để trang Khóa học và trang chủ tổng hợp một lần. */
+export function useAllCourseLessons(): Record<string, Lesson[]> {
+    const edits = useOrbitStore((s) => s.lessonEdits)
+    const review = useOrbitStore((s) => s.lessonReview)
+    const role = useOrbitStore((s) => s.role)
+    return useMemo(() => {
+        const out: Record<string, Lesson[]> = {}
+        for (const c of courses) {
+            out[c.id] = getLessonsOfCourse(c.id)
+                .map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
+                .filter((l) => role === 'teacher' || (review[l.id] ?? getLesson(l.id)?.status) === 'published')
+        }
+        return out
+    }, [edits, review, role])
 }

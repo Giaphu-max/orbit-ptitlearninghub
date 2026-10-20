@@ -193,7 +193,7 @@ export function TopNav() {
             className={`nav-bar fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] ${t.text}`}
         >
             <div className="container-page flex h-full items-center gap-4 lg:gap-6">
-                <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap" aria-label="Orbit, trang chủ">
+                <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="Orbit, trang chủ">
                     <BrandLogo />
                     <span className="leading-tight">
                         <span className="block text-[17px] font-extrabold tracking-tight">Orbit</span>
@@ -208,7 +208,7 @@ export function TopNav() {
                             to={it.to}
                             onClick={(e) => goTo(e, it)}
                             aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
-                            className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition duration-fast xl:px-4 ${isActive(it) ? t.active : t.link}`}
+                            className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 xl:px-4 ${isActive(it) ? t.active : t.link}`}
                         >
                             {it.label}
                         </Link>
@@ -228,7 +228,7 @@ export function TopNav() {
                         aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
                         aria-expanded={menuOpen}
                         onClick={() => setMenuOpen((v) => !v)}
-                        className={`flex h-10 w-10 items-center justify-center rounded-full border ${t.burger}`}
+                        className={`flex h-10 w-10 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${t.burger}`}
                     >
                         {menuOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>

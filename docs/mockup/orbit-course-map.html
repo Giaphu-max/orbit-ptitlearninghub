@@ -1,0 +1,263 @@
+<title>Orbit Course Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: page header + one "route map" per course: course head (title left, big % right) then a horizontal track of lesson stations ending at a finish flag; vertical track on mobile */
+:root{
+  --bg:#FAF8F5;--card:#FFFFFF;--muted-bg:#F2EDE8;--line:#E8E2DC;--fg:#1A1412;--muted:#6B605B;
+  --red:#C4161C;--red-ink:#A3121A;--red-soft:#FBEAEA;--gold:#E8A93A;--ok:#1F8A4C;
+  --sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+  --shadow:0 18px 40px -28px rgba(60,20,20,.35);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#141112;--card:#1E1A1B;--muted-bg:#2A2425;--line:#342C2E;--fg:#F4EEEA;--muted:#A79C97;--red-ink:#FF8A84;--red-soft:#3A1618;--shadow:0 18px 40px -24px rgba(0,0,0,.7);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141112;--card:#1E1A1B;--muted-bg:#2A2425;--line:#342C2E;--fg:#F4EEEA;--muted:#A79C97;--red-ink:#FF8A84;--red-soft:#3A1618;--shadow:0 18px 40px -24px rgba(0,0,0,.7);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans)}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+.wrap{max-width:1240px;margin:0 auto;padding:48px max(20px,env(safe-area-inset-left)) 80px}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px}
+.top small{font-size:12px;color:var(--muted)}
+.pill{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--red-ink)}
+h1{font-size:clamp(36px,6vw,64px);line-height:1.02;letter-spacing:-.035em;font-weight:900;margin:10px 0 0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.totals{display:flex;gap:28px}
+.totals div{display:flex;flex-direction:column}
+.totals b{font-family:var(--mono);font-size:32px;letter-spacing:-.04em}
+.totals span{font-size:12px;color:var(--muted)}
+
+.course{margin-top:56px;background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}
+.c-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;padding:28px 32px 8px;align-items:center}
+.chip{display:inline-block;font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;background:var(--red-soft);color:var(--red-ink)}
+.c-head h2{font-size:clamp(26px,3.4vw,38px);line-height:1.08;letter-spacing:-.03em;font-weight:900;margin:10px 0 6px}
+.c-head p{margin:0;color:var(--muted);font-size:15px}
+.ring{position:relative;width:96px;height:96px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:9}
+.ring .bgc{stroke:var(--muted-bg)}
+.ring .fgc{stroke:var(--red);stroke-linecap:round;transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:22px;letter-spacing:-.03em}
+.c-stats{display:flex;gap:18px;align-items:center}
+.c-stats ul{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.c-stats ul b{font-family:var(--mono);color:var(--fg)}
+
+/* route */
+.route{position:relative;padding:28px 32px 32px;overflow-x:auto;scrollbar-width:thin}
+.stations{position:relative;isolation:isolate;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);gap:20px;min-width:min-content}
+.track{position:absolute;left:0;width:0;top:calc(var(--thumbH) + 22px);height:4px;border-radius:4px;background:var(--muted-bg)}
+.track i{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:4px;background:var(--red);transform-origin:left;transform:scaleX(0);transition:transform 1.2s cubic-bezier(.22,1,.36,1)}
+.course{--thumbH:128px}
+.st{position:relative;display:flex;flex-direction:column;gap:0;text-decoration:none;opacity:0;transform:translateY(14px);transition:opacity .5s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+.in .st{opacity:1;transform:none}
+.thumb{position:relative;height:var(--thumbH);border-radius:16px;overflow:hidden;background:var(--g,linear-gradient(135deg,#3a2a28,#1e1617));transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .dur{position:absolute;right:8px;bottom:8px;font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.72);border-radius:6px;padding:3px 6px}
+.thumb .play{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;opacity:0;transform:scale(.8);transition:.25s}
+.thumb .play::after{content:"";border-left:13px solid var(--red);border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px}
+.st:hover .thumb{transform:translateY(-4px);box-shadow:0 18px 30px -18px rgba(0,0,0,.5)}
+.st:hover .play{opacity:1;transform:none}
+.thumb .done{position:absolute;inset:0;background:rgba(31,138,76,.25)}
+.dot{position:relative;z-index:1;width:18px;height:18px;border-radius:50%;border:3px solid var(--muted-bg);background:var(--card);margin:13px 0 13px 14px}
+.st.done .dot{background:var(--ok);border-color:var(--ok)}
+.st.cur .dot{background:var(--red);border-color:var(--red)}
+.st.cur .dot::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--red);animation:ping 1.6s cubic-bezier(0,0,.2,1) infinite}
+@keyframes ping{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.st .n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.st h3{margin:4px 0 8px;font-size:16px;line-height:1.3;font-weight:800;letter-spacing:-.01em}
+.mastery{display:flex;gap:5px;align-items:center}
+.mastery span{width:12px;height:12px;border-radius:4px;background:var(--muted-bg);position:relative;overflow:hidden}
+.mastery span i{position:absolute;inset:0;background:var(--red);opacity:var(--m)}
+.mastery em{font-style:normal;font-size:12px;color:var(--muted);margin-left:6px}
+.state{margin-top:10px;font-size:13px;font-weight:700;color:var(--muted)}
+.st.cur .state{color:var(--red-ink)}
+.go{margin-top:12px;align-self:flex-start;border:0;border-radius:999px;background:var(--red);color:#fff;font-weight:800;font-size:14px;padding:10px 16px;display:inline-flex;gap:8px;align-items:center;box-shadow:0 10px 20px -10px rgba(196,22,28,.8)}
+.go::before{content:"";border-left:9px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent}
+/* finish */
+.finish .thumb{display:grid;place-items:center;background:var(--muted-bg)}
+.finish .thumb::after{content:"";position:absolute;inset:0;opacity:.09;background:repeating-conic-gradient(var(--fg) 0 25%,transparent 0 50%) 0 0/22px 22px}
+.finish .flag{position:relative;z-index:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;text-align:center}
+.finish .flag b{display:block;font-family:var(--mono);font-size:24px}
+.finish .flag span{font-size:11px;color:var(--muted)}
+.finish .dot{border-radius:4px;transform:rotate(45deg)}
+.ghost{margin-top:12px;align-self:flex-start;border:1px solid var(--line);background:transparent;border-radius:999px;font-weight:700;font-size:14px;padding:9px 14px}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:0 32px 22px}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:10px;height:10px;border-radius:3px;background:var(--red)}
+
+
+
+/* featured + grid */
+#featured .course{margin-top:40px}
+.feat-tag{display:inline-flex;gap:6px;align-items:center;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--red-ink);margin-right:8px}
+.feat-tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px color-mix(in srgb,var(--red) 20%,transparent)}
+.gh{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:48px 0 16px}
+.gt{margin:0;font-size:22px;font-weight:900;letter-spacing:-.02em}
+.gh .filters{margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.tile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s,border-color .25s}
+.tile:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.tile:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.tile.sel{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
+.cover{position:relative;height:92px;display:grid;grid-template-columns:repeat(var(--n),1fr);gap:2px}
+.cover span{background:var(--g)}
+.cover img{width:100%;height:100%;object-fit:cover}
+.cover b{position:absolute;right:10px;top:10px;font-family:var(--mono);font-size:13px;background:rgba(0,0,0,.6);color:#fff;border-radius:8px;padding:3px 7px}
+.cover b.ok{background:var(--ok)}
+.tile.new .cover{filter:saturate(.35) brightness(.9)}
+.tb{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px}
+.tb small{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--red-ink)}
+.tb strong{font-size:16px;line-height:1.3;font-weight:800;min-height:2.6em}
+.tb .mini{margin-top:6px}
+.tb em{font-style:normal;font-size:12px;color:var(--muted)}
+.tile.doing .tb em{color:var(--red-ink);font-weight:700}
+.mini{position:relative;display:flex;justify-content:space-between;align-items:center;height:14px}
+.mini::before{content:"";position:absolute;left:5px;right:5px;top:50%;height:3px;margin-top:-1.5px;border-radius:3px;background:var(--muted-bg)}
+.mini::after{content:"";position:absolute;left:5px;top:50%;height:3px;margin-top:-1.5px;border-radius:3px;background:var(--red);width:calc((100% - 10px) * var(--f))}
+.mini i{position:relative;z-index:1;width:10px;height:10px;border-radius:50%;background:var(--card);border:2px solid var(--muted-bg)}
+.mini i.d{background:var(--ok);border-color:var(--ok)}
+.mini i.c{background:var(--red);border-color:var(--red)}
+.mini i.f{border-radius:2px;transform:rotate(45deg)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700}
+.filters button b{font-family:var(--mono);margin-left:5px;color:var(--muted)}
+.filters button[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.filters button[aria-selected="true"] b{color:inherit;opacity:.7}
+.note{font-size:12px;color:var(--muted);margin-top:16px}
+.empty{grid-column:1/-1;padding:32px;text-align:center;color:var(--muted);border:1.5px dashed var(--line);border-radius:20px}
+#featured .course{animation:fin .45s cubic-bezier(.22,1,.36,1)}
+@keyframes fin{from{opacity:0;transform:translateY(10px)}}
+@media (max-width:760px){.grid{grid-template-columns:1fr 1fr;gap:10px}.cover{height:64px}.tb{padding:10px 12px 12px}.tb strong{font-size:14px}.filters{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.filters button{flex:none}}
+
+@media (max-width:760px){
+  .c-head{grid-template-columns:1fr;padding:22px 20px 0}
+  .route{padding:20px}
+  .stations{grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:1fr;gap:16px;padding-left:28px}
+  .track{width:4px!important;right:auto}
+  .track i{transform-origin:top;transform:scaleY(0)}
+  .dot{position:absolute;left:-29px;top:12px;margin:0}
+  .st{display:grid;grid-template-columns:120px 1fr;column-gap:14px}
+  .thumb{height:72px;grid-row:span 5}
+  .go,.ghost{grid-column:2}
+  .legend{padding:0 20px 20px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}.st{opacity:1;transform:none}}
+</style>
+
+<div class="wrap">
+  <div class="top"><small>Bản mẫu · trang Khóa học dạng bản đồ chặng</small><button class="pill" id="theme">Đổi sáng/tối</button></div>
+  <div class="head">
+    <div>
+      <div class="eyebrow">Khóa học</div>
+      <h1>Học theo chặng,<br>có đích.</h1>
+    </div>
+    <div class="totals">
+      <div><b id="tc">2</b><span>khóa</span></div>
+      <div><b id="tl">6</b><span>bài giảng</span></div>
+      <div><b id="tk">24</b><span>khái niệm vững</span></div>
+    </div>
+  </div>
+  <div id="featured"></div>
+  <div class="gh"><h2 class="gt">Tất cả khóa</h2><div class="filters" role="tablist" id="filters"></div></div>
+  <div class="grid" id="grid"></div>
+  <p class="note">6 khóa ngoài Dựng phim và Nhiếp ảnh là dữ liệu minh họa để thử bố cục khi có nhiều khóa.</p>
+</div>
+
+<script>
+(function(){
+  const G=['linear-gradient(135deg,#5a2a24,#1c1214)','linear-gradient(135deg,#2d3a4f,#141820)','linear-gradient(135deg,#4f3b1f,#191410)','linear-gradient(135deg,#1f4a4a,#0f1a1a)','linear-gradient(135deg,#3b2a55,#141020)','linear-gradient(135deg,#6b4a1e,#1a130c)'];
+  const L=(title,sec,m,progress=0,yt='')=>({title,sec,m,progress,yt});
+  const z=k=>Array(k).fill(0), full=k=>Array(k).fill(.9);
+  const COURSES=[
+    {subject:'Dựng phim',title:'Dựng audio và video phi tuyến',test:'0/10',lessons:[
+      L('Bản chất của dựng audio và video phi tuyến trong hậu kỳ',439,[.92,.85,.62,0],.46,'sF6dUF6JWy0'),
+      L('Tổ chức cấu trúc nội dung và điều hướng tiếp nhận',385,[.4,0,0,0,0],0,'1fiBJcP0AFM'),
+      L('Nhịp điệu dựng phim',379,[.25,0,0,0],0,'x0KOqBHDJ98')]},
+    {subject:'Nhiếp ảnh',title:'Nhiếp ảnh và ánh sáng',test:null,lessons:[
+      L('Ba loại ánh sáng cơ bản trong quay phim và chụp ảnh',194,z(4),0,'qyu4pWB4L8g'),
+      L('Nguyên lý màu sắc cơ bản trong nhiếp ảnh và điện ảnh',812,z(4),0,'tbERKd_t4So'),
+      L('Tư duy nhiếp ảnh: từ động lực nội tại đến thị giác điện ảnh',830,z(4),0,'WQGLhZu2lnw')]},
+    {subject:'Thiết kế',title:'Bố cục và nguyên lý thị giác',test:'9/10',lessons:[L('Quy tắc 1/3 và đường dẫn',420,full(4),1),L('Cân bằng và tương phản',510,full(4),1),L('Hệ thống lưới',480,full(3),1),L('Phân cấp thị giác',450,[.9,.85,.9],1)]},
+    {subject:'Âm thanh',title:'Thiết kế âm thanh cho phim',test:null,lessons:[L('Ba lớp âm thanh',360,[.9,.7,.3],1),L('Foley và hiệu ứng',540,[.5,0,0],.3),L('Mix và master',600,z(4))]},
+    {subject:'Chuyển động',title:'Motion graphics cơ bản',test:null,lessons:[L('Nguyên lý chuyển động',400,z(4)),L('Easing và nhịp',380,z(3)),L('Kinetic typography',520,z(4))]},
+    {subject:'Kịch bản',title:'Viết kịch bản phim ngắn',test:null,lessons:[L('Cấu trúc ba hồi',450,z(3)),L('Nhân vật và xung đột',500,z(4))]},
+    {subject:'3D',title:'Dựng hình 3D low-poly',test:'8/10',lessons:[L('Khối cơ bản',300,full(3),1),L('UV và vật liệu',420,full(3),1),L('Ánh sáng và render',480,[.85,.9,.8],1)]},
+    {subject:'Đồ họa',title:'Typography ứng dụng',test:null,lessons:[L('Giải phẫu chữ',350,z(4)),L('Ghép cặp font',400,z(3)),L('Chữ trong chuyển động',420,z(3))]}
+  ];
+  const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  COURSES.forEach(c=>{
+    const n=c.lessons.length; c.cur=c.lessons.findIndex(l=>l.progress<1);
+    c.pct=Math.round(c.lessons.reduce((a,l)=>a+l.progress,0)/n*100);
+    c.status=c.pct>=100?'done':c.pct>0?'doing':'new';
+    c.fill=c.cur<0?1:(c.cur+c.lessons[c.cur].progress)/n;
+    c.mins=Math.round(c.lessons.reduce((a,l)=>a+l.sec,0)/60);
+    c.concepts=c.lessons.reduce((a,l)=>a+l.m.length,0); c.strong=c.lessons.reduce((a,l)=>a+l.m.filter(x=>x>=.8).length,0);
+  });
+  document.getElementById('tc').textContent=COURSES.length;
+  document.getElementById('tl').textContent=COURSES.reduce((a,c)=>a+c.lessons.length,0);
+  document.getElementById('tk').textContent=COURSES.reduce((a,c)=>a+c.strong,0)+'/'+COURSES.reduce((a,c)=>a+c.concepts,0);
+  const feat=document.getElementById('featured'), grid=document.getElementById('grid');
+  function detail(c){
+    const n=c.lessons.length, cur=c.cur;
+    return `<div class="route"><div class="stations">
+      <div class="track"><i style="transform:scaleX(0)" data-to="${c.fill}"></i></div>
+      ${c.lessons.map((l,i)=>{const isCur=i===cur,done=l.progress>=1;
+        const state=done?'Đã xong':isCur?(l.progress>0?`Đang học · ${Math.round(l.progress*100)}%`:'Chặng tiếp theo'):'Chưa học';
+        return `<a class="st ${done?'done':''} ${isCur?'cur':''}" href="#" style="transition-delay:${80+i*90}ms">
+          <div class="thumb" style="--g:${G[(i+c.title.length)%G.length]}">${l.yt?`<img alt="" loading="lazy" src="https://i.ytimg.com/vi/${l.yt}/mqdefault.jpg" onerror="this.remove()">`:''}<span class="play"></span><span class="dur">${fmt(l.sec)}</span></div>
+          <span class="dot"></span><span class="n">Chặng ${String(i+1).padStart(2,'0')}</span><h3>${l.title}</h3>
+          <div class="mastery">${l.m.map(v=>`<span><i style="--m:${v}"></i></span>`).join('')}<em>${l.m.filter(x=>x>=.8).length}/${l.m.length} vững</em></div>
+          <div class="state">${state}</div>${isCur?`<button class="go">${l.progress>0?'Học tiếp':'Bắt đầu'}</button>`:''}</a>`}).join('')}
+      <a class="st finish" href="#" style="transition-delay:${80+n*90}ms"><div class="thumb"><div class="flag"><b>${c.test??'—'}</b><span>${c.test?'điểm tốt nhất':'chưa làm'}</span></div></div>
+        <span class="dot"></span><span class="n">Đích</span><h3>Test cuối chương</h3><div class="state">Biết khái niệm nào còn hổng</div><span class="ghost">Làm test</span></a>
+    </div></div>`;
+  }
+  var showFeatured=function(c){
+    const n=c.lessons.length, label=c.status==='doing'?'Đang học':c.status==='done'?'Đã xong':'Khóa đang xem';
+    feat.innerHTML=`<section class="course"><div class="c-head">
+        <div><span class="feat-tag">${label}</span><span class="chip">${c.subject}</span><h2>${c.title}</h2></div>
+        <div class="c-stats">
+          <div class="ring"><svg viewBox="0 0 100 100"><circle class="bgc" cx="50" cy="50" r="42"/><circle class="fgc" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg><b>${c.pct}%</b></div>
+          <ul><li><b>${c.lessons.filter(l=>l.progress>=1).length}/${n}</b> bài xong</li><li><b>${c.mins}</b> phút video</li><li><b>${c.strong}/${c.concepts}</b> khái niệm vững</li></ul>
+        </div></div>${detail(c)}</section>`;
+    const el=feat.firstElementChild, st=el.querySelector('.stations'), t=st.querySelector('.track'), dots=[...st.querySelectorAll('.dot')];
+    const pos=d=>({x:d.offsetParent.offsetLeft+d.offsetLeft+d.offsetWidth/2,y:d.offsetParent.offsetTop+d.offsetTop+d.offsetHeight/2});
+    const place=()=>{const a=pos(dots[0]),zz=pos(dots[dots.length-1]);
+      if(innerWidth>760){t.style.left=a.x+'px';t.style.width=(zz.x-a.x)+'px';t.style.top=(a.y-2)+'px';t.style.height=''}
+      else{t.style.left=(a.x-2)+'px';t.style.width='';t.style.top=a.y+'px';t.style.height=(zz.y-a.y)+'px'}};
+    place(); feat.place=place;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{el.classList.add('in');
+      el.querySelector('.fgc').style.strokeDashoffset=263.9*(1-c.pct/100);
+      const i=t.firstElementChild; i.style.transform=innerWidth>760?`scaleX(${c.fill})`:`scaleY(${c.fill})`;}));
+    grid.querySelectorAll('.tile').forEach(x=>x.classList.toggle('sel',x.dataset.i==String(COURSES.indexOf(c))));
+  };
+  const TABS=[['all','Tất cả'],['doing','Đang học'],['new','Chưa bắt đầu'],['done','Đã xong']];
+  let filter='all';
+  const fhost=document.getElementById('filters'), order={doing:0,new:1,done:2};
+  function renderGrid(){
+    fhost.innerHTML=TABS.map(([k,l])=>`<button role="tab" aria-selected="${k===filter}" data-k="${k}">${l}<b>${k==='all'?COURSES.length:COURSES.filter(c=>c.status===k).length}</b></button>`).join('');
+    fhost.querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.k;renderGrid()});
+    const list=COURSES.map((c,i)=>[c,i]).filter(([c])=>filter==='all'||c.status===filter).sort((a,b)=>order[a[0].status]-order[b[0].status]);
+    grid.innerHTML=list.length?'':'<div class="empty">Chưa có khóa nào ở mục này.</div>';
+    list.forEach(([c,i])=>{
+      const n=c.lessons.length;
+      const dots=c.lessons.map((l,j)=>`<i class="${l.progress>=1?'d':j===c.cur&&c.status==='doing'?'c':''}"></i>`).join('')+`<i class="f ${c.test&&parseInt(c.test)>=7?'d':''}"></i>`;
+      const sub=c.status==='done'?`Đã xong · test ${c.test??'chưa làm'}`:c.status==='doing'?`Tiếp: Chặng ${String(c.cur+1).padStart(2,'0')} · ${c.pct}%`:`${n} bài · ${c.mins} phút`;
+      const b=document.createElement('button'); b.className='tile '+c.status; b.dataset.i=i;
+      b.innerHTML=`<div class="cover" style="--n:${n}">${c.lessons.map((l,j)=>`<span style="--g:${G[(j+c.title.length)%G.length]}">${l.yt?`<img alt="" loading="lazy" src="https://i.ytimg.com/vi/${l.yt}/mqdefault.jpg" onerror="this.remove()">`:''}</span>`).join('')}${c.status!=='new'?`<b class="${c.status==='done'?'ok':''}">${c.status==='done'?'✓ ':''}${c.pct}%</b>`:''}</div>
+        <div class="tb"><small>${c.subject}</small><strong>${c.title}</strong><span class="mini" style="--f:${c.fill}" aria-hidden="true">${dots}</span><em>${sub}</em></div>`;
+      b.onclick=()=>{showFeatured(c); feat.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})};
+      grid.appendChild(b);
+    });
+    const selIdx=feat.dataset.i; grid.querySelectorAll('.tile').forEach(x=>x.classList.toggle('sel',x.dataset.i===selIdx));
+  }
+  renderGrid();
+  const start=COURSES.find(c=>c.status==='doing')||COURSES[0];
+  feat.dataset.i=String(COURSES.indexOf(start)); showFeatured(start);
+  const _sf=showFeatured; showFeatured=function(c){feat.dataset.i=String(COURSES.indexOf(c));_sf(c)};
+  addEventListener('resize',()=>feat.place&&feat.place());
+  document.getElementById('theme').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=dark?'light':'dark'};
+})();
+</script>

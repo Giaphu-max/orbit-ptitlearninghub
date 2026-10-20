@@ -34,8 +34,10 @@ function kindFor(path: string): { kind: Kind; mark?: () => void } {
         return {
             kind: 'morph',
             mark: () => {
-                card.style.viewTransitionName = `vt-${card.dataset.vt}`
-                window.setTimeout(() => (card.style.viewTransitionName = ''), CLEAR_MS)
+                // Thẻ có phần tử data-vt-thumb (trạm bài trên bản đồ chặng) thì chỉ ảnh thumbnail morph thành khung video
+                const target = card.querySelector<HTMLElement>('[data-vt-thumb]') ?? card
+                target.style.viewTransitionName = `vt-${card.dataset.vt}`
+                window.setTimeout(() => (target.style.viewTransitionName = ''), CLEAR_MS)
             },
         }
     }
