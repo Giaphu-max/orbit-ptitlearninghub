@@ -189,6 +189,8 @@ export interface BadgeContext {
     conceptMastery: Record<string, number>
     quizResults: Record<string, QuizResult>
     streak: StreakState
+    /** Điểm tổng cao nhất ở Virtual Director */
+    directorBest: number
 }
 
 export function badgeProgress(badge: Badge, ctx: BadgeContext): { current: number; target: number } {
@@ -203,8 +205,7 @@ export function badgeProgress(badge: Badge, ctx: BadgeContext): { current: numbe
         case 'streak':
             return { current: Math.min(c.days, ctx.streak.count), target: c.days }
         case 'director-score':
-            // Virtual Director chưa có: chưa thể đạt
-            return { current: 0, target: 1 }
+            return { current: ctx.directorBest >= c.minScore ? 1 : 0, target: 1 }
     }
 }
 
@@ -290,4 +291,22 @@ export function lessonCompleteScreen(lesson: Lesson, quizResults: Record<string,
     if (missed) rows.push({ label: `${missed} câu chưa đúng, nên xem lại`, xp: 0 })
     const headline = corrected ? 'Sai một lần, hiểu tận gốc.' : missed ? 'Xong bài. Còn vài chỗ cần xem lại.' : 'Gọn gàng, không sót câu nào.'
     return { context: `Hoàn thành · ${lesson.title}`, headline, rows, masteryConceptId: conceptId, next: { label: 'Học tiếp', to: '/learning' } }
+}
+
+/** XP Virtual Director: chỉ thưởng khi đạt từ 70 điểm và vượt kỷ lục cũ, để không cày bằng cách chụp lặp. */
+export const DIRECTOR_MIN_SCORE = 70
+export const directorXp = (score: number, best: number) =>
+    score >= DIRECTOR_MIN_SCORE && score > best ? Math.min(60, 20 + (score - DIRECTOR_MIN_SCORE) * 2) : 0
+
+/** Màn thưởng khi đạt điểm cao ở Virtual Director. */
+export function directorScreen(score: number, composition: number, lighting: number): RewardScreen {
+    return {
+        context: 'Virtual Director · Studio 3D',
+        headline: score >= 90 ? 'Khung hình của một đạo diễn thực thụ.' : 'Bố cục và ánh sáng đã vào form.',
+        rows: [
+            { label: `Bố cục ${composition} · Ánh sáng ${lighting}`, xp: 0 },
+            { label: `Kỷ lục mới ${score}/100 · thưởng theo điểm`, xp: directorXp(score, 0), highlight: true },
+        ],
+        next: { label: 'Chụp tiếp', to: '/studio' },
+    }
 }

@@ -28,3 +28,11 @@ export const CAMPUS = {
     skyLight: '#FFE9E0',
     groundLight: '#5A2A28',
 } as const
+
+// Màu vật thể và ánh sáng của studio Virtual Director (cảnh 3D, không đổi theo giao diện sáng/tối).
+export const STUDIO = {
+    floor: '#D9D2CB', backdrop: '#B9B0A8', plinth: '#8E0E13',
+    skin: '#E8B99A', suit: '#2B2B33', scarf: '#C4161C',
+    propBlue: '#3E7BD6', propYellow: '#EFC86E', propGreen: '#5E9E6A', column: '#F4EEE4',
+    key: '#FFE2C2', fill: '#CFE0FF', rim: '#FFB3A8', ambient: '#FFFFFF',
+} as const

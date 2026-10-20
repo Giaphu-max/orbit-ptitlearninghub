@@ -256,6 +256,7 @@ function Badges() {
     const conceptMastery = useOrbitStore((s) => s.conceptMastery)
     const quizResults = useOrbitStore((s) => s.quizResults)
     const streak = useOrbitStore((s) => s.streak)
+    const directorBest = useOrbitStore((s) => s.directorBest)
 
     return (
         <section aria-labelledby="badges-title">
@@ -266,7 +267,7 @@ function Badges() {
             <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {badges.map((b) => {
                     const has = earned.includes(b.id)
-                    const { current, target } = badgeProgress(b, { conceptMastery, quizResults, streak })
+                    const { current, target } = badgeProgress(b, { conceptMastery, quizResults, streak, directorBest })
                     return (
                         <li key={b.id} className={`flex flex-col gap-4 rounded-card border p-5 ${has ? 'border-brand-200 bg-card shadow-card' : 'border-border bg-muted/50'}`}>
                             <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-muted-foreground'}`}>

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
-import { advanceStreak, dailyFor, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
+import { advanceStreak, dailyFor, directorXp, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
 // Lưu localStorage; mọi thao tác storage bọc try/catch để chế độ ẩn danh
@@ -58,6 +58,8 @@ interface OrbitState {
     earnedBadgeIds: string[]
     /** Kết quả từng câu gốc; chỉ ghi lần đầu nên làm lại không được cộng XP thêm */
     quizResults: Record<string, QuizResult>
+    /** Điểm tổng cao nhất ở Virtual Director (0 = chưa chụp) */
+    directorBest: number
     /** Tiến độ nhiệm vụ trong ngày; sang ngày mới thì tự bắt đầu lại */
     daily: DailyState
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
@@ -78,6 +80,8 @@ interface OrbitState {
     recordQuizResult: (input: RecordQuizInput) => number
     /** Nhận thưởng một nhiệm vụ đã xong; trả về XP được cộng (0 nếu chưa đủ hoặc đã nhận) */
     claimMission: (missionId: string) => number
+    /** Ghi điểm một lần chụp ở Virtual Director; trả về XP được cộng (0 nếu chưa vượt kỷ lục hoặc dưới 70 điểm) */
+    recordDirectorScore: (score: number) => number
     resetDemo: () => void
 }
 
@@ -104,6 +108,7 @@ export function makeDemoProfile() {
         conceptMastery: { 'dung-tuyen-tinh': 0.92, 'dung-phi-tuyen': 0.85, 'tinh-phi-huy-hoai': 0.62, 'tu-duy-dung': 0.4, 'nhip-hinh': 0.25 } as Record<string, number>,
         earnedBadgeIds: ['chuoi-7-ngay'],
         quizResults: {} as Record<string, QuizResult>,
+        directorBest: 0,
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
         lessonReview: {} as Record<string, ReviewStatus>,
         lessonEdits: {} as Record<string, LessonEdits>,
@@ -208,10 +213,22 @@ export const useOrbitStore = create<OrbitState>()(
                         conceptMastery,
                         streak,
                         daily,
-                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults, streak }, s.earnedBadgeIds),
+                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults, streak, directorBest: s.directorBest }, s.earnedBadgeIds),
                         lessonProgress: { ...s.lessonProgress, [lessonId]: { ...progress, completed: progress.completed || done } },
                     }
                 })
+                return xp
+            },
+
+            recordDirectorScore: (score) => {
+                const s0 = get()
+                const xp = directorXp(score, s0.directorBest)
+                if (score <= s0.directorBest) return 0
+                set((s) => ({
+                    xp: s.xp + xp,
+                    directorBest: score,
+                    earnedBadgeIds: evaluateBadges({ conceptMastery: s.conceptMastery, quizResults: s.quizResults, streak: s.streak, directorBest: score }, s.earnedBadgeIds),
+                }))
                 return xp
             },
 
@@ -227,7 +244,7 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 3,
+            version: 4,
             // Phiên bản cũ chưa có hồ sơ demo: bỏ để dùng hồ sơ mặc định mới
             migrate: () => makeDemoProfile() as unknown as OrbitState,
             storage: createJSONStorage(() => safeLocalStorage),

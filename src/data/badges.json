@@ -3,18 +3,40 @@
     "id": "nha-dung-phi-tuyen",
     "name": "Nhà dựng phi tuyến",
     "description": "Nắm vững dựng phi tuyến và tính phi hủy hoại (từ 80% trở lên).",
-    "criterion": { "type": "concept-mastery", "conceptIds": ["dung-phi-tuyen", "tinh-phi-huy-hoai"], "threshold": 0.8 }
+    "criterion": {
+      "type": "concept-mastery",
+      "conceptIds": [
+        "dung-phi-tuyen",
+        "tinh-phi-huy-hoai"
+      ],
+      "threshold": 0.8
+    }
   },
   {
     "id": "hoc-tu-loi-sai",
     "name": "Học từ lỗi sai",
     "description": "Sửa đúng 5 câu hỏi sau khi đã trả lời sai.",
-    "criterion": { "type": "corrected-mistakes", "count": 5 }
+    "criterion": {
+      "type": "corrected-mistakes",
+      "count": 5
+    }
   },
   {
     "id": "chuoi-7-ngay",
     "name": "Bền bỉ 7 ngày",
     "description": "Học đều 7 ngày liên tiếp.",
-    "criterion": { "type": "streak", "days": 7 }
+    "criterion": {
+      "type": "streak",
+      "days": 7
+    }
+  },
+  {
+    "id": "dao-dien-hinh-anh",
+    "name": "Đạo diễn hình ảnh",
+    "description": "Đạt từ 80 điểm ở Virtual Director: bố cục và ánh sáng đều ổn.",
+    "criterion": {
+      "type": "director-score",
+      "minScore": 80
+    }
   }
 ]

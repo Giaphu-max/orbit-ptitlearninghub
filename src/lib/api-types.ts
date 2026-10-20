@@ -37,3 +37,52 @@ export interface ChatResponse {
 export interface ApiErrorBody {
     error: string
 }
+
+// ── Virtual Director: chấm ảnh chụp từ studio 3D ────────────────────────────
+
+export const GRADE_LIMITS = {
+    /** Ảnh JPEG base64 (không kèm tiền tố data:) tối đa ~1,5 MB */
+    imageMaxChars: 2_000_000,
+} as const
+
+/** Thông số máy và đèn lúc chụp, gửi kèm để AI chỉ ra nguyên nhân bằng ngôn ngữ nhiếp ảnh. */
+export interface DirectorSetup {
+    focalLengthMm: number
+    /** Góc xoay quanh chủ thể (độ), 0 = chính diện */
+    azimuthDeg: number
+    elevationDeg: number
+    distance: number
+    /** Cường độ đèn 0–100 */
+    key: number
+    fill: number
+    rim: number
+    /** Góc đèn chính so với trục máy ảnh (độ, âm = bên trái) */
+    keyAngleDeg: number
+}
+
+export interface GradePhotoRequest {
+    /** JPEG base64, không kèm tiền tố data: */
+    imageBase64: string
+    setup: DirectorSetup
+}
+
+/** Vùng cần chỉnh, toạ độ 0–1 so với khung ảnh (gốc ở góc trên trái). */
+export interface FocusArea {
+    x: number
+    y: number
+    w: number
+    h: number
+    note: string
+}
+
+export interface GradePhotoResponse {
+    /** Điểm 0–100 */
+    composition: number
+    lighting: number
+    overall: number
+    compositionComment: string
+    lightingComment: string
+    /** Việc nên chỉnh tiếp theo, ngắn gọn */
+    tips: string[]
+    areas: FocusArea[]
+}
