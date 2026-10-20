@@ -1,4 +1,6 @@
 import type { ApiErrorBody, ChatRequest, ChatResponse, GradePhotoRequest, GradePhotoResponse } from './api-types'
+import type { EnvironmentRequest, EnvironmentSpec } from './environment'
+import { validateEnvironment } from './environment'
 import type { ExplainRequest, ExplainResponse } from './quiz'
 
 // Gọi các hàm serverless trong api/. Trình duyệt không bao giờ gọi Gemini trực tiếp.
@@ -49,3 +51,18 @@ export const gradePhoto = (req: GradePhotoRequest) => postJson<GradePhotoRespons
         timeoutMessage: 'AI chấm ảnh lâu quá. Bạn bấm chụp lại nhé.',
         fallbackMessage: 'AI chưa chấm được ảnh lúc này. Bạn thử lại nhé.',
     })
+
+/** Prompt-to-Environment: mô tả ánh sáng → thông số đèn. JSON được kiểm tra lại ở trình duyệt trước khi trả về. */
+export async function generateEnvironment(req: EnvironmentRequest): Promise<EnvironmentSpec> {
+    const raw = await postJson<unknown>('/api/environment', req, {
+        timeoutMs: 60_000,
+        timeoutMessage: 'AI nghĩ lâu quá, cảnh được giữ nguyên. Bạn thử lại nhé.',
+        fallbackMessage: 'AI chưa tạo được ánh sáng lúc này, cảnh được giữ nguyên. Bạn thử lại nhé.',
+    })
+    try {
+        return validateEnvironment(raw)
+    } catch (err) {
+        console.error(err)
+        throw new ApiRequestError('AI trả về thông số ánh sáng chưa hợp lệ, cảnh được giữ nguyên. Bạn thử mô tả lại nhé.')
+    }
+}

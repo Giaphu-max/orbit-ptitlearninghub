@@ -1,10 +1,11 @@
 import { lazy, Suspense, useCallback, useRef, useState } from 'react'
 import { Camera, Grid3x3, Loader2, RotateCcw, Sparkles } from 'lucide-react'
 import type { GradePhotoResponse } from '@/lib/api-types'
-import { ApiRequestError, gradePhoto } from '@/lib/api'
+import { ApiRequestError, generateEnvironment, gradePhoto } from '@/lib/api'
+import { ENV_LIMITS } from '@/lib/environment'
 import { announceRewards, directorScreen, DIRECTOR_MIN_SCORE } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
-import { DEFAULT_SETUP, type CameraSetup, type CaptureFn } from '@/components/studio/studio-scene'
+import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup, type CaptureFn } from '@/components/studio/studio-scene'
 
 // Phần 3D tải riêng (three.js + R3F nặng).
 const StudioScene = lazy(() => import('@/components/studio/studio-scene'))
@@ -17,6 +18,8 @@ function canRender3D() {
         return false
     }
 }
+
+const ENV_SUGGESTIONS = ['Hoàng hôn gắt, bóng đổ dài', 'Ánh sáng studio mềm chụp chân dung', 'Đêm có sương, đèn viền lạnh', 'Nắng trưa gắt từ trên cao']
 
 type Phase =
     | { kind: 'live' }
@@ -32,6 +35,8 @@ export function OrbitStudioView() {
     const captureRef = useRef<CaptureFn | null>(null)
     const directorBest = useOrbitStore((s) => s.directorBest)
     const [webgl] = useState(canRender3D)
+    const [envPrompt, setEnvPrompt] = useState('')
+    const [env, setEnv] = useState<{ kind: 'idle' } | { kind: 'loading' } | { kind: 'done'; prompt: string; explanation: string } | { kind: 'error'; message: string }>({ kind: 'idle' })
 
     const onReady = useCallback((fn: CaptureFn) => {
         captureRef.current = fn
@@ -45,7 +50,7 @@ export function OrbitStudioView() {
         setPhase({ kind: 'grading', image: dataUrl })
         try {
             // Chỉ gửi thông số nhiếp ảnh; dịch khung đã thể hiện trong ảnh
-            const { shiftX: _x, shiftY: _y, ...director } = setup
+            const { shiftX: _x, shiftY: _y, look: _look, ...director } = setup
             const result = await gradePhoto({ imageBase64: base64, setup: director })
             const before = useOrbitStore.getState()
             const xp = before.recordDirectorScore(result.overall)
@@ -54,6 +59,20 @@ export function OrbitStudioView() {
             setPhase({ kind: 'result', image: dataUrl, result })
         } catch (err) {
             setPhase({ kind: 'error', message: err instanceof ApiRequestError ? err.message : 'AI chưa chấm được lúc này. Bạn thử lại nhé.' })
+        }
+    }
+
+    const applyEnvironment = async (text: string) => {
+        const prompt = text.trim()
+        if (!prompt || env.kind === 'loading') return
+        setEnv({ kind: 'loading' })
+        try {
+            const spec = await generateEnvironment({ prompt })
+            // Chỉ đổi cảnh khi đã có thông số hợp lệ; lỗi thì cảnh cũ được giữ nguyên
+            setSetup((s) => setupFromEnvironment(s, spec))
+            setEnv({ kind: 'done', prompt, explanation: spec.explanation })
+        } catch (err) {
+            setEnv({ kind: 'error', message: err instanceof ApiRequestError ? err.message : 'AI chưa tạo được ánh sáng lúc này, cảnh được giữ nguyên. Bạn thử lại nhé.' })
         }
     }
 
@@ -131,6 +150,62 @@ export function OrbitStudioView() {
                             <Slider label="Khoảng cách" unit="m" min={3} max={10} step={0.1} value={setup.distance} onChange={set('distance')} />
                             <Slider label="Dịch khung ngang" min={-0.4} max={0.4} step={0.01} value={setup.shiftX} onChange={set('shiftX')} format={(v) => `${Math.round(v * 100)}%`} />
                             <Slider label="Dịch khung dọc" min={-0.4} max={0.4} step={0.01} value={setup.shiftY} onChange={set('shiftY')} format={(v) => `${Math.round(v * 100)}%`} />
+                        </Panel>
+                        <Panel title="Mô tả ánh sáng bằng lời">
+                            <form
+                                className="flex flex-col gap-3"
+                                onSubmit={(e) => {
+                                    e.preventDefault()
+                                    void applyEnvironment(envPrompt)
+                                }}
+                            >
+                                <label className="block">
+                                    <span className="sr-only">Mô tả ánh sáng</span>
+                                    <textarea
+                                        value={envPrompt}
+                                        onChange={(e) => setEnvPrompt(e.target.value)}
+                                        maxLength={ENV_LIMITS.promptMaxChars}
+                                        rows={2}
+                                        placeholder="Ví dụ: hoàng hôn gắt, bóng đổ dài"
+                                        className="w-full resize-none rounded-md border border-input bg-card px-3 py-2 text-[15px] text-foreground transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                                    />
+                                </label>
+                                <ul className="flex flex-wrap gap-2" aria-label="Gợi ý nhanh">
+                                    {ENV_SUGGESTIONS.map((t) => (
+                                        <li key={t}>
+                                            <button
+                                                type="button"
+                                                disabled={env.kind === 'loading'}
+                                                onClick={() => {
+                                                    setEnvPrompt(t)
+                                                    void applyEnvironment(t)
+                                                }}
+                                                className="rounded-full border border-border bg-card px-3 py-1.5 text-left text-[12px] font-semibold text-foreground transition hover:border-brand-300 disabled:opacity-50"
+                                            >
+                                                {t}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <button
+                                    type="submit"
+                                    disabled={env.kind === 'loading' || !envPrompt.trim()}
+                                    className="inline-flex items-center justify-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background transition hover:opacity-90 disabled:opacity-50"
+                                >
+                                    {env.kind === 'loading' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                                    {env.kind === 'loading' ? 'AI đang bố trí đèn…' : 'Tạo ánh sáng'}
+                                </button>
+                            </form>
+                            {env.kind === 'error' && (
+                                <p role="alert" className="rounded-card border border-border bg-muted px-4 py-3 text-sm text-foreground">{env.message}</p>
+                            )}
+                            {env.kind === 'done' && (
+                                <div role="status" className="rounded-card border border-brand-100 bg-brand-50 px-4 py-3">
+                                    <p className="text-eyebrow uppercase text-brand-ink">Vì sao chọn vậy</p>
+                                    <p className="mt-1.5 text-sm leading-relaxed text-foreground">{env.explanation}</p>
+                                    <p className="mt-2 text-xs text-muted-foreground">Bạn vẫn chỉnh tiếp được bằng thanh trượt bên dưới.</p>
+                                </div>
+                            )}
                         </Panel>
                         <Panel title="Ánh sáng ba điểm">
                             <Slider label="Đèn chính" unit="%" min={0} max={100} step={1} value={setup.key} onChange={set('key')} />
