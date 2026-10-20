@@ -19,5 +19,6 @@ export const getLessonsOfCourse = (courseId: string) => lessons.filter((l) => l.
 
 export const allConcepts = lessons.flatMap((l) => l.concepts)
 export const getConcept = (id: string) => allConcepts.find((c) => c.id === id)
+export const getConceptLesson = (conceptId: string) => lessons.find((l) => l.concepts.some((c) => c.id === conceptId))
 
 export type * from './types'

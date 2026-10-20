@@ -77,19 +77,26 @@ export interface SourceRef {
     start: Seconds
 }
 
-export interface DailyParagraph {
-    text: string
-    sources: SourceRef[]
-}
+/**
+ * Một khối của bài Daily. Trong `text` (và `items`), từ khóa khái niệm được đánh dấu
+ * dạng `{{conceptId|từ hiển thị}}`; giao diện tách ra bằng parseInline (src/lib/daily-text.ts).
+ */
+export type DailyBlock =
+    | { type: 'hook'; text: string; sources: SourceRef[] }
+    | { type: 'paragraph'; text: string; sources: SourceRef[] }
+    | { type: 'quote'; text: string; sources: SourceRef[] }
+    | { type: 'keypoint'; text: string; sources: SourceRef[] }
+    | { type: 'bullets'; items: string[]; sources: SourceRef[] }
+    | { type: 'example'; text: string; sources: SourceRef[] }
+    /** Câu kiểm tra nhanh; trả lời đúng mới tính hoàn thành bài */
+    | { type: 'check'; question: QuizChoiceQuestion; sources: SourceRef[] }
 
 export interface DailyArticle {
     id: string
     title: string
     readingMinutes: number
     conceptIds: string[]
-    paragraphs: DailyParagraph[]
-    /** 1–2 câu kiểm tra nhanh; trả lời đúng mới tính hoàn thành */
-    checks: QuizChoiceQuestion[]
+    blocks: DailyBlock[]
     origin: ContentOrigin
 }
 

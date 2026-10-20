@@ -1,6 +1,7 @@
 import type {
     Concept,
     DailyArticle,
+    DailyBlock,
     Lesson,
     LessonQuizQuestion,
     QuizChoiceQuestion,
@@ -218,6 +219,15 @@ function resolveSource(src: SourceRef, lessons: Lesson[]): SourceRef | null {
     return Math.abs(nearest.start - src.start) <= 15 ? { lessonId: lesson.id, start: nearest.start } : null
 }
 
+const MARK = /\{\{([^|}]*)\|([^}]*)\}\}/g
+
+/** Giữ dấu khái niệm hợp lệ `{{id|chữ}}`; id lạ thì bỏ dấu, giữ chữ. Dấu `{{` lỗi còn sót thì xóa. */
+function cleanMarks(text: string, known: Set<string>, keep: boolean): string {
+    // Dấu hợp lệ tạm đổi sang ký tự điều khiển để bước xóa `{{`/`}}` lỗi còn sót không đụng tới
+    const out = text.replace(MARK, (_m, id: string, label: string) => (keep && known.has(id.trim()) ? `\u0001${id.trim()}|${label.trim()}\u0002` : label.trim()))
+    return out.replace(/\{\{|\}\}/g, '').replace(/\u0001/g, '{{').replace(/\u0002/g, '}}').trim()
+}
+
 export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles: DailyArticle[]; report: Report } {
     const report: Report = { warnings: [], errors: [] }
     const knownConcepts = new Set(lessons.flatMap((l) => l.concepts.map((c) => c.id)))
@@ -231,50 +241,78 @@ export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles
             return
         }
 
-        const paragraphs = a.paragraphs
-            .map((p) => {
-                const seen = new Set<string>()
-                const sources = p.sources
-                    .map((s) => resolveSource(s, lessons))
-                    .filter((s): s is SourceRef => !!s && !seen.has(`${s.lessonId}@${s.start}`) && !!seen.add(`${s.lessonId}@${s.start}`))
-                return { text: p.text.trim(), sources }
-            })
-            .filter((p) => {
-                if (!p.sources.length) report.warnings.push(`${label}: bỏ một đoạn không có nguồn hợp lệ`)
-                return p.text && p.sources.length
-            })
-        if (paragraphs.length < 2) {
-            report.warnings.push(`${label}: bỏ vì còn dưới 2 đoạn có dẫn nguồn`)
-            return
+        // Id theo vị trí trong lượt tạo, không theo tiêu đề: tiêu đề sửa hay chuẩn hóa lại thì link và tiến độ đã lưu không mất
+        const id = `daily-${idx + 1}`
+        let checkNo = 0
+        const blocks: DailyBlock[] = []
+        for (const b of a.blocks) {
+            const seen = new Set<string>()
+            const sources = b.sources
+                .map((s) => resolveSource(s, lessons))
+                .filter((s): s is SourceRef => !!s && !seen.has(`${s.lessonId}@${s.start}`) && !!seen.add(`${s.lessonId}@${s.start}`))
+            if (!sources.length) {
+                report.warnings.push(`${label}: bỏ một khối ${b.type} không có nguồn hợp lệ`)
+                continue
+            }
+            const marked = b.type !== 'quote'
+            const text = cleanMarks(b.text ?? '', knownConcepts, marked)
+            if (b.type === 'bullets') {
+                const items = (b.items ?? []).map((i) => cleanMarks(i, knownConcepts, true)).filter(Boolean)
+                if (items.length < 2) report.warnings.push(`${label}: bỏ khối bullets có dưới 2 ý`)
+                else blocks.push({ type: 'bullets', items, sources })
+            } else if (b.type === 'check') {
+                const c = b.question
+                if (!c) {
+                    report.warnings.push(`${label}: bỏ khối check thiếu câu hỏi`)
+                    continue
+                }
+                const qid = `${id}-c${++checkNo}`
+                blocks.push({
+                    type: 'check',
+                    sources,
+                    question: {
+                        id: qid,
+                        conceptId: knownConcepts.has(c.conceptId) ? c.conceptId : conceptIds[0],
+                        prompt: c.prompt.trim(),
+                        ...shuffleOptions(c, qid),
+                        explanation: c.explanation.trim(),
+                    },
+                })
+            } else if (text) {
+                // Nhãn "Điểm cốt lõi" đã có ở giao diện, bỏ phần Gemini tự thêm vào đầu câu
+                blocks.push({ type: b.type, text: b.type === 'keypoint' ? text.replace(/^điểm cốt lõi\s*[:：-]\s*/i, '') : text, sources })
+            }
         }
 
+        const count = (t: DailyBlock['type']) => blocks.filter((b) => b.type === t).length
+        if (!count('check')) {
+            report.warnings.push(`${label}: bỏ vì không có câu kiểm tra`)
+            return
+        }
+        if (count('paragraph') + count('keypoint') + count('example') < 3) {
+            report.warnings.push(`${label}: bỏ vì còn quá ít khối nội dung`)
+            return
+        }
+        // hook phải đứng đầu, check dồn về cuối
+        blocks.sort((x, y) => rank(x.type) - rank(y.type))
+
         // Daily là bài tổng hợp: nguồn phải đến từ ít nhất 2 bài giảng khác nhau
-        const sourceLessons = new Set(paragraphs.flatMap((p) => p.sources.map((s) => s.lessonId)))
+        const sourceLessons = new Set(blocks.flatMap((b) => b.sources.map((s) => s.lessonId)))
         if (sourceLessons.size < 2) {
             report.warnings.push(`${label}: bỏ vì chỉ dẫn nguồn từ ${sourceLessons.size} bài giảng (cần ít nhất 2)`)
             return
         }
 
-        // Id theo vị trí trong lượt tạo, không theo tiêu đề: tiêu đề sửa hay chuẩn hóa lại thì link và tiến độ đã lưu không mất
-        const id = `daily-${idx + 1}`
-        const checks = a.checks.map((c, i): QuizChoiceQuestion => {
-            const qid = `${id}-c${i + 1}`
-            return {
-                id: qid,
-                conceptId: knownConcepts.has(c.conceptId) ? c.conceptId : conceptIds[0],
-                prompt: c.prompt.trim(),
-                ...shuffleOptions(c, qid),
-                explanation: c.explanation.trim(),
-            }
-        })
-        const words = paragraphs.reduce((n, p) => n + p.text.split(/\s+/).length, 0)
+        const marks = blocks.reduce((n, b) => n + (b.type === 'bullets' ? b.items : b.type === 'check' ? [] : [b.text]).reduce((m, t) => m + (t.match(MARK)?.length ?? 0), 0), 0)
+        if (marks < 2) report.warnings.push(`${label}: chỉ có ${marks} từ khóa được đánh dấu`)
+
+        const words = blocks.reduce((n, b) => n + (b.type === 'bullets' ? b.items.join(' ') : b.type === 'check' ? '' : b.text).replace(MARK, '$2').split(/\s+/).length, 0)
         articles.push({
             id,
             title: normalizeTitle(a.title),
-            readingMinutes: Math.min(3, Math.max(1, Math.round(words / 180))),
+            readingMinutes: Math.min(3, Math.max(1, Math.round(words / 150))),
             conceptIds,
-            paragraphs,
-            checks,
+            blocks,
             origin: 'gemini',
         })
     })
@@ -283,3 +321,6 @@ export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles
     if (missing.length) report.warnings.push(`Khái niệm chưa có bài Daily nào: ${missing.join(', ')}`)
     return { articles, report }
 }
+
+/** Thứ tự cố định: hook, nội dung, check. Giữ nguyên thứ tự Gemini trong từng nhóm (sort ổn định). */
+const rank = (t: DailyBlock['type']) => (t === 'hook' ? 0 : t === 'check' ? 2 : 1)

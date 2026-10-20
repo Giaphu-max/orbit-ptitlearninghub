@@ -1,4 +1,5 @@
 import { dailyArticles, lessons } from '@/data'
+import { checkBlocks } from '@/lib/daily-text'
 import type { DailyArticle, Lesson, QuizChoiceQuestion } from '@/data/types'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { OUTCOME_MASTERY } from '@/lib/quiz'
@@ -56,7 +57,7 @@ export function buildQuestionBank(lessons: Lesson[], daily: DailyArticle[] = dai
         }
     }
     for (const a of daily) {
-        for (const c of a.checks) {
+        for (const { question: c } of checkBlocks(a)) {
             const lessonId = conceptLesson.get(c.conceptId)
             const ok = standaloneQuestion(c)
             if (lessonId && ok) bank.push({ ...ok, lessonId })
@@ -145,7 +146,7 @@ export function reviewStepFor(conceptId: string): ReviewStep | null {
         const concept = lesson.concepts.find((c) => c.id === conceptId)
         if (!concept) continue
         const direct = dailyArticles.filter((a) => a.conceptIds.includes(conceptId))
-        const viaSource = dailyArticles.filter((a) => !direct.includes(a) && a.paragraphs.some((p) => p.sources.some((s) => s.lessonId === lesson.id && s.start >= concept.segment.start - 5 && s.start < concept.segment.end)))
+        const viaSource = dailyArticles.filter((a) => !direct.includes(a) && a.blocks.some((p) => p.sources.some((s) => s.lessonId === lesson.id && s.start >= concept.segment.start - 5 && s.start < concept.segment.end)))
         return {
             conceptId,
             conceptName: concept.name,

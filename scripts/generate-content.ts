@@ -149,7 +149,7 @@ Yêu cầu:
 - quiz: 4–6 câu, mỗi khái niệm quan trọng một câu, pauseAt ngay sau khi giảng xong khái niệm đó; answerSegment là đoạn video giảng viên nói ra đáp án (thường trùng đoạn giảng khái niệm, 10–60 giây). Câu hỏi kiểm tra hiểu và vận dụng (tình huống dựng phim thực tế, chọn thao tác phù hợp…), không hỏi chi tiết vụn vặt. 4 phương án, phương án sai là những hiểu lầm sinh viên hay mắc. Mỗi câu kèm đúng 1 câu biến thể cùng khái niệm, cùng độ khó, khác tình huống.`
 
 /** Đổi khi sửa prompt Daily để cache cũ không bị dùng lại. */
-const DAILY_PROMPT_VERSION = 'cross-lesson-v3'
+const DAILY_PROMPT_VERSION = 'blocks-v1'
 
 function dailyPrompt(lessons: Lesson[], count: number) {
     const context = lessons
@@ -166,10 +166,18 @@ Viết ${count} bài đọc. Yêu cầu:
 - Giữa ${count} bài, các cặp bài giảng được nối nên khác nhau; cố gắng phủ cả ${lessons.length} bài giảng.
 - Mỗi bài gắn 3–5 khái niệm, trong đó có khái niệm của ít nhất 2 bài giảng khác nhau. Chia sao cho MỌI khái niệm trong danh sách đều được ít nhất một bài gắn và bàn tới thật sự trong nội dung (không gắn cho có).
 - Tiêu đề viết kiểu tiếng Việt: chỉ viết hoa chữ đầu và tên riêng, KHÔNG viết hoa từng chữ. Chỉ kết thúc bằng dấu "?" khi tiêu đề thật sự là câu hỏi; tiêu đề nhận định thì không có dấu "?".
-- Tổng 350–500 chữ (đọc 2–3 phút): 4–5 đoạn, mỗi đoạn 80–110 chữ, giọng gần gũi, có ví dụ tình huống thực tế trong chủ đề của video. Đoạn nào nối hai bài thì nói rõ ý nào đến từ bài nào.
-- Chỉ dùng kiến thức có trong transcript, không thêm ngoài. Mỗi đoạn có ít nhất một nguồn {lessonId, start}; đoạn nối nhiều bài thì ghi nguồn của từng bài. lessonId và start phải lấy ĐÚNG giá trị trong ngoặc vuông của đoạn transcript chứa ý đó (đừng tự đoán mốc).
-- conceptIds lấy đúng id trong danh sách khái niệm.
-- checks: 1–2 câu kiểm tra nhanh 4 phương án, trả lời được nếu đọc kỹ bài; nên có một câu đòi hỏi nối ý của hai bài.
+- Mỗi bài là DANH SÁCH KHỐI có kiểu (blocks), theo đúng thứ tự sau:
+  1. hook: đúng 1 khối đầu, một câu mở lớn gây tò mò hoặc nêu một nghịch lý (tối đa 20 chữ).
+  2. paragraph: 2–3 khối, mỗi khối NGẮN, tối đa 3 câu (khoảng 40–60 chữ). Khối nối hai bài thì nói rõ ý nào đến từ bài nào.
+  3. quote: 1 khối, một câu đáng nhớ lấy sát lời giảng viên trong transcript (tối đa 25 chữ).
+  4. keypoint: 1 khối "Điểm cốt lõi", 1–2 câu chốt ý quan trọng nhất của bài.
+  5. bullets: 0–1 khối, trường items gồm 3–4 ý ngắn (mỗi ý tối đa 15 chữ).
+  6. example: 1 khối ví dụ áp dụng một tình huống thực tế trong chủ đề của video (2–3 câu).
+  7. check: 1–2 khối cuối, trường question là câu kiểm tra 4 phương án, trả lời được nếu đọc kỹ bài; nên có một câu đòi hỏi nối ý của hai bài. Khối check vẫn ghi sources là đoạn transcript chứa đáp án.
+- Tổng nội dung chữ khoảng 300–450 chữ (đọc 2–3 phút).
+- Từ khóa khái niệm: trong text của hook/paragraph/keypoint/example và trong items, đánh dấu cụm từ chính là một khái niệm bằng {{conceptId|cụm từ hiển thị}} (ví dụ {{dung-phi-tuyen|dựng phi tuyến}}); conceptId lấy ĐÚNG từ danh sách khái niệm; cụm hiển thị 1–4 chữ, giữ nguyên cách viết tự nhiên trong câu. Mỗi khái niệm gắn cho bài chỉ cần đánh dấu ở lần xuất hiện đầu tiên; mỗi bài có 3–6 từ khóa được đánh dấu. Không đánh dấu trong quote và check.
+- Chỉ dùng kiến thức có trong transcript, không thêm ngoài. Mọi khối đều có sources (ít nhất một {lessonId, start}); khối nối nhiều bài thì ghi nguồn của từng bài. lessonId và start phải lấy ĐÚNG giá trị trong ngoặc vuông của đoạn transcript chứa ý đó (đừng tự đoán mốc).
+- conceptIds của bài lấy đúng id trong danh sách khái niệm.
 - Các bài không trùng nội dung với nhau.
 
 ${context}`

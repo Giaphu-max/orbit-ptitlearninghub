@@ -85,24 +85,30 @@ export function fromWireDraft(wire: LessonDraftWire): LessonDraft {
 }
 export type LessonDraft = z.infer<typeof LessonDraft>
 
+const DailySource = z.object({ lessonId: z.string(), start: seconds })
+
+/**
+ * Khối bài Daily ở dạng phẳng (Gemini xử lý schema phẳng ổn định hơn union):
+ * trường nào không thuộc kiểu khối thì bỏ trống. normalizeDaily đổi sang DailyBlock.
+ */
+export const DailyBlockDraft = z.object({
+    type: z.enum(['hook', 'paragraph', 'quote', 'keypoint', 'bullets', 'example', 'check']),
+    text: z.string().optional().describe('Nội dung khối (mọi kiểu trừ bullets và check). Từ khóa khái niệm đánh dấu {{conceptId|từ hiển thị}}'),
+    items: z.array(z.string()).optional().describe('Chỉ cho bullets: 3–4 ý ngắn, mỗi ý tối đa 15 chữ'),
+    question: ChoiceQuestionDraft.optional().describe('Chỉ cho check'),
+    sources: z
+        .array(DailySource)
+        .min(1)
+        .describe('Nguồn: lessonId và start lấy đúng từ các đoạn transcript đã cho; khối nối nhiều bài thì ghi nguồn của từng bài'),
+})
+export type DailyBlockDraft = z.infer<typeof DailyBlockDraft>
+
 export const DailyDraft = z.object({
     articles: z.array(
         z.object({
             title: z.string().describe('Tiêu đề gợi tò mò, dạng câu hỏi hoặc nhận định, tiếng Việt; chỉ viết hoa chữ đầu và tên riêng; chỉ dùng "?" khi là câu hỏi thật'),
             conceptIds: z.array(z.string()).min(2).describe('id khái niệm bài đọc ôn lại, lấy từ danh sách đã cho; gồm khái niệm của ít nhất 2 bài giảng khác nhau'),
-            paragraphs: z
-                .array(
-                    z.object({
-                        text: z.string().describe('Đoạn văn 80–110 chữ'),
-                        sources: z
-                            .array(z.object({ lessonId: z.string(), start: seconds }))
-                            .min(1)
-                            .describe('Nguồn: lessonId và start lấy đúng từ các đoạn transcript đã cho; đoạn nối nhiều bài thì ghi nguồn của từng bài'),
-                    }),
-                )
-                .min(4)
-                .max(5),
-            checks: z.array(ChoiceQuestionDraft).min(1).max(2),
+            blocks: z.array(DailyBlockDraft).min(6).max(12),
         }),
     ),
 })

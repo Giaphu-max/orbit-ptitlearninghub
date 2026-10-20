@@ -191,7 +191,7 @@ function PriorityCard({ article }: { article: DailyArticle }) {
     const concept = getConcept(weakest)
     const m = mastery[weakest]
     const reason = concept ? (m === undefined ? `Ưu tiên · bạn chưa làm quiz “${concept.name}”` : `Ưu tiên · “${concept.name}” mới nắm ${Math.round(m * 100)}%`) : 'Ưu tiên cho bạn hôm nay'
-    const src = article.paragraphs[0]?.sources[0]
+    const src = article.blocks.find((b) => b.sources.length)?.sources[0]
     const lesson = src ? getLesson(src.lessonId) : undefined
 
     return (
