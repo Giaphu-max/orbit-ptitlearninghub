@@ -512,3 +512,41 @@
   -webkit-backdrop-filter: blur(8px) saturate(100%);
   backdrop-filter: blur(8px) saturate(100%);
 }
+
+
+/* Studio 3D: trạng thái chờ AI dựng ánh sáng, vệt quét khi chấm ảnh, skeleton. Chỉ transform + opacity; reduced-motion đã tắt animation ở trên. */
+@keyframes studio-scan {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(430%); }
+}
+@keyframes studio-veil {
+  from { opacity: 1; }
+  to { opacity: 0.55; }
+}
+@keyframes studio-bulb {
+  50% { transform: scale(1.5); opacity: 0.55; }
+}
+@keyframes studio-scanv {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(430%); }
+}
+@keyframes studio-skel {
+  to { background-position: -200% 0; }
+}
+@keyframes studio-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes studio-pop {
+  from { opacity: 0; transform: scale(1.25); }
+}
+.studio-scan { animation: studio-scan 1.4s cubic-bezier(0.6, 0, 0.4, 1) infinite; }
+.studio-veil { animation: studio-veil 1.6s ease-in-out infinite alternate; }
+.studio-bulb { animation: studio-bulb 1s ease-in-out infinite; }
+.studio-scanv { animation: studio-scanv 1.2s linear infinite; }
+.studio-spin { animation: studio-spin 0.7s linear infinite; }
+.studio-pop { animation: studio-pop 0.4s cubic-bezier(0.34, 1.6, 0.5, 1) both; }
+.studio-skel {
+  background: linear-gradient(90deg, hsl(var(--muted)), hsl(var(--border)), hsl(var(--muted)));
+  background-size: 200% 100%;
+  animation: studio-skel 1.2s linear infinite;
+}

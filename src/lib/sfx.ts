@@ -131,7 +131,35 @@ function whoosh(c: AudioContext, t: number, dur: number) {
     n.stop(t + dur)
 }
 
+/** Tiếng "tách" ngắn của màn trập: nhiễu lọc cao + một nốt trầm nhỏ. */
+function click(c: AudioContext, t: number, vol: number) {
+    const dur = 0.035
+    const n = c.createBufferSource()
+    const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate)
+    const d = buf.getChannelData(0)
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length)
+    n.buffer = buf
+    const f = c.createBiquadFilter()
+    f.type = 'highpass'
+    f.frequency.value = 1800
+    const g = c.createGain()
+    g.gain.value = vol
+    n.connect(f)
+    f.connect(g)
+    g.connect(master!)
+    n.start(t)
+    tone(c, 320, t, 0.05, 'triangle', vol * 0.35)
+}
+
 export const SFX = {
+    /** Màn trập máy ảnh: hai tiếng tách liền nhau, nhẹ. */
+    shutter() {
+        const c = soundOn() && audio()
+        if (!c) return
+        const t = c.currentTime
+        click(c, t, 0.5)
+        click(c, t + 0.075, 0.32)
+    },
     /** Đúng ngay lần đầu; `combo` là số lần đúng liên tiếp (đã tính lần này), mỗi bậc cao hơn một nửa cung, tối đa 6. */
     correct(combo = 1) {
         const c = soundOn() && audio()
