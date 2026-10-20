@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { armAudio } from '@/lib/sound'
+import { armFeedback } from '@/lib/feedback'
+import { armAudio } from '@/lib/sfx'
 import '@fontsource/be-vietnam-pro/400.css'
 import '@fontsource/be-vietnam-pro/500.css'
 import '@fontsource/be-vietnam-pro/600.css'
@@ -14,6 +15,7 @@ import App from './App.tsx'
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
 
 armAudio()
+armFeedback()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -7,7 +7,7 @@ import { ConceptPopover, type OpenConcept } from '@/components/daily/concept-pop
 import { InlineText } from '@/components/daily/inline-text'
 import { SourceChip } from '@/components/daily/source-chip'
 import { checkBlocks } from '@/lib/daily-text'
-import { breakCombo, celebrate } from '@/lib/feedback'
+import { celebrate, reactWrong } from '@/lib/feedback'
 import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -19,6 +19,7 @@ export function OrbitDailyView() {
     const complete = useOrbitStore((s) => s.completeDailyArticle)
     const [chosen, setChosen] = useState<Record<string, number>>({})
     const [concept, setConcept] = useState<OpenConcept | null>(null)
+    const hadWrong = useRef(false)
     const barRef = useRef<HTMLDivElement>(null)
     const articleRef = useRef<HTMLElement>(null)
     const closeConcept = useCallback(() => setConcept(null), [])
@@ -65,10 +66,13 @@ export function OrbitDailyView() {
 
     // Trả lời câu kiểm tra: đúng thì phản hồi ngay (không có XP riêng, XP tính khi hoàn thành bài), sai thì ngắt combo
     const pick = (q: (typeof checks)[number]['question'], n: number, el: HTMLElement) => {
-        const hadWrong = chosen[q.id] !== undefined && chosen[q.id] !== q.correctIndex
+        const fixed = chosen[q.id] !== undefined && chosen[q.id] !== q.correctIndex
         setChosen((m) => ({ ...m, [q.id]: n }))
-        if (n === q.correctIndex) celebrate({ anchor: el, kind: hadWrong ? 'corrected' : 'correct' })
-        else breakCombo()
+        if (n === q.correctIndex) celebrate({ anchor: el, kind: fixed ? 'corrected' : 'correct' })
+        else {
+            hadWrong.current = true
+            reactWrong(el)
+        }
     }
 
     const finish = () => {
@@ -80,7 +84,7 @@ export function OrbitDailyView() {
             after,
             {
                 context: `Hoàn thành · ${article.title}`,
-                headline: 'Thêm một mảnh ghép.',
+                headline: hadWrong.current ? 'Sai một lần, hiểu tận gốc.' : 'Thêm một mảnh ghép.',
                 rows: [
                     { label: 'Đọc xong bài', xp: DAILY_ARTICLE_XP - DAILY_CHECK_XP },
                     { label: 'Trả lời đúng câu kiểm tra', xp: DAILY_CHECK_XP },

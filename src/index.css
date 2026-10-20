@@ -39,6 +39,8 @@
     --reward-from: 358 67% 51%;
     --reward-mid: 358 80% 43%;
     --reward-to: 358 78% 21%;
+    /* Vàng lóe của phần XP vừa cộng trên thanh cấp độ (#FFD27A), cố định ở cả hai giao diện */
+    --reward-gain: 37 100% 74%;
 
     --brand: 358 80% 43%;
     --brand-foreground: 0 0% 100%;

@@ -7,7 +7,7 @@ import { XpChip } from '@/components/xp-chip'
 import { visibleStreak } from '@/lib/gamification'
 import { centerOf, enterRole } from '@/lib/role-switch'
 import { scrollToSection } from '@/lib/scroll'
-import { useSoundStore } from '@/lib/sound'
+import { useSoundStore } from '@/lib/sfx'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
 export type NavTone = 'hero' | 'plain'

@@ -27,6 +27,10 @@ export interface RewardEvent {
     unlocked: string[]
     streak: number
     next: { label: string; to: string }
+    /** Điểm màn nền đỏ lan ra: nút vừa bấm (px trong cửa sổ) */
+    origin?: { x: number; y: number }
+    /** Chờ bao lâu (ms) mới mở màn, để phản hồi tại nút kịp chạy sau khi trả lời */
+    delayMs?: number
 }
 
 interface RewardState {

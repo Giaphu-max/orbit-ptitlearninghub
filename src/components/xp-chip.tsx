@@ -5,7 +5,7 @@ import { xpLandAt } from '@/lib/feedback'
 import { levelFromXp } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
-const COUNT_MS = 300
+const COUNT_MS = 400
 
 /**
  * Chip cấp + XP trên nav: khi XP tăng thì chip nảy và số đếm tăng dần (bắt đầu khi nhãn "+N XP" bay tới).
@@ -30,7 +30,7 @@ export function XpChip({ className }: { className: string }) {
         let raf = 0
         const delay = Math.max(0, xpLandAt() - performance.now())
         const timer = window.setTimeout(() => {
-            chipRef.current?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.16)', offset: 0.35 }, { transform: 'scale(1)' }], { duration: 320, easing: 'cubic-bezier(.3,1.5,.5,1)' })
+            chipRef.current?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)', offset: 0.3 }, { transform: 'scale(1)' }], { duration: 500, easing: 'cubic-bezier(.34,1.8,.5,1)' })
             const t0 = performance.now()
             const tick = (now: number) => {
                 const k = Math.min(1, (now - t0) / COUNT_MS)

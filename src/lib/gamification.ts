@@ -1,6 +1,7 @@
 import { useRewardStore, type RewardEvent, type RewardRow } from '@/store/useRewardStore'
 import { badges, lessons } from '@/data'
 import type { Badge, Concept, Lesson } from '@/data/types'
+import { inputOrigin } from '@/lib/feedback'
 import { QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 import type { QuizResult } from '@/store/useOrbitStore'
 
@@ -256,7 +257,7 @@ export interface RewardScreen {
  * Chỉ truyền `screen` khi xong bài giảng, xong bài Daily hoặc xong test; các hành động còn lại (từng câu quiz,
  * nhiệm vụ, Studio) chỉ nhận phản hồi nhỏ ở chip XP.
  */
-export function announceRewards(before: Snapshot, after: Snapshot, screen?: RewardScreen) {
+export function announceRewards(before: Snapshot, after: Snapshot, screen?: RewardScreen, opts: { afterAnswer?: boolean } = {}) {
     const gained = after.xp - before.xp
     const level = levelFromXp(after.xp)
     const levelUp = level > levelFromXp(before.xp)
@@ -287,6 +288,9 @@ export function announceRewards(before: Snapshot, after: Snapshot, screen?: Rewa
         unlocked,
         streak: after.streak.count,
         next: screen?.next ?? { label: 'Học tiếp', to: '/learning' },
+        origin: inputOrigin(),
+        // Vừa trả lời xong: chờ ~750ms cho tia sáng, chip XP bay vào nav rồi mới mở màn
+        delayMs: opts.afterAnswer ? 750 : 0,
     })
 }
 

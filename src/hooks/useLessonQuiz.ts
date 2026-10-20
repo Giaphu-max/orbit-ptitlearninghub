@@ -105,7 +105,7 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
             // Màn thưởng phủ đỏ chỉ ở khoảnh khắc đáng nhớ: xong bài, lên cấp, huy hiệu mới
             const after = useOrbitStore.getState()
             const lessonDone = !wasDone && (after.lessonProgress[lesson.id]?.completed ?? false)
-            announceRewards(before, after, lessonDone ? lessonCompleteScreen(lesson, after.quizResults, root.conceptId) : undefined)
+            announceRewards(before, after, lessonDone ? lessonCompleteScreen(lesson, after.quizResults, root.conceptId) : undefined, { afterAnswer: true })
         },
         [lesson, recordQuizResult],
     )

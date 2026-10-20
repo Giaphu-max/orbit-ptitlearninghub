@@ -4,7 +4,7 @@ import { motion } from 'motion/react'
 import { ArrowRight, Check, Loader2, PlayCircle, RotateCcw, Sparkles, X } from 'lucide-react'
 import type { Lesson } from '@/data/types'
 import type { QuizPhase, QuizReward } from '@/hooks/useLessonQuiz'
-import { breakCombo, celebrate } from '@/lib/feedback'
+import { celebrate, reactWrong } from '@/lib/feedback'
 import { questionAt, QUIZ_XP } from '@/lib/quiz'
 import { formatTime } from '@/lib/youtube'
 
@@ -64,7 +64,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, reward, onAnswer, o
         if (celebrated.current === key) return
         celebrated.current = key
         if (!answered.correct) {
-            breakCombo()
+            reactWrong(optionRefs.current[answered.chosen] ?? null)
             return
         }
         const r = rewardRef.current
@@ -129,9 +129,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, reward, onAnswer, o
                             aria-checked={isChosen}
                             disabled={!!answered}
                             onClick={() => onAnswer(i)}
-                            animate={isChosen && answered && !answered.correct ? { x: [0, -6, 6, -4, 4, 0] } : {}}
-                            transition={{ duration: 0.35 }}
-                            className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-[15px] transition duration-fast disabled:cursor-default ${tone}`}
+                                                        className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-[15px] transition duration-fast disabled:cursor-default ${tone}`}
                         >
                             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted font-mono text-xs font-bold text-muted-foreground">
                                 {answered && isChosen ? answered.correct ? <Check size={14} className="text-success" /> : <X size={14} className="text-brand-ink" /> : LETTERS[i]}
