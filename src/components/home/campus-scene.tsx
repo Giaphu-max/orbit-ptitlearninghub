@@ -209,7 +209,7 @@ const TIER_OF_SLOT = WIN_SLOTS.map(([, y]) => Math.min(2, Math.floor(((y - 3.5) 
 const TIER_SLOTS = [0, 1, 2].map((t) => WIN_SLOTS.map((_, i) => i).filter((i) => TIER_OF_SLOT[i] === t))
 /** Độ sáng hiện tại của từng tầng (0..1). Để ở module: rời trang chủ rồi quay lại thì tầng mới đọc sáng lên mượt từ giá trị cũ. */
 const tierShown = [0, 0, 0]
-const TIER_EPS_STAGE = 0.7 // chỉ chạy hiệu ứng khi chương Hôm nay đã vào khung nhìn
+const TIER_EPS_STAGE = 0.78 // chỉ chạy hiệu ứng khi chương Hôm nay đã vào khung nhìn
 
 function A2Windows({ nightRef, reduce, dailyLit, stage }: { nightRef: React.MutableRefObject<number>; reduce: boolean; dailyLit: React.MutableRefObject<boolean[]>; stage: React.MutableRefObject<number> }) {
     const winRef = useRef<THREE.InstancedMesh>(null)
@@ -248,7 +248,7 @@ function A2Windows({ nightRef, reduce, dailyLit, stage }: { nightRef: React.Muta
     useFrame((_, delta) => {
         // Tầng theo bài Daily đã đọc: chỉ đổi opacity vật liệu, không đụng React
         const active = stage.current > TIER_EPS_STAGE
-        const gate = Math.min(1, Math.max(0, (stage.current - 0.6) / 0.4))
+        const gate = Math.min(1, Math.max(0, (stage.current - 0.75) / 0.25))
         for (let t = 0; t < 3; t++) {
             if (active) {
                 const want = dailyLit.current[t] ? 1 : 0
@@ -541,24 +541,28 @@ const DESKTOP_SHIFT = 0.18
 /** Tỉ lệ rộng/cao của vùng trống mà các keyframe được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
 const REF_ASPECT = 1.05
 
+/** Keyframe máy quay theo tọa độ cầu quanh target: az (độ, 0 = nhìn từ +z, tăng dần về phía +x), el (độ), r, fov */
 interface CamKey {
-    p: Vec3
     t: Vec3
+    az: number
+    el: number
+    r: number
     fov: number
 }
+
 /** Hệ số từ mét (studio) sang đơn vị khuôn viên: nhân vật Studio cao ~2 m thành ~10 đơn vị, vừa tầm tòa A2. */
 const K = 5
 const STUDIO_TARGET: Vec3 = [0, 1.1 * K, 0]
 /** Góc máy mặc định của Studio (tiêu cự 50mm, góc/độ cao/khoảng cách theo DEFAULT_SETUP) trong hệ khuôn viên */
 function studioCam(): CamKey {
     const d = DEFAULT_SETUP
-    const a = THREE.MathUtils.degToRad(d.azimuthDeg)
-    const e = THREE.MathUtils.degToRad(d.elevationDeg)
-    // Cùng hướng nhìn và tiêu cự với Studio, lùi 1,7 lần để thấy đủ nhân vật, vật thể và phông
-    const r = d.distance * K * 1.7
     return {
-        p: [Math.sin(a) * Math.cos(e) * r + STUDIO_TARGET[0], Math.sin(e) * r + STUDIO_TARGET[1], Math.cos(a) * Math.cos(e) * r + STUDIO_TARGET[2]],
         t: STUDIO_TARGET,
+        // Cùng hướng nhìn và tiêu cự với Studio, lùi 1,7 lần để thấy đủ nhân vật, vật thể và phông.
+        // +360° để quỹ đạo đi tiếp cùng chiều từ chương Khóa học (az 105°) tới đây.
+        az: d.azimuthDeg + 360,
+        el: d.elevationDeg,
+        r: d.distance * K * 1.7,
         fov: THREE.MathUtils.radToDeg(2 * Math.atan(24 / (2 * d.focalLengthMm))),
     }
 }
@@ -577,6 +581,10 @@ const A2_GLASS_AT: Vec3 = [2, 8.3, 2.6]
 /** Khoảng S của match cut và của từng khối */
 const MORPH_FROM = 2.15
 const MORPH_TO_S = 2.95
+/** Máy chỉ di chuyển trong [0.2, 0.8] của mỗi đoạn S∈[i, i+1]; hai đầu đứng yên cho người xem đọc chữ chương. Match cut chạy đúng trong khoảng máy di chuyển của đoạn Khóa học → Studio. */
+const MOVE_FROM = 0.2
+const MOVE_TO = 0.8
+const SWAY = 0.12 // r tăng tới 12% giữa đường
 /** Đèn Studio mặc định; đèn viền (mặc định 0) bật nhẹ để thấy viền đỏ. Cường độ ×K² vì ánh sáng điểm giảm theo bình phương khoảng cách. */
 const RIM_ON = 30
 const I_KEY = (DEFAULT_SETUP.key / 100) * 140 * K * K
@@ -597,10 +605,21 @@ const PLATE_DARK = new THREE.Color(CAMPUS.plateDark)
 
 /** Máy quay theo chương 1..3 (chương 0 là góc nhìn hero do OrbitControls điều khiển). */
 const CHAPTER_CAMS: CamKey[] = [
-    { p: [24, 16, 50], t: [3, 8.5, 1], fov: 30 }, // 01 Hôm nay: sát tòa A2
-    { p: [58, 36, 52], t: [6, 7, -3], fov: 32 }, // 02 Khóa học: A2 + A3 nhấc lên
-    studioCam(), // 03 Studio: đúng góc máy mặc định của trang Studio (nhân hệ số K)
+    { t: [2, 8, 2.5], az: 15, el: 14, r: 54, fov: 30 }, // 01 Hôm nay: chính diện A2, hơi chéo phải, thấy trọn 3 tầng cửa sổ
+    { t: [7, 6, -3], az: 105, el: 24, r: 80, fov: 32 }, // 02 Khóa học: từ phía đông, A3 ở tiền cảnh, thấy A2 + A3 và nhãn
+    studioCam(), // 03 Studio: đúng góc máy mặc định của trang Studio
 ]
+/** Một đầu của đoạn quỹ đạo đang nội suy */
+interface CamOut {
+    t: THREE.Vector3
+    az: number
+    el: number
+    r: number
+    fov: number
+}
+const wrapDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180
+const smoothstep = (x: number) => x * x * (3 - 2 * x)
+const RAD = Math.PI / 180
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
@@ -771,8 +790,9 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
     const ndc = useMemo(() => new THREE.Vector2(-9, -9), [])
     // Màu trời lấy từ token CSS (--stage-*), đọc một lần khi dựng cảnh
     const colors = useMemo(() => ({ sky: tokenColor('--stage-sky', '#9E1218'), mid: tokenColor('--stage-mid', '#4A0A0E'), deep: tokenColor('--stage-deep', '#130D0E'), now: new THREE.Color() }), [])
-    const camA = useMemo(() => ({ p: new THREE.Vector3(), t: new THREE.Vector3() }), [])
-    const camB = useMemo(() => ({ p: new THREE.Vector3(), t: new THREE.Vector3() }), [])
+    const camA = useMemo<CamOut>(() => ({ t: new THREE.Vector3(), az: 0, el: 0, r: 0, fov: 0 }), [])
+    const camB = useMemo<CamOut>(() => ({ t: new THREE.Vector3(), az: 0, el: 0, r: 0, fov: 0 }), [])
+    const camHero = useMemo(() => ({ v: new THREE.Vector3() }), [])
 
     const size = useThree((s) => s.size)
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
@@ -915,33 +935,51 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
                 camera.updateProjectionMatrix()
             }
         } else {
-            const i = Math.min(Math.floor(S), CHAPTER_CAMS.length - 1)
-            const f = easeInOutCubic(clamp01(S - i))
-            const key = (n: number, out: { p: THREE.Vector3; t: THREE.Vector3 }) => {
+            // Một vòng quỹ đạo liên tục, một chiều: nội suy az/el/r/fov/target rồi mới tính vị trí từ tọa độ cầu.
+            // heroPos đứng yên từ lúc rời hero nên cuộn ngược về hero quay đúng az lúc rời đi.
+            const hv = camHero.v.copy(heroPos.current).sub(TARGET)
+            const hr = hv.length()
+            const hAz = Math.atan2(hv.x, hv.z) / RAD
+            const hEl = Math.asin(hv.y / hr) / RAD
+            // Hero → Hôm nay: unwrap về az gần nhất; các keyframe sau cộng cùng độ lệch để az luôn tăng
+            const off = hAz + wrapDeg(CHAPTER_CAMS[0].az - hAz) - CHAPTER_CAMS[0].az
+            const key = (n: number, out: CamOut) => {
                 if (n === 0) {
-                    out.p.copy(heroPos.current)
                     out.t.copy(TARGET)
-                    return FOV
+                    out.az = hAz
+                    out.el = hEl
+                    out.r = hr
+                    out.fov = FOV
+                    return
                 }
                 const k = CHAPTER_CAMS[n - 1]
                 out.t.set(...k.t)
-                out.p.set(...k.p).sub(out.t).multiplyScalar(fitScale.current).add(out.t)
-                return k.fov
+                out.az = k.az + off
+                out.el = k.el
+                out.r = k.r * fitScale.current
+                out.fov = k.fov
             }
-            const fa = key(i, camA)
-            const fb = key(Math.min(i + 1, CHAPTER_CAMS.length), camB)
-            camera.position.lerpVectors(camA.p, camB.p, f)
+            const i = Math.min(Math.floor(S), CHAPTER_CAMS.length - 1)
+            const f = smoothstep(band(S - i, MOVE_FROM, MOVE_TO))
+            key(i, camA)
+            key(i + 1, camB)
+            const az = camA.az + (camB.az - camA.az) * f
+            const el = camA.el + (camB.el - camA.el) * f
+            const r = (camA.r + (camB.r - camA.r) * f) * (1 + SWAY * Math.sin(Math.PI * f))
             camA.t.lerp(camB.t, f)
-            const fov = fa + (fb - fa) * f
+            const fov = camA.fov + (camB.fov - camA.fov) * f
+            const ce = Math.cos(el * RAD)
+            camera.position.set(camA.t.x + r * Math.sin(az * RAD) * ce, camA.t.y + r * Math.sin(el * RAD), camA.t.z + r * Math.cos(az * RAD) * ce)
             if (camera.fov !== fov) {
                 camera.fov = fov
                 camera.updateProjectionMatrix()
             }
             camera.lookAt(camA.t)
+            if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, az, el, r, f }
         }
 
         // ── Nền trời và sương theo chương: đỏ PTIT → đỏ sẫm → gần đen ──
-        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 2.15, 2.95)))
+        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 2.2, 2.8)))
         if (scene.background instanceof THREE.Color) scene.background.copy(colors.now)
         if (scene.fog) {
             const d = camera.position.distanceTo(TARGET)
@@ -972,7 +1010,8 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
             setHovered(hb)
         }
         // Chương Khóa học: các tòa có khóa nhấc lên (rồi hạ xuống khi sang Studio)
-        const courseLift = easeInOutCubic(band(S, 1.4, 2)) * (1 - easeInOutCubic(band(S, 2.2, 2.7)))
+        // Nhấc lên khi máy tới chương Khóa học (dừng ở S 1.8–2.2), hạ xuống khi máy rời đi
+        const courseLift = easeInOutCubic(band(S, 1.5, 1.9)) * (1 - easeInOutCubic(band(S, 2.2, 2.5)))
         registry.current.forEach((grp, name) => {
             const lift = lifts.current.get(name) ?? 0
             const want = Math.max(name === hb ? 0.9 : 0, liftNames.has(name) ? courseLift * 1.6 : 0)
@@ -982,15 +1021,17 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
         })
 
         // ── Match cut khuôn viên → phòng chụp Studio (S 2.15 → 2.95; cuộn ngược thì chạy ngược) ──
-        const m = easeInOutCubic(band(S, MORPH_FROM, MORPH_TO_S))
-        if (S > MORPH_FROM - 0.1 || morphed.current) {
-            morphed.current = S > MORPH_FROM - 0.1
+        // Máy chỉ di chuyển ở S ∈ [2.2, 2.8]: match cut được co đúng vào khoảng đó (Sm chạy 2.1 → 3.0 theo các mốc bên dưới)
+        const Sm = 2.1 + band(S, 2 + MOVE_FROM, 2 + MOVE_TO) * 0.9
+        const m = easeInOutCubic(band(Sm, MORPH_FROM, MORPH_TO_S))
+        if (S > 2.05 || morphed.current) {
+            morphed.current = S > 2.05
             if (Math.abs(m - morph.current) > 0.0005 || !morphed.current) {
                 morph.current = m
                 applyLights(nightRef.current)
             }
-            const grow = (a: number, b: number) => Math.max(easeInOutCubic(band(S, a, b)), 0.001)
-            const out = (a: number, b: number) => Math.max(1 - easeInOutCubic(band(S, a, b)), 0.001)
+            const grow = (a: number, b: number) => Math.max(easeInOutCubic(band(Sm, a, b)), 0.001)
+            const out = (a: number, b: number) => Math.max(1 - easeInOutCubic(band(Sm, a, b)), 0.001)
             const set = (g: THREE.Object3D | null, sc: number, x = 0, y = 0, z = 0) => {
                 if (!g) return
                 g.visible = sc > 0.01
@@ -1061,7 +1102,7 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
 
         // Nhãn: chỉ ở hero và chương Khóa học; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
         if (frame.current++ % 6 === 0) {
-            const gate = S < 0.45 || (S > 1.55 && S < 2.45)
+            const gate = S < 0.2 || (S > 1.75 && S < 2.22)
             const key = gate ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : ''
             if (key !== labelKey.current) {
                 labelKey.current = key
