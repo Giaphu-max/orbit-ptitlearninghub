@@ -323,12 +323,13 @@ function CaptureBridge({ onReady, snapRef }: { onReady: (fn: CaptureFn) => void;
             snapRef.current?.()
             gl.render(scene, camera)
             const src = gl.domElement
-            const width = Math.min(768, src.width)
+            // Thu nhỏ về cạnh dài 960px, JPEG 0.7: ảnh ~100–200 KB để kho 24 ảnh không phình bộ nhớ
+            const k = Math.min(1, 960 / Math.max(src.width, src.height))
             const out = document.createElement('canvas')
-            out.width = width
-            out.height = Math.round((src.height / src.width) * width)
+            out.width = Math.round(src.width * k)
+            out.height = Math.round(src.height * k)
             out.getContext('2d')?.drawImage(src, 0, 0, out.width, out.height)
-            const dataUrl = out.toDataURL('image/jpeg', 0.82)
+            const dataUrl = out.toDataURL('image/jpeg', 0.7)
             return { dataUrl, base64: dataUrl.slice(dataUrl.indexOf(',') + 1) }
         })
     }, [gl, scene, camera, onReady, snapRef])

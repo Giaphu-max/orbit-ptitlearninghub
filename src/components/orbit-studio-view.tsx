@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertCircle, Camera, Check, Grid3x3, Info, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
+import { AlertCircle, Camera, Check, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
 import type { LightingIntent } from '@/lib/api-types'
 import { ApiRequestError, generateEnvironment, isNotLightingError } from '@/lib/api'
 import { ENV_LIMITS } from '@/lib/environment'
@@ -11,7 +11,9 @@ import { getConcept } from '@/data'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { gradeShot, SHOTS_MAX, useStudioSession, type StudioShot } from '@/store/useStudioSession'
 import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup } from '@/lib/studio-setup'
-import { GradeDrawer } from '@/components/studio/grade-drawer'
+import { GalleryPanel, ScoreBadge } from '@/components/studio/gallery-panel'
+import { Lightbox } from '@/components/studio/lightbox'
+import { ShotDrawer } from '@/components/studio/shot-drawer'
 import { StudioRail, type RailTab } from '@/components/studio/studio-rail'
 import type { CaptureFn } from '@/components/studio/studio-scene'
 
@@ -61,13 +63,47 @@ export function OrbitStudioView() {
     const lastEnvAt = useRef(0)
     const lastPrompt = useRef('')
 
-    const { shots, selectedId, drawerOpen } = useStudioSession()
+    const { shots, selectedId, drawerOpen, galleryOpen } = useStudioSession()
     const selected = shots.find((s) => s.id === selectedId)
+    const selectedIndex = shots.findIndex((s) => s.id === selectedId)
+    const [toast, setToast] = useState<{ message: string; undo?: () => void } | null>(null)
+    const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+    const tweenRaf = useRef(0)
     const loading = env.kind === 'loading'
 
     const onReady = useCallback((fn: CaptureFn) => {
         captureRef.current = fn
     }, [])
+
+    // Esc đóng lớp trên cùng trước: lightbox → bảng lưới → ngăn Xem ảnh
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== 'Escape') return
+            const st = useStudioSession.getState()
+            if (st.lightboxOpen) st.setLightbox(false)
+            else if (st.galleryOpen) st.setGallery(false)
+            else if (st.drawerOpen) st.openDrawer(false)
+        }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [])
+
+    useEffect(() => () => {
+        clearTimeout(toastTimer.current)
+        cancelAnimationFrame(tweenRaf.current)
+    }, [])
+
+    const showToast = (message: string, undo?: () => void, ms = 5000) => {
+        clearTimeout(toastTimer.current)
+        setToast({ message, undo })
+        toastTimer.current = setTimeout(() => setToast(null), ms)
+    }
+
+    // Dải phim cuộn ngang: ảnh mới tự cuộn tới cuối
+    useEffect(() => {
+        const el = stripRef.current
+        if (el) el.scrollLeft = el.scrollWidth
+    }, [shots.length])
 
     // Ba bước "AI đang dựng ánh sáng" tick dần theo thời gian trong lúc chờ API
     useEffect(() => {
@@ -114,9 +150,14 @@ export function OrbitStudioView() {
     const shoot = () => {
         const capture = captureRef.current
         if (!capture) return
+        if (useStudioSession.getState().shots.length >= SHOTS_MAX) {
+            showToast(`Đã đủ ${SHOTS_MAX} ảnh, xóa bớt để chụp tiếp`, undefined, 4000)
+            return
+        }
         const { dataUrl, base64 } = capture()
         const intent = buildIntent(setup, applied)
         const id = useStudioSession.getState().addShot({ image: dataUrl, base64, setup, intent })
+        if (id === null) return
         SFX.shutter()
         if (!reducedMotion()) {
             flashRef.current?.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 280, easing: 'ease-out' })
@@ -162,9 +203,43 @@ export function OrbitStudioView() {
         void applyEnvironment(text)
     }
 
-    const retake = (shot: StudioShot) => {
-        setSetup(shot.setup)
+    /** Đưa cảnh về thiết lập của một ảnh: số (máy, đèn) nội suy ~500ms; màu và nền do cảnh tự nội suy. */
+    const reuseSetup = (shot: StudioShot) => {
+        const from = setup
+        const to = shot.setup
+        cancelAnimationFrame(tweenRaf.current)
+        // Môi trường AI đi kèm ảnh (nếu có) để các lần chấm sau vẫn đúng ý đồ
+        setApplied(shot.intent.prompt ? { prompt: shot.intent.prompt, explanation: shot.intent.explanation ?? '', setup: to } : null)
         useStudioSession.getState().openDrawer(false)
+        if (reducedMotion()) {
+            setSetup(to)
+            return
+        }
+        const keys = ['focalLengthMm', 'azimuthDeg', 'elevationDeg', 'distance', 'shiftX', 'shiftY', 'key', 'keyAngleDeg', 'fill', 'rim'] as const
+        const t0 = performance.now()
+        const step = (now: number) => {
+            const t = Math.min(1, (now - t0) / 500)
+            const k = 1 - Math.pow(1 - t, 3)
+            if (t >= 1) {
+                setSetup(to)
+                return
+            }
+            const next: CameraSetup = { ...to }
+            for (const key of keys) next[key] = from[key] + (to[key] - from[key]) * k
+            setSetup(next)
+            tweenRaf.current = requestAnimationFrame(step)
+        }
+        tweenRaf.current = requestAnimationFrame(step)
+    }
+
+    const deleteShot = (shot: StudioShot) => {
+        const index = useStudioSession.getState().removeShot(shot.id)
+        if (index < 0) return
+        showToast('Đã xóa ảnh', () => {
+            const ok = useStudioSession.getState().restoreShot(shot, index)
+            if (ok) useStudioSession.getState().select(shot.id)
+            showToast(ok ? 'Đã hoàn tác' : `Đã đủ ${SHOTS_MAX} ảnh, chưa hoàn tác được`, undefined, 2500)
+        })
     }
 
     const gradeLabel = !selected ? 'Chấm ảnh này' : selected.status === 'done' ? 'Đã chấm' : selected.status === 'grading' ? 'Đang chấm…' : 'Chấm ảnh này'
@@ -281,6 +356,7 @@ export function OrbitStudioView() {
                             </form>
                         </div>
 
+                        {galleryOpen && <GalleryPanel />}
                         <EnvOverlay env={env} step={envStep} onRetry={() => void applyEnvironment(lastPrompt.current, true)} onClose={() => setEnv({ kind: 'idle' })} />
                         <div ref={flashRef} aria-hidden className="pointer-events-none absolute inset-0 bg-ink-foreground opacity-0" />
                     </div>
@@ -295,14 +371,14 @@ export function OrbitStudioView() {
                         >
                             <Camera size={17} /> Chụp
                         </button>
+                        <p className="hidden shrink-0 font-mono text-xs text-muted-foreground sm:block" aria-live="polite">{shots.length} ảnh</p>
                         <div
                             ref={stripRef}
-                            aria-label={`Ảnh đã chụp, ${shots.length}/${SHOTS_MAX}`}
-                            className="order-last flex min-w-0 basis-full gap-2 overflow-x-auto p-0.5 [scrollbar-width:none] sm:order-none sm:basis-0 sm:flex-1"
+                            aria-label={`Ảnh đã chụp, ${shots.length} ảnh`}
+                            className="order-last flex min-w-0 basis-full gap-2 overflow-x-auto p-0.5 [scrollbar-width:thin] sm:order-none sm:basis-0 sm:flex-1"
                         >
-                            {Array.from({ length: SHOTS_MAX }, (_, i) => {
-                                const shot = shots[i]
-                                if (!shot) return <div key={`e${i}`} aria-hidden className="aspect-[3/2] w-24 shrink-0 rounded-xl border-[1.5px] border-dashed border-border" />
+                            {shots.length === 0 && <div className="flex aspect-[3/2] h-16 items-center justify-center rounded-xl border-[1.5px] border-dashed border-border px-3 text-xs text-muted-foreground">Chưa có ảnh nào</div>}
+                            {shots.map((shot, i) => {
                                 const sel = shot.id === selectedId
                                 return (
                                     <button
@@ -315,11 +391,7 @@ export function OrbitStudioView() {
                                         className={`relative aspect-[3/2] w-24 shrink-0 overflow-hidden rounded-xl border-2 bg-ink p-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${sel ? 'border-brand-600' : 'border-transparent hover:border-brand-300'}`}
                                     >
                                         <img src={shot.image} alt="" className="h-full w-full object-cover" />
-                                        {shot.status === 'done' && (
-                                            <span className={`absolute bottom-1 right-1 rounded-md px-1.5 py-0.5 font-mono text-[11px] font-bold ${(shot.result?.overall ?? 0) >= DIRECTOR_MIN_SCORE ? 'bg-success text-success-foreground' : 'bg-ink/70 text-ink-foreground'}`}>
-                                                {shot.result?.overall}
-                                            </span>
-                                        )}
+                                        <ScoreBadge shot={shot} className="absolute bottom-1 right-1" />
                                         {shot.status === 'grading' && (
                                             <span className="absolute inset-0 flex items-center justify-center bg-ink/50 text-ink-foreground"><Loader2 size={16} className="animate-spin" /></span>
                                         )}
@@ -329,6 +401,16 @@ export function OrbitStudioView() {
                                     </button>
                                 )
                             })}
+                            {shots.length > 0 && (
+                                <button
+                                    type="button"
+                                    aria-pressed={galleryOpen}
+                                    onClick={() => useStudioSession.getState().setGallery(!galleryOpen)}
+                                    className="flex aspect-[3/2] w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-xs font-bold text-foreground transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                                >
+                                    <Images size={16} /> Xem tất cả
+                                </button>
+                            )}
                         </div>
                         <button
                             type="button"
@@ -336,7 +418,7 @@ export function OrbitStudioView() {
                             onClick={() => selected && void gradeShot(selected.id)}
                             className="ml-auto inline-flex shrink-0 items-center gap-2 rounded-card border border-border bg-muted px-4 py-3 text-sm font-extrabold text-foreground transition hover:border-brand-300 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:ml-0"
                         >
-                            {selected?.status === 'done' ? <Check size={16} /> : <Sparkles size={16} />} {gradeLabel}
+                            <Sparkles size={16} /> {gradeLabel}
                         </button>
                     </div>
                 </section>
@@ -353,9 +435,29 @@ export function OrbitStudioView() {
                         onApplyLighting={askLighting}
                         explanation={applied?.explanation ?? null}
                     />
-                    <GradeDrawer shot={selected} open={drawerOpen && Boolean(selected)} onClose={() => useStudioSession.getState().openDrawer(false)} onRetake={retake} />
+                    <ShotDrawer
+                        shot={selected}
+                        index={selectedIndex}
+                        total={shots.length}
+                        open={drawerOpen && Boolean(selected)}
+                        onClose={() => useStudioSession.getState().openDrawer(false)}
+                        onReuse={reuseSetup}
+                        onDelete={deleteShot}
+                    />
                 </div>
             </div>
+
+            <Lightbox />
+            {toast && (
+                <div role="status" className="fixed bottom-5 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink px-4 py-2.5 text-sm text-ink-foreground shadow-raised">
+                    {toast.message}
+                    {toast.undo && (
+                        <button type="button" onClick={toast.undo} className="rounded-full bg-ink-foreground/15 px-3 py-1 text-xs font-bold transition hover:bg-ink-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                            Hoàn tác
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
@@ -370,7 +472,7 @@ function EnvOverlay({ env, step, onRetry, onClose }: { env: EnvState; step: numb
     if (env.kind === 'idle') return null
     const loading = env.kind === 'loading'
     return (
-        <div className="absolute inset-0" aria-live="polite">
+        <div className="absolute inset-0 z-20" aria-live="polite">
             {loading && (
                 <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                     <div className="studio-veil absolute inset-0 bg-ink/35" />
