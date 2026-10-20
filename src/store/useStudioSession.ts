@@ -16,6 +16,8 @@ export type ShotStatus = 'idle' | 'grading' | 'done' | 'error'
 
 export interface StudioShot {
     id: number
+    /** Giờ chụp (ms) */
+    at: number
     /** Data URL để hiển thị */
     image: string
     /** Base64 JPEG gửi cho api/grade-photo */
@@ -40,7 +42,7 @@ interface StudioSessionState {
     /** Tối đa 2 ảnh đang chọn để so sánh, theo thứ tự chọn */
     compareIds: number[]
     /** Thêm ảnh; trả về null khi đã đủ SHOTS_MAX (không tự xóa ảnh nào) */
-    addShot: (shot: Omit<StudioShot, 'id' | 'status'>) => number | null
+    addShot: (shot: Omit<StudioShot, 'id' | 'status' | 'at'>) => number | null
     /** Chọn ảnh và mở ngăn Xem ảnh */
     select: (id: number | null) => void
     openDrawer: (open: boolean) => void
@@ -69,7 +71,7 @@ export const useStudioSession = create<StudioSessionState>()((set, get) => ({
     addShot: (shot) => {
         if (get().shots.length >= SHOTS_MAX) return null
         const id = nextId++
-        set((s) => ({ shots: [...s.shots, { ...shot, id, status: 'idle' }], selectedId: id, drawerOpen: false }))
+        set((s) => ({ shots: [...s.shots, { ...shot, id, at: Date.now(), status: 'idle' }], selectedId: id, drawerOpen: false }))
         return id
     },
     select: (id) => set({ selectedId: id, drawerOpen: id !== null }),

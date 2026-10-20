@@ -290,6 +290,10 @@ export function OrbitStudioView() {
                         )}
 
                         <div className="absolute inset-x-3 top-3 flex items-center gap-2">
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${glass}`}>
+                                <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-brand-500" />
+                                Trực tiếp
+                            </span>
                             <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${glass}`}>
                                 <span className="font-mono">{setup.focalLengthMm}mm</span> · {elevationLabel(setup.elevationDeg)}
                             </span>
@@ -391,6 +395,7 @@ export function OrbitStudioView() {
                                         className={`relative aspect-[3/2] w-24 shrink-0 overflow-hidden rounded-xl border-2 bg-ink p-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${sel ? 'border-brand-600' : 'border-transparent hover:border-brand-300'}`}
                                     >
                                         <img src={shot.image} alt="" className="h-full w-full object-cover" />
+                                        <span className="absolute left-1 top-1 rounded-md bg-ink/70 px-1.5 py-0.5 font-mono text-[10px] text-ink-foreground">{i + 1}</span>
                                         <ScoreBadge shot={shot} className="absolute bottom-1 right-1" />
                                         {shot.status === 'grading' && (
                                             <span className="absolute inset-0 flex items-center justify-center bg-ink/50 text-ink-foreground"><Loader2 size={16} className="animate-spin" /></span>
@@ -447,9 +452,9 @@ export function OrbitStudioView() {
                 </div>
             </div>
 
-            <Lightbox />
+            <Lightbox onReuse={reuseSetup} onDelete={deleteShot} />
             {toast && (
-                <div role="status" className="fixed bottom-5 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink px-4 py-2.5 text-sm text-ink-foreground shadow-raised">
+                <div role="status" className="fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink px-4 py-2.5 text-sm text-ink-foreground shadow-raised">
                     {toast.message}
                     {toast.undo && (
                         <button type="button" onClick={toast.undo} className="rounded-full bg-ink-foreground/15 px-3 py-1 text-xs font-bold transition hover:bg-ink-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">

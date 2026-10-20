@@ -31,7 +31,7 @@ export function ShotDrawer({ shot, index, total, open, onClose, onReuse, onDelet
                 open ? 'visible translate-y-0 min-[980px]:translate-x-0' : 'invisible translate-y-[calc(100%+2rem)] min-[980px]:translate-x-[calc(100%+1.5rem)] min-[980px]:translate-y-0'
             }`}
         >
-            <div className="flex items-center gap-1.5 border-b border-border px-3 py-3 pl-[18px]">
+            <div className="flex items-center gap-1.5 border-b border-border py-3 pl-5 pr-3">
                 <h2 className="flex-1 text-sm font-bold text-foreground">
                     Xem ảnh <span className="ml-1 font-mono text-xs font-medium text-muted-foreground">{index + 1}/{total}</span>
                 </h2>
@@ -40,7 +40,7 @@ export function ShotDrawer({ shot, index, total, open, onClose, onReuse, onDelet
                 <IconBtn label="Xóa ảnh" disabled={!shot || shot.status === 'grading'} onClick={() => shot && onDelete(shot)}><Trash2 size={15} /></IconBtn>
                 <IconBtn label="Đóng" onClick={onClose}><X size={15} /></IconBtn>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-[18px]">{shot && <Body key={shot.id} shot={shot} onReuse={onReuse} />}</div>
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-5">{shot && <Body key={shot.id} shot={shot} index={index} onReuse={onReuse} />}</div>
         </aside>
     )
 }
@@ -60,7 +60,7 @@ function IconBtn({ label, disabled, onClick, children }: { label: string; disabl
     )
 }
 
-function Body({ shot, onReuse }: { shot: StudioShot; onReuse: (s: StudioShot) => void }) {
+function Body({ shot, index, onReuse }: { shot: StudioShot; index: number; onReuse: (s: StudioShot) => void }) {
     const { status, result } = shot
     const rows = snapshotRows(shot)
 
@@ -70,7 +70,7 @@ function Body({ shot, onReuse }: { shot: StudioShot; onReuse: (s: StudioShot) =>
                 type="button"
                 onClick={() => useStudioSession.getState().setLightbox(true)}
                 aria-label="Mở ảnh toàn màn hình"
-                className="group relative block w-full overflow-hidden rounded-card bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                className="group relative block w-full overflow-hidden rounded-card border border-border bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             >
                 <img src={shot.image} alt="Ảnh đã chụp trong studio" className="block h-auto w-full" />
                 {status === 'grading' && (
@@ -88,6 +88,7 @@ function Body({ shot, onReuse }: { shot: StudioShot; onReuse: (s: StudioShot) =>
                             <span className="absolute -top-px left-0 flex h-5 min-w-5 -translate-y-full items-center justify-center rounded-t bg-brand-600 px-1.5 font-mono text-[11px] font-bold text-ink-foreground">{i + 1}</span>
                         </span>
                     ))}
+                <span className="absolute left-2 top-2 rounded-md bg-ink/70 px-1.5 py-0.5 font-mono text-[11px] text-ink-foreground">Ảnh {index + 1}</span>
                 <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-ink/60 text-ink-foreground opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
                     <Maximize2 size={13} />
                 </span>
