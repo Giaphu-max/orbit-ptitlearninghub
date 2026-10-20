@@ -44,8 +44,10 @@ export function OrbitDailyView() {
         const update = () => {
             raf = 0
             const d = frames.map(dist)
-            const best = d.indexOf(Math.min(...d))
-            if (active < 0 || (best !== active && d[active] - d[best] >= HYSTERESIS)) {
+            // Vừa mở bài (chưa cuộn): luôn sáng khối mở đầu
+            const best = window.scrollY < 40 ? 0 : d.indexOf(Math.min(...d))
+            const switchNow = active < 0 || (best !== active && (window.scrollY < 40 || d[active] - d[best] >= HYSTERESIS))
+            if (switchNow) {
                 active = best
                 frames.forEach((f, i) => f.setAttribute('data-active', String(i === active)))
             }
@@ -140,7 +142,7 @@ export function OrbitDailyView() {
                     <h1 className="mt-3 text-headline text-foreground">{article.title}</h1>
                 </div>
 
-                <div className="flex flex-col gap-10 pt-[24vh] sm:gap-12">
+                <div className="mt-10 flex flex-col gap-10 sm:gap-12">
                     {article.blocks.map((block, i) => (
                         <div key={i} data-block={block.type}>
                             <div data-focus className={`fb ${FRAME[block.type]}`}>
