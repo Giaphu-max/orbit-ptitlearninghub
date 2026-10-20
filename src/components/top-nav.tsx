@@ -20,8 +20,8 @@ interface NavItem {
 
 const BASE_ITEMS: NavItem[] = [
     { label: 'Trang chủ', to: '/', match: (p, h) => p === '/' && h !== '#daily' },
-    { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' || p.startsWith('/lesson') },
     { label: 'Orbit Daily', to: '/#daily', match: (p, h) => p.startsWith('/daily') || (p === '/' && h === '#daily') },
+    { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' || p.startsWith('/lesson') },
     { label: 'Studio 3D', to: '/studio', match: (p) => p.startsWith('/studio') },
 ]
 
