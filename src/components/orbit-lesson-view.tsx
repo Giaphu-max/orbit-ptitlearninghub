@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { ChevronLeft, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
 import { getCourse, getLessonsOfCourse, lessons } from '@/data'
@@ -56,7 +56,11 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     const xp = useOrbitStore((s) => s.xp)
 
     // Đọc vị trí cũ một lần lúc mở bài
+    // ?t=giây: mở thẳng tại mốc đó (link nguồn của Orbit Daily, lộ trình ôn tập sau test)
+    const [searchParams] = useSearchParams()
     const [resumeFrom] = useState(() => {
+        const t = Number(searchParams.get('t'))
+        if (Number.isFinite(t) && t > 0) return Math.min(Math.floor(t), Math.max(0, lesson.durationSec - 1))
         const saved = useOrbitStore.getState().lessonProgress[lesson.id]?.lastPositionSec ?? 0
         return saved >= RESUME_MIN_SEC && saved < lesson.durationSec - RESUME_TAIL_SEC ? Math.floor(saved) : 0
     })

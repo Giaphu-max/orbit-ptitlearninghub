@@ -145,6 +145,9 @@ Yêu cầu:
 - concepts: 3–6 khái niệm cốt lõi theo thứ tự xuất hiện; segment là đoạn giảng chính khái niệm đó; prerequisiteIds chỉ chứa khái niệm xuất hiện trước trong cùng bài mà khái niệm này thực sự dựa vào.
 - quiz: 4–6 câu, mỗi khái niệm quan trọng một câu, pauseAt ngay sau khi giảng xong khái niệm đó; answerSegment là đoạn video giảng viên nói ra đáp án (thường trùng đoạn giảng khái niệm, 10–60 giây). Câu hỏi kiểm tra hiểu và vận dụng (tình huống dựng phim thực tế, chọn thao tác phù hợp…), không hỏi chi tiết vụn vặt. 4 phương án, phương án sai là những hiểu lầm sinh viên hay mắc. Mỗi câu kèm đúng 1 câu biến thể cùng khái niệm, cùng độ khó, khác tình huống.`
 
+/** Đổi khi sửa prompt Daily để cache cũ không bị dùng lại. */
+const DAILY_PROMPT_VERSION = 'cross-lesson-v2'
+
 function dailyPrompt(lessons: Lesson[], count: number) {
     const context = lessons
         .map((l) => {
@@ -153,14 +156,16 @@ function dailyPrompt(lessons: Lesson[], count: number) {
             return `### Bài "${l.title}" (lessonId=${l.id})\nKhái niệm:\n${concepts}\nTranscript:\n${transcript}`
         })
         .join('\n\n')
-    return `Bạn soạn "Orbit Daily": bài đọc ngắn 2–3 phút giúp sinh viên ôn lại kiến thức từ các bài giảng dưới đây.
+    return `Bạn soạn "Orbit Daily": bài đọc ngắn 2–3 phút TỔNG HỢP kiến thức từ nhiều bài giảng, giúp sinh viên thấy các bài giảng liên hệ với nhau.
 
 Viết ${count} bài đọc. Yêu cầu:
-- Mỗi bài tập trung 1–3 khái niệm, ưu tiên nối kiến thức giữa các bài giảng khác nhau.
-- Tổng 350–500 chữ (đọc 2–3 phút): 4–5 đoạn, mỗi đoạn 80–110 chữ, giọng gần gũi, có ví dụ tình huống thực tế trong chủ đề của video.
-- Chỉ dùng kiến thức có trong transcript. Mỗi đoạn có ít nhất một nguồn {lessonId, start} lấy ĐÚNG các giá trị lessonId và start trong ngoặc vuông của đoạn transcript chứa ý đó.
+- BẮT BUỘC mỗi bài lấy kiến thức từ ít nhất 2 bài giảng KHÁC NHAU (lessonId khác nhau): lấy một ý ở bài này đặt cạnh, so sánh hoặc nối với một ý ở bài kia. Bài nào chỉ dùng một bài giảng là không đạt.
+- Giữa ${count} bài, các cặp bài giảng được nối nên khác nhau; cố gắng phủ cả ${lessons.length} bài giảng.
+- Mỗi bài gắn 2–4 khái niệm, trong đó có khái niệm của ít nhất 2 bài giảng khác nhau.
+- Tổng 350–500 chữ (đọc 2–3 phút): 4–5 đoạn, mỗi đoạn 80–110 chữ, giọng gần gũi, có ví dụ tình huống thực tế trong chủ đề của video. Đoạn nào nối hai bài thì nói rõ ý nào đến từ bài nào.
+- Chỉ dùng kiến thức có trong transcript, không thêm ngoài. Mỗi đoạn có ít nhất một nguồn {lessonId, start}; đoạn nối nhiều bài thì ghi nguồn của từng bài. lessonId và start phải lấy ĐÚNG giá trị trong ngoặc vuông của đoạn transcript chứa ý đó (đừng tự đoán mốc).
 - conceptIds lấy đúng id trong danh sách khái niệm.
-- checks: 1–2 câu kiểm tra nhanh 4 phương án, trả lời được nếu đọc kỹ bài.
+- checks: 1–2 câu kiểm tra nhanh 4 phương án, trả lời được nếu đọc kỹ bài; nên có một câu đòi hỏi nối ý của hai bài.
 - Các bài không trùng nội dung với nhau.
 
 ${context}`
@@ -308,13 +313,13 @@ async function main() {
         console.log(`\n▶ Orbit Daily (${config.dailyCount} bài từ ${lessonsOut.length} bài giảng)`)
         const lessonsHash = createHash('sha256').update(JSON.stringify(lessonsOut.map((l) => [l.id, l.transcript, l.concepts]))).digest('hex')
         const cacheFile = path.join(CACHE_DIR, 'daily.json')
-        let cache = readJson<{ lessonsHash: string; count: number; draft: DailyDraft }>(cacheFile)
-        if (cache && cache.lessonsHash === lessonsHash && cache.count === config.dailyCount && !args.force && !regenerated) {
+        let cache = readJson<{ lessonsHash: string; count: number; promptVersion?: string; draft: DailyDraft }>(cacheFile)
+        if (cache && cache.lessonsHash === lessonsHash && cache.count === config.dailyCount && cache.promptVersion === DAILY_PROMPT_VERSION && !args.force && !regenerated) {
             console.log('   ↺ dùng cache')
         } else {
             try {
                 const draft = await generateJson(DailyDraft, [{ text: dailyPrompt(lessonsOut, config.dailyCount) }])
-                cache = { lessonsHash, count: config.dailyCount, draft }
+                cache = { lessonsHash, count: config.dailyCount, promptVersion: DAILY_PROMPT_VERSION, draft }
                 writeJson(cacheFile, cache)
             } catch (err) {
                 if (err instanceof QuotaExhausted) stopQuota(err, 'bài đọc Daily')

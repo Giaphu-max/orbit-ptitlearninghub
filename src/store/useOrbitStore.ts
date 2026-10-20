@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
+import { dailyArticles } from '@/data'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 import { advanceStreak, dailyFor, directorXp, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
@@ -99,7 +100,8 @@ export function makeDemoProfile() {
     return {
         role: null as Role | null,
         learnerName: DEFAULT_LEARNER_NAME,
-        dailyRead: { 'daily-1-ban-chat-cua-dung-phim-phi-tuyen-va-cach': today } as Record<string, string>,
+        // Bài Daily đầu tiên (id đổi mỗi lần tạo lại nội dung nên lấy từ dữ liệu)
+        dailyRead: Object.fromEntries(dailyArticles.slice(0, 1).map((a) => [a.id, today])) as Record<string, string>,
         xp: 2480,
         streak: { count: 12, lastStudyDate: today as string | null, freezeUsedWeek: null as string | null },
         // 202s / 439s ≈ 46%

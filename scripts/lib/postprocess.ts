@@ -246,6 +246,13 @@ export function normalizeDaily(draft: DailyDraft, lessons: Lesson[]): { articles
             return
         }
 
+        // Daily là bài tổng hợp: nguồn phải đến từ ít nhất 2 bài giảng khác nhau
+        const sourceLessons = new Set(paragraphs.flatMap((p) => p.sources.map((s) => s.lessonId)))
+        if (sourceLessons.size < 2) {
+            report.warnings.push(`${label}: bỏ vì chỉ dẫn nguồn từ ${sourceLessons.size} bài giảng (cần ít nhất 2)`)
+            return
+        }
+
         const id = `daily-${idx + 1}-${slugify(a.title).slice(0, 40)}`
         const checks = a.checks.map((c, i): QuizChoiceQuestion => {
             const qid = `${id}-c${i + 1}`

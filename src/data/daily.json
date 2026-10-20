@@ -1,97 +1,31 @@
 [
   {
-    "id": "daily-1-ban-chat-cua-dung-phim-phi-tuyen-va-cach",
-    "title": "Bản chất của dựng phim phi tuyến và cách bảo vệ tư liệu gốc như thế nào?",
+    "id": "daily-1-tai-sao-dung-phi-tuyen-la-chia-khoa-toi-",
+    "title": "Tại sao dựng phi tuyến là chìa khóa tối ưu tải trí tuệ người xem?",
     "readingMinutes": 2,
     "conceptIds": [
       "dung-phi-tuyen",
-      "tinh-phi-huy-hoai"
+      "tinh-phi-huy-hoai",
+      "tu-duy-dung",
+      "tai-tri-tue"
     ],
     "paragraphs": [
       {
-        "text": "Cách đây 60 năm, để cắt một bộ phim, người ta phải cầm cuộn phim nhựa, đặt lên bàn, dùng dao dọc đúng khung hình cần cắt rồi dán hai mảnh phim lại với nhau bằng băng dính. Cắt sang một phát là bạn sẽ làm hỏng cả cuộn phim gốc hoặc nếu bạn muốn thử bằng cách khác thì bạn phải làm lại từ đầu. Điều này hoàn toàn khác biệt so với công nghệ kỹ thuật số hiện đại ngày nay, nơi mọi thao tác cắt nối đều được thực hiện trên môi trường máy tính an toàn và tiện lợi hơn rất nhiều.",
-        "sources": [
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 0
-          }
-        ]
-      },
-      {
-        "text": "Bây giờ thì sao? Bạn chỉ cần kéo một cái clip trên màn hình, thả vào đúng chỗ, không thích thì kéo ngược lại, file gốc không hề di chuyển. Nghe thì giống như một sự thuận lợi đơn thuần thôi đúng không? Nhưng mà thực chất, sự thay đổi này đã làm một việc lớn hơn nhiều, đó là thay đổi hoàn toàn cách chúng ta tư duy về quá trình dựng phim hậu kỳ. Bạn không còn phải lo lắng về việc làm hỏng tư liệu ban đầu mỗi khi muốn thử nghiệm một ý tưởng mới lạ trong dự án.",
-        "sources": [
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 16
-          }
-        ]
-      },
-      {
-        "text": "Còn dựng phi tuyến hay tiếng Anh gọi là NLE (Non-linear editing) là một thế giới khác hẳn. Với dựng phi tuyến, bạn có nhiều lớp video và nhiều lớp âm thanh chồng lên nhau, bạn thêm hiệu ứng và chuyển cảnh ngay trong thời gian thực, bạn chỉnh màu, phân loại màu, trộn âm thanh hay thiết kế âm thanh một cách mượt mà. Đây là trung tâm của mọi công việc hậu kỳ, nơi hình ảnh, âm thanh và hiệu ứng hòa quyện vào nhau.",
-        "sources": [
-          {
-            "lessonId": "ban-chat-dung-phi-tuyen",
-            "start": 70
-          }
-        ]
-      },
-      {
-        "text": "Và đây là chữ quan trọng nhất mà bạn phải nhớ trong video ngày hôm nay: Phi hủy hoại (Non-destructive). Nghĩa là mọi thao tác bạn làm không hề đụng tới file gốc, bạn có thể thử nghiệm sáng tạo thoải mái mà không bao giờ sợ mất nội dung gốc. Phương pháp này cho phép bạn truy cập ngẫu nhiên tới bất kỳ khung hình nào một cách dễ dàng, giúp tối ưu hóa thời gian và mở rộng biên giới sáng tạo trong quá trình làm phim chuyên nghiệp.",
+        "text": "Trong dựng phim kỹ thuật số, dựng phi tuyến hay NLE mang lại khả năng làm việc trên nhiều lớp hình ảnh và âm thanh vô cùng linh hoạt. Khái niệm quan trọng nhất của phương pháp này chính là tính phi hủy hoại. Nguyên tắc này đảm bảo mọi thao tác chỉnh sửa, cắt ghép hay thử nghiệm hiệu ứng đều không làm thay đổi hoặc mất dữ liệu của file gốc. Nhờ đó, người dựng phim có thể tự do sáng tạo, thay đổi vị trí các đoạn clip hay thử nghiệm nhiều phương án nối cảnh khác nhau mà không lo sợ làm hỏng tư liệu ban đầu.",
         "sources": [
           {
             "lessonId": "ban-chat-dung-phi-tuyen",
             "start": 97
           }
         ]
-      }
-    ],
-    "checks": [
-      {
-        "id": "daily-1-ban-chat-cua-dung-phim-phi-tuyen-va-cach-c1",
-        "conceptId": "tinh-phi-huy-hoai",
-        "prompt": "Tính phi hủy hoại (Non-destructive) trong dựng phim mang lại lợi ích gì?",
-        "options": [
-          "Giúp tự động cắt bỏ những đoạn phim thừa mà không cần con người can thiệp",
-          "Mọi thao tác chỉnh sửa không làm thay đổi hoặc mất dữ liệu của file gốc",
-          "Tăng tốc độ xuất file video lên nhiều lần so với bình thường",
-          "Làm thay đổi trực tiếp file gốc để tiết kiệm dung lượng ổ cứng"
-        ],
-        "correctIndex": 1,
-        "explanation": "Tính phi hủy hoại đảm bảo mọi thao tác chỉnh sửa đều không đụng tới hoặc làm mất dữ liệu của file gốc, cho phép thử nghiệm thoải mái."
-      }
-    ],
-    "origin": "gemini"
-  },
-  {
-    "id": "daily-2-tai-sao-noi-dung-dung-van-co-the-that-ba",
-    "title": "Tại sao nội dung đúng vẫn có thể thất bại nếu thiếu tư duy dựng và kiểm soát tải trí tuệ?",
-    "readingMinutes": 2,
-    "conceptIds": [
-      "tu-duy-dung",
-      "tai-tri-tue"
-    ],
-    "paragraphs": [
-      {
-        "text": "Hãy tưởng tượng hai người dựng được đưa một bản tư liệu giống hệt nhau, cùng những cảnh quay đó, cùng những câu thoại đó. Một người cho ra video khiến bạn xem mà rồi không hiểu đang nói gì phải bỏ ngang giữa chừng. Nhưng mà người kia lại cho ra một video mà bạn dán mắt từ đầu đến cuối. Cùng một nguyên liệu nhưng mà khác nhau ở đâu nhỉ? Khác ở một thứ vô hình gọi là tư duy dựng, và việc nắm bắt nó sẽ thay đổi hoàn toàn sản phẩm của bạn.",
-        "sources": [
-          {
-            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
-            "start": 0
-          }
-        ]
       },
       {
-        "text": "Hầu hết người mới sẽ nghĩ rằng dựng chẳng qua là ghép nối giữa các cảnh quay. Sai! Hoặc đúng hơn, nó mới chỉ là cái vỏ bên ngoài. Dựng thực chất là tổ chức chiến lược thông tin, là quá trình tạo ra một lộ trình giúp người xem hiểu nội dung một cách có hệ thống từ điểm bắt đầu cho đến điểm kết luận cuối cùng. Bạn không chỉ đang xếp các clip với nhau, mà bạn còn đang dẫn đường cho bộ não của người xem qua từng khung hình.",
+        "text": "Sự tự do trong thao tác kỹ thuật này hỗ trợ trực tiếp cho tư duy dựng, nơi người dựng không chỉ ghép nối clip mà còn tổ chức chiến lược thông tin. Khi xây dựng một video, người dựng phải kiểm soát tải trí tuệ của khán giả, bởi vì bộ não con người chỉ xử lý được khoảng bốn đến bảy đơn vị thông tin tại một thời điểm. Nếu tư duy dựng kém hoặc sắp xếp nội dung lộn xộn, người xem sẽ chịu tải ngoại sinh rất cao, dẫn đến cảm giác mệt mỏi và dễ dời mắt khỏi video.",
         "sources": [
           {
             "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
             "start": 31
-          }
-        ]
-      },
-      {
-        "text": "Khi bàn về cách tiếp nhận thông tin, có một khái niệm học thuật vô cùng quan trọng mà bạn phải nắm bắt, đó chính là tải trí tuệ hay còn gọi là cognitive load. Hiểu một cách đơn giản, bộ não của người xem giống như một cái bàn làm việc nhỏ, nó chỉ có thể xử lý được khoảng bốn đến bảy đơn vị thông tin cùng một lúc mà thôi. Do đó, người dựng cần phải phân phối lượng thông tin sao cho thật hợp lý.",
-        "sources": [
+          },
           {
             "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
             "start": 187
@@ -99,70 +33,92 @@
         ]
       },
       {
-        "text": "Bên trong cấu trúc đó, có ba loại tải mà bạn cần lưu ý: tải nội tại đến từ độ phức tạp tự nhiên của nội dung, tải ngoại sinh xuất hiện khi dựng kém hoặc lộn xộn làm tăng loại tải vô ích này, và tải tạo ra ý nghĩa là nỗ lực tốt giúp người xem hiểu sâu và nhớ lâu. Nội dung đúng vẫn có thể thất bại hoàn toàn nếu bạn nhồi nhét quá nhiều thông tin và làm khán giả bị quá tải quá nhanh.",
+        "text": "Sự kết hợp giữa hai khái niệm này cho thấy tầm quan trọng của công nghệ đối với tư duy sáng tạo. Nhờ tính phi hủy hoại của dựng phi tuyến trong bài giảng thứ nhất, người dựng dễ dàng thử nghiệm nhiều cấu trúc thông tin khác nhau để tìm ra phương án tối ưu nhất. Nhờ khả năng truy cập ngẫu nhiên đến bất kỳ khung hình nào, người dựng có thể điều chỉnh vị trí các đoạn cắt nhằm giảm thiểu tải ngoại sinh và tối ưu hóa tải tạo ý nghĩa như đã phân tích trong bài giảng thứ hai.",
         "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 113
+          },
           {
             "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
             "start": 217
+          }
+        ]
+      },
+      {
+        "text": "Trong thực tế, ở giai đoạn Rough cut của bài giảng về dựng phi tuyến, bản dựng thường dài và chứa nhiều chi tiết dư thừa khiến người xem khó tiếp nhận. Người dựng sẽ dựa vào việc đánh giá tải trí tuệ từ bài giảng tư duy dựng để cắt bỏ những chi tiết rườm rà. Việc tinh chỉnh này được thực hiện an toàn trên mảng dựng phi tuyến mà không làm ảnh hưởng đến nguồn tư liệu gốc, đảm bảo sản phẩm cuối cùng vừa mạch lạc vừa hấp dẫn khán giả.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 272
+          },
+          {
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 319
           }
         ]
       }
     ],
     "checks": [
       {
-        "id": "daily-2-tai-sao-noi-dung-dung-van-co-the-that-ba-c1",
+        "id": "daily-1-tai-sao-dung-phi-tuyen-la-chia-khoa-toi--c1",
         "conceptId": "tai-tri-tue",
-        "prompt": "Theo bài giảng, bộ não của người xem có khả năng xử lý khoảng bao nhiêu đơn vị thông tin cùng một lúc?",
+        "prompt": "Tính phi hủy hoại trong dựng phi tuyến hỗ trợ như thế nào cho việc quản lý tải trí tuệ của người xem?",
         "options": [
-          "Khoảng 10 đến 15 đơn vị thông tin",
-          "Khoảng 1 đến 2 đơn vị thông tin",
-          "Khoảng 4 đến 7 đơn vị thông tin",
-          "Không giới hạn số lượng đơn vị thông tin"
+          "Thay đổi nội dung của file thô ban đầu để phù hợp với độ tuổi và học vấn của từng nhóm khán giả.",
+          "Bắt buộc người dựng phải thực hiện cắt nối theo đúng một trình tự duy nhất để tránh làm phiền người xem.",
+          "Giúp người dựng thử nghiệm nhiều phương án sắp xếp thông tin mà không sợ mất file gốc, từ đó giảm tải ngoại sinh.",
+          "Tự động xóa bỏ các cảnh quay thừa để giảm số lượng đơn vị thông tin xuống dưới bốn đơn vị."
         ],
         "correctIndex": 2,
-        "explanation": "Bộ não người xem giống như một chiếc bàn làm việc nhỏ, chỉ xử lý được khoảng 4 đến 7 đơn vị thông tin một lúc."
+        "explanation": "Tính phi hủy hoại cho phép người dựng thử nghiệm linh hoạt các cấu trúc thông tin mà không làm hỏng file gốc, nhờ đó tìm ra cách dựng giảm tải ngoại sinh vô ích cho khán giả."
       }
     ],
     "origin": "gemini"
   },
   {
-    "id": "daily-3-nhip-hinh-va-nhip-am-ket-hop-the-nao-de-",
-    "title": "Nhịp hình và nhịp âm kết hợp thế nào để tạo nên sức hút cảm xúc trong phim?",
+    "id": "daily-2-ket-hop-nhip-dieu-va-cong-cu-dan-dat-de-",
+    "title": "Kết hợp nhịp điệu và công cụ dẫn dắt để đạt mục tiêu giao tiếp?",
     "readingMinutes": 2,
     "conceptIds": [
+      "muc-tieu-giao-tiep",
+      "cong-cu-dan-dat-chu-y",
       "nhip-hinh",
-      "nhip-am",
-      "thoi-luong-canh"
+      "nhip-am"
     ],
     "paragraphs": [
       {
-        "text": "Bạn có để ý không, có những video bạn xem mà bạn thấy hay, thấy cuốn, hay có những bộ phim bạn xem mà bạn thấy không thể quên được mặc dù bạn chẳng nói được tại sao không. Bí mật đằng sau những thước phim ấy nằm ở mô hình thời gian và tiết tấu trong chuỗi dựng. Nó được tạo ra từ sự kết hợp nhịp nhàng giữa độ dài của các cảnh quay khác nhau và thời điểm chính xác của các điểm cắt.",
+        "text": "Khi bắt đầu dựng một dự án video, việc đầu tiên người dựng cần xác định là mục tiêu giao tiếp của sản phẩm. Mỗi mục đích khác nhau như truyền tải thông tin hay thuyết phục người xem sẽ đòi hỏi phong cách dựng và cấu trúc khác nhau. Để đạt được mục tiêu đó, người dựng phải sử dụng các công cụ dẫn dắt sự chú ý thông qua hình ảnh như bố cục, chuyển động, và âm thanh như nhạc nền hoặc tín hiệu âm thanh nhằm định hướng hành trình nhận thức của khán giả.",
         "sources": [
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 0
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 108
           },
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 32
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 255
           }
         ]
       },
       {
-        "text": "Đầu tiên là nhịp hình hay còn gọi là visual rhythm, đây là những nhịp mà bạn cảm nhận được bằng mắt. Nó dựa hoàn toàn trên thời lượng của từng cảnh quay, các mẫu cảnh ngắn dài xen kẽ liên tục và những chuyển động ngay trong khung hình. Nhịp hình giúp định hình cách mắt khán giả quét qua không gian thị giác và tạo ra sự kích thích cần thiết cho người xem xuyên suốt chiều dài câu chuyện.",
+        "text": "Để các công cụ dẫn dắt sự chú ý hoạt động hiệu quả, người dựng cần làm chủ nhịp điệu trong tổ chức thời gian. Nhịp hình được cảm nhận qua thị giác thông qua thời lượng cảnh quay và các mẫu cảnh ngắn dài xen kẽ. Trong khi đó, nhịp âm được cảm nhận qua thính giác dựa trên tiết tấu của âm thanh, nhịp điệu lời thoại và các khoảng nghỉ. Hai yếu tố này phối hợp chặt chẽ với nhau để tạo ra sức hút thị giác và thính giác cho toàn bộ video.",
         "sources": [
           {
             "lessonId": "nhip-dieu-to-chuc-thoi-gian",
             "start": 59
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 95
           }
         ]
       },
       {
-        "text": "Song hành với thị giác chính là nhịp âm hay còn gọi là audio rhythm. Đây là nhịp mà bạn cảm nhận được bằng tai, dựa trên tiết tấu và nhịp điệu của âm thanh, tốc độ của lời thoại, các khoảng nghỉ tĩnh lặng đầy dụng ý và các hiệu ứng âm thanh đặc sắc. Nhịp hình và nhịp âm giống như hai chân của một người vậy, khi mà chúng bước cùng một nhịp thì video của bạn sẽ cực kỳ vững chắc.",
+        "text": "Sự liên kết giữa mục tiêu giao tiếp từ bài tư duy dựng và nhịp điệu từ bài tổ chức thời gian thể hiện rất rõ trong thực tế. Ví dụ, nếu mục tiêu giao tiếp là thuyết phục khán giả, việc kết hợp nhịp hình và nhịp âm bước cùng nhịp sẽ tạo ra cảm xúc mạnh mẽ, tác động trực tiếp đến tâm lý người xem. Ngược lại, nếu mục tiêu là cung cấp thông tin, nhịp điệu cần được giữ ở mức vừa phải để các công cụ hình ảnh và âm thanh không làm quá tải người nghe.",
         "sources": [
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 95
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 108
           },
           {
             "lessonId": "nhip-dieu-to-chuc-thoi-gian",
@@ -171,11 +127,11 @@
         ]
       },
       {
-        "text": "Bên cạnh đó, thời lượng của một cảnh quay cũng ảnh hưởng trực tiếp đến tiết tấu của nhịp dựng phim. Cụ thể, các cảnh ngắn dưới hai giây sẽ tạo ra nhịp độ nhanh, mang lại năng lượng cao và kích thích thị giác mạnh mẽ cho khán giả. Ngược lại, việc kiểm soát khéo léo thời lượng cảnh quay sẽ giúp người dựng dễ dàng đẩy cao trào, nhấn mạnh khoảnh khắc quan trọng hoặc tạo ra những khoảng lặng đắt giá trước điểm then chốt.",
+        "text": "Bên cạnh đó, việc điều khiển nhịp điệu còn giúp nhấn mạnh các thông tin quan trọng. Khi muốn tạo điểm nhấn cho một thông điệp cốt lõi trong bài giảng tư duy dựng, người dựng có thể chủ động giảm tốc độ hoặc tạo khoảng nghỉ ngắn ngay trước điểm then chốt theo hướng dẫn của bài nhịp điệu. Sự phối hợp này giúp sự chú ý của khán giả được điều hướng chính xác vào trọng tâm mà video muốn truyền tải mà không cảm thấy bị ngợp.",
         "sources": [
           {
-            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
-            "start": 161
+            "lessonId": "tu-duy-dung-dieu-huong-tiep-nhan",
+            "start": 255
           },
           {
             "lessonId": "nhip-dieu-to-chuc-thoi-gian",
@@ -186,17 +142,97 @@
     ],
     "checks": [
       {
-        "id": "daily-3-nhip-hinh-va-nhip-am-ket-hop-the-nao-de--c1",
-        "conceptId": "thoi-luong-canh",
-        "prompt": "Cảnh quay có thời lượng dưới 2 giây thường mang lại hiệu quả gì cho nhịp dựng?",
+        "id": "daily-2-ket-hop-nhip-dieu-va-cong-cu-dan-dat-de--c1",
+        "conceptId": "nhip-hinh",
+        "prompt": "Khi mục tiêu giao tiếp của video là thuyết phục khán giả, người dựng nên phối hợp nhịp hình và nhịp âm như thế nào?",
         "options": [
-          "Tạo nhịp chậm rãi, mang lại cảm giác buồn ngủ cho người xem",
-          "Tạo nhịp nhanh, năng lượng cao và kích thích thị giác mạnh",
-          "Làm gián đoạn mạch cảm xúc và gây khó chịu cho khán giả",
-          "Giúp khán giả có nhiều thời gian suy ngẫm về nội dung cốt truyện"
+          "Cố tình làm lệch nhịp giữa hình và âm để gây nhiễu loạn tâm lý khán giả.",
+          "Để nhịp hình và nhịp âm bước cùng nhịp nhằm tạo tác động cảm xúc mạnh mẽ đến tâm lý người xem.",
+          "Chỉ kéo dài thời lượng mỗi cảnh quay trên 10 giây mà không cần quan tâm đến tiết tấu lời thoại.",
+          "Tắt hoàn toàn nhịp âm để khán giả tập trung duy nhất vào các chuyển động trên nhịp hình."
         ],
         "correctIndex": 1,
-        "explanation": "Cảnh ngắn dưới hai giây tạo ra nhịp nhanh, năng lượng cao và kích thích thị giác mạnh mẽ cho người xem."
+        "explanation": "Khi nhịp hình và nhịp âm bước cùng nhịp, video tạo ra sự vững chắc và năng lượng cảm xúc cao, phục vụ hiệu quả cho mục tiêu giao tiếp thuyết phục."
+      }
+    ],
+    "origin": "gemini"
+  },
+  {
+    "id": "daily-3-quy-trinh-4-giai-doan-can-thiep-the-nao-",
+    "title": "Quy trình 4 giai đoạn can thiệp thế nào vào thời lượng cảnh và thời gian?",
+    "readingMinutes": 2,
+    "conceptIds": [
+      "quy-trinh-dung-bon-giai-doan",
+      "thoi-luong-canh",
+      "nen-va-keo-dai-thoi-gian"
+    ],
+    "paragraphs": [
+      {
+        "text": "Quá trình hoàn thiện một video chuyên nghiệp luôn tuân theo quy trình dựng 4 giai đoạn bao gồm Assembly, Rough cut, Fine cut và Time lock. Ở giai đoạn đầu tiên, người dựng sắp xếp tư liệu thô theo trình tự sơ bộ. Sang giai đoạn Rough cut, câu chuyện được định hình rõ ràng hơn và nhịp điệu tổng thể bắt đầu được thiết lập. Mỗi bước trong quy trình này đòi hỏi người dựng phải đưa ra các quyết định chính xác về mặt thời gian và thứ tự xuất hiện của các hình ảnh.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 202
+          },
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 239
+          },
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 272
+          }
+        ]
+      },
+      {
+        "text": "Yếu tố cốt lõi quyết định tiết tấu trong các giai đoạn dựng chính là thời lượng cảnh quay. Một cảnh quay ngắn dưới hai giây thường tạo ra nhịp nhanh, mang lại năng lượng cao và kích thích thị giác mạnh mẽ. Trong khi đó, các cảnh quay trung bình từ hai đến năm giây hoặc cảnh dài trên năm giây lại mang đến cảm giác mượt mà, giúp người xem có thời gian quan sát kỹ lưỡng và cảm nhận sâu hơn về bối cảnh cùng nhân vật.",
+        "sources": [
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 161
+          }
+        ]
+      },
+      {
+        "text": "Khi bước sang giai đoạn Fine cut của quy trình 4 giai đoạn trong bài dựng phi tuyến, người dựng sẽ siết chặt các điểm cắt và ứng dụng kỹ thuật nén và kéo dài thời gian từ bài nhịp điệu. Người dựng có thể sử dụng montage cắt nhanh các cảnh ngắn dưới hai giây để nén thời gian trôi qua một cách hiệu quả, hoặc dùng cảnh quay dài để kéo dài thời gian, tạo điểm dừng cảm xúc mượt mà trước khi chuyển sang giai đoạn chốt bản dựng.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 315
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 240
+          }
+        ]
+      },
+      {
+        "text": "Cuối cùng là giai đoạn Time lock, khi timeline bị khóa hoàn toàn và không còn bất kỳ thay đổi nào về thời gian hay thứ tự video nữa. Việc chốt nhịp điệu hình ảnh ở giai đoạn này tạo tiền đề vững chắc cho đội ngũ âm thanh và chỉnh màu bắt tay vào hoàn thiện sản phẩm. Việc hiểu rõ mối quan hệ giữa các giai đoạn dựng và cách điều khiển thời gian sẽ giúp bạn làm chủ tiến trình hậu kỳ một cách chuyên nghiệp.",
+        "sources": [
+          {
+            "lessonId": "ban-chat-dung-phi-tuyen",
+            "start": 364
+          },
+          {
+            "lessonId": "nhip-dieu-to-chuc-thoi-gian",
+            "start": 281
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "daily-3-quy-trinh-4-giai-doan-can-thiep-the-nao--c1",
+        "conceptId": "nen-va-keo-dai-thoi-gian",
+        "prompt": "Kỹ thuật nén thời gian bằng chuỗi montage cắt nhanh thường được ứng dụng hiệu quả nhất ở giai đoạn nào trong quy trình dựng?",
+        "options": [
+          "Giai đoạn Time lock, khi timeline đã bị khóa và không thể sửa hình ảnh.",
+          "Giai đoạn Assembly, khi mới chỉ nhập và xếp tư liệu thô chưa qua cắt gọt.",
+          "Giai đoạn xuất bản thành phẩm sau khi hoàn tất phối khí âm thanh.",
+          "Giai đoạn Fine cut, khi người dựng siết chặt từng điểm cắt và hoàn thiện nhịp điệu."
+        ],
+        "correctIndex": 3,
+        "explanation": "Ở giai đoạn Fine cut, người dựng đi sâu vào tinh chỉnh chính xác từng điểm cắt và nhịp điệu, ứng dụng các kỹ thuật như nén thời gian để tạo dòng chảy mượt mà trước khi khóa timeline."
       }
     ],
     "origin": "gemini"

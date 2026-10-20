@@ -88,7 +88,7 @@ export const DailyDraft = z.object({
     articles: z.array(
         z.object({
             title: z.string().describe('Tiêu đề gợi tò mò, dạng câu hỏi hoặc nhận định, tiếng Việt'),
-            conceptIds: z.array(z.string()).min(1).describe('id khái niệm bài đọc ôn lại, lấy từ danh sách đã cho'),
+            conceptIds: z.array(z.string()).min(2).describe('id khái niệm bài đọc ôn lại, lấy từ danh sách đã cho; gồm khái niệm của ít nhất 2 bài giảng khác nhau'),
             paragraphs: z
                 .array(
                     z.object({
@@ -96,7 +96,7 @@ export const DailyDraft = z.object({
                         sources: z
                             .array(z.object({ lessonId: z.string(), start: seconds }))
                             .min(1)
-                            .describe('Nguồn: lessonId và start lấy đúng từ các đoạn transcript đã cho'),
+                            .describe('Nguồn: lessonId và start lấy đúng từ các đoạn transcript đã cho; đoạn nối nhiều bài thì ghi nguồn của từng bài'),
                     }),
                 )
                 .min(4)

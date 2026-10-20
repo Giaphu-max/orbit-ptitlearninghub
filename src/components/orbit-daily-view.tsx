@@ -57,7 +57,7 @@ export function OrbitDailyView() {
                                 {p.sources.map((src) => (
                                     <Link
                                         key={`${src.lessonId}-${src.start}`}
-                                        to={`/lesson/${src.lessonId}`}
+                                        to={`/lesson/${src.lessonId}?t=${src.start}`}
                                         className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-semibold text-foreground transition hover:border-brand-300"
                                     >
                                         {getLesson(src.lessonId)?.title ?? src.lessonId}
