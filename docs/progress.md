@@ -38,7 +38,6 @@ Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗ
 ### Giao diện
 - `/studio`: trang rộng hơn khung nhìn (scrollWidth 1100 > 1024), có thanh cuộn ngang; chưa rõ cột nào tràn.
 - `/studio`: ở khung nhìn ~1000px canvas chỉ rộng ~600px, bố cục 2 cột hơi chật; cột trái bị lép.
-- `/studio`: thêm panel "Mô tả ánh sáng bằng lời" làm cột phải dài thêm, nút "Chụp và chấm điểm" nằm rất thấp, phải cuộn mới thấy.
 - `/test/:courseId` (màn giới thiệu): thẻ "Phần thưởng" xuống dòng 3 lần ("+10 XP / câu đúng"), lệch độ cao với hai thẻ còn lại.
 - `/test/:courseId` (đang làm): trên màn hình hẹp 10 chấm điều hướng + 2 nút Câu trước/Câu sau chưa được xem thử; có thể xuống nhiều hàng.
 - `/test/:courseId` (kết quả): 10 thẻ khái niệm xếp dọc rất dài, nên gộp hoặc thu gọn; thẻ đúng nên nhỏ hơn thẻ hổng.
@@ -46,7 +45,6 @@ Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗ
 - `/lesson/:id?t=…`: banner "Đang tiếp tục từ 01:48, chỗ bạn dừng lần trước" sai ngữ cảnh khi vào từ link nguồn Daily hoặc lộ trình ôn (không phải chỗ dừng lần trước).
 - `/lesson/:id`: thẻ đỏ "Làm test tổng hợp" đặt trên khung "Khái niệm chính"; chưa xem thử với dark mode và mobile.
 - `/learning`: toàn bộ là dữ liệu giả (ảnh picsum, 26 khóa bịa, "UI/UX", "Blender" trong thanh "Lộ trình đang học"); không có khóa thật nào và không có đường vào test từ đây; bấm khóa đều dẫn tới `/lesson` chung.
-- `/teacher` tab "Kết quả test": ẩn thanh chọn bài khi ở tab này, nhưng chọn bài ở tab khác rồi quay lại thì thanh chọn nhảy xuất hiện lại (chưa xem thử bố cục mobile).
 - `/studio`: màu sàn, vật thể và nhân vật không đổi theo môi trường AI tạo (chỉ đổi đèn, phông, sương), cảnh đêm vẫn có sàn màu be sáng.
 - Chưa kiểm tra bố cục mobile (≤390px) cho: `/test`, tab "Kết quả test" của giảng viên, panel mô tả ánh sáng ở Studio.
 
@@ -54,7 +52,7 @@ Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗ
 - `src/data/daily.json`: khái niệm "Vai trò của người xem" (`vai-tro-nguoi-xem`) không có bài Daily nào nhắc tới, nên lộ trình ôn của nó hiện "Chưa có bài Daily về khái niệm này".
 - `src/data/daily.json`: ràng buộc "≥2 video" áp ở mức cả bài; đoạn 2 của bài 3 chỉ dẫn 1 nguồn từ 1 video (đúng yêu cầu nhưng chưa nối chéo ở mọi đoạn).
 - `src/data/daily.json`: id bài Daily đổi mỗi lần chạy lại script (`daily-N-<slug tiêu đề>`), nên link cũ và `dailyRead` đã lưu trong localStorage của người dùng sẽ mất khớp sau khi tạo lại nội dung (hồ sơ demo thì đã tự theo dữ liệu).
-- `src/data/class-stats.json` mục `tests`: số liệu do viết tay (30/32 sinh viên, điểm TB 68%…), chưa khớp với số liệu quiz theo khái niệm ở mục `concepts` (ví dụ tỉ lệ đúng test của "Tính phi hủy hoại" 44% so với 59% đúng lần đầu trong quiz).
+- `src/data/class-stats.json` mục `tests`: số liệu do viết tay (30/32 sinh viên, điểm TB 68%…), chưa khớp với số liệu quiz theo khái niệm ở mục `concepts` (ví dụ "Tính phi hủy hoại": test 44% đúng, trong khi quiz ghi 17/29 sai lần đầu tức 41% đúng).
 - Ngân hàng test chỉ có 29 câu cho 13 khái niệm, mỗi lượt đúng 1 câu/khái niệm nên làm lại ít khác biệt; nhiều khái niệm chỉ 2 câu (gốc + biến thể) và Daily check.
 - Câu test lấy lẫn câu quiz-trong-video có ngữ cảnh "vừa xem đoạn video"; chưa rà xem có câu nào mất nghĩa khi đứng riêng.
 - Nội dung do Gemini tạo: tên bài/ khái niệm vẫn lệch giữa bài ("Nhịp Điệu Dựng Phim" viết hoa từng chữ, các tiêu đề Daily kết thúc bằng dấu "?" dù là câu khẳng định); chưa duyệt kiến thức từng câu với giảng viên.
@@ -75,7 +73,7 @@ Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗ
 - Studio: thông báo lỗi khi AI từ chối nội dung không phải ánh sáng hiện như lỗi (`role="alert"`), và lời giải thích thành công bị xóa khi lần sau gặp lỗi (cảnh vẫn giữ nhưng lời giải thích cũ biến mất).
 - Studio: tạo ánh sáng bằng gợi ý nhanh gọi API ngay khi bấm chip, không có bước xác nhận; bấm liên tục chip tốn hạn mức (chỉ chặn khi đang tải).
 - `api/environment.ts` rate limit theo IP chỉ có hiệu lực trong một instance serverless; không có giới hạn tổng theo ngày.
-- `/lesson/:id?t=`: `t` quá nhỏ (<10 giây) không còn hiện banner nhưng vẫn bắt đầu tại đó; `t` lớn hơn độ dài video bị kẹp về cuối.
+- `/lesson/:id?t=`: `t` lớn hơn độ dài video bị kẹp về giây cuối; banner "Đang tiếp tục" hiện cho mọi `t` > 0, kể cả vài giây đầu.
 
 ### Kỹ thuật
 - Build cảnh báo `INEFFECTIVE_DYNAMIC_IMPORT`: `orbit-studio-view.tsx` vừa `lazy()` vừa import tĩnh `DEFAULT_SETUP`/`setupFromEnvironment` từ `studio-scene.tsx`, nên three.js nằm trong chunk trang Studio và `studio-scene-*.js` chỉ còn 0,13 kB; lazy-load thực chất không có tác dụng. Nên tách hằng số và hàm ra file không import three.
@@ -85,4 +83,4 @@ Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗ
 - `api/environment.ts` và `src/lib/environment.ts` nhân đôi miền giá trị (schema Gemini viết tay song song với `validateEnvironment`); đổi khoảng giá trị phải sửa hai nơi.
 - `scripts/generate-content.ts`: lần chạy này Gemini hết hạn mức ở 3 model đầu, Daily được tạo bằng `gemini-3.6-flash`; nội dung phụ thuộc model còn quota nên chất lượng giữa các lần chạy không đồng đều.
 - `npm run dev:vercel` (`vercel dev`) chưa chạy lại sau các thay đổi này, chỉ chạy qua middleware dev của Vite.
-- `scripts/.cache/` và `docs/`, `.claude/` chưa được theo dõi bởi git (docs/progress.md và các file trong `docs/` chưa commit).
+- `docs/mockup*`, `docs/*.html` và `.claude/` vẫn chưa được git theo dõi (cố ý không commit trong đợt này).
