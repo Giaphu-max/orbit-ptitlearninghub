@@ -7,6 +7,7 @@ import { ConceptPopover, type OpenConcept } from '@/components/daily/concept-pop
 import { InlineText } from '@/components/daily/inline-text'
 import { SourceChip } from '@/components/daily/source-chip'
 import { checkBlocks } from '@/lib/daily-text'
+import { breakCombo, celebrate } from '@/lib/feedback'
 import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -62,6 +63,14 @@ export function OrbitDailyView() {
     const checks = checkBlocks(article)
     const allCorrect = checks.every((c) => chosen[c.question.id] === c.question.correctIndex)
 
+    // Trả lời câu kiểm tra: đúng thì phản hồi ngay (không có XP riêng, XP tính khi hoàn thành bài), sai thì ngắt combo
+    const pick = (q: (typeof checks)[number]['question'], n: number, el: HTMLElement) => {
+        const hadWrong = chosen[q.id] !== undefined && chosen[q.id] !== q.correctIndex
+        setChosen((m) => ({ ...m, [q.id]: n }))
+        if (n === q.correctIndex) celebrate({ anchor: el, kind: hadWrong ? 'corrected' : 'correct' })
+        else breakCombo()
+    }
+
     const finish = () => {
         const before = useOrbitStore.getState()
         if (complete(article.id, DAILY_ARTICLE_XP) === 0) return
@@ -103,7 +112,7 @@ export function OrbitDailyView() {
                                     block={block}
                                     pick={chosen[block.question.id]}
                                     locked={read !== undefined}
-                                    onPick={(n) => setChosen((m) => ({ ...m, [block.question.id]: n }))}
+                                    onPick={(n, el) => pick(block.question, n, el)}
                                 />
                             ) : (
                                 <BlockBody block={block} onConcept={openConcept} />
@@ -194,7 +203,7 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
     }
 }
 
-function CheckBlock({ block, pick, locked, onPick }: { block: Extract<DailyBlock, { type: 'check' }>; pick: number | undefined; locked: boolean; onPick: (i: number) => void }) {
+function CheckBlock({ block, pick, locked, onPick }: { block: Extract<DailyBlock, { type: 'check' }>; pick: number | undefined; locked: boolean; onPick: (i: number, el: HTMLElement) => void }) {
     const c = block.question
     const answered = pick !== undefined
     return (
@@ -210,7 +219,7 @@ function CheckBlock({ block, pick, locked, onPick }: { block: Extract<DailyBlock
                             <button
                                 type="button"
                                 disabled={locked || (answered && pick === c.correctIndex)}
-                                onClick={() => onPick(i)}
+                                onClick={(e) => onPick(i, e.currentTarget)}
                                 className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left text-[15px] transition duration-fast ${
                                     correct ? 'border-success bg-success/10 text-foreground' : wrong ? 'answer-wrong' : 'border-border bg-card text-foreground hover:border-brand-300'
                                 }`}

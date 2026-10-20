@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Award, Flame, TrendingUp } from 'lucide-react'
 import { levelProgress, levelTitle } from '@/lib/gamification'
+import { haptic, playComplete, playFanfare } from '@/lib/sound'
 import { useRewardStore, type RewardEvent } from '@/store/useRewardStore'
 
 /** Màn hình nhận thưởng phủ đỏ (theo docs/mockup/Reward.dc.html): hiện lần lượt từng sự kiện trong hàng đợi. */
@@ -28,7 +29,7 @@ export function RewardOverlay() {
 }
 
 /** Độ trễ từng dòng trồi lên (giây) */
-const stagger = (i: number) => ({ animationDelay: `${0.3 + i * 0.12}s` })
+const stagger = (i: number) => ({ animationDelay: `${0.12 + i * 0.08}s` })
 
 function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => void }) {
     const navigate = useNavigate()
@@ -37,6 +38,14 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
     const levelUp = lp.level > lpBefore.level
     const btnRef = useRef<HTMLButtonElement>(null)
     useEffect(() => btnRef.current?.focus(), [])
+
+    // Âm thanh + rung khi màn thưởng hiện: lên cấp hoặc huy hiệu là hồi ba nốt, còn lại là hai nốt
+    const fanfare = levelUp || !!event.badge
+    useEffect(() => {
+        if (fanfare) playFanfare()
+        else playComplete()
+        haptic(fanfare ? [20, 50, 20, 50, 40] : [14, 40, 22])
+    }, [fanfare])
 
     const go = (to: string) => {
         onClose()
@@ -51,7 +60,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.18 }}
             className="fixed inset-0 z-[100] overflow-y-auto overflow-x-hidden bg-reward text-ink-foreground"
         >
             {/* Hình trang trí trôi (chỉ transform) + hai vòng tròn mờ */}
@@ -72,10 +81,15 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                     <span className="rw-chip self-start rounded-full px-3.5 py-2 text-sm font-bold">{event.context}</span>
 
                     {event.xp > 0 && (
-                        <div className="flex animate-pop items-baseline gap-3 lg:gap-4">
+                        <motion.div
+                            initial={{ scale: 0.4, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: 'spring', stiffness: 420, damping: 13, delay: 0.05 }}
+                            className="flex origin-left items-baseline gap-3 lg:gap-4"
+                        >
                             <span className="font-mono text-[clamp(5rem,13vw,10.5rem)] font-bold leading-[0.9] tracking-[-0.06em]">+{event.xp}</span>
                             <span className="text-[clamp(1.75rem,3.4vw,3rem)] font-extrabold">XP</span>
-                        </div>
+                        </motion.div>
                     )}
 
                     <h2 className="max-w-xl text-[clamp(1.75rem,3vw,2.5rem)] font-extrabold leading-[1.15] tracking-tight">{event.headline}</h2>
@@ -97,7 +111,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                 </div>
 
                 {/* ── Cột phải: cấp độ, huy hiệu / mức nắm vững, mở khóa, nút ── */}
-                <div className="flex w-full shrink-0 animate-rise-r2 flex-col gap-5 lg:w-[480px]">
+                <div style={{ animationDelay: '0.15s' }} className="flex w-full shrink-0 animate-rise-r2 flex-col gap-5 lg:w-[480px]">
                     <div className="rw-card relative rounded-3xl p-7">
                         <div className="flex items-baseline justify-between gap-3">
                             <strong className="text-lg">
@@ -195,7 +209,7 @@ function Bar({ from, to, className, trackClass, fillClass }: { from: number; to:
         <span className={`block overflow-hidden rounded-full ${trackClass} ${className}`} role="progressbar" aria-valuenow={Math.round(clamp(to) * 100)} aria-valuemin={0} aria-valuemax={100}>
             <span
                 className={`block h-full w-full origin-left animate-fill-bar rounded-full ${fillClass}`}
-                style={{ transform: `scaleX(${clamp(to)})`, ['--fill-from' as string]: clamp(from), ['--fill-to' as string]: clamp(to) }}
+                style={{ animationDelay: '0.3s', transform: `scaleX(${clamp(to)})`, ['--fill-from' as string]: clamp(from), ['--fill-to' as string]: clamp(to) }}
             />
         </span>
     )

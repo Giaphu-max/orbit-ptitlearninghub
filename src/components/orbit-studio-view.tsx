@@ -4,7 +4,7 @@ import { Camera, Grid3x3, Info, Loader2, RotateCcw, Sparkles } from 'lucide-reac
 import type { GradePhotoResponse, LightingIntent } from '@/lib/api-types'
 import { ApiRequestError, generateEnvironment, gradePhoto, isNotLightingError } from '@/lib/api'
 import { ENV_LIMITS } from '@/lib/environment'
-import { announceRewards, directorScreen, DIRECTOR_MIN_SCORE } from '@/lib/gamification'
+import { announceRewards, DIRECTOR_MIN_SCORE } from '@/lib/gamification'
 import { getStudioBrief, studioBriefsWithConcept } from '@/lib/studio-briefs'
 import { getConcept, lessons } from '@/data'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -75,9 +75,9 @@ export function OrbitStudioView() {
             const { shiftX: _x, shiftY: _y, look: _look, ...director } = setup
             const result = await gradePhoto({ imageBase64: base64, setup: director, intent: buildIntent(setup, applied) })
             const before = useOrbitStore.getState()
-            const xp = before.recordDirectorScore(result.overall)
+            before.recordDirectorScore(result.overall)
             const after = useOrbitStore.getState()
-            announceRewards(before, after, xp > 0 ? directorScreen(result.overall, result.composition, result.lighting) : undefined)
+            announceRewards(before, after)
             setShots((list) => [{ image: dataUrl, result, at: Date.now() }, ...list].slice(0, HISTORY_MAX))
             setPhase({ kind: 'result', image: dataUrl, result })
         } catch (err) {

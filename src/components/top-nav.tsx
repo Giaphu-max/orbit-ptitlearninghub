@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Flame, Menu, RotateCcw, Repeat, X, Zap } from 'lucide-react'
+import { Flame, Menu, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { levelFromXp, visibleStreak } from '@/lib/gamification'
+import { XpChip } from '@/components/xp-chip'
+import { visibleStreak } from '@/lib/gamification'
 import { centerOf, enterRole } from '@/lib/role-switch'
 import { scrollToSection } from '@/lib/scroll'
+import { useSoundStore } from '@/lib/sound'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
 export type NavTone = 'hero' | 'plain'
@@ -158,7 +160,6 @@ export function TopNav() {
         navigate(it.to, { replace: true, preventScrollReset: true })
     }
     const role = useOrbitStore((s) => s.role)
-    const xp = useOrbitStore((s) => s.xp)
     const streakState = useOrbitStore((s) => s.streak)
 
     const items = role === 'teacher' ? TEACHER_ITEMS : BASE_ITEMS
@@ -174,10 +175,7 @@ export function TopNav() {
                 <Flame size={14} className={streak > 0 ? 'fill-current' : ''} />
                 Chuỗi {streak} ngày
             </Link>
-            <Link to="/journey" className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition duration-fast ${t.chip}`}>
-                <Zap size={14} className="fill-current" />
-                Cấp {levelFromXp(xp)} · <span className="font-mono">{xp.toLocaleString('vi-VN')}</span> XP
-            </Link>
+            <XpChip className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition-colors duration-fast ${t.chip}`} />
         </>
     )
 
@@ -295,6 +293,8 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
     const name = useOrbitStore((s) => s.learnerName)
     const setName = useOrbitStore((s) => s.setLearnerName)
     const resetDemo = useOrbitStore((s) => s.resetDemo)
+    const soundOn = useSoundStore((s) => s.enabled)
+    const setSoundOn = useSoundStore((s) => s.setEnabled)
     const navigate = useNavigate()
     const [draft, setDraft] = useState(name)
     const other: Role = role === 'teacher' ? 'student' : 'teacher'
@@ -318,6 +318,18 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
             <p className="text-sm text-muted-foreground">
                 Vai trò: <span className="font-semibold text-foreground">{role === 'teacher' ? 'Giảng viên' : 'Sinh viên'}</span>
             </p>
+            <button
+                type="button"
+                role="switch"
+                aria-checked={soundOn}
+                onClick={() => setSoundOn(!soundOn)}
+                className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+                {soundOn ? <Volume2 size={16} /> : <VolumeX size={16} />} Âm thanh
+                <span aria-hidden className={`ml-auto flex h-5 w-9 items-center rounded-full p-0.5 transition-colors duration-fast ${soundOn ? 'bg-brand-600' : 'bg-border'}`}>
+                    <span className={`h-4 w-4 rounded-full bg-ink-foreground shadow-card transition-transform duration-fast ${soundOn ? 'translate-x-4' : ''}`} />
+                </span>
+            </button>
             <button
                 type="button"
                 onClick={(e) => {

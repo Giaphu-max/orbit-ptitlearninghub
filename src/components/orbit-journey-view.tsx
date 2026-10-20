@@ -145,20 +145,11 @@ function Missions() {
     const claimMission = useOrbitStore((s) => s.claimMission)
     const daily = dailyFor(dailyRaw)
 
-    const claim = (id: string, title: string) => {
+    const claim = (id: string) => {
         const before = useOrbitStore.getState()
         if (claimMission(id) === 0) return
         const after = useOrbitStore.getState()
-        announceRewards(
-            before,
-            after,
-            {
-                context: 'Nhiệm vụ hoàn thành',
-                headline: 'Xong một việc, gần thêm một bước.',
-                rows: [{ label: title, xp: after.xp - before.xp }],
-                next: { label: 'Học tiếp', to: '/learning' },
-            },
-        )
+        announceRewards(before, after)
     }
 
     return (
@@ -193,7 +184,7 @@ function Missions() {
                                 <button
                                     type="button"
                                     disabled={!done}
-                                    onClick={() => claim(m.id, m.title)}
+                                    onClick={() => claim(m.id)}
                                     className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
                                 >
                                     <Zap size={14} className="fill-current" /> {done ? 'Nhận' : 'Thưởng'} +{m.rewardXp} XP

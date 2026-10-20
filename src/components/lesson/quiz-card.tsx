@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown'
 import { motion } from 'motion/react'
 import { ArrowRight, Check, Loader2, PlayCircle, RotateCcw, Sparkles, X } from 'lucide-react'
 import type { Lesson } from '@/data/types'
-import type { QuizPhase } from '@/hooks/useLessonQuiz'
+import type { QuizPhase, QuizReward } from '@/hooks/useLessonQuiz'
+import { breakCombo, celebrate } from '@/lib/feedback'
 import { questionAt, QUIZ_XP } from '@/lib/quiz'
 import { formatTime } from '@/lib/youtube'
 
@@ -13,6 +14,8 @@ interface QuizCardProps {
     canPlay: boolean
     /** Câu đã có kết quả từ trước: làm lại để ôn, không cộng XP */
     isRepeat: boolean
+    /** Phần thưởng của câu vừa trả lời (để nhãn XP bay lên chip) */
+    reward: QuizReward | null
     onAnswer: (index: number) => void
     onReview: () => void
     onNextVariant: () => void
@@ -21,7 +24,7 @@ interface QuizCardProps {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
-export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview, onNextVariant, onResume }: QuizCardProps) {
+export function QuizCard({ lesson, phase, canPlay, isRepeat, reward, onAnswer, onReview, onNextVariant, onResume }: QuizCardProps) {
     const { root, attempt } = phase
     const question = questionAt(root, attempt)!
     const concept = lesson.concepts.find((c) => c.id === question.conceptId)
@@ -46,6 +49,27 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
     }, [answered, question.options.length, onAnswer])
+
+    // Phản hồi ngay khi trả lời: đúng thì lóe xanh, nảy, hạt, nhãn XP, âm thanh; sai thì ngắt chuỗi combo
+    // Giữ theo chỉ số: motion.button không cập nhật ref khi đổi ref giữa các lần render
+    const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
+    const celebrated = useRef('')
+    const rewardRef = useRef(reward)
+    useEffect(() => {
+        rewardRef.current = reward
+    }, [reward])
+    useEffect(() => {
+        if (!answered) return
+        const key = `${question.id}:${attempt}`
+        if (celebrated.current === key) return
+        celebrated.current = key
+        if (!answered.correct) {
+            breakCombo()
+            return
+        }
+        const r = rewardRef.current
+        celebrate({ anchor: optionRefs.current[answered.chosen] ?? null, kind: attempt === 0 ? 'correct' : 'corrected', xp: r && !r.repeat ? r.xp : 0 })
+    }, [answered, question.id, attempt])
 
     const xpIfCorrect = attempt === 0 ? QUIZ_XP.correct : QUIZ_XP.corrected
     const explain = answered?.explain
@@ -97,12 +121,15 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, onAnswer, onReview,
                     return (
                         <motion.button
                             key={i}
+                            ref={(el) => {
+                                optionRefs.current[i] = el
+                            }}
                             type="button"
                             role="radio"
                             aria-checked={isChosen}
                             disabled={!!answered}
                             onClick={() => onAnswer(i)}
-                            animate={isChosen && answered && !answered.correct ? { x: [0, -6, 6, -4, 4, 0] } : isChosen && answered?.correct ? { scale: [1, 1.02, 1] } : {}}
+                            animate={isChosen && answered && !answered.correct ? { x: [0, -6, 6, -4, 4, 0] } : {}}
                             transition={{ duration: 0.35 }}
                             className={`flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-left text-[15px] transition duration-fast disabled:cursor-default ${tone}`}
                         >

@@ -13,7 +13,8 @@ export function QuizRewardToast({ reward }: { reward: QuizReward | null }) {
     const [visible, setVisible] = useState<QuizReward | null>(null)
 
     useEffect(() => {
-        if (!reward) return
+        // Câu có XP đã được báo bằng nhãn bay lên chip XP; thông báo này chỉ cho câu không cộng XP
+        if (!reward || reward.xp > 0) return
         setVisible(reward)
         const t = window.setTimeout(() => setVisible(null), 3200)
         return () => window.clearTimeout(t)

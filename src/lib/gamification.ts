@@ -33,22 +33,21 @@ export function levelProgress(xp: number): LevelProgress {
     return { level, into, span, ratio: span > 0 ? into / span : 0, toNext: span - into }
 }
 
+/** Tên cấp tăng dần theo mức nắm vững; cấp cao nhất là Bậc thầy. */
 const LEVEL_TITLES = [
     'Người mới',
-    'Học việc',
-    'Có nền tảng',
-    'Vững vàng',
-    'Thành thạo',
     'Người quan sát',
-    'Bậc thầy',
-    'Nhà dựng phim',
+    'Người tập dựng',
+    'Người dựng cảnh',
+    'Biên tập viên',
     'Người kể chuyện',
     'Đạo diễn hình ảnh',
-    'Bậc thầy nhịp điệu',
-    'Huyền thoại PTIT',
+    'Nhà làm phim',
+    'Nghệ nhân hình ảnh',
+    'Bậc thầy',
 ]
-/** Mỗi cấp một tên riêng; vượt quá danh sách thì dùng tên cuối kèm số cấp. */
-export const levelTitle = (level: number) => LEVEL_TITLES[level - 1] ?? `${LEVEL_TITLES[LEVEL_TITLES.length - 1]} ${level - LEVEL_TITLES.length + 1}`
+/** Mỗi cấp một tên riêng; từ cấp cuối trở đi giữ danh hiệu Bậc thầy. */
+export const levelTitle = (level: number) => LEVEL_TITLES[Math.min(Math.max(level, 1), LEVEL_TITLES.length) - 1]
 
 // ─── Ngày và tuần (giờ máy) ────────────────────────────────────────────────
 
@@ -254,6 +253,8 @@ export interface RewardScreen {
 /**
  * So sánh trạng thái trước/sau một hành động và đẩy một màn hình thưởng:
  * có `screen` (và XP tăng) thì là màn nhận XP đầy đủ; không thì chỉ hiện khi lên cấp hoặc có huy hiệu mới.
+ * Chỉ truyền `screen` khi xong bài giảng, xong bài Daily hoặc xong test; các hành động còn lại (từng câu quiz,
+ * nhiệm vụ, Studio) chỉ nhận phản hồi nhỏ ở chip XP.
  */
 export function announceRewards(before: Snapshot, after: Snapshot, screen?: RewardScreen) {
     const gained = after.xp - before.xp

@@ -168,6 +168,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                         phase={phase}
                                         canPlay={canPlay}
                                         isRepeat={!!quiz.results[phase.root.id] && !(phase.kind === 'answered')}
+                                        reward={quiz.reward}
                                         onAnswer={quiz.answer}
                                         onReview={quiz.review}
                                         onNextVariant={quiz.nextVariant}
