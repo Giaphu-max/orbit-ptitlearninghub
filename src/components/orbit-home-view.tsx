@@ -373,8 +373,8 @@ function StudioChapter() {
     return (
         <Reveal>
             <Eyebrow>03 · Studio 3D</Eyebrow>
-            <Title id="studio-title">{'Tả ánh sáng.\nRồi chụp.'}</Title>
-            <Lead>Đặt máy, chỉnh tiêu cự và ba đèn trong studio ảo. Bạn đặt máy, AI đặt đèn rồi chấm ảnh.</Lead>
+            <Title id="studio-title">{'Rồi cả khuôn viên\nthành phòng chụp.'}</Title>
+            <Lead>Khối vàng của A3 thành chủ thể, dải kính xanh thành đạo cụ. Bạn đặt máy, AI đặt đèn rồi chấm ảnh.</Lead>
             <div className="flex flex-col gap-4">
                 <Feature icon={<Sparkles size={16} />} title="Prompt-to-Environment">
                     Mô tả ánh sáng bằng lời, AI dựng đèn, màu nền, sương và giải thích theo lý thuyết nhiếp ảnh.
@@ -389,7 +389,7 @@ function StudioChapter() {
                 </span>
                 “Studio tối, đèn chính vàng ấm từ trái, viền sáng phía sau”
             </p>
-            <Link to="/studio" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70">
+            <Link to="/studio" data-vt="studio-stage" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70">
                 Vào Studio <ArrowRight size={16} />
             </Link>
         </Reveal>

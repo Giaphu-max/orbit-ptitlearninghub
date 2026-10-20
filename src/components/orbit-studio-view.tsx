@@ -268,7 +268,7 @@ export function OrbitStudioView() {
                     </div>
 
                     {/* Canvas 3D */}
-                    <div ref={viewportRef} className="relative h-[56vh] overflow-hidden rounded-panel bg-ink shadow-card min-[980px]:h-auto min-[980px]:min-h-0 min-[980px]:flex-1">
+                    <div ref={viewportRef} style={{ viewTransitionName: 'vt-studio-stage' }} className="relative h-[56vh] overflow-hidden rounded-panel bg-ink shadow-card min-[980px]:h-auto min-[980px]:min-h-0 min-[980px]:flex-1">
                         {webgl ? (
                             <div className="absolute inset-0">
                                 <Suspense fallback={<div className="flex h-full items-center justify-center text-ink-foreground"><Loader2 className="animate-spin" /></div>}>

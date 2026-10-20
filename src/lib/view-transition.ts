@@ -26,6 +26,18 @@ function targetPath(to: unknown): string | null {
 }
 
 function kindFor(path: string): { kind: Kind; mark?: () => void } {
+    // Nút "Vào Studio" ở chương cuối trang chủ: sân khấu 3D toàn màn hình morph thành khung studio (cùng góc máy)
+    if (path === '/studio' && lastCard?.dataset.vt === 'studio-stage' && performance.now() - lastClickAt < 800) {
+        return {
+            kind: 'morph',
+            mark: () => {
+                const stage = document.getElementById('home-stage')
+                if (!stage) return
+                stage.style.viewTransitionName = 'vt-studio-stage'
+                window.setTimeout(() => (stage.style.viewTransitionName = ''), CLEAR_MS)
+            },
+        }
+    }
     if (path === '/studio' || path === '/learning') return { kind: 'slide' }
     const m = path.match(/^\/(daily|lesson)\/([^/]+)$/)
     if (m && lastCard && performance.now() - lastClickAt < 800 && lastCard.dataset.vt === `${m[1]}-${decodeURIComponent(m[2])}`) {

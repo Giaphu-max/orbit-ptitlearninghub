@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, type MutableRefObject } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Color, FogExp2, MathUtils, MeshStandardMaterial, Vector3, type PointLight, type SpotLight } from 'three'
+import { Color, FogExp2, MathUtils, Vector3, type PointLight, type SpotLight } from 'three'
 import { STUDIO } from '@/components/home/campus-palette'
+import { createMaterials, tintMaterials, StudioPlinth, PropBlue, PropColumn, PropGreen, PropYellow, STUDIO_PROP_AT, StudioFigure, StudioWalls, type Materials } from '@/components/studio/studio-set'
 import { wrap180, type CameraSetup } from '@/lib/studio-setup'
 
 // Cảnh studio của Virtual Director: phông, chủ thể, vài vật thể gây nhiễu và 3 đèn.
@@ -36,50 +37,6 @@ function Rig({ setup }: { setup: CameraSetup }) {
         cam.updateProjectionMatrix()
     }, [camera, aspect, setup.focalLengthMm, setup.azimuthDeg, setup.elevationDeg, setup.distance, setup.shiftX, setup.shiftY])
     return null
-}
-
-/** Vật liệu của cảnh, tạo riêng cho từng canvas; màu gốc được pha theo môi trường (cảnh đêm thì sàn và vật thể tối đi). */
-type MaterialKey = 'floor' | 'wall' | 'plinth' | 'skin' | 'hair' | 'suit' | 'scarf' | 'propBlue' | 'propYellow' | 'propGreen' | 'column'
-
-const BASE_COLORS: Record<MaterialKey, { color: string; roughness: number; floor?: boolean; flat?: boolean }> = {
-    floor: { color: STUDIO.floor, roughness: 0.9, floor: true },
-    wall: { color: STUDIO.backdrop, roughness: 1 },
-    plinth: { color: STUDIO.plinth, roughness: 0.6 },
-    skin: { color: STUDIO.skin, roughness: 0.55, flat: true },
-    hair: { color: STUDIO.hair, roughness: 0.8, flat: true },
-    suit: { color: STUDIO.suit, roughness: 0.7, flat: true },
-    scarf: { color: STUDIO.scarf, roughness: 0.8, flat: true },
-    propBlue: { color: STUDIO.propBlue, roughness: 0.5 },
-    propYellow: { color: STUDIO.propYellow, roughness: 0.4 },
-    propGreen: { color: STUDIO.propGreen, roughness: 0.6 },
-    column: { color: STUDIO.column, roughness: 0.8 },
-}
-
-type Materials = Record<MaterialKey, MeshStandardMaterial>
-
-function createMaterials(): Materials {
-    const out = {} as Materials
-    for (const key of Object.keys(BASE_COLORS) as MaterialKey[]) {
-        out[key] = new MeshStandardMaterial({ color: BASE_COLORS[key].color, roughness: BASE_COLORS[key].roughness, flatShading: BASE_COLORS[key].flat })
-    }
-    return out
-}
-
-const luminance = (c: Color) => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
-const DEFAULT_LUMINANCE = luminance(new Color(STUDIO.backdrop))
-
-/** Pha màu vật thể theo màu nền: nền càng tối (cảnh đêm) thì sàn và vật thể càng tối, hơi ngả về màu nền. */
-function tintMaterials(mats: Materials, background: Color) {
-    const tone = MathUtils.clamp(luminance(background) / DEFAULT_LUMINANCE, 0, 1)
-    for (const key of Object.keys(BASE_COLORS) as MaterialKey[]) {
-        const base = BASE_COLORS[key]
-        if (key === 'wall') {
-            mats.wall.color.copy(background)
-            continue
-        }
-        const gain = base.floor ? 0.15 + 0.85 * tone : 0.5 + 0.5 * tone
-        mats[key].color.set(base.color).multiplyScalar(gain).lerp(background, base.floor ? 0.3 : 0.12)
-    }
 }
 
 const intensity = (v: number, max: number) => (v / 100) * max
@@ -214,76 +171,16 @@ function Environment({ setup, snapRef, mats }: { setup: CameraSetup; snapRef: Mu
 }
 
 function Subject({ mats }: { mats: Materials }) {
+    const P = STUDIO_PROP_AT
     return (
         <group>
-            <mesh position={[0, 0.06, 0]} receiveShadow castShadow>
-                <cylinderGeometry args={[0.7, 0.8, 0.12, 40]} />
-                <primitive object={mats.plinth} attach="material" />
-            </mesh>
-            {/* Nhân vật low-poly: thân, vai, tay, cổ, đầu (mặt hướng +z, về phía máy ảnh), tóc, khăn đỏ */}
-            <group>
-                <mesh position={[0, 0.57, 0]} castShadow receiveShadow>
-                    <cylinderGeometry args={[0.28, 0.32, 0.9, 8]} />
-                    <primitive object={mats.suit} attach="material" />
-                </mesh>
-                <mesh position={[0, 1.28, 0]} castShadow receiveShadow>
-                    <cylinderGeometry args={[0.4, 0.28, 0.58, 8]} />
-                    <primitive object={mats.suit} attach="material" />
-                </mesh>
-                <mesh position={[0, 1.57, 0]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-                    <capsuleGeometry args={[0.13, 0.74, 3, 8]} />
-                    <primitive object={mats.suit} attach="material" />
-                </mesh>
-                {[-1, 1].map((side) => (
-                    <mesh key={side} position={[side * 0.53, 1.12, 0]} rotation={[0, 0, side * 0.08]} castShadow receiveShadow>
-                        <cylinderGeometry args={[0.09, 0.075, 0.8, 6]} />
-                        <primitive object={mats.suit} attach="material" />
-                    </mesh>
-                ))}
-                <mesh position={[0, 1.72, 0]} castShadow receiveShadow>
-                    <cylinderGeometry args={[0.085, 0.1, 0.2, 8]} />
-                    <primitive object={mats.skin} attach="material" />
-                </mesh>
-                <mesh position={[0, 1.68, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                    <torusGeometry args={[0.17, 0.06, 6, 12]} />
-                    <primitive object={mats.scarf} attach="material" />
-                </mesh>
-                <mesh position={[0, 1.94, 0]} castShadow receiveShadow>
-                    <icosahedronGeometry args={[0.24, 1]} />
-                    <primitive object={mats.skin} attach="material" />
-                </mesh>
-                <mesh position={[0, 1.97, -0.03]} rotation={[-0.25, 0, 0]} castShadow>
-                    <sphereGeometry args={[0.26, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                    <primitive object={mats.hair} attach="material" />
-                </mesh>
-                {[-1, 1].map((side) => (
-                    <mesh key={side} position={[side * 0.085, 1.95, 0.215]}>
-                        <sphereGeometry args={[0.027, 6, 6]} />
-                        <primitive object={mats.hair} attach="material" />
-                    </mesh>
-                ))}
-                <mesh position={[0, 1.9, 0.235]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-                    <coneGeometry args={[0.035, 0.07, 4]} />
-                    <primitive object={mats.skin} attach="material" />
-                </mesh>
-            </group>
+            <StudioPlinth mats={mats} />
+            <StudioFigure mats={mats} />
             {/* Vật thể xung quanh để sinh viên cân nhắc bố cục */}
-            <mesh position={[-1.7, 0.4, -0.6]} castShadow receiveShadow>
-                <boxGeometry args={[0.8, 0.8, 0.8]} />
-                <primitive object={mats.propBlue} attach="material" />
-            </mesh>
-            <mesh position={[1.5, 0.35, 0.2]} castShadow receiveShadow>
-                <sphereGeometry args={[0.35, 32, 32]} />
-                <primitive object={mats.propYellow} attach="material" />
-            </mesh>
-            <mesh position={[2.3, 0.9, -1.4]} castShadow receiveShadow>
-                <cylinderGeometry args={[0.28, 0.28, 1.8, 32]} />
-                <primitive object={mats.propGreen} attach="material" />
-            </mesh>
-            <mesh position={[-2.8, 1.2, -2.4]} castShadow receiveShadow>
-                <cylinderGeometry args={[0.35, 0.35, 2.4, 32]} />
-                <primitive object={mats.column} attach="material" />
-            </mesh>
+            <group position={P.blue}><PropBlue mats={mats} /></group>
+            <group position={P.yellow}><PropYellow mats={mats} /></group>
+            <group position={P.green}><PropGreen mats={mats} /></group>
+            <group position={P.column}><PropColumn mats={mats} /></group>
         </group>
     )
 }
@@ -295,19 +192,7 @@ function Set({ mats }: { mats: Materials }) {
                 <circleGeometry args={[14, 64]} />
                 <primitive object={mats.floor} attach="material" />
             </mesh>
-            {/* Phông cong sau lưng chủ thể */}
-            <mesh position={[0, 3.5, -4.5]} receiveShadow material={mats.wall}>
-                <planeGeometry args={[18, 8]} />
-            </mesh>
-            <mesh position={[0, 3.5, 4.5]} rotation={[0, Math.PI, 0]} material={mats.wall}>
-                <planeGeometry args={[18, 8]} />
-            </mesh>
-            <mesh position={[-6, 3.5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow material={mats.wall}>
-                <planeGeometry args={[18, 8]} />
-            </mesh>
-            <mesh position={[6, 3.5, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow material={mats.wall}>
-                <planeGeometry args={[18, 8]} />
-            </mesh>
+            <StudioWalls mats={mats} />
         </group>
     )
 }

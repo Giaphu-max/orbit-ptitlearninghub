@@ -61,7 +61,7 @@ export function CampusStage({ stage, staticMode, reduce, liftNames, dailyLit, co
     const [enabled] = useState(canRender3D)
 
     return (
-        <div aria-hidden={!enabled} className={`bg-stage pointer-events-none fixed left-0 top-0 w-full ${staticMode ? 'z-20 h-[55svh] border-b border-ink-foreground/15 shadow-raised' : 'z-0 h-[100svh]'}`}>
+        <div id="home-stage" aria-hidden={!enabled} className={`bg-stage pointer-events-none fixed left-0 top-0 w-full ${staticMode ? 'z-20 h-[55svh] border-b border-ink-foreground/15 shadow-raised' : 'z-0 h-[100svh]'}`}>
             <div className="pointer-events-auto absolute inset-0">
                 {enabled ? (
                     <Suspense fallback={null}>

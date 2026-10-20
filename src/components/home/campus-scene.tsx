@@ -6,6 +6,8 @@ import { Html, OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
+import { DEFAULT_SETUP } from '@/lib/studio-setup'
+import { createMaterials, PropBlue, PropColumn, PropGreen, PropYellow, STUDIO_PROP_AT, StudioFigure, StudioPlinth, StudioWalls, tintMaterials } from '@/components/studio/studio-set'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
 // Hình khối, màu và số đo giữ nguyên bản gốc; không dùng file model nào.
@@ -368,9 +370,13 @@ interface WorldProps {
     dailyLit: React.MutableRefObject<boolean[]>
     stage: React.MutableRefObject<number>
     coursePct: Readonly<Record<string, number>>
+    /** Các nhóm thu nhỏ biến mất ở chương Studio (cảnh đặt scale theo S, không qua React) */
+    shrink: { trees: React.RefObject<THREE.Group | null>; clouds: React.RefObject<THREE.Group | null>; ground: React.RefObject<THREE.Group | null> }
+    /** Máy yếu: cây không đổ bóng */
+    lowQuality: boolean
 }
 
-function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, coursePct }: WorldProps) {
+function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, coursePct, shrink, lowQuality }: WorldProps) {
     const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name), pct: coursePct[name] })
 
     return (
@@ -378,6 +384,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             {/* Nền, đường, bãi cỏ */}
             <Box s={[46, 1, 36]} c={C.plateEdge} at={[0, -1.2, 0]} />
             <Box s={[45, 0.4, 35]} c={C.plate} at={[0, -0.4, 0]} />
+            <group ref={shrink.ground}>
             <Box s={[45, 0.02, 3]} c={C.road} at={[0, 0, 16]} />
             <Box s={[9, 0.02, 8]} c={C.pave} at={[2, 0, 9]} />
             {LAWNS.map(([x, z, w, d], i) => (
@@ -392,6 +399,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     <Box s={[0.85, 0.35, 1.1]} c={c} at={[x, 0.5, z - 0.1]} />
                 </group>
             ))}
+            </group>
 
             {/* Tòa A2 */}
             <Building {...b('Tòa A2')} anchorY={17.6} position={[2, 0, 1]}>
@@ -485,23 +493,27 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             </Building>
 
             {/* Cây */}
+            <group ref={shrink.trees}>
             {TREE_SPOTS.map(([x, z], i) => {
                 const s = 0.8 + ((i * 37) % 10) / 22
                 return (
                     <group key={i}>
-                        <mesh position={[x, 0.6 * s, z]} material={stdMat(C.trunk)} castShadow receiveShadow>
+                        <mesh position={[x, 0.6 * s, z]} material={stdMat(C.trunk)} castShadow={!lowQuality} receiveShadow>
                             <cylinderGeometry args={[0.14 * s, 0.2 * s, 1.2 * s, 6]} />
                         </mesh>
-                        <mesh position={[x, 1.9 * s, z]} material={stdMat(i % 3 ? C.tree : C.tree2)} castShadow receiveShadow>
+                        <mesh position={[x, 1.9 * s, z]} material={stdMat(i % 3 ? C.tree : C.tree2)} castShadow={!lowQuality} receiveShadow>
                             <icosahedronGeometry args={[1.15 * s, 0]} />
                         </mesh>
                     </group>
                 )
             })}
+            </group>
 
-            {[0, 1, 2, 3].map((i) => (
-                <Cloud key={i} index={i} reduce={reduce} />
-            ))}
+            <group ref={shrink.clouds}>
+                {[0, 1, 2, 3].map((i) => (
+                    <Cloud key={i} index={i} reduce={reduce} />
+                ))}
+            </group>
         </>
     )
 }
@@ -534,11 +546,60 @@ interface CamKey {
     t: Vec3
     fov: number
 }
+/** Hệ số từ mét (studio) sang đơn vị khuôn viên: nhân vật Studio cao ~2 m thành ~10 đơn vị, vừa tầm tòa A2. */
+const K = 5
+const STUDIO_TARGET: Vec3 = [0, 1.1 * K, 0]
+/** Góc máy mặc định của Studio (tiêu cự 50mm, góc/độ cao/khoảng cách theo DEFAULT_SETUP) trong hệ khuôn viên */
+function studioCam(): CamKey {
+    const d = DEFAULT_SETUP
+    const a = THREE.MathUtils.degToRad(d.azimuthDeg)
+    const e = THREE.MathUtils.degToRad(d.elevationDeg)
+    // Cùng hướng nhìn và tiêu cự với Studio, lùi 1,7 lần để thấy đủ nhân vật, vật thể và phông
+    const r = d.distance * K * 1.7
+    return {
+        p: [Math.sin(a) * Math.cos(e) * r + STUDIO_TARGET[0], Math.sin(e) * r + STUDIO_TARGET[1], Math.cos(a) * Math.cos(e) * r + STUDIO_TARGET[2]],
+        t: STUDIO_TARGET,
+        fov: THREE.MathUtils.radToDeg(2 * Math.atan(24 / (2 * d.focalLengthMm))),
+    }
+}
+
+// Match cut chương Studio: vị trí gốc các tòa và đích của chúng (khối vật thể Studio, mét × K)
+const BASE_XZ: Record<string, [number, number]> = { 'Tòa A2': [2, 1], 'Tòa A3': [12.5, -9.5], 'Hội trường A1': [-11, -9], 'Tòa A1': [-11.5, 3.5], Canteen: [-1.5, -11], 'Cổng trường': [2, 13.2] }
+const P_AT = STUDIO_PROP_AT
+const MORPH_TO: Record<string, [number, number]> = {
+    'Tòa A2': [0, 0],
+    'Tòa A3': [P_AT.yellow[0] * K, P_AT.yellow[2] * K],
+    'Tòa A1': [P_AT.blue[0] * K, P_AT.blue[2] * K],
+    'Hội trường A1': [P_AT.column[0] * K, P_AT.column[2] * K],
+}
+/** Cửa kính xanh của A2 (tâm, hệ thế giới) thành trụ xanh */
+const A2_GLASS_AT: Vec3 = [2, 8.3, 2.6]
+/** Khoảng S của match cut và của từng khối */
+const MORPH_FROM = 2.15
+const MORPH_TO_S = 2.95
+/** Đèn Studio mặc định; đèn viền (mặc định 0) bật nhẹ để thấy viền đỏ. Cường độ ×K² vì ánh sáng điểm giảm theo bình phương khoảng cách. */
+const RIM_ON = 30
+const I_KEY = (DEFAULT_SETUP.key / 100) * 140 * K * K
+const I_FILL = (DEFAULT_SETUP.fill / 100) * 40 * K * K
+const I_RIM = (RIM_ON / 100) * 160 * K * K
+const polarAt = (azDeg: number, elDeg: number, radius: number): Vec3 => {
+    const a = THREE.MathUtils.degToRad(azDeg)
+    const e = THREE.MathUtils.degToRad(elDeg)
+    return [Math.sin(a) * Math.cos(e) * radius + STUDIO_TARGET[0], Math.sin(e) * radius + STUDIO_TARGET[1], Math.cos(a) * Math.cos(e) * radius + STUDIO_TARGET[2]]
+}
+const LOOK = DEFAULT_SETUP.look
+const KEY_SIDE = Math.sign(DEFAULT_SETUP.keyAngleDeg) || 1
+const KEY_POS = polarAt(DEFAULT_SETUP.azimuthDeg + DEFAULT_SETUP.keyAngleDeg, LOOK.keyElevationDeg, 6 * K)
+const FILL_POS = polarAt(DEFAULT_SETUP.azimuthDeg - KEY_SIDE * LOOK.fillSideDeg, LOOK.fillElevationDeg, 6 * K)
+const RIM_POS = polarAt(DEFAULT_SETUP.azimuthDeg + 180 + KEY_SIDE * LOOK.rimSideDeg, LOOK.rimElevationDeg, 5 * K)
+const PLATE_LIGHT = new THREE.Color(CAMPUS.plate)
+const PLATE_DARK = new THREE.Color(CAMPUS.plateDark)
+
 /** Máy quay theo chương 1..3 (chương 0 là góc nhìn hero do OrbitControls điều khiển). */
 const CHAPTER_CAMS: CamKey[] = [
     { p: [24, 16, 50], t: [3, 8.5, 1], fov: 30 }, // 01 Hôm nay: sát tòa A2
     { p: [58, 36, 52], t: [6, 7, -3], fov: 32 }, // 02 Khóa học: A2 + A3 nhấc lên
-    { p: [3, 13, 64], t: [2, 6, 0], fov: 34 }, // 03 Studio: chính diện
+    studioCam(), // 03 Studio: đúng góc máy mặc định của trang Studio (nhân hệ số K)
 ]
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
@@ -672,7 +733,34 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
     const nightRef = useRef(reduce && night ? 1 : 0)
     const nightTarget = useRef(night ? 1 : 0)
     const mood = useRef(0)
+    const morph = useRef(0)
+    const morphed = useRef(false)
     const ctlOn = useRef(true)
+    // Match cut → Studio: vật thể Studio thật (studio-set), đèn 3 điểm mặc định, nhóm thu nhỏ của khuôn viên
+    const treesG = useRef<THREE.Group>(null)
+    const cloudsG = useRef<THREE.Group>(null)
+    const groundG = useRef<THREE.Group>(null)
+    const shrink = useMemo(() => ({ trees: treesG, clouds: cloudsG, ground: groundG }), [])
+    const plinthG = useRef<THREE.Group>(null)
+    const figureG = useRef<THREE.Group>(null)
+    const blueG = useRef<THREE.Group>(null)
+    const yellowG = useRef<THREE.Group>(null)
+    const greenG = useRef<THREE.Group>(null)
+    const columnG = useRef<THREE.Group>(null)
+    const wallsG = useRef<THREE.Group>(null)
+    const keyL = useRef<THREE.SpotLight>(null)
+    const fillL = useRef<THREE.PointLight>(null)
+    const rimL = useRef<THREE.SpotLight>(null)
+    const studioMats = useMemo(() => {
+        const m = createMaterials()
+        tintMaterials(m, new THREE.Color(DEFAULT_SETUP.look.background))
+        return m
+    }, [])
+    const plateMat = useMemo(() => stdMat(CAMPUS.plate), [])
+    // Đo FPS: dưới 40 thì giảm chất lượng (shadow map nhỏ, cây không đổ bóng)
+    const perf = useRef({ t: 0, n: 0, bad: 0 })
+    const [lowQuality, setLowQuality] = useState(false)
+    const lowRef = useRef(false)
     const heroPos = useRef(START_POS.clone())
     const fitScale = useRef(1)
     const [hovered, setHovered] = useState<BuildingName | null>(null)
@@ -704,12 +792,14 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
     const applyLights = (n: number) => {
         // Về cuối trang chủ (chương Studio) ánh sáng dịu bớt cho hợp nền gần đen
         const dim = 1 - 0.3 * mood.current
+        // Match cut: nắng khuôn viên tắt dần khi bộ đèn Studio bật
+        const off = 1 - morph.current
         if (sun.current) {
-            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * dim
+            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * dim * (0.04 + 0.96 * off)
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
-        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * dim
-        if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI
+        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * dim * (0.2 + 0.8 * off)
+        if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI * off
     }
 
     // Màn chuyển giao diện đang che: đặt thẳng ánh sáng mới rồi vẽ đúng một khung (canvas đang dừng)
@@ -734,6 +824,17 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
         return () => window.clearTimeout(resumeTimer.current)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [domElement, touch])
+
+    // Giảm chất lượng: shadow map nhỏ hơn (tạo lại khi đổi kích thước)
+    useEffect(() => {
+        if (!lowQuality) return
+        for (const [light, size] of [[sun.current, 1024], [keyL.current, 512]] as const) {
+            if (!light) continue
+            light.shadow.mapSize.set(size, size)
+            light.shadow.map?.dispose()
+            light.shadow.map = null
+        }
+    }, [lowQuality])
 
     // Bấm (không phải kéo) vào tòa có khóa học: mở khóa đó. Tia lấy theo điểm bấm nên cảm ứng cũng dùng được.
     useEffect(() => {
@@ -880,6 +981,84 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
             grp.position.y = next
         })
 
+        // ── Match cut khuôn viên → phòng chụp Studio (S 2.15 → 2.95; cuộn ngược thì chạy ngược) ──
+        const m = easeInOutCubic(band(S, MORPH_FROM, MORPH_TO_S))
+        if (S > MORPH_FROM - 0.1 || morphed.current) {
+            morphed.current = S > MORPH_FROM - 0.1
+            if (Math.abs(m - morph.current) > 0.0005 || !morphed.current) {
+                morph.current = m
+                applyLights(nightRef.current)
+            }
+            const grow = (a: number, b: number) => Math.max(easeInOutCubic(band(S, a, b)), 0.001)
+            const out = (a: number, b: number) => Math.max(1 - easeInOutCubic(band(S, a, b)), 0.001)
+            const set = (g: THREE.Object3D | null, sc: number, x = 0, y = 0, z = 0) => {
+                if (!g) return
+                g.visible = sc > 0.01
+                g.scale.setScalar(sc)
+                g.position.set(x, y, z)
+            }
+            // Cây, mây, đường/bãi cỏ/xe thu nhỏ biến mất
+            const sOut = out(2.1, 2.5)
+            for (const g of [treesG.current, cloudsG.current, groundG.current]) {
+                if (g) {
+                    g.visible = sOut > 0.01
+                    g.scale.setScalar(sOut)
+                }
+            }
+            // Các tòa trượt về đích và thu nhỏ; vật thể Studio tương ứng lớn lên ở đích
+            const buildingScale: Record<string, number> = { 'Tòa A3': out(2.35, 2.8), 'Hội trường A1': out(2.3, 2.8), 'Tòa A1': out(2.3, 2.8), Canteen: sOut, 'Cổng trường': sOut }
+            registry.current.forEach((grp, name) => {
+                const base = BASE_XZ[name]
+                if (!base) return
+                const to = MORPH_TO[name] ?? base
+                grp.position.x = base[0] + (to[0] - base[0]) * m
+                grp.position.z = base[1] + (to[1] - base[1]) * m
+                if (name === 'Tòa A2') {
+                    // A2 thu vào bục: thấp và mảnh dần, ẩn hẳn khi gần xong
+                    grp.scale.set(1 - 0.65 * m, 1 - 0.55 * m, 1 - 0.65 * m)
+                    grp.visible = m < 0.98
+                } else {
+                    const sc = buildingScale[name] ?? 1
+                    grp.scale.setScalar(sc)
+                    grp.visible = sc > 0.01
+                }
+            })
+            const Y = P_AT.yellow
+            set(plinthG.current, K * grow(2.3, 2.8))
+            set(figureG.current, K * grow(2.6, 3))
+            set(yellowG.current, K * grow(2.45, 2.95), Y[0] * K, Y[1] * K, Y[2] * K)
+            set(blueG.current, K * grow(2.4, 2.9), P_AT.blue[0] * K, P_AT.blue[1] * K, P_AT.blue[2] * K)
+            set(columnG.current, K * grow(2.4, 2.95), P_AT.column[0] * K, P_AT.column[1] * K, P_AT.column[2] * K)
+            // Dải kính xanh A2 → trụ xanh
+            set(greenG.current, K * grow(2.3, 2.9), A2_GLASS_AT[0] + (P_AT.green[0] * K - A2_GLASS_AT[0]) * m, A2_GLASS_AT[1] + (P_AT.green[1] * K - A2_GLASS_AT[1]) * m, A2_GLASS_AT[2] + (P_AT.green[2] * K - A2_GLASS_AT[2]) * m)
+            if (wallsG.current) {
+                const e = grow(2.4, 3)
+                wallsG.current.visible = e > 0.01
+                wallsG.current.scale.set(K, K * e, K)
+            }
+            // Mặt đất tối dần
+            plateMat.color.copy(PLATE_LIGHT).lerp(PLATE_DARK, m)
+            // Bộ đèn 3 điểm của Studio
+            if (keyL.current) keyL.current.intensity = I_KEY * m
+            if (fillL.current) fillL.current.intensity = I_FILL * m
+            if (rimL.current) rimL.current.intensity = I_RIM * m
+            if (keyL.current) keyL.current.shadow.autoUpdate = m > 0.01
+        }
+
+        // ── Đo FPS (chỉ khi tab đang hiện): hai lần liên tiếp dưới 40fps thì giảm chất lượng ──
+        const pf = perf.current
+        pf.t += delta
+        if (++pf.n >= 90) {
+            const fps = pf.n / pf.t
+            pf.bad = fps < 40 && !document.hidden && !lowRef.current ? pf.bad + 1 : 0
+            if (pf.bad >= 2 && !lowRef.current) {
+                lowRef.current = true
+                setLowQuality(true)
+            }
+            pf.t = 0
+            pf.n = 0
+        }
+
         // Nhãn: chỉ ở hero và chương Khóa học; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
         if (frame.current++ % 6 === 0) {
             const gate = S < 0.45 || (S > 1.55 && S < 2.45)
@@ -937,8 +1116,34 @@ function Scene({ night, reduce, touch, staticMode, stage, liftNames, dailyLit, c
                 shadow-bias={-0.0006}
             />
             <directionalLight ref={rim} color={CAMPUS.rimLight} intensity={0.35 * Math.PI} position={[30, 14, -30]} />
+            {/* Bộ đèn 3 điểm của Studio (thông số mặc định), tắt cho tới chương Studio */}
+            <spotLight ref={keyL} position={KEY_POS} color={LOOK.keyColor} intensity={0} angle={0.6} penumbra={0.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
+            <pointLight ref={fillL} position={FILL_POS} color={LOOK.fillColor} intensity={0} />
+            <spotLight ref={rimL} position={RIM_POS} color={LOOK.rimColor} intensity={0} angle={0.7} penumbra={0.5} />
+            {/* Vật thể Studio thật (studio-set), hiện dần theo match cut */}
+            <group ref={wallsG} visible={false} scale={[K, 0.001, K]}>
+                <StudioWalls mats={studioMats} />
+            </group>
+            <group ref={plinthG} visible={false} scale={0.001}>
+                <StudioPlinth mats={studioMats} />
+            </group>
+            <group ref={figureG} visible={false} scale={0.001}>
+                <StudioFigure mats={studioMats} />
+            </group>
+            <group ref={yellowG} visible={false} scale={0.001}>
+                <PropYellow mats={studioMats} />
+            </group>
+            <group ref={greenG} visible={false} scale={0.001}>
+                <PropGreen mats={studioMats} />
+            </group>
+            <group ref={blueG} visible={false} scale={0.001}>
+                <PropBlue mats={studioMats} />
+            </group>
+            <group ref={columnG} visible={false} scale={0.001}>
+                <PropColumn mats={studioMats} />
+            </group>
             <group ref={world}>
-                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} coursePct={coursePct} />
+                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} coursePct={coursePct} shrink={shrink} lowQuality={lowQuality} />
             </group>
         </>
     )
