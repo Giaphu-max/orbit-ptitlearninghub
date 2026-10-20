@@ -129,6 +129,7 @@ const TONE = {
 export function TopNav() {
     const { pathname, hash } = useLocation()
     const navigate = useNavigate()
+    const [menuOpen, setMenuOpen] = useState(false)
     const onHome = pathname === '/'
     const pastHero = useScrolledPastHero(onHome)
     const activeSection = useActiveSection(onHome)
@@ -136,6 +137,7 @@ export function TopNav() {
     const t = TONE[tone]
     const isActive = (it: NavItem) => (onHome ? it.section === activeSection : it.match(pathname))
     const goTo = (e: ReactMouseEvent, it: NavItem) => {
+        setMenuOpen(false)
         if (!onHome || !it.section) return
         e.preventDefault()
         scrollToSection(it.section)
@@ -144,7 +146,6 @@ export function TopNav() {
     const role = useOrbitStore((s) => s.role)
     const xp = useOrbitStore((s) => s.xp)
     const streakState = useOrbitStore((s) => s.streak)
-    const [menuOpen, setMenuOpen] = useState(false)
 
     const items = role === 'teacher' ? [...BASE_ITEMS, { label: 'Giảng viên', to: '/teacher', match: (p: string) => p.startsWith('/teacher') } as NavItem] : BASE_ITEMS
     const streak = visibleStreak(streakState).count

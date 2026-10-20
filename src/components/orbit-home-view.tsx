@@ -281,18 +281,19 @@ function ProgressSection() {
         <section id="progress" aria-labelledby="progress-title" className="section-anchor">
             <SectionHeading id="progress-title" eyebrow="Tiến độ của bạn" title="Đi đều, hiểu chắc." />
             <div className="mt-7 grid gap-5 lg:grid-cols-[1.9fr_1fr]">
-                <div className="rounded-[26px] border border-border bg-card p-6 shadow-card">
+                <div className="min-w-0 rounded-[26px] border border-border bg-card p-6 shadow-card">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <h3 className="font-bold text-foreground">Cây kỹ năng · {course?.title ?? 'Chưa có khóa học'}</h3>
                         <Link to="/journey" className="text-sm font-bold text-brand-ink underline underline-offset-4">
                             Mở cây kỹ năng
                         </Link>
                     </div>
-                    <ol className="mt-6 flex items-center" aria-label="Các khái niệm trong cây kỹ năng">
+                    <div className="-mx-2 mt-6 overflow-x-auto px-2 pb-2">
+                    <ol className="flex w-max min-w-full items-center" aria-label="Các khái niệm trong cây kỹ năng">
                         {nodes.map((n, i) => {
                             const mastered = n.mastery >= UNLOCK_THRESHOLD
                             return (
-                                <li key={n.concept.id} className="flex items-center" style={{ flex: i < nodes.length - 1 ? '1 1 0' : '0 0 auto' }}>
+                                <li key={n.concept.id} className="relative flex items-center" style={{ flex: i < nodes.length - 1 ? '1 1 0' : '0 0 auto' }}>
                                     <span
                                         title={`${n.concept.name}: ${Math.round(n.mastery * 100)}%`}
                                         className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
@@ -311,6 +312,7 @@ function ProgressSection() {
                             )
                         })}
                     </ol>
+                    </div>
                     <p className="mt-5 text-[15px] text-muted-foreground">
                         {current ? (
                             <>

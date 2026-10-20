@@ -69,8 +69,11 @@ function CourseBlock({ course }: { course: Course }) {
                         </Link>
                     )}
                     <Link to={`/test/${course.id}`} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-bold text-foreground transition hover:bg-muted">
-                        <ClipboardCheck size={15} /> Làm test cuối chương
-                        {record && <span className="font-mono text-muted-foreground">· tốt nhất {record.bestCorrect}/{record.bestTotal}</span>}
+                        <ClipboardCheck size={15} className="shrink-0" />
+                        <span>
+                            Làm test cuối chương
+                            {record && <span className="text-muted-foreground"> · tốt nhất <span className="font-mono">{record.bestCorrect}/{record.bestTotal}</span></span>}
+                        </span>
                     </Link>
                 </div>
             </div>

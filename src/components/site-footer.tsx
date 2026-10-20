@@ -71,6 +71,7 @@ export function SiteFooter() {
                             Nền tảng học tập có điểm dừng cho sinh viên PTIT: trợ giảng AI bám bài giảng thật, bài đọc ngắn mỗi ngày và phần thưởng gắn với việc hiểu bài.
                         </p>
                     </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:contents">
                     {groups.map((g) => (
                         <nav key={g.title} aria-label={g.title}>
                             <h2 className="text-eyebrow uppercase text-foreground">{g.title}</h2>
@@ -91,6 +92,7 @@ export function SiteFooter() {
                             </ul>
                         </nav>
                     ))}
+                    </div>
                 </div>
 
                 <div className="mt-12 flex flex-col gap-1.5 border-t border-border pt-6 text-sm text-muted-foreground">

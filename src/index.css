@@ -150,6 +150,8 @@
 
   body {
     @apply bg-surface font-sans text-foreground;
+    /* Không để nội dung tràn ngang làm nới khung nhìn trên điện thoại (thanh nav cố định sẽ bị đẩy ra ngoài màn hình) */
+    overflow-x: clip;
   }
 }
 

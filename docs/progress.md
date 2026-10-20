@@ -33,7 +33,34 @@ Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗ
 - Chạy thật trên `npm run dev`: Daily (link `?t=` đúng), làm test từ đầu đến kết quả, tab giảng viên, Studio với Gemini thật (hoàng hôn gắt cho ra cảnh ấm tối, bóng dài), gọi `/api/environment` với nội dung lạc đề trả 422 thân thiện, nhánh lỗi quá giờ giữ cảnh cũ. Giao diện tối của trang kết quả test xem ổn.
 - Chưa kiểm tra: `vercel dev`, điện thoại thật, màn hình nhỏ cho trang `/test`, thao tác bàn phím trên trang test, đo độ mượt chuyển cảnh Studio.
 
-## Lỗi và chỗ chưa ổn (mỗi dòng một mục)
+## Đợt 2 (21/10): trang chủ nhiều phần, nav cuộn, footer, /learning thật
+
+### Đã làm
+- Nav: thứ tự Trang chủ, Orbit Daily, Khóa học, Studio 3D; thanh nav cố định ở mọi trang (trong suốt đè hero ở đầu trang chủ, đổi sang nền mờ khi cuộn qua hero); `--nav-h` trong `index.css`.
+- Trang chủ: Hero → Orbit Daily → Khóa học → Studio 3D → Tiến độ của bạn → Footer. Mỗi phần dùng `SectionHeading` (dòng nhỏ viết hoa + tiêu đề lớn, cùng lề trái).
+- Khóa học: thẻ khóa thật (tiến độ, Học tiếp, Làm test cuối chương) + 3 thẻ bài của khóa kèm tiến độ; nút "Xem tất cả khóa học".
+- Studio 3D: ảnh tĩnh chụp từ studio thật (mặc định và "hoàng hôn gắt, bóng đổ dài") trong `src/assets/`, nút "Vào Studio"; không dựng cảnh 3D thứ hai.
+- Bấm nav cuộn mượt tới phần (scroll-margin = chiều cao nav), mục đang xem sáng theo IntersectionObserver; ở trang khác thì về trang chủ rồi cuộn; reduced-motion thì nhảy thẳng. Kiểm tra bằng trình duyệt: cả 4 mục cuộn đúng (đỉnh phần cách đỉnh 80px), mục sáng đúng khi cuộn, từ `/studio` bấm "Khóa học" về `/#courses`.
+- Footer (`site-footer.tsx`): logo + mô tả, nhóm link Học tập / Công cụ / Về dự án, bốn dòng thông tin theo yêu cầu; dùng ở trang chủ và `/learning`.
+- `/learning`: viết lại hoàn toàn, bỏ dữ liệu giả; mỗi khóa có tiến độ, danh sách bài (tiến độ từng bài, nút Vào bài/Học tiếp/Xem lại), nút Làm test cuối chương.
+- Sửa lỗi tràn ngang trên điện thoại ở trang chủ (hàng khái niệm của cây kỹ năng và chữ `sr-only` làm khung nhìn nới rộng, đẩy nút menu/theme ra ngoài màn hình khi nav cố định); thêm `overflow-x: clip` cho body.
+- Đã xem ở 375px, 1280px, 1920px, giao diện sáng và tối (trang chủ, `/learning`, footer, menu điện thoại).
+
+### Lỗi và chỗ chưa ổn mới thấy
+- Trang chủ, phần Khóa học: dữ liệu chỉ có 1 khóa, nên 4 thẻ là 1 thẻ khóa + 3 thẻ bài, chưa phải 3–4 khóa khác nhau.
+- Trang chủ, nav: phần "Tiến độ của bạn" không có mục nav riêng, nên khi cuộn tới đó không mục nào sáng (hoặc giữ Studio 3D khi ở cuối trang).
+- Trang chủ, nav: cuộn mượt qua quãng dài (từ đầu trang tới Studio) mất vài giây trong khung xem trước; chưa thử trên máy thật.
+- Trang chủ, Studio 3D: ảnh chụp 901×600 hơi mờ trên màn 1920px; ảnh hoàng hôn nền gần đen, nhân vật tối; chưa có ảnh riêng cho giao diện sáng/tối.
+- Trang chủ, Hero: nút theme và avatar trong nav kiểu hero (nền tối) đổi sang kiểu thường khi cuộn qua hero, có thoáng chớp trong lúc chuyển.
+- Footer: link "Mã nguồn" trỏ GitHub `Giaphu-max/orbit-ptitlearninghub` (có thể cần đặt công khai hoặc đổi) và "Học viện PTIT" trỏ `ptit.edu.vn` (chưa kiểm tra đường dẫn); chưa có trang "Về dự án" thật.
+- Footer: link "Trợ giảng AI" chỉ mở bài đầu tiên, không phải trang riêng; nhóm "Về dự án" chỉ có 2 link.
+- `/learning`: chỉ 1 khóa; trên điện thoại hàng bài xếp dọc khá dài; nút test dài, xuống dòng.
+- `/learning`: thanh điều hướng cũ "Lộ trình đang học" và lưới khóa giả đã bỏ, nhưng chưa có tìm kiếm/lọc khi số khóa tăng.
+- Giao diện tối: lúc chuyển giao diện có vòng tròn đỏ (theme-curtain) còn sót trong ảnh chụp giữa chừng, chưa rõ có biến mất hẳn trên mọi trình duyệt.
+- Nav: trên màn hẹp, mục đang xem trong menu điện thoại chỉ đổi nền, không có dấu hiệu khác; menu không tự cuộn khi cao hơn màn hình.
+- Trang giảng viên và `/test`: nav cố định mới chưa kiểm tra riêng bố cục ở màn hẹp (đã chừa `--nav-h` ở trên).
+
+## Lỗi và chỗ chưa ổn (đợt 1; mỗi dòng một mục)
 
 ### Giao diện
 - `/studio`: trang rộng hơn khung nhìn (scrollWidth 1100 > 1024), có thanh cuộn ngang; chưa rõ cột nào tràn.
@@ -44,7 +71,6 @@ Cập nhật 20/10/2026, sau đợt làm 3 chức năng còn lại. Phần "Lỗ
 - `/daily/:id`: chip nguồn hiện nguyên tên bài giảng rất dài ("Tổ chức cấu trúc nội dung và điều hướng tiếp nhận trong dựng phim 01:48"), xuống dòng xấu, lặp lại nhiều lần trong một bài.
 - `/lesson/:id?t=…`: banner "Đang tiếp tục từ 01:48, chỗ bạn dừng lần trước" sai ngữ cảnh khi vào từ link nguồn Daily hoặc lộ trình ôn (không phải chỗ dừng lần trước).
 - `/lesson/:id`: thẻ đỏ "Làm test tổng hợp" đặt trên khung "Khái niệm chính"; chưa xem thử với dark mode và mobile.
-- `/learning`: toàn bộ là dữ liệu giả (ảnh picsum, 26 khóa bịa, "UI/UX", "Blender" trong thanh "Lộ trình đang học"); không có khóa thật nào và không có đường vào test từ đây; bấm khóa đều dẫn tới `/lesson` chung.
 - `/studio`: màu sàn, vật thể và nhân vật không đổi theo môi trường AI tạo (chỉ đổi đèn, phông, sương), cảnh đêm vẫn có sàn màu be sáng.
 - Chưa kiểm tra bố cục mobile (≤390px) cho: `/test`, tab "Kết quả test" của giảng viên, panel mô tả ánh sáng ở Studio.
 
