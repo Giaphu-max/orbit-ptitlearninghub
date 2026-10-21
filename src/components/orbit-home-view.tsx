@@ -26,10 +26,17 @@ export function OrbitHomeView() {
     const dailyLit = useDailyLit()
     const rootRef = useRef<HTMLDivElement>(null)
     const screenRef = useRef<HTMLDivElement>(null)
-    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef }), [])
+    const stageRef = useRef<HTMLDivElement>(null)
+    const footerRef = useRef<HTMLDivElement>(null)
+    const dockRef = useRef<HTMLDivElement>(null)
+    const capRef = useRef<HTMLSpanElement>(null)
+    const [calm, setCalm] = useCalm()
+    const calmRef = useRef(calm)
+    calmRef.current = calm
+    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, cap: capRef, calm: calmRef }), [])
 
     return (
-        <div ref={rootRef} className="relative w-full bg-stage text-ink-foreground">
+        <div ref={rootRef} data-calm={calm} className="relative w-full bg-stage text-ink-foreground">
             <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} />
             <div aria-hidden className="stage-glow pointer-events-none fixed inset-0 z-[1]" />
             <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" style={{ opacity: 'calc(1 - var(--kiosk-focus, 0))' }} />
@@ -44,7 +51,7 @@ export function OrbitHomeView() {
                 <Chapter id="daily" index={1} staticMode={staticMode}>
                     <DailyChapter />
                 </Chapter>
-                <Chapter id="courses" index={2} staticMode={staticMode} tall hideOnDesktop>
+                <Chapter id="courses" index={2} staticMode={staticMode} tall hideOnDesktop={!calm}>
                     <CoursesChapter stopNames={stopNames} summaryOf={summaryOf} staticMode={staticMode} />
                 </Chapter>
                 <Chapter id="studio" index={3} staticMode={staticMode}>
@@ -58,7 +65,23 @@ export function OrbitHomeView() {
                 </p>
             )}
 
-            <div className="relative z-10">
+            {!staticMode && (
+                <div ref={dockRef} className="fixed bottom-5 right-[max(1.5rem,4vw)] z-[6] flex items-center gap-3 font-mono text-[11px] text-ink-foreground/70">
+                    <span ref={capRef} aria-hidden />
+                    <button
+                        type="button"
+                        aria-pressed={calm}
+                        onClick={() => setCalm(!calm)}
+                        className="rounded-full border border-ink-foreground/20 bg-ink/80 px-3 py-1.5 text-xs font-bold text-ink-foreground transition hover:bg-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
+                    >
+                        {calm ? 'Hiện cảnh 3D' : 'Làm mờ cảnh 3D'}
+                    </button>
+                </div>
+            )}
+
+            {/* Footer nằm trên mọi lớp 3D và màn kiosk; dải chuyển màu ở mép trên */}
+            <div ref={footerRef} className="relative z-[20] flow-root bg-card">
+                <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-24 h-24 bg-gradient-to-b from-transparent to-card" />
                 <SiteFooter />
             </div>
         </div>
@@ -80,6 +103,27 @@ function useBuildingCourses() {
             coursePct: Object.fromEntries(withCourse.map((x) => [x.name, x.sum.pct])) as Readonly<Record<string, number>>,
         }
     }, [summaries])
+}
+
+const CALM_KEY = 'orbit-calm'
+/** Chế độ làm mờ cảnh 3D, nhớ trong localStorage (bọc try/catch). */
+function useCalm() {
+    const [calm, set] = useState(() => {
+        try {
+            return localStorage.getItem(CALM_KEY) === '1'
+        } catch {
+            return false
+        }
+    })
+    const setCalm = (v: boolean) => {
+        set(v)
+        try {
+            localStorage.setItem(CALM_KEY, v ? '1' : '0')
+        } catch {
+            /* không lưu được thì thôi */
+        }
+    }
+    return [calm, setCalm] as const
 }
 
 /** Bài Daily hôm nay (đúng thứ tự danh sách) đã đọc chưa → ref cho cảnh 3D, mỗi bài một tầng cửa sổ A2. Ghi ref, không render lại cảnh. */

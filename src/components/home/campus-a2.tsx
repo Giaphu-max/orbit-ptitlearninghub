@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { A2COL as A, CAMPUS, LOBBY as L } from './campus-palette'
+import { PracticeRoom } from './campus-room'
 import { Box, Cylinder, DrawPlane, HipRoof, stdMat, TextPlane, type BoxProps, type TextOpts, type Vec3 } from './campus-prims'
 
 // Phần mới của khuôn viên theo bản mẫu docs/mockup/orbit-campus-journey.html: đế tòa A2 (sảnh lõm, mặt kính nhìn xuyên vào trong,
@@ -311,7 +312,8 @@ function Kiosk() {
 }
 
 const DOWNLIGHTS: [number, number][] = [[-16.5, 8], [-16.5, 1], [-16.5, -6], [16.5, 8], [16.5, 1], [16.5, -6], [-7, -7.5], [7, -7.5]]
-const LOBBY_LIGHTS: Vec3[] = [[-13, 6, 7], [13, 6, 7], [0, 7, 3], [-14, 3.5, -6], [14, 3.5, -6]]
+// Ít đèn điểm để shader không phình (mỗi đèn nhân chi phí biên dịch của mọi vật liệu)
+const LOBBY_LIGHTS: Vec3[] = [[-12, 6, 6], [12, 6, 6], [0, 6, -4]]
 const PLANT_LEAVES = Array.from({ length: 9 }, (_, i) => [Math.cos(i * 0.7) * 0.8, 1.25 + (i % 3) * 0.2, 3 + Math.sin(i * 0.7) * 0.8, i % 2] as const)
 
 /** Sảnh A2 (rộng 20 × sâu 11 sau khi thu nhỏ): sáng dần từ lúc máy còn đứng ngoài nhìn qua kính. */
@@ -334,7 +336,7 @@ export function A2Lobby({ stage }: { stage: React.MutableRefObject<number> }) {
     }, [floorMat])
 
     useFrame(() => {
-        const k = lerp(5, 15, band(stage.current, 1.1, 1.43))
+        const k = lerp(5, 15, band(stage.current, 1.1, 1.43)) * (1 - band(stage.current, 2.2, 2.6) * 0.5)
         for (const l of lights.current) if (l) l.intensity = k
     })
 
@@ -351,12 +353,11 @@ export function A2Lobby({ stage }: { stage: React.MutableRefObject<number> }) {
             <IB s={[17.8, 4.2, 0.3]} mat={granite} at={[11.1, 2.1, -10]} />
             <IB s={[40, 3.8, 0.3]} mat={white} at={[0, 6.1, -10]} />
             <IB s={[4.4, 0.4, 0.3]} mat={white} at={[0, 4, -10]} />
-            {/* Hành lang ngắn sau lối đi giữa (bước sau sẽ nối tới phòng thực hành) */}
+            {/* Hành lang ngắn sau lối đi giữa nối vào phòng thực hành */}
             <IB s={[4.4, 0.2, 3]} mat={floorMat} at={[0, FY - 0.1, -11.5]} />
             <IB s={[0.3, 4, 3]} mat={white} at={[-2.2, 2, -11.5]} />
             <IB s={[0.3, 4, 3]} mat={white} at={[2.2, 2, -11.5]} />
             <IB s={[4.4, 0.2, 3]} mat={white} at={[0, 4, -11.5]} />
-            <IB s={[4.4, 4, 0.3]} mat={white} at={[0, 2, -13]} />
             <DrawPlane w={3.6} h={0.64} cw={1024} ch={180} draw={drawRoomSign} at={[0, 3.55, -9.84]} />
 
             {/* Sàn lửng hai bên và phía sau, lan can kính */}
@@ -443,6 +444,8 @@ export function A2Lobby({ stage }: { stage: React.MutableRefObject<number> }) {
                 ))}
                 <Kiosk />
             </group>
+
+            <PracticeRoom stage={stage} floorY={FY} worldScale={LOBBY_SCALE} />
 
             {LOBBY_LIGHTS.map(([x, y, z], i) => (
                 <pointLight key={i} ref={(l) => void (lights.current[i] = l)} position={[x, y, z]} color={L.point} intensity={5} distance={18} decay={1.2} />

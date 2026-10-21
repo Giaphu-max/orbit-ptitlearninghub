@@ -58,5 +58,6 @@ export const LOBBY = {
     techA: '#0E2A5C', techB: '#1E5C9C', techLine: 'rgba(120,200,255,.35)', techText: '#FFFFFF',
     loveBg: '#8F96A3', loveTile: '255,255,255', loveRed: '#E0262E', loveRed2: '#B8141B', loveDark: '#1A0A0A',
     houseRoof: '#9C9893', kiosk: '#F3F2EF', screen: '#0B0B0D', screenGlow: '#140A0B',
+    roomFloor: '#C79B72', roomCeil: '#F2EEE9', desk: '#F4F0EA', deskLeg: '#888888', roomLamp: '#FFF6E8', roomPoint: '#FFF3E0',
     roomRed: '#C4161C', roomText: '#FFFFFF', point: '#FFF1E2', corridor: '#C79B72',
 } as const

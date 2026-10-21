@@ -7,6 +7,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
 import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
+import { STUDIO_Z } from './campus-room'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
@@ -462,6 +463,10 @@ const APPROACH: [number, THREE.Vector3, THREE.Vector3][] = [
     [1.63, lobbyPoint(-4.8, 2.8, 3.4), KSCR.center.clone()],
     [APPROACH_END, KIOSK_CAM, KSCR.center.clone()],
 ]
+/** Từ kiosk lùi ra, băng qua sảnh, hành lang, vào lớp và nhìn về bộ studio (S 1.9 → 3) */
+const ROOM_FROM = 1.9
+const ROOM_POS = new THREE.CatmullRomCurve3([KIOSK_CAM, lobbyPoint(-3.5, 2.6, 0.5), lobbyPoint(-1, 2.3, -4), lobbyPoint(-1.5, 2.1, -6), lobbyPoint(0, 1.9, -9), lobbyPoint(0, 2.8, -14.5), lobbyPoint(0, 3.3, -16.5)], false, 'centripetal')
+const ROOM_TGT = new THREE.CatmullRomCurve3([KSCR.center.clone(), lobbyPoint(-1, 2.3, -6), lobbyPoint(0, 2, -12), lobbyPoint(0, 1.8, -22), lobbyPoint(0, 1.6, STUDIO_Z + 1), lobbyPoint(0, 1.7, STUDIO_Z)], false, 'centripetal')
 const catmull = (pts: THREE.Vector3[]) => new THREE.CatmullRomCurve3(pts, false, 'centripetal')
 const APPROACH_POS = catmull(APPROACH.map((k) => k[1]))
 const APPROACH_TGT = catmull(APPROACH.map((k) => k[2]))
@@ -543,6 +548,35 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
     el.style.pointerEvents = live ? 'auto' : 'none'
     el.inert = !live
     if (op > 0) el.style.transform = homography(KIOSK_W, KIOSK_H, pts)
+}
+
+const CAPTIONS: [number, string][] = [[0.15, 'Khuôn viên PTIT'], [1, 'Vòng quanh trường'], [1.43, 'Tòa A2 · cửa kính tự mở'], [2, 'Sảnh A2'], [2.55, 'Hành lang']]
+const captionAt = (s: number) => CAPTIONS.find(([to]) => s < to)?.[1] ?? 'Phòng thực hành'
+
+/**
+ * Phần "vỏ" quanh cảnh, ghi thẳng vào DOM (chỉ khi giá trị đổi): chú thích máy quay, canvas và dock mờ dần khi footer đi vào.
+ * Chế độ làm mờ để CSS (data-calm) lo phần canvas.
+ */
+function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, last: { cap: string; stage: string; dock: string }) {
+    const footer = kiosk.footer.current
+    const out = footer ? clamp01(1 - footer.getBoundingClientRect().top / window.innerHeight) : 0
+    const stageOpacity = calm ? '' : (1 - out * 0.9).toFixed(3)
+    const dockOpacity = (1 - out).toFixed(2)
+    const cap = captionAt(S)
+    if (stageOpacity !== last.stage && kiosk.stage.current) {
+        last.stage = stageOpacity
+        kiosk.stage.current.style.opacity = stageOpacity
+    }
+    const dock = kiosk.dock.current
+    if (dock && dockOpacity !== last.dock) {
+        last.dock = dockOpacity
+        dock.style.opacity = dockOpacity
+        dock.style.pointerEvents = out > 0.5 ? 'none' : ''
+    }
+    if (cap !== last.cap && kiosk.cap.current) {
+        last.cap = cap
+        kiosk.cap.current.textContent = cap
+    }
 }
 
 const wrapDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180
@@ -684,6 +718,7 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
     // S đã làm mượt (lerp theo dt) và mức "đã vào trong nhà" (0 ngoài sân → 1 trong sảnh): nắng giảm, đèn trong sảnh nổi lên
     const sm = useRef(stage.current)
     const indoor = useRef(0)
+    const chrome = useRef({ cap: '', stage: '', dock: '' })
     // Đo FPS: dưới 40 thì giảm chất lượng (shadow map nhỏ, cây không đổ bóng)
     const perf = useRef({ t: 0, n: 0, bad: 0 })
     const [lowQuality, setLowQuality] = useState(false)
@@ -750,12 +785,14 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
     }, [domElement, touch])
 
     // Giảm chất lượng: shadow map nhỏ hơn (tạo lại khi đổi kích thước)
+    const setDpr = useThree((s) => s.setDpr)
     useEffect(() => {
         if (!lowQuality || !sun.current) return
+        setDpr(1)
         sun.current.shadow.mapSize.set(1024, 1024)
         sun.current.shadow.map?.dispose()
         sun.current.shadow.map = null
-    }, [lowQuality])
+    }, [lowQuality, setDpr])
 
     // Bấm (không phải kéo) vào tòa có khóa học: mở khóa đó. Tia lấy theo điểm bấm nên cảm ứng cũng dùng được.
     useEffect(() => {
@@ -804,9 +841,13 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
         const p = pointer.current
 
         // ── S làm mượt theo dt. Chế độ tĩnh: không bay, mọi chương sau hero đứng ở khung chính diện A2 (S = 1) ──
+        // Chế độ làm mờ: camera ngừng theo cuộn (giữ nguyên S)
+        const calmOn = kiosk.calm.current && !staticMode
         const want = staticMode ? Math.min(stage.current, 1) : stage.current
-        sm.current = reduce || staticMode ? want : sm.current + (want - sm.current) * (1 - Math.exp(-Math.min(delta, 0.05) * S_SMOOTH))
-        if (Math.abs(want - sm.current) < 1e-4) sm.current = want
+        if (!calmOn) {
+            sm.current = reduce || staticMode ? want : sm.current + (want - sm.current) * (1 - Math.exp(-Math.min(delta, 0.05) * S_SMOOTH))
+            if (Math.abs(want - sm.current) < 1e-4) sm.current = want
+        }
         const S = sm.current
         const live = S > HERO_EPS // đã rời hero: camera chạy theo đường bay, hero tắt kéo xoay và tự xoay
         indoor.current = band(S, 1.33, 1.45)
@@ -860,6 +901,11 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
                 _look.copy(TARGET).lerp(A2_FACE, t)
                 camera.position.set(_look.x + r * Math.sin(az) * Math.cos(el), _look.y + r * Math.sin(el), _look.z + r * Math.cos(az) * Math.cos(el))
                 fov = lerp(FOV, ORBIT_FOV, t)
+            } else if (S >= ROOM_FROM) {
+                const t = smoothstep(band(S, ROOM_FROM, 3))
+                ROOM_POS.getPoint(t, camera.position)
+                ROOM_TGT.getPoint(t, _look)
+                fov = lerp(46, 44, t)
             } else {
                 const s = Math.min(S, APPROACH_END)
                 const u = approachU(s)
@@ -879,13 +925,14 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
         }
 
         // ── Kiosk: zoom tới thì khung nhìn về giữa (hết dịch sang phải), màn DOM bám 4 góc màn 3D ──
-        const f = kioskFocus(S)
+        const f = calmOn ? 0 : kioskFocus(S)
         if (!staticMode) {
             const ox = -size.width * DESKTOP_SHIFT * (1 - f)
             if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01) camera.setViewOffset(size.width, size.height, ox, 0, size.width, size.height)
         }
         camera.updateMatrixWorld()
-        placeKiosk(kiosk, camera, size, S, f, !staticMode)
+        placeKiosk(kiosk, camera, size, S, f, !staticMode && !calmOn)
+        updateChrome(kiosk, S, calmOn, chrome.current)
 
         // ── Nền trời và sương: đỏ PTIT → đỏ sẫm (hết chương Hôm nay) → tối dần khi bước vào sảnh (S 1.36 → 1.46) ──
         colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 1.36, 1.46)))

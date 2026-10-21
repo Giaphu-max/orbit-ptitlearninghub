@@ -1,13 +1,24 @@
-import type { RefObject } from 'react'
+import type { MutableRefObject, RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Play } from 'lucide-react'
 import { CourseArt } from '@/components/courses/course-cover'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 
-/** Cầu nối giữa cảnh 3D và DOM: cảnh ghi transform/độ mờ của màn kiosk và biến CSS --kiosk-focus lên phần tử gốc mỗi khung hình. */
+/**
+ * Cầu nối giữa cảnh 3D và DOM: cảnh ghi trực tiếp (trong useFrame, không qua React) transform/độ mờ của màn kiosk, biến CSS --kiosk-focus
+ * lên phần tử gốc, độ mờ của canvas theo footer, độ mờ và chú thích của dock.
+ */
 export interface KioskBridge {
     screen: RefObject<HTMLDivElement | null>
     root: RefObject<HTMLElement | null>
+    /** Khung canvas cố định: mờ dần khi footer đi vào */
+    stage: RefObject<HTMLDivElement | null>
+    footer: RefObject<HTMLElement | null>
+    dock: RefObject<HTMLElement | null>
+    /** Chú thích vị trí máy quay trên dock */
+    cap: RefObject<HTMLElement | null>
+    /** Chế độ làm mờ cảnh 3D: camera ngừng theo cuộn */
+    calm: MutableRefObject<boolean>
 }
 
 /** Kích thước thiết kế của màn kiosk (tỉ lệ 16:10, khớp màn 3D); cảnh 3D map 4 góc của khối này bằng matrix3d. */
