@@ -26,7 +26,7 @@ export type Materials = Record<MaterialKey, MeshStandardMaterial>
 export function createMaterials(): Materials {
     const out = {} as Materials
     for (const key of Object.keys(BASE_COLORS) as MaterialKey[]) {
-        out[key] = new MeshStandardMaterial({ color: BASE_COLORS[key].color, roughness: BASE_COLORS[key].roughness, flatShading: BASE_COLORS[key].flat })
+        out[key] = new MeshStandardMaterial({ color: BASE_COLORS[key].color, roughness: BASE_COLORS[key].roughness, flatShading: BASE_COLORS[key].flat ?? false })
     }
     return out
 }

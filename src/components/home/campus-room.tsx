@@ -76,7 +76,9 @@ export function PracticeRoom({ stage, floorY, worldScale }: { stage: React.Mutab
         lampMat.emissiveIntensity = lerp(1.1, 0.15, st)
         if (keyL.current) {
             keyL.current.intensity = I_KEY * st
-            keyL.current.shadow.autoUpdate = st > 0.01
+            // Chỉ đổ bóng khi đèn thật sự sáng: shadow map luôn được vẽ khi đã được đưa vào shader
+            const shadow = st > 0.01
+            if (keyL.current.castShadow !== shadow) keyL.current.castShadow = shadow
         }
         if (fillL.current) fillL.current.intensity = I_FILL * st
         if (rimL.current) rimL.current.intensity = I_RIM * st
@@ -133,7 +135,7 @@ export function PracticeRoom({ stage, floorY, worldScale }: { stage: React.Mutab
                 </group>
                 <primitive object={keyT} position={STUDIO_TARGET} />
                 <primitive object={rimT} position={STUDIO_TARGET} />
-                <spotLight ref={keyL} target={keyT} position={KEY_POS} color={LOOK.keyColor} intensity={0} angle={0.6} penumbra={0.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
+                <spotLight ref={keyL} target={keyT} position={KEY_POS} color={LOOK.keyColor} intensity={0} angle={0.6} penumbra={0.6} shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
                 <pointLight ref={fillL} position={FILL_POS} color={LOOK.fillColor} intensity={0} />
                 <spotLight ref={rimL} target={rimT} position={RIM_POS} color={LOOK.rimColor} intensity={0} angle={0.7} penumbra={0.5} />
             </group>

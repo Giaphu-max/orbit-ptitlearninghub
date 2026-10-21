@@ -754,7 +754,7 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
         // Vào trong nhà: nắng, trời và đèn viền giảm hẳn để đèn trong sảnh làm chủ
         const inside = indoor.current
         if (sun.current) {
-            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * (1 - 0.85 * inside)
+            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * (1 - inside)
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
         if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * (1 - 0.68 * inside)
@@ -995,6 +995,10 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
         // Chuyển hoàng hôn ↔ buổi tối
         nightRef.current += (nightTarget.current - nightRef.current) * (reduce ? 1 : 0.04)
         applyLights(nightRef.current)
+        // Chỉ một đèn đổ bóng tại một thời điểm: nắng ngoài trời; vào hẳn trong nhà (nắng đã về 0) thì tắt, nhường đèn key của studio.
+        // Đèn castShadow mà không được vẽ shadow map sẽ làm sampler bóng thiếu texture (GL_INVALID_OPERATION), nên luôn bật/tắt cùng lúc với nguồn sáng.
+        const sunShadow = indoor.current < 1
+        if (sun.current && sun.current.castShadow !== sunShadow) sun.current.castShadow = sunShadow
         void state
     })
 
@@ -1107,7 +1111,7 @@ export default function CampusScene({ night, reduce, staticMode, stage, dailyLit
                     frameloop={frozen ? 'never' : 'always'}
                     legacy
                     flat
-                    shadows="soft"
+                    shadows="percentage"
                     dpr={[1, 2]}
                     camera={{ fov: FOV, position: START_POS.toArray(), near: 1, far: 400 }}
                     gl={{ antialias: true, alpha: true }}

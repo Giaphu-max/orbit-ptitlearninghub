@@ -24,7 +24,9 @@ export function stdMat(color: string, o: MatOpts = {}) {
     let m = matCache.get(key)
     if (!m) {
         const { flat = true, opacity, ...rest } = o
-        m = new THREE.MeshStandardMaterial({ color, flatShading: flat, roughness: 0.9, metalness: 0, ...rest, ...(opacity === undefined ? {} : { transparent: true, opacity, depthWrite: false }) })
+        const params = { color, flatShading: flat, roughness: 0.9, metalness: 0, ...rest, ...(opacity === undefined ? {} : { transparent: true, opacity, depthWrite: false }) }
+        // Three cảnh báo khi tham số có giá trị undefined: bỏ các khóa đó
+        m = new THREE.MeshStandardMaterial(Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined)))
         matCache.set(key, m)
     }
     return m
