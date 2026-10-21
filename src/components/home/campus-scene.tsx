@@ -6,7 +6,8 @@ import { Html, OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
-import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP } from './campus-a2'
+import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
+import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
@@ -472,6 +473,78 @@ function approachU(s: number) {
 }
 const approachFov = (s: number) => (s < 1.52 ? lerp(ORBIT_FOV, 56, smoothstep(band(s, 1.24, 1.5))) : lerp(56, 46, smoothstep(band(s, 1.52, 1.7))))
 
+// ── Màn kiosk: map khối DOM 960×600 lên 4 góc màn 3D bằng CSS matrix3d (homography) ──
+const _corner = new THREE.Vector3()
+const _toCam = new THREE.Vector3()
+/** Giải hệ 8 ẩn bằng khử Gauss có chọn trụ */
+function solve8(A: number[][], b: number[]) {
+    for (let i = 0; i < 8; i++) {
+        let m = i
+        for (let r = i + 1; r < 8; r++) if (Math.abs(A[r][i]) > Math.abs(A[m][i])) m = r
+        ;[A[i], A[m]] = [A[m], A[i]]
+        ;[b[i], b[m]] = [b[m], b[i]]
+        for (let r = i + 1; r < 8; r++) {
+            const f = A[r][i] / A[i][i]
+            for (let c = i; c < 8; c++) A[r][c] -= f * A[i][c]
+            b[r] -= f * b[i]
+        }
+    }
+    const x = new Array<number>(8)
+    for (let i = 7; i >= 0; i--) {
+        let t = b[i]
+        for (let c = i + 1; c < 8; c++) t -= A[i][c] * x[c]
+        x[i] = t / A[i][i]
+    }
+    return x
+}
+/** Góc của khối w×h (trái-trên, phải-trên, trái-dưới, phải-dưới) → 4 điểm P (px màn hình) */
+function homography(w: number, h: number, P: number[][]) {
+    const S = [[0, 0], [w, 0], [0, h], [w, h]]
+    const A: number[][] = []
+    const B: number[] = []
+    for (let i = 0; i < 4; i++) {
+        const [x, y] = S[i]
+        const [u, v] = P[i]
+        A.push([x, y, 1, 0, 0, 0, -u * x, -u * y])
+        B.push(u)
+        A.push([0, 0, 0, x, y, 1, -v * x, -v * y])
+        B.push(v)
+    }
+    const [a, b, c, d, e, f, g, k] = solve8(A, B)
+    return `matrix3d(${a},${d},0,${g},${b},${e},0,${k},0,0,1,0,${c},${f},0,1)`
+}
+/** Mức zoom vào kiosk: 0 → 1 trong S 1.52–1.7, rời đi ở S 1.88–2.05 */
+const kioskFocus = (s: number) => band(s, 1.52, 1.7) * (1 - band(s, 1.88, 2.05))
+
+function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: { width: number; height: number }, S: number, f: number, enabled: boolean) {
+    const el = kiosk.screen.current
+    kiosk.root.current?.style.setProperty('--kiosk-focus', f.toFixed(3))
+    if (!el) return
+    let op = enabled ? band(S, 1.3, 1.42) * (1 - band(S, 2.0, 2.14)) : 0
+    // Màn quay lưng lại camera thì ẩn
+    if (op > 0 && _toCam.copy(camera.position).sub(KSCR.center).dot(KSCR.normal) <= 0) op = 0
+    const pts: number[][] = []
+    if (op > 0) {
+        for (const [x, y] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) {
+            _corner.set((x * SCR_W) / 2, (y * SCR_H) / 2, 0).applyMatrix4(KSCR.matrix).project(camera)
+            // Góc nằm ngoài frustum (gần/xa) thì ẩn
+            if (_corner.z > 1 || _corner.z < -1) {
+                op = 0
+                break
+            }
+            pts.push([((_corner.x + 1) / 2) * size.width, ((1 - _corner.y) / 2) * size.height])
+        }
+    }
+    const shown = op * (0.4 + 0.6 * f)
+    // Chỉ nhận chuột/bàn phím khi đã zoom xong
+    const live = f > 0.9 && op > 0.9
+    el.style.opacity = shown.toFixed(3)
+    el.style.visibility = shown > 0.002 ? 'visible' : 'hidden'
+    el.style.pointerEvents = live ? 'auto' : 'none'
+    el.inert = !live
+    if (op > 0) el.style.transform = homography(KIOSK_W, KIOSK_H, pts)
+}
+
 const wrapDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180
 const RAD = Math.PI / 180
 const lerp = THREE.MathUtils.lerp
@@ -499,6 +572,8 @@ interface SceneProps {
     stage: React.MutableRefObject<number>
     /** Bài Daily hôm nay (theo thứ tự) đã đọc chưa: mỗi bài = một tầng cửa sổ A2 */
     dailyLit: React.MutableRefObject<boolean[]>
+    /** Màn kiosk (DOM) được định vị lên màn 3D */
+    kiosk: KioskBridge
     /** % tiến độ khóa theo tên tòa, hiện trên nhãn */
     coursePct: Readonly<Record<string, number>>
     pointer: React.MutableRefObject<{ x: number; y: number; inside: boolean }>
@@ -592,7 +667,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, staticMode, stage, dailyLit, coursePct, pointer, onOpenCourse }: SceneProps) {
+function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, coursePct, pointer, onOpenCourse }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -803,6 +878,15 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, coursePct, p
             if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, pos: camera.position.toArray(), look: _look.toArray(), fov }
         }
 
+        // ── Kiosk: zoom tới thì khung nhìn về giữa (hết dịch sang phải), màn DOM bám 4 góc màn 3D ──
+        const f = kioskFocus(S)
+        if (!staticMode) {
+            const ox = -size.width * DESKTOP_SHIFT * (1 - f)
+            if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01) camera.setViewOffset(size.width, size.height, ox, 0, size.width, size.height)
+        }
+        camera.updateMatrixWorld()
+        placeKiosk(kiosk, camera, size, S, f, !staticMode)
+
         // ── Nền trời và sương: đỏ PTIT → đỏ sẫm (hết chương Hôm nay) → tối dần khi bước vào sảnh (S 1.36 → 1.46) ──
         colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 1.36, 1.46)))
         if (scene.background instanceof THREE.Color) scene.background.copy(colors.now)
@@ -923,11 +1007,12 @@ export interface CampusSceneProps {
     staticMode: boolean
     stage: React.MutableRefObject<number>
     dailyLit: React.MutableRefObject<boolean[]>
+    kiosk: KioskBridge
     coursePct: Readonly<Record<string, number>>
     onOpenCourse?: (courseId: string) => void
 }
 
-export default function CampusScene({ night, reduce, staticMode, stage, dailyLit, coursePct, onOpenCourse }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, stage, dailyLit, kiosk, coursePct, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -982,7 +1067,7 @@ export default function CampusScene({ night, reduce, staticMode, stage, dailyLit
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} dailyLit={dailyLit} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
+                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}
         </div>

@@ -10,6 +10,7 @@ import { DAILY_LIMIT, gapScore, todaysDaily } from '@/lib/next-step'
 import { useScrollStage, useStageMode } from '@/hooks/useScrollStage'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusStage } from '@/components/home/campus-stage'
+import { KioskScreen, type KioskBridge } from '@/components/home/kiosk-screen'
 import { SiteFooter } from '@/components/site-footer'
 
 /**
@@ -23,12 +24,16 @@ export function OrbitHomeView() {
     const { stage, scrolled } = useScrollStage({ staticMode, barRef })
     const { stopNames, summaryOf, coursePct } = useBuildingCourses()
     const dailyLit = useDailyLit()
+    const rootRef = useRef<HTMLDivElement>(null)
+    const screenRef = useRef<HTMLDivElement>(null)
+    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef }), [])
 
     return (
-        <div className="relative w-full bg-stage text-ink-foreground">
-            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} dailyLit={dailyLit} coursePct={coursePct} />
+        <div ref={rootRef} className="relative w-full bg-stage text-ink-foreground">
+            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} />
             <div aria-hidden className="stage-glow pointer-events-none fixed inset-0 z-[1]" />
-            <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
+            <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" style={{ opacity: 'calc(1 - var(--kiosk-focus, 0))' }} />
+            {!staticMode && <KioskScreen screenRef={screenRef} />}
             <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
@@ -39,7 +44,7 @@ export function OrbitHomeView() {
                 <Chapter id="daily" index={1} staticMode={staticMode}>
                     <DailyChapter />
                 </Chapter>
-                <Chapter id="courses" index={2} staticMode={staticMode} tall>
+                <Chapter id="courses" index={2} staticMode={staticMode} tall hideOnDesktop>
                     <CoursesChapter stopNames={stopNames} summaryOf={summaryOf} staticMode={staticMode} />
                 </Chapter>
                 <Chapter id="studio" index={3} staticMode={staticMode}>
@@ -90,7 +95,7 @@ function useDailyLit() {
 // ─── Khung chương ──────────────────────────────────────────────────────────
 
 /** Mỗi chương cao tối thiểu 100vh; cột chữ bên trái (desktop) hoặc nằm dưới canvas (màn hẹp). */
-function Chapter({ id, index, staticMode, wide, tall, children }: { id: string; index: number; staticMode: boolean; wide?: boolean; tall?: boolean; children: ReactNode }) {
+function Chapter({ id, index, staticMode, wide, tall, hideOnDesktop, children }: { id: string; index: number; staticMode: boolean; wide?: boolean; tall?: boolean; hideOnDesktop?: boolean; children: ReactNode }) {
     return (
         <section
             id={id}
@@ -98,7 +103,7 @@ function Chapter({ id, index, staticMode, wide, tall, children }: { id: string; 
             className={`section-anchor container-page flex min-h-[100svh] pb-16 ${staticMode ? 'scroll-mt-0 items-start' : tall ? 'items-start pt-24' : 'items-center pt-24'}`}
             style={staticMode ? { paddingTop: 'calc(55svh + 1.5rem)' } : undefined}
         >
-            <div className={`pointer-events-auto w-full ${wide ? 'max-w-[600px]' : 'max-w-[520px]'}`}>{children}</div>
+            <div className={`pointer-events-auto w-full ${wide ? 'max-w-[600px]' : 'max-w-[520px]'} ${hideOnDesktop && !staticMode ? 'invisible' : ''}`}>{children}</div>
         </section>
     )
 }
@@ -344,7 +349,7 @@ function CoursesChapter({ stopNames, summaryOf, staticMode }: { stopNames: strin
             <Reveal>
                 <Eyebrow>02 · Khóa học</Eyebrow>
                 <Title id="courses-title">{'Mỗi tòa nhà\nlà một khóa học.'}</Title>
-                <Lead>Máy quay đi qua từng tòa. Tòa đang được nhìn nhấc lên kèm tên khóa và tiến độ. Bấm vào tòa hoặc thẻ để vào bản đồ chặng.</Lead>
+                <Lead>Mỗi khóa nằm trong một tòa. Bấm vào thẻ để vào bản đồ chặng.</Lead>
                 {cards.length === 0 && <p className={`${darkCard} p-5 text-ink-foreground/80`}>Chưa có khóa học nào được giảng viên xuất bản.</p>}
             </Reveal>
             {cards.map((c, i) => (

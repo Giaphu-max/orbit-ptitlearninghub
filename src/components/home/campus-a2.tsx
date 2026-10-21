@@ -53,7 +53,7 @@ export function kioskScreenFrame() {
     screen.position.z = 0.05
     head.add(screen)
     lobby.updateMatrixWorld(true)
-    return { center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE }
+    return { center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE, matrix: screen.matrixWorld.clone() }
 }
 
 const HW = 10.35 // nửa bề ngang đế
