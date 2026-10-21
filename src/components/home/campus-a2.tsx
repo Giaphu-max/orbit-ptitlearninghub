@@ -54,7 +54,7 @@ export function kioskScreenFrame() {
     screen.position.z = 0.05
     head.add(screen)
     lobby.updateMatrixWorld(true)
-    return { center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE, matrix: screen.matrixWorld.clone() }
+    return { center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE, matrix: screen.matrixWorld.clone(), up: new THREE.Vector3(0, 1, 0).transformDirection(screen.matrixWorld), right: new THREE.Vector3(1, 0, 0).transformDirection(screen.matrixWorld) }
 }
 
 const HW = 10.35 // nửa bề ngang đế
@@ -100,12 +100,12 @@ function Door({ side, doorRef }: { side: 1 | -1; doorRef: React.RefObject<THREE.
     )
 }
 
-/** Đế rộng của A2 + mặt tiền kính + cửa. `stage` là S đã làm mượt: cửa mở ở S 1.24 → 1.34. */
+/** Đế rộng của A2 + mặt tiền kính + cửa. `stage` là S đã làm mượt: cửa mở ở S 1.28 → 1.44. */
 export function A2Podium({ stage }: { stage: React.MutableRefObject<number> }) {
     const left = useRef<THREE.Group>(null)
     const right = useRef<THREE.Group>(null)
     useFrame(() => {
-        const open = smooth(band(stage.current, 1.24, 1.34))
+        const open = smooth(band(stage.current, 1.28, 1.44))
         if (left.current) left.current.position.x = -0.8 - open * 1.55
         if (right.current) right.current.position.x = 0.8 + open * 1.55
     })

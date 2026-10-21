@@ -217,6 +217,10 @@
   .stage-glow {
     background: radial-gradient(60% 70% at 70% 30%, hsl(var(--stage-glow) / 0.18), transparent 60%);
   }
+  /* Nội dung đang hiện (--on-stage 0→1, do useScrollStage ghi): cảnh lùi lại, tối và bớt bão hòa */
+  #home-stage {
+    filter: brightness(calc(1 - 0.28 * var(--on-stage, 0))) saturate(calc(1 - 0.25 * var(--on-stage, 0)));
+  }
   /* Chế độ làm mờ cảnh 3D (nút ở góc phải dưới trang chủ) */
   [data-calm='true'] #home-stage {
     opacity: 0.28;

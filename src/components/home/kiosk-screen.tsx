@@ -17,6 +17,8 @@ export interface KioskBridge {
     dock: RefObject<HTMLElement | null>
     /** Chú thích vị trí máy quay trên dock */
     cap: RefObject<HTMLElement | null>
+    /** Lớp tối màn che các điểm cắt cảnh */
+    dip: RefObject<HTMLDivElement | null>
     /** Chế độ làm mờ cảnh 3D: camera ngừng theo cuộn */
     calm: MutableRefObject<boolean>
 }

@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
 import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
 import { STUDIO_Z } from './campus-room'
+import { getLenis } from '@/lib/scroll'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
@@ -437,46 +438,73 @@ const DESKTOP_REGION = 0.62
 const DESKTOP_SHIFT = 0.18
 /** Tỉ lệ rộng/cao của vùng trống mà khung chính diện A2 (chế độ tĩnh) được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
 const REF_ASPECT = 1.05
-/** Hệ số làm mượt S theo dt (lerp) */
+/** Hệ số làm mượt S theo dt (lerp): nhanh hơn khi đã có Lenis làm mượt cuộn */
 const S_SMOOTH = 3.2
+const S_SMOOTH_LENIS = 7
 
-// ── Đường bay: S 0→1 vòng quanh khuôn viên, S 1→1.72 vào sảnh tới kiosk (S > 1.72 đứng yên ở kiosk) ──
+// ── Máy quay: mỗi chuyển cảnh là MỘT động tác đơn giản; đoạn dài thì cắt bằng tối màn (dip) ──
+//   S 0→1: vòng quanh khuôn viên, kết thúc chính diện A2
+//   S 1→1.8: tiến thẳng tới cửa A2 (cửa mở S 1.28–1.44), CẮT ở 62%, hiện ở góc 3/4 trước kiosk rồi đẩy nhẹ vào
+//   S 1.8→3: lùi nhẹ khỏi kiosk, CẮT ở 36%, hiện ở cửa phòng thực hành rồi đẩy thẳng về bộ studio
 const ORBIT_EL = 12
 const ORBIT_R = 50
 const ORBIT_FOV = 30
-const APPROACH_END = 1.72
+const CUT2 = 0.62
+const CUT3 = 0.36
 const A2_FACE = a2Point(0, 6, 1)
 const KSCR = kioskScreenFrame()
 /** Khoảng cách để màn hình kiosk chiếm ~84% chiều cao khung ở FOV 46 */
 const KIOSK_D = KSCR.height / (0.84 * 2 * Math.tan(THREE.MathUtils.degToRad(23)))
-const KIOSK_CAM = KSCR.center.clone().addScaledVector(KSCR.normal, KIOSK_D)
+/** Hướng nhìn 3/4 vào màn: pháp tuyến xoay -0,2 rad quanh trục dọc của màn và +0,12 quanh trục ngang (không nhìn thẳng góc) */
+const KDIR = KSCR.normal.clone().applyAxisAngle(KSCR.up, -0.2).applyAxisAngle(KSCR.right, 0.12).normalize()
+const KIOSK_CAM = KSCR.center.clone().addScaledVector(KDIR, KIOSK_D * 1.6)
+const KIOSK_FAR = KSCR.center.clone().addScaledVector(KDIR, KIOSK_D * 2.5)
+const KIOSK_BACK = KSCR.center.clone().addScaledVector(KDIR, KIOSK_D * 2.2)
 const ORBIT_END = new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R, Math.cos(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R).add(A2_FACE)
-/** [S, vị trí máy, điểm nhìn]: một đường CatmullRom (centripetal) đi qua tất cả, mốc S nội suy tuyến tính giữa các điểm. */
-const APPROACH: [number, THREE.Vector3, THREE.Vector3][] = [
-    [1.0, ORBIT_END, A2_FACE.clone()],
-    [1.1, a2Point(0, 4.2, 22), a2Point(0, 5, 1)], // hạ xuống sân
-    [1.21, a2Point(0, 2.4, 10), a2Point(0, 2.8, 0)],
-    [1.3, a2Point(0, 1.6, 4.4), a2Point(0, 1.6, -1)], // lên bậc, cửa trượt mở (1.24 → 1.34)
-    [1.36, a2Point(0, 1.35, 1.9), lobbyPoint(0, 3, -6)],
-    [1.43, lobbyPoint(0, 2.3, 12.6), lobbyPoint(0, 3, -6)], // ngưỡng cửa
-    [1.52, lobbyPoint(0, 2.6, 9.6), lobbyPoint(-1, 3, -6)], // dừng ngắn nhìn toàn sảnh
-    [1.63, lobbyPoint(-4.8, 2.8, 3.4), KSCR.center.clone()],
-    [APPROACH_END, KIOSK_CAM, KSCR.center.clone()],
-]
-/** Từ kiosk lùi ra, băng qua sảnh, hành lang, vào lớp và nhìn về bộ studio (S 1.9 → 3) */
-const ROOM_FROM = 1.9
-const ROOM_POS = new THREE.CatmullRomCurve3([KIOSK_CAM, lobbyPoint(-3.5, 2.6, 0.5), lobbyPoint(-1, 2.3, -4), lobbyPoint(-1.5, 2.1, -6), lobbyPoint(0, 1.9, -9), lobbyPoint(0, 2.8, -14.5), lobbyPoint(0, 3.3, -16.5)], false, 'centripetal')
-const ROOM_TGT = new THREE.CatmullRomCurve3([KSCR.center.clone(), lobbyPoint(-1, 2.3, -6), lobbyPoint(0, 2, -12), lobbyPoint(0, 1.8, -22), lobbyPoint(0, 1.6, STUDIO_Z + 1), lobbyPoint(0, 1.7, STUDIO_Z)], false, 'centripetal')
-const catmull = (pts: THREE.Vector3[]) => new THREE.CatmullRomCurve3(pts, false, 'centripetal')
-const APPROACH_POS = catmull(APPROACH.map((k) => k[1]))
-const APPROACH_TGT = catmull(APPROACH.map((k) => k[2]))
-/** S → tham số của đường cong (đều theo chỉ số điểm, nội suy tuyến tính giữa hai mốc S liền kề) */
-function approachU(s: number) {
-    let i = 0
-    while (i < APPROACH.length - 2 && s > APPROACH[i + 1][0]) i++
-    return (i + band(s, APPROACH[i][0], APPROACH[i + 1][0])) / (APPROACH.length - 1)
+const DOOR_IN = a2Point(0, 1.5, 2.3)
+const DOOR_LOOK = a2Point(0, 1.6, -2)
+const ROOM_A = lobbyPoint(0, 2.5, -13.6)
+const ROOM_B = lobbyPoint(0, 2.4, -19)
+const ROOM_LOOK = lobbyPoint(0, 1.5, STUDIO_Z)
+/** S tại điểm cắt chương 02: từ đây trở đi là "trong nhà" (trời, nắng, đèn sảnh đổi trong lúc tối màn) */
+const INDOOR_S = 1 + 0.8 * CUT2
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
+/** Độ tối màn: đỉnh ở điểm cắt, tắt dần trong ±0,07 quãng */
+function dipAt(s: number) {
+    const d2 = s > 1 && s < 1.8 ? clamp01(1 - Math.abs(band(s, 1, 1.8) - CUT2) / 0.07) : 0
+    const d3 = s > 1.8 && s < 3 ? clamp01(1 - Math.abs(band(s, 1.8, 3) - CUT3) / 0.07) : 0
+    return Math.max(d2, d3)
 }
-const approachFov = (s: number) => (s < 1.52 ? lerp(ORBIT_FOV, 56, smoothstep(band(s, 1.24, 1.5))) : lerp(56, 46, smoothstep(band(s, 1.52, 1.7))))
+/** Máy quay cho S ≥ 1: ghi vị trí vào `pos`, điểm nhìn vào `look`, trả về FOV */
+function transitCamera(s: number, pos: THREE.Vector3, look: THREE.Vector3) {
+    if (s < 1.8) {
+        const u = band(s, 1, 1.8)
+        if (u < CUT2) {
+            const k = smoothstep(u / CUT2)
+            pos.copy(ORBIT_END).lerp(DOOR_IN, k)
+            look.copy(A2_FACE).lerp(DOOR_LOOK, k)
+            return lerp(ORBIT_FOV, 44, k)
+        }
+        pos.copy(KIOSK_FAR).lerp(KIOSK_CAM, easeOut((u - CUT2) / (1 - CUT2)))
+        look.copy(KSCR.center)
+        return 46
+    }
+    if (s >= 3) {
+        pos.copy(ROOM_B)
+        look.copy(ROOM_LOOK)
+        return 44
+    }
+    const u = band(s, 1.8, 3)
+    if (u < CUT3) {
+        pos.copy(KIOSK_CAM).lerp(KIOSK_BACK, smoothstep(u / CUT3))
+        look.copy(KSCR.center)
+        return 46
+    }
+    const k = smoothstep((u - CUT3) / (1 - CUT3))
+    pos.copy(ROOM_A).lerp(ROOM_B, k)
+    look.copy(ROOM_LOOK)
+    return lerp(48, 44, k)
+}
 
 // ── Màn kiosk: map khối DOM 960×600 lên 4 góc màn 3D bằng CSS matrix3d (homography) ──
 const _corner = new THREE.Vector3()
@@ -518,14 +546,14 @@ function homography(w: number, h: number, P: number[][]) {
     const [a, b, c, d, e, f, g, k] = solve8(A, B)
     return `matrix3d(${a},${d},0,${g},${b},${e},0,${k},0,0,1,0,${c},${f},0,1)`
 }
-/** Mức zoom vào kiosk: 0 → 1 trong S 1.52–1.7, rời đi ở S 1.88–2.05 */
-const kioskFocus = (s: number) => band(s, 1.52, 1.7) * (1 - band(s, 1.88, 2.05))
+/** Mức zoom vào kiosk: 0 → 1 trong S 1.55–1.74, rời đi ở S 1.86–2.1 */
+const kioskFocus = (s: number) => band(s, 1.55, 1.74) * (1 - band(s, 1.86, 2.1))
 
 function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: { width: number; height: number }, S: number, f: number, enabled: boolean) {
     const el = kiosk.screen.current
     kiosk.root.current?.style.setProperty('--kiosk-focus', f.toFixed(3))
     if (!el) return
-    let op = enabled ? band(S, 1.3, 1.42) * (1 - band(S, 2.0, 2.14)) : 0
+    let op = enabled ? band(S, 1.52, 1.6) * (1 - band(S, 1.92, 2.1)) : 0
     // Màn quay lưng lại camera thì ẩn
     if (op > 0 && _toCam.copy(camera.position).sub(KSCR.center).dot(KSCR.normal) <= 0) op = 0
     const pts: number[][] = []
@@ -550,19 +578,24 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
     if (op > 0) el.style.transform = homography(KIOSK_W, KIOSK_H, pts)
 }
 
-const CAPTIONS: [number, string][] = [[0.15, 'Khuôn viên PTIT'], [1, 'Vòng quanh trường'], [1.43, 'Tòa A2 · cửa kính tự mở'], [2, 'Sảnh A2'], [2.55, 'Hành lang']]
+const CAPTIONS: [number, string][] = [[0.15, 'Khuôn viên PTIT'], [1, 'Vòng quanh trường'], [1.5, 'Tòa A2 · cửa kính tự mở'], [2.23, 'Sảnh A2']]
 const captionAt = (s: number) => CAPTIONS.find(([to]) => s < to)?.[1] ?? 'Phòng thực hành'
 
 /**
  * Phần "vỏ" quanh cảnh, ghi thẳng vào DOM (chỉ khi giá trị đổi): chú thích máy quay, canvas và dock mờ dần khi footer đi vào.
  * Chế độ làm mờ để CSS (data-calm) lo phần canvas.
  */
-function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, last: { cap: string; stage: string; dock: string }) {
+function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, last: { cap: string; stage: string; dock: string; dip: string }) {
     const footer = kiosk.footer.current
     const out = footer ? clamp01(1 - footer.getBoundingClientRect().top / window.innerHeight) : 0
     const stageOpacity = calm ? '' : (1 - out * 0.9).toFixed(3)
     const dockOpacity = (1 - out).toFixed(2)
     const cap = captionAt(S)
+    const dip = dipAt(S).toFixed(3)
+    if (dip !== last.dip && kiosk.dip.current) {
+        last.dip = dip
+        kiosk.dip.current.style.opacity = dip
+    }
     if (stageOpacity !== last.stage && kiosk.stage.current) {
         last.stage = stageOpacity
         kiosk.stage.current.style.opacity = stageOpacity
@@ -584,7 +617,6 @@ const RAD = Math.PI / 180
 const lerp = THREE.MathUtils.lerp
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 const smoothstep = (x: number) => x * x * (3 - 2 * x)
-const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 /** 0→1 khi s đi từ a tới b */
 const band = (s: number, a: number, b: number) => clamp01((s - a) / (b - a))
 
@@ -602,6 +634,8 @@ interface SceneProps {
     touch: boolean
     /** Không chuyển cảnh (màn hẹp / giảm chuyển động): mỗi chương một khung máy cố định, canvas cao 55vh */
     staticMode: boolean
+    /** Giảm chuyển động: không bay, mọi chương sau hero đứng ở khung chính diện A2 */
+    flat: boolean
     /** S liên tục 0..3 do useScrollStage cung cấp (ref, không phải state) */
     stage: React.MutableRefObject<number>
     /** Bài Daily hôm nay (theo thứ tự) đã đọc chưa: mỗi bài = một tầng cửa sổ A2 */
@@ -701,7 +735,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, coursePct, pointer, onOpenCourse }: SceneProps) {
+function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk, coursePct, pointer, onOpenCourse }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -718,7 +752,7 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
     // S đã làm mượt (lerp theo dt) và mức "đã vào trong nhà" (0 ngoài sân → 1 trong sảnh): nắng giảm, đèn trong sảnh nổi lên
     const sm = useRef(stage.current)
     const indoor = useRef(0)
-    const chrome = useRef({ cap: '', stage: '', dock: '' })
+    const chrome = useRef({ cap: '', stage: '', dock: '', dip: '' })
     // Đo FPS: dưới 40 thì giảm chất lượng (shadow map nhỏ, cây không đổ bóng)
     const perf = useRef({ t: 0, n: 0, bad: 0 })
     const [lowQuality, setLowQuality] = useState(false)
@@ -843,14 +877,15 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
         // ── S làm mượt theo dt. Chế độ tĩnh: không bay, mọi chương sau hero đứng ở khung chính diện A2 (S = 1) ──
         // Chế độ làm mờ: camera ngừng theo cuộn (giữ nguyên S)
         const calmOn = kiosk.calm.current && !staticMode
-        const want = staticMode ? Math.min(stage.current, 1) : stage.current
+        const want = flat ? Math.min(stage.current, 1) : stage.current
         if (!calmOn) {
-            sm.current = reduce || staticMode ? want : sm.current + (want - sm.current) * (1 - Math.exp(-Math.min(delta, 0.05) * S_SMOOTH))
+            sm.current = reduce || flat ? want : sm.current + (want - sm.current) * (1 - Math.exp(-Math.min(delta, 0.2) * (getLenis() ? S_SMOOTH_LENIS : S_SMOOTH)))
             if (Math.abs(want - sm.current) < 1e-4) sm.current = want
         }
         const S = sm.current
         const live = S > HERO_EPS // đã rời hero: camera chạy theo đường bay, hero tắt kéo xoay và tự xoay
-        indoor.current = band(S, 1.33, 1.45)
+        // Vào/ra nhà đổi ngay tại điểm cắt, lúc màn đang tối hẳn
+        indoor.current = S > INDOOR_S ? 1 : 0
 
         // ── Máy quay ──
         const ctl = controls.current
@@ -874,6 +909,7 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
         }
 
         if (!live) {
+            camera.up.set(0, 1, 0)
             if (touch && !reduce) heroPos.current.applyAxisAngle(Y_AXIS, -delta * 0.12) // cảm ứng: chỉ tự xoay
             else heroPos.current.copy(camera.position)
             if (touch) {
@@ -901,17 +937,8 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
                 _look.copy(TARGET).lerp(A2_FACE, t)
                 camera.position.set(_look.x + r * Math.sin(az) * Math.cos(el), _look.y + r * Math.sin(el), _look.z + r * Math.cos(az) * Math.cos(el))
                 fov = lerp(FOV, ORBIT_FOV, t)
-            } else if (S >= ROOM_FROM) {
-                const t = smoothstep(band(S, ROOM_FROM, 3))
-                ROOM_POS.getPoint(t, camera.position)
-                ROOM_TGT.getPoint(t, _look)
-                fov = lerp(46, 44, t)
             } else {
-                const s = Math.min(S, APPROACH_END)
-                const u = approachU(s)
-                APPROACH_POS.getPoint(u, camera.position)
-                APPROACH_TGT.getPoint(u, _look)
-                fov = approachFov(s)
+                fov = transitCamera(S, camera.position, _look)
             }
             // Cận gần hơn khi vào sảnh: màn hình kiosk ở cách máy chưa tới 1 đơn vị
             const near = S > 1.2 ? 0.1 : 1
@@ -920,6 +947,8 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
                 camera.near = near
                 camera.updateProjectionMatrix()
             }
+            // Gần kiosk: trục dọc của máy nghiêng theo màn để màn không bị xiên
+            camera.up.set(0, 1, 0).lerp(KSCR.up, calmOn ? 0 : kioskFocus(S)).normalize()
             camera.lookAt(_look)
             if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, pos: camera.position.toArray(), look: _look.toArray(), fov }
         }
@@ -934,8 +963,8 @@ function Scene({ night, reduce, touch, staticMode, stage, dailyLit, kiosk, cours
         placeKiosk(kiosk, camera, size, S, f, !staticMode && !calmOn)
         updateChrome(kiosk, S, calmOn, chrome.current)
 
-        // ── Nền trời và sương: đỏ PTIT → đỏ sẫm (hết chương Hôm nay) → tối dần khi bước vào sảnh (S 1.36 → 1.46) ──
-        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 1.36, 1.46)))
+        // ── Nền trời và sương: đỏ PTIT → đỏ sẫm (hết chương Hôm nay) → tối hẳn khi vào nhà (đổi lúc tối màn) ──
+        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, indoor.current)
         if (scene.background instanceof THREE.Color) scene.background.copy(colors.now)
         if (scene.fog) {
             // Sương theo khoảng cách tới tâm khuôn viên; trong sảnh (gần tâm) giữ nguyên mức ở xa để không phủ mờ nội thất
@@ -1056,6 +1085,7 @@ export interface CampusSceneProps {
     night: boolean
     reduce: boolean
     staticMode: boolean
+    flat: boolean
     stage: React.MutableRefObject<number>
     dailyLit: React.MutableRefObject<boolean[]>
     kiosk: KioskBridge
@@ -1063,7 +1093,7 @@ export interface CampusSceneProps {
     onOpenCourse?: (courseId: string) => void
 }
 
-export default function CampusScene({ night, reduce, staticMode, stage, dailyLit, kiosk, coursePct, onOpenCourse }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, flat, stage, dailyLit, kiosk, coursePct, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -1118,7 +1148,7 @@ export default function CampusScene({ night, reduce, staticMode, stage, dailyLit
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
+                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}
         </div>

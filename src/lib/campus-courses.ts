@@ -18,23 +18,3 @@ export function courseOfBuilding(name: string) {
     const id = BUILDING_COURSE_IDS[name]
     return id ? getCourse(id) : undefined
 }
-
-/** Hướng mặt đẹp của tòa (độ, 0 = mặt trước nhìn về +z). Dùng để sắp thứ tự các tòa có khóa (rồi tới thứ tự khai báo). */
-export const BUILDING_FACE_AZ: Record<string, number> = {
-    'Tòa A2': 0,
-    'Hội trường A2': 0,
-    'Tòa A3': 0,
-    'Hội trường A1': 0,
-    'Tòa A1': 0,
-    Canteen: 0,
-    'Cổng trường': 0,
-}
-
-/** Các tòa có khóa (trong số `names`) theo thứ tự hiển thị ở chương Khóa học. */
-export function courseStops(names: Iterable<string>): string[] {
-    const decl = Object.keys(BUILDING_COURSE_IDS)
-    const have = new Set(names)
-    return decl
-        .filter((n) => BUILDING_COURSE_IDS[n] && have.has(n))
-        .sort((a, b) => (BUILDING_FACE_AZ[a] ?? 0) - (BUILDING_FACE_AZ[b] ?? 0) || decl.indexOf(a) - decl.indexOf(b))
-}

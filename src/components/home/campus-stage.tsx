@@ -45,6 +45,8 @@ interface CampusStageProps {
     /** Màn hẹp / giảm chuyển động: không chuyển cảnh, canvas cao 55vh phía trên */
     staticMode: boolean
     reduce: boolean
+    /** Không bay máy quay (giảm chuyển động): mọi chương dùng khung chính diện A2 */
+    flat: boolean
     dailyLit: React.MutableRefObject<boolean[]>
     /** Màn kiosk (DOM) mà cảnh 3D định vị mỗi khung hình */
     kiosk: KioskBridge
@@ -56,7 +58,7 @@ interface CampusStageProps {
  * Màn hẹp: sân khấu nằm trên cùng (cao 55svh) và nội dung trượt bên dưới nó.
  * Nền (màu trời đỏ PTIT) luôn có sẵn bên dưới để lúc tải hoặc khi không có WebGL trang vẫn đúng tông.
  */
-export function CampusStage({ stage, staticMode, reduce, dailyLit, kiosk, coursePct }: CampusStageProps) {
+export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk, coursePct }: CampusStageProps) {
     const navigate = useNavigate()
     const night = useThemeStore((s) => s.theme === 'dark')
     const [enabled] = useState(canRender3D)
@@ -66,7 +68,7 @@ export function CampusStage({ stage, staticMode, reduce, dailyLit, kiosk, course
             <div className="pointer-events-auto absolute inset-0">
                 {enabled ? (
                     <Suspense fallback={null}>
-                        <CampusScene night={night} reduce={reduce} staticMode={staticMode} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} onOpenCourse={(id) => navigate(`/learning?course=${id}`)} />
+                        <CampusScene night={night} reduce={reduce} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} onOpenCourse={(id) => navigate(`/learning?course=${id}`)} />
                     </Suspense>
                 ) : (
                     <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`}>
