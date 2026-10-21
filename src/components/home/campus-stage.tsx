@@ -42,7 +42,7 @@ function StaticCampus() {
 interface CampusStageProps {
     /** S liên tục 0..3 từ useScrollStage */
     stage: React.MutableRefObject<number>
-    /** Màn hẹp / giảm chuyển động: không chuyển cảnh, canvas cao 55vh phía trên */
+    /** Màn hẹp / giảm chuyển động: không chuyển cảnh, canvas cao 44svh phía trên */
     staticMode: boolean
     reduce: boolean
     /** Không bay máy quay (giảm chuyển động): mọi chương dùng khung chính diện A2 */
@@ -55,8 +55,8 @@ interface CampusStageProps {
 
 /**
  * Sân khấu 3D dùng chung cho cả trang chủ: một Canvas cố định phía sau nội dung, đổi hoàng hôn ↔ buổi tối theo giao diện của web.
- * Màn hẹp: sân khấu nằm trên cùng (cao 55svh) và nội dung trượt bên dưới nó.
- * Nền (màu trời đỏ PTIT) luôn có sẵn bên dưới để lúc tải hoặc khi không có WebGL trang vẫn đúng tông.
+ * Màn hẹp: sân khấu nằm trên cùng (cao 44svh) và nội dung trượt bên dưới nó.
+ * Nền (gradient trời từ token --sky-*, kem ấm ban ngày / xanh đêm buổi tối) luôn có sẵn bên dưới để lúc tải hoặc khi không có WebGL trang vẫn đúng tông.
  */
 export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk, coursePct }: CampusStageProps) {
     const navigate = useNavigate()
@@ -64,7 +64,7 @@ export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk, 
     const [enabled] = useState(canRender3D)
 
     return (
-        <div id="home-stage" ref={kiosk.stage} aria-hidden={!enabled} className={`bg-stage pointer-events-none fixed left-0 top-0 w-full ${staticMode ? 'z-20 h-[55svh] border-b border-ink-foreground/15 shadow-raised' : 'z-0 h-[100svh]'}`}>
+        <div id="home-stage" ref={kiosk.stage} aria-hidden={!enabled} className={`stage-sky pointer-events-none fixed left-0 top-0 w-full ${staticMode ? 'z-20 h-[44svh] border-b border-border shadow-raised' : 'z-0 h-[100svh]'}`}>
             <div className="pointer-events-auto absolute inset-0">
                 {enabled ? (
                     <Suspense fallback={null}>

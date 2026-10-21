@@ -41,18 +41,21 @@
     --ink-foreground: 0 0% 100%;
     --info: 201 80% 32%;
 
-    /* Hero và màn nhận XP: luôn nền tối/đỏ ở cả hai giao diện */
+    /* Màn nhận XP (và nền hero cũ .bg-hero): luôn nền tối/đỏ ở cả hai giao diện */
     --hero-base: 12 36% 5%;
     --hero-glow: 358 80% 43%;
     --hero-glow-deep: 358 83% 27%;
     --hero-top: 358 40% 12%;
-    /* Sân khấu trang chủ (cuộn kể chuyện): trời đỏ PTIT → đỏ sẫm → gần đen ở Studio, giữ nguyên ở cả hai giao diện.
-       Cảnh 3D đọc các giá trị này (sky/mid/deep) để lerp màu nền và sương. */
-    --stage-sky: 357 81% 35%;
-    --stage-mid: 356 76% 17%;
+    /* Sân khấu trang chủ (giao diện sáng): trời kem ấm ban ngày. --sky-1..4 từ trên xuống, --sky-glow là quầng nắng góc trên phải.
+       Cảnh 3D đọc --sky-2/--sky-3 để pha sương, --stage-deep là nền nội thất. */
+    --sky-1: 31 42% 86%;
+    --sky-2: 31 47% 90%;
+    --sky-3: 34 50% 95%;
+    --sky-4: 33 53% 97%;
+    --sky-glow: 0 0% 100%;
+    --sky-glow-alpha: 0.9;
+    --stage-bg: 33 53% 97%;
     --stage-deep: 353 19% 6%;
-    --stage-veil: 355 63% 6%;
-    --stage-glow: 0 100% 66%;
     --reward-from: 358 67% 51%;
     --reward-mid: 358 80% 43%;
     --reward-to: 358 78% 21%;
@@ -164,6 +167,15 @@
 
     --info: 199 80% 68%;
 
+    /* Trang chủ buổi tối: trời xanh đêm (navy), không đỏ */
+    --sky-1: 226 60% 10%;
+    --sky-2: 226 58% 15%;
+    --sky-3: 227 56% 20%;
+    --sky-4: 226 52% 25%;
+    --sky-glow: 225 57% 72%;
+    --sky-glow-alpha: 0.28;
+    --stage-bg: 227 46% 8%;
+
     --background: 20 14% 6%;
     --foreground: 30 15% 94%;
     --surface: 20 12% 8%;
@@ -219,32 +231,38 @@
       radial-gradient(70% 70% at 5% 100%, hsl(var(--hero-glow-deep)) 0%, transparent 65%),
       linear-gradient(160deg, hsl(var(--hero-top)) 0%, hsl(var(--hero-base)) 100%);
   }
-  /* Trang chủ kể chuyện: nền sân khấu, lớp gradient sau cột chữ, vệt sáng và hiện dần từng chương */
+  /* Trang chủ kể chuyện: nền trang, trời (gradient từ token), lớp phủ bên trái sau cột chữ, panel hiện theo trạng thái rời rạc */
   .bg-stage {
-    background-color: hsl(var(--stage-sky));
+    background-color: hsl(var(--stage-bg));
   }
-  .stage-glow {
-    background: radial-gradient(60% 70% at 70% 30%, hsl(var(--stage-glow) / 0.18), transparent 60%);
+  .stage-sky {
+    background-image:
+      radial-gradient(40% 34% at 78% 16%, hsl(var(--sky-glow) / var(--sky-glow-alpha)) 0%, hsl(var(--sky-glow) / 0) 70%),
+      linear-gradient(180deg, hsl(var(--sky-1)) 0%, hsl(var(--sky-2)) 42%, hsl(var(--sky-3)) 75%, hsl(var(--sky-4)) 100%);
   }
-  /* Chữ chương 01–03 (section[data-journey]): trạng thái rời rạc do useScrollStage đặt (class on / past), không buộc theo vị trí cuộn */
-  [data-journey] [data-col] {
+  .stage-dip {
+    background-color: hsl(var(--stage-bg));
+  }
+  /* Panel chương (useScrollStage đặt class on / past): chồng nhau trong một ô lưới, panel không `on` thì ẩn sau khi hiệu ứng ra xong */
+  [data-panel] {
     visibility: hidden;
+    transition: visibility 0s 0.6s;
   }
-  [data-journey].on [data-col] {
+  [data-panel].on {
     visibility: visible;
     transition: visibility 0s;
   }
-  [data-journey] [data-s] {
+  [data-panel] [data-s] {
     opacity: 0;
     transform: translate3d(0, var(--reveal-offset), 0);
     filter: blur(var(--reveal-blur));
-    transition: opacity var(--duration-reveal-out), transform var(--duration-reveal-out-move) var(--ease-out), filter var(--duration-reveal-out);
+    transition: opacity 0.45s, transform 0.6s var(--ease-out), filter 0.45s;
     will-change: opacity, transform;
   }
-  [data-journey].past [data-s] {
+  [data-panel].past [data-s] {
     transform: translate3d(0, calc(var(--reveal-offset) * -1), 0);
   }
-  [data-journey].on [data-s] {
+  [data-panel].on [data-s] {
     opacity: 1;
     transform: none;
     filter: none;
@@ -252,16 +270,16 @@
     transition-delay: calc(var(--reveal-delay) + var(--n, 0) * var(--reveal-stagger));
   }
   @media (prefers-reduced-motion: reduce) {
-    [data-journey] [data-s] {
+    [data-panel] [data-s] {
       transition: none !important;
       transform: none !important;
       filter: none !important;
       opacity: 1 !important;
     }
   }
-  /* Nội dung đang hiện (--on-stage 0→1, do useScrollStage ghi): cảnh lùi lại, tối và bớt bão hòa */
+  /* Có chữ trên màn: cảnh chỉ bớt bão hòa và tương phản nhẹ, không làm tối (--on-stage 0→1 do cảnh làm mượt) */
   #home-stage {
-    filter: brightness(calc(1 - 0.28 * var(--on-stage, 0))) saturate(calc(1 - 0.25 * var(--on-stage, 0)));
+    filter: saturate(calc(1 - 0.22 * var(--on-stage, 0))) contrast(calc(1 - 0.1 * var(--on-stage, 0)));
   }
   /* Chế độ làm mờ cảnh 3D (nút ở góc phải dưới trang chủ) */
   [data-calm='true'] #home-stage {
@@ -270,10 +288,10 @@
     transition: opacity 0.5s, filter 0.5s;
   }
   .stage-veil {
-    background: linear-gradient(90deg, hsl(var(--stage-veil) / 0.9) 0%, hsl(var(--stage-veil) / 0.5) 38%, hsl(var(--stage-veil) / 0) 58%);
+    background: linear-gradient(90deg, hsl(var(--stage-bg) / 0.95) 0%, hsl(var(--stage-bg) / 0.84) 30%, hsl(var(--stage-bg) / 0.32) 48%, hsl(var(--stage-bg) / 0) 60%);
   }
   .stage-veil[data-static='true'] {
-    background: linear-gradient(180deg, hsl(var(--stage-veil) / 0.5) 0%, hsl(var(--stage-veil) / 0.95) 55%);
+    background: linear-gradient(180deg, hsl(var(--stage-bg) / 0.5) 0%, hsl(var(--stage-bg) / 0.95) 55%);
   }
   .reveal {
     opacity: 0;
@@ -284,29 +302,7 @@
     opacity: 1;
     transform: none;
   }
-  /* Tiêu đề tách chữ: từng từ trồi lên khỏi mặt nạ khi chương vào khung nhìn. Đệm trên để dấu tiếng Việt không bị cắt. */
-  .split-w {
-    display: inline-block;
-    overflow: hidden;
-    vertical-align: top;
-    padding-top: 0.2em;
-    margin-top: -0.2em;
-    padding-bottom: 0.08em;
-  }
-  .split-w > span {
-    display: inline-block;
-    transform: translateY(110%);
-    transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
-    transition-delay: calc(var(--i, 0) * 70ms + 120ms);
-  }
-  .reveal.in .split-w > span {
-    transform: none;
-  }
   @media (prefers-reduced-motion: reduce) {
-    .split-w > span {
-      transform: none;
-      transition: none;
-    }
     .reveal {
       opacity: 1;
       transform: none;
@@ -634,7 +630,7 @@
   }
 }
 
-/* Nền thanh nav: trong suốt trên đầu hero, kính tối khi đã cuộn trong hero, nền thường sau hero.
+/* Nền thanh nav: trong suốt trên đầu hero, kính theo giao diện khi đã cuộn trong hero, nền thường sau hero.
    Mọi trạng thái cùng một bộ thuộc tính (kể cả backdrop-filter) để chuyển 200ms mượt, không giật. */
 .nav-bar {
   background-color: transparent;
@@ -645,9 +641,9 @@
   transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, backdrop-filter 200ms ease, -webkit-backdrop-filter 200ms ease;
 }
 .nav-bar[data-nav='glass'] {
-  background-color: hsl(var(--hero-base) / 0.72);
-  border-bottom-color: hsl(var(--ink-foreground) / 0.1);
-  box-shadow: 0 8px 24px -12px hsl(var(--hero-base) / 0.6);
+  background-color: hsl(var(--background) / 0.72);
+  border-bottom-color: hsl(var(--border));
+  box-shadow: 0 8px 24px -12px hsl(var(--foreground) / 0.12);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
   backdrop-filter: blur(12px) saturate(140%);
 }

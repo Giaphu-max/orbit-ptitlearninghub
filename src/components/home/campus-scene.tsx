@@ -8,7 +8,6 @@ import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
 import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
 import { STUDIO_Z } from './campus-room'
-import { getLenis } from '@/lib/scroll'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
@@ -284,6 +283,9 @@ interface WorldProps {
     lowQuality: boolean
 }
 
+/** Vị trí cổng trường (gốc cổng, mặt ngoài hướng +z): đường máy quay chương 02 đi dưới dầm cổng */
+const GATE_AT: Vec3 = [2, 0, 16.5]
+
 function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, coursePct, lowQuality }: WorldProps) {
     const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name), pct: coursePct[name] })
 
@@ -381,7 +383,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                 <HipRoof w={6.4} h={1.4} d={4.2} c={C.roofRed} at={[0, 2.2, 0]} />
             </Building>
 
-            <Building {...b('Cổng trường')} anchorY={5.6} position={[2, 0, 16.5]}>
+            <Building {...b('Cổng trường')} anchorY={5.6} position={GATE_AT}>
                 {[-3.4, 3.4].map((x) => (
                     <Box key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
                 ))}
@@ -420,6 +422,10 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
 
 const SUN_DAY = new THREE.Color(CAMPUS.sunlight)
 const SUN_NIGHT = new THREE.Color(CAMPUS.moonlight)
+const HEMI_SKY_DAY = new THREE.Color(CAMPUS.skyLight)
+const HEMI_SKY_NIGHT = new THREE.Color(CAMPUS.nightSkyLight)
+const HEMI_GROUND_DAY = new THREE.Color(CAMPUS.groundLight)
+const HEMI_GROUND_NIGHT = new THREE.Color(CAMPUS.nightGroundLight)
 const TARGET = new THREE.Vector3(0, 3, 0)
 const START_POS = new THREE.Vector3(52, 40, 58)
 const Y_AXIS = new THREE.Vector3(0, 1, 0)
@@ -438,9 +444,6 @@ const DESKTOP_REGION = 0.62
 const DESKTOP_SHIFT = 0.18
 /** Tỉ lệ rộng/cao của vùng trống mà khung chính diện A2 (chế độ tĩnh) được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
 const REF_ASPECT = 1.05
-/** Hệ số làm mượt S theo dt (lerp): khi đã có Lenis thì chỉ còn lớp rất nhẹ để camera không trễ so với trang */
-const S_SMOOTH = 3.2
-const S_SMOOTH_LENIS = 14
 /** Làm mượt độ tối nền khi có chữ (đích chỉ là 0/1) */
 const DIM_SMOOTH = 3
 
@@ -465,6 +468,15 @@ const KIOSK_BACK = KSCR.center.clone().addScaledVector(KDIR, KIOSK_D * 2.2)
 const ORBIT_END = new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R, Math.cos(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R).add(A2_FACE)
 const DOOR_IN = a2Point(0, 1.5, 2.3)
 const DOOR_LOOK = a2Point(0, 1.6, -2)
+// Đường qua cổng trường: cuối vòng quay → trước cổng trên cao (cách cổng ~17) → hạ thấp → giữa lối cổng (thấp hơn dầm, lọt giữa hai trụ) → giữa sân → trước cửa A2.
+// Mắt và điểm nhìn là hai đường cong cùng số mốc, tham số hóa theo độ dài cung nên dùng chung một t.
+const GATE_SIGN = new THREE.Vector3(GATE_AT[0], 4.6, GATE_AT[2])
+const gatePos = new THREE.CatmullRomCurve3(
+    [ORBIT_END.clone(), new THREE.Vector3(GATE_AT[0], 7, GATE_AT[2] + 17), new THREE.Vector3(GATE_AT[0], 2.1, GATE_AT[2] + 7), new THREE.Vector3(GATE_AT[0], 1.9, GATE_AT[2]), new THREE.Vector3(GATE_AT[0], 1.8, 9), DOOR_IN.clone()],
+    false,
+    'centripetal',
+)
+const gateLook = new THREE.CatmullRomCurve3([A2_FACE.clone(), GATE_SIGN, new THREE.Vector3(GATE_AT[0], 2.6, 8), a2Point(0, 2.4, 1), a2Point(0, 2, 0), DOOR_LOOK.clone()], false, 'centripetal')
 const ROOM_A = lobbyPoint(0, 2.5, -13.6)
 const ROOM_B = lobbyPoint(0, 2.4, -19)
 const ROOM_LOOK = lobbyPoint(0, 1.5, STUDIO_Z)
@@ -482,10 +494,13 @@ function transitCamera(s: number, pos: THREE.Vector3, look: THREE.Vector3) {
     if (s < 1.8) {
         const u = band(s, 1, 1.8)
         if (u < CUT2) {
-            const k = smoothstep(u / CUT2)
-            pos.copy(ORBIT_END).lerp(DOOR_IN, k)
-            look.copy(A2_FACE).lerp(DOOR_LOOK, k)
-            return lerp(ORBIT_FOV, 44, k)
+            // Đi đều, chậm lại một chút khi tới cửa
+            const x = u / CUT2
+            const k = x * 0.5 + x * (2 - x) * 0.5
+            const t = gatePos.getUtoTmapping(k)
+            gatePos.getPoint(t, pos)
+            gateLook.getPoint(t, look)
+            return lerp(ORBIT_FOV, 44, smoothstep(clamp01(k * 1.6)))
         }
         pos.copy(KIOSK_FAR).lerp(KIOSK_CAM, easeOut((u - CUT2) / (1 - CUT2)))
         look.copy(KSCR.center)
@@ -779,8 +794,12 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const frame = useRef(0)
     const raycaster = useMemo(() => new THREE.Raycaster(), [])
     const ndc = useMemo(() => new THREE.Vector2(-9, -9), [])
-    // Màu trời lấy từ token CSS (--stage-*), đọc một lần khi dựng cảnh
-    const colors = useMemo(() => ({ sky: tokenColor('--stage-sky', '#9E1218'), mid: tokenColor('--stage-mid', '#4A0A0E'), deep: tokenColor('--stage-deep', '#130D0E'), now: new THREE.Color() }), [])
+    // Sương lấy từ token trời (--sky-*), nền nội thất từ --stage-deep. Đọc lại khi đổi giao diện sáng/tối (trời ngoài trời là gradient CSS sau canvas trong suốt).
+    const colors = useMemo(() => ({ fogA: new THREE.Color(), fogB: new THREE.Color(), deep: tokenColor('--stage-deep', '#130D0E'), now: new THREE.Color() }), [])
+    const readSky = () => {
+        colors.fogA.copy(tokenColor('--sky-2', '#F2E7DB'))
+        colors.fogB.copy(tokenColor('--sky-3', '#F8F2EA'))
+    }
     const camHero = useMemo(() => ({ v: new THREE.Vector3() }), [])
 
     const size = useThree((s) => s.size)
@@ -794,9 +813,17 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     useLayoutEffect(() => {
         camera.position.copy(START_POS)
         camera.lookAt(TARGET)
-        scene.background = colors.now.copy(colors.sky)
-        scene.fog = new THREE.Fog(colors.sky, 100, 400)
+        readSky()
+        scene.background = null
+        scene.fog = new THREE.Fog(colors.fogB, 100, 400)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [camera, scene, colors])
+    // Đổi giao diện: đợi class `dark` lên <html> rồi đọc lại màu sương
+    useEffect(() => {
+        const id = requestAnimationFrame(readSky)
+        return () => cancelAnimationFrame(id)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [night])
 
     const applyLights = (n: number) => {
         // Vào trong nhà: nắng, trời và đèn viền giảm hẳn để đèn trong sảnh làm chủ
@@ -805,7 +832,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             sun.current.intensity = (1.05 - n * 0.75) * Math.PI * (1 - inside)
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
-        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * (1 - 0.68 * inside)
+        if (hemi.current) {
+            hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * (1 - 0.68 * inside)
+            hemi.current.color.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_NIGHT, n)
+            hemi.current.groundColor.copy(HEMI_GROUND_DAY).lerp(HEMI_GROUND_NIGHT, n)
+        }
         if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI * (1 - inside)
     }
 
@@ -893,8 +924,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         const calmOn = kiosk.calm.current && !staticMode
         const want = flat ? Math.min(stage.current, 1) : stage.current
         if (!calmOn) {
-            sm.current = reduce || flat ? want : sm.current + (want - sm.current) * (1 - Math.exp(-Math.min(delta, 0.2) * (getLenis() ? S_SMOOTH_LENIS : S_SMOOTH)))
-            if (Math.abs(want - sm.current) < 1e-4) sm.current = want
+            sm.current = want // useScrollStage đã tween S theo thời gian nên không làm mượt thêm
         }
         const S = sm.current
         const live = S > HERO_EPS // đã rời hero: camera chạy theo đường bay, hero tắt kéo xoay và tự xoay
@@ -955,7 +985,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 fov = transitCamera(S, camera.position, _look)
             }
             // Cận gần hơn khi vào sảnh: màn hình kiosk ở cách máy chưa tới 1 đơn vị
-            const near = S > 1.2 ? 0.1 : 1
+            const near = S > 1.05 ? 0.1 : 1
             if (camera.fov !== fov || camera.near !== near) {
                 camera.fov = fov
                 camera.near = near
@@ -977,9 +1007,12 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         placeKiosk(kiosk, camera, size, S, f, !staticMode && !calmOn)
         updateChrome(kiosk, S, calmOn, delta, chrome.current)
 
-        // ── Nền trời và sương: đỏ PTIT → đỏ sẫm (hết chương Hôm nay) → tối hẳn khi vào nhà (đổi lúc tối màn) ──
-        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, indoor.current)
-        if (scene.background instanceof THREE.Color) scene.background.copy(colors.now)
+        // ── Sương theo màu trời; ngoài trời nền trong suốt (thấy gradient trời CSS), vào nhà thì nền nội thất tối (đổi lúc tối màn) ──
+        colors.now.copy(colors.fogA).lerp(colors.fogB, band(S, 0, 1)).lerp(colors.deep, indoor.current)
+        if (indoor.current) {
+            if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color()
+            scene.background.copy(colors.deep)
+        } else if (scene.background) scene.background = null
         if (scene.fog) {
             // Sương theo khoảng cách tới tâm khuôn viên; trong sảnh (gần tâm) giữ nguyên mức ở xa để không phủ mờ nội thất
             const d = Math.max(camera.position.distanceTo(TARGET), 60)

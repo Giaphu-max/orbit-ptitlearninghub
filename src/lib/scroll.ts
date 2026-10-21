@@ -15,6 +15,20 @@ export const setChapterScroller = (fn: ((index: number) => void) | null) => {
     chapterScroller = fn
 }
 
+// Chương hiện tại của trang chủ kể chuyện (nav đọc để đánh dấu mục đang chọn); -1 = trang chủ không ở chế độ hành trình
+let chapter = -1
+const chapterSubs = new Set<() => void>()
+export const setJourneyChapter = (c: number) => {
+    if (c === chapter) return
+    chapter = c
+    chapterSubs.forEach((f) => f())
+}
+export const subscribeChapter = (f: () => void) => {
+    chapterSubs.add(f)
+    return () => void chapterSubs.delete(f)
+}
+export const getJourneyChapter = () => chapter
+
 /** Cuộn mượt tới vị trí y (Lenis nếu có, không thì cuộn mượt của trình duyệt; giảm chuyển động thì nhảy thẳng). */
 export function scrollToY(y: number, duration = 1.6) {
     if (lenis) lenis.scrollTo(y, { duration })

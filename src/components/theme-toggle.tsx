@@ -6,7 +6,7 @@ type Tone = 'hero' | 'plain'
 
 /**
  * Nút chuyển sáng/tối: chỉ có icon, kèm aria-label và tooltip.
- * tone "hero" dùng trên nền tối cố định (chữ trắng), "plain" dùng trên nền theo giao diện.
+ * Cả hai tone đều theo token giao diện (trang chủ không còn nền tối cố định); giữ prop để nơi gọi không phải đổi.
  */
 export function ThemeToggle({ tone = 'plain', className = 'relative' }: { tone?: Tone; className?: string }) {
     const theme = useThemeStore((s) => s.theme)
@@ -25,11 +25,8 @@ export function ThemeToggle({ tone = 'plain', className = 'relative' }: { tone?:
                 }}
                 aria-disabled={busy}
                 aria-label={label}
-                className={`flex h-10 w-10 items-center justify-center rounded-full border transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${
-                    tone === 'hero'
-                        ? 'border-ink-foreground/20 bg-ink-foreground/10 text-ink-foreground hover:bg-ink-foreground/20'
-                        : 'border-border bg-card text-foreground hover:border-brand-300'
-                }`}
+                data-tone={tone}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition duration-fast hover:scale-105 hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             >
                 <AnimatePresence mode="wait" initial={false}>
                     <motion.span

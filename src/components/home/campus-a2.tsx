@@ -100,12 +100,12 @@ function Door({ side, doorRef }: { side: 1 | -1; doorRef: React.RefObject<THREE.
     )
 }
 
-/** Đế rộng của A2 + mặt tiền kính + cửa. `stage` là S đã làm mượt: cửa mở ở S 1.28 → 1.44. */
+/** Đế rộng của A2 + mặt tiền kính + cửa. `stage` là S đã làm mượt: cửa mở trong ~15% quãng cuối tới cửa (S 1.38 → 1.49). */
 export function A2Podium({ stage }: { stage: React.MutableRefObject<number> }) {
     const left = useRef<THREE.Group>(null)
     const right = useRef<THREE.Group>(null)
     useFrame(() => {
-        const open = smooth(band(stage.current, 1.28, 1.44))
+        const open = smooth(band(stage.current, 1.38, 1.49))
         if (left.current) left.current.position.x = -0.8 - open * 1.55
         if (right.current) right.current.position.x = 0.8 + open * 1.55
     })

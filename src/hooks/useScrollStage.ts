@@ -1,38 +1,31 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react'
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
-import { scrollToY, setChapterScroller, setLenis } from '@/lib/scroll'
+import { setChapterScroller, setJourneyChapter, setLenis } from '@/lib/scroll'
 
 /** Dưới ngưỡng này trang chủ dùng canvas 55svh phía trên (bố cục màn hẹp); máy quay vẫn bay như desktop. */
 export const STATIC_QUERY = '(max-width: 859px)'
 const REDUCE_QUERY = '(prefers-reduced-motion: reduce)'
 
-/** Số chương trên trang chủ: S chạy liên tục 0..CHAPTERS-1. */
+/** Số chương trên trang chủ: Hero, Hôm nay, Khóa học, Studio. */
 export const CHAPTERS = 4
 
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-const smooth = (t: number) => t * t * (3 - 2 * t)
-const band = (s: number, a: number, b: number) => clamp((s - a) / (b - a))
 
-/**
- * Mỗi chương (01–03) = hai nhịp: CHUYỂN CẢNH (máy quay chạy, cột chữ ẩn) rồi DỪNG ĐỌC (máy quay đứng yên, nội dung ghim giữa màn).
- * Quãng cuộn tính theo số màn hình: TR = chuyển cảnh, ST = dừng đọc. Chiều cao section = (0.1 + TR + ST + 0.15) × 100vh.
- */
-export const BUDGET = [null, { TR: 0.9, ST: 1.2 }, { TR: 0.9, ST: 1.1 }, { TR: 0.8, ST: 1.2 }] as const
-/** Khoảng S của máy quay trong phần chuyển cảnh của từng chương */
-const TRANSIT = [null, [0, 1], [1, 1.8], [1.8, 3]] as const
-const LEAD = 0.1 // màn hình đầu section trước khi máy quay bắt đầu chạy
-const TAIL = 0.15 // màn hình cuối section
-/** Chữ hiện khi máy quay đã đi được 70% quãng chuyển cảnh, và rời đi khi còn 0,3 màn hình cuối section */
-const ON_LEAD = 0.3
-const ON_END = 0.3
-
-/** Chiều cao section chương i (svh) */
-export const stageHeightSvh = (i: number) => {
-    const B = BUDGET[i]
-    return B ? (LEAD + B.TR + B.ST + TAIL) * 100 : 100
-}
+/** S của máy quay ở từng chương (cảnh 3D đọc S liên tục 0..3) */
+const STOP = [0, 1, 1.8, 3] as const
+/** Số giây bay giữa hai chương liền nhau: hero→Hôm nay (vòng quanh trường), →Khóa học (qua cổng, cửa kính, kiosk), →Studio */
+const SEG = [2.6, 2.8, 2.4] as const
+const FLIGHT_MIN = 0.6
+const FLIGHT_MAX = 3.6
+/** Chữ vào khi máy quay đã bay được chừng này, để chữ hiện đúng lúc cảnh dừng */
+const REVEAL = 0.72
+/** Hạn mức vận tốc đầu của đoạn bay mới (S/giây) để không giật khi đổi hướng giữa chừng */
+const V_LIMIT = 1.5
+/** Một khoảng nghỉ lâu chừng này giữa hai sự kiện wheel = cú vuốt trước (và quán tính của nó) đã hết */
+const WHEEL_GAP_MS = 160
+const MIN_LOCK_MS = 900
+const SWIPE_PX = 36
 
 function useMedia(query: string) {
     const [match, setMatch] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches)
@@ -61,61 +54,27 @@ interface Options {
     journey: boolean
     /** Thanh tiến độ cuộn: hook ghi trực tiếp transform, không qua state. */
     barRef?: RefObject<HTMLElement | null>
-    /** Phần tử gốc của trang chủ: hook ghi biến --on-stage và đánh dấu mục thanh chương đang chọn. */
+    /** Phần tử gốc của trang chủ: hook ghi data-on-stage và đánh dấu mục thanh chương đang chọn. */
     rootRef: RefObject<HTMLElement | null>
+    /** Chế độ "Làm mờ cảnh 3D": không khóa cuộn, chữ hiện ngay */
+    calmRef: MutableRefObject<boolean>
 }
 
 /**
- * Đọc vị trí cuộn thành S liên tục 0..3 (nhịp chuyển cảnh/dừng đọc theo BUDGET) và đánh dấu từng section chương bằng class rời rạc
- * `on` (đang đọc) / `past` (đã qua); CSS lo phần hiện chữ theo nhịp cố định. Cuộn mượt bằng Lenis, không có snap tự kéo.
- * Mọi thứ ghi thẳng vào DOM/ref; chỉ `scrolled` là state và đổi rất ít.
- * S ở đây là giá trị đích (chưa làm mượt); cảnh 3D tự làm mượt.
+ * Cuộn theo trạng thái (như marketingbigday2026): một section cao có khung sticky 100svh, bốn panel chồng nhau.
+ * Vị trí cuộn chỉ chọn CHƯƠNG hiện tại; máy quay (S) bay theo thời gian bằng cubic Hermite từ (S, vận tốc hiện tại) tới điểm dừng của chương,
+ * và chữ hiện (class `on`) khi chuyến bay đi được 72%. Mỗi cú vuốt bước đúng một chương: input bị chặn khi đang bay hoặc khi còn quán tính của cú vuốt trước.
+ * Mọi thứ ghi thẳng vào DOM/ref; chỉ `scrolled` là state và đổi rất ít. Giảm chuyển động: không khóa, S nhảy thẳng tới chương đang đọc.
  */
-export function useScrollStage({ journey, barRef, rootRef }: Options) {
+export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
     const stage = useRef(0)
     const [scrolled, setScrolled] = useState(false)
 
     useEffect(() => {
-        const secs = [...document.querySelectorAll<HTMLElement>('[data-chapter]')]
         let lastScrolled: boolean | null = null
-        let lastOnStage = ''
-        let lastChap = -1
-        const stepCount: number[] = []
-
-        const read = () => {
+        const updateChrome = () => {
             const vh = window.innerHeight
             const y = window.scrollY
-            const vis = [clamp(1 - (y / vh) * 1.4), 0, 0, 0]
-            let st = 0
-            if (journey) {
-                for (let i = 1; i < secs.length; i++) {
-                    const B = BUDGET[i]!
-                    const r = secs[i].getBoundingClientRect()
-                    const d = (vh - r.top) / vh // số màn hình đã cuộn kể từ khi section vào khung
-                    const H = r.height / vh
-                    const d1 = LEAD + B.TR
-                    if (d > LEAD) st = lerp(TRANSIT[i]![0], TRANSIT[i]![1], smooth(band(d, LEAD, d1)))
-                    // Trạng thái rời rạc: trước / on / past. CSS animate với nhịp cố định, không buộc theo vị trí cuộn.
-                    const on = d >= d1 - B.TR * ON_LEAD && d < H - ON_END
-                    secs[i].classList.toggle('on', on)
-                    secs[i].classList.toggle('past', d >= H - ON_END)
-                    vis[i] = on ? 1 : 0
-                    // Thứ tự phần tử cho độ trễ lần lượt (--n)
-                    const stepEls = secs[i].querySelectorAll<HTMLElement>('[data-s]')
-                    if (stepCount[i] !== stepEls.length) {
-                        stepCount[i] = stepEls.length
-                        stepEls.forEach((el, k) => el.style.setProperty('--n', String(k)))
-                    }
-                }
-            } else {
-                // Giảm chuyển động: không bay, S nhảy tới số nguyên của chương đang đọc
-                const mid = vh * 0.5
-                secs.forEach((el, i) => {
-                    if (el.getBoundingClientRect().top < mid) st = i
-                })
-            }
-            stage.current = clamp(st, 0, CHAPTERS - 1)
-
             const max = document.documentElement.scrollHeight - vh
             if (barRef?.current) barRef.current.style.transform = `scaleX(${max > 0 ? clamp(y / max) : 0})`
             const isScrolled = y > 40
@@ -123,70 +82,221 @@ export function useScrollStage({ journey, barRef, rootRef }: Options) {
                 lastScrolled = isScrolled
                 setScrolled(isScrolled)
             }
-            const root = rootRef.current
-            if (root) {
-                // Đích 0/1: cảnh 3D tự làm mượt theo thời gian rồi ghi --on-stage
-                const onStage = String(Math.max(vis[1], vis[3]))
-                if (onStage !== lastOnStage) {
-                    lastOnStage = onStage
-                    root.dataset.onStage = onStage
-                }
-                let chap = 0
-                let best = -1
-                vis.forEach((v, i) => {
-                    if (v > best + 0.001) {
-                        best = v
-                        chap = i
-                    }
+        }
+        const markRail = (chap: number) => {
+            rootRef.current?.querySelectorAll<HTMLElement>('[data-rail-link]').forEach((a, i) => a.setAttribute('data-on', String(i === chap)))
+        }
+
+        const journeyEl = document.getElementById('journey')
+        const pin = journeyEl?.firstElementChild as HTMLElement | null | undefined
+        const panels = [...document.querySelectorAll<HTMLElement>('[data-panel]')]
+
+        // ── Không có hành trình (giảm chuyển động): S nhảy tới số nguyên của chương đang đọc, không khóa cuộn ──
+        if (!journey || !journeyEl || !pin || panels.length === 0) {
+            const secs = [...document.querySelectorAll<HTMLElement>('[data-chapter]')]
+            const read = () => {
+                const mid = window.innerHeight * 0.5
+                let st = 0
+                secs.forEach((el, i) => {
+                    if (el.getBoundingClientRect().top < mid) st = i
                 })
-                if (best < 0.05) chap = st < 1 ? 0 : st < 1.8 ? 1 : st < 2.6 ? 2 : 3
-                if (chap !== lastChap) {
-                    lastChap = chap
-                    root.querySelectorAll<HTMLElement>('[data-rail-link]').forEach((a, i) => a.setAttribute('data-on', String(i === chap)))
-                }
+                stage.current = clamp(st, 0, CHAPTERS - 1)
+                updateChrome()
+            }
+            read()
+            window.addEventListener('scroll', read, { passive: true })
+            window.addEventListener('resize', read)
+            return () => {
+                window.removeEventListener('scroll', read)
+                window.removeEventListener('resize', read)
             }
         }
 
-        // ── Lenis (cuộn mượt) ──
-        let lenis: Lenis | null = null
-        let raf = 0
-        if (journey) {
-            lenis = new Lenis({ duration: 1.15, smoothWheel: true })
-            setLenis(lenis)
-            lenis.on('scroll', read)
-            const tick = (t: number) => {
-                lenis!.raf(t)
-                raf = requestAnimationFrame(tick)
+        const N = panels.length
+        panels.forEach((p) => [...p.querySelectorAll<HTMLElement>('[data-s]')].forEach((el, k) => el.style.setProperty('--n', String(k))))
+
+        let S = 0
+        let state = -1
+        let shown = -1
+        let tw = { from: 0, to: 0, v0: 0, t0: 0, D: 0 }
+        /** Sau go(): bỏ qua việc đọc chương từ vị trí cuộn cho tới khi cuộn xong (chương đã chọn sẵn) */
+        let holdUntil = 0
+        let stepLock = 0
+        let lastWheel = 0
+        let stream = false
+        let native = false
+        let touchY: number | null = null
+
+        // Cubic Hermite từ (from, v0) tới (to, 0) trong D giây: trả [S, vận tốc theo S/giây]
+        const twAt = (now: number): [number, number] => {
+            const { from, to, v0, t0, D } = tw
+            if (D <= 0) return [to, 0]
+            const t = clamp((now - t0) / 1000 / D)
+            if (t >= 1) return [to, 0]
+            const t2 = t * t
+            const t3 = t2 * t
+            const p = (2 * t3 - 3 * t2 + 1) * from + (t3 - 2 * t2 + t) * D * v0 + (-2 * t3 + 3 * t2) * to
+            const v = ((6 * t2 - 6 * t) * from + (3 * t2 - 4 * t + 1) * D * v0 + (-6 * t2 + 6 * t) * to) / D
+            return [p, v]
+        }
+        const flightTime = (a: number, b: number) => {
+            const lo = Math.min(a, b)
+            const hi = Math.max(a, b)
+            let d = 0
+            for (let i = 0; i < SEG.length; i++) d += SEG[i] * clamp((Math.min(hi, STOP[i + 1]) - Math.max(lo, STOP[i])) / (STOP[i + 1] - STOP[i]))
+            return clamp(d, FLIGHT_MIN, FLIGHT_MAX)
+        }
+
+        const setState = (i: number) => {
+            if (i === state) return
+            const now = performance.now()
+            const first = state < 0
+            state = i
+            const [, v] = twAt(now)
+            const to = STOP[i]
+            tw = { from: S, to, v0: first ? 0 : clamp(v, -V_LIMIT, V_LIMIT), t0: now, D: first ? 0 : flightTime(S, to) }
+            if (first) S = to
+            panels.forEach((p, k) => {
+                p.classList.remove('on')
+                p.classList.toggle('past', k < i)
+            })
+            shown = -1
+            if (rootRef.current) rootRef.current.dataset.onStage = '0'
+            markRail(i)
+            setJourneyChapter(i)
+        }
+        // Panel mới `on` khi chuyến bay đi được REVEAL (hoặc ngay nếu không bay / chế độ làm mờ)
+        const revealIfReady = (now: number) => {
+            if (shown === state || state < 0) return
+            if (tw.D <= 0 || calmRef.current || (now - tw.t0) / 1000 >= tw.D * REVEAL) {
+                panels[state].classList.add('on')
+                shown = state
+                if (rootRef.current) rootRef.current.dataset.onStage = state === 1 || state === 3 ? '1' : '0'
             }
+        }
+
+        const dist = () => Math.max(1, journeyEl.offsetHeight - pin.offsetHeight)
+        const top = () => journeyEl.getBoundingClientRect().top + window.scrollY
+        const chapterY = (c: number) => top() + (dist() * (c + 0.5)) / N
+        const readScroll = () => {
+            const p = clamp((window.scrollY - top()) / dist(), 0, 0.999)
+            if (performance.now() >= holdUntil) setState(Math.floor(p * N))
+            updateChrome()
+        }
+        const inStage = () => {
+            const t = top()
+            return window.scrollY >= t - 2 && window.scrollY <= t + dist() + 2
+        }
+
+        // ── Lenis: cuộn theo thời gian (mỗi nấc wheel trượt ~1,15s), không snap ──
+        const lenis = new Lenis({ duration: 1.15, smoothWheel: true })
+        setLenis(lenis)
+        lenis.on('scroll', readScroll)
+
+        // Cuộn tới giữa vùng của chương (rail, nav, bước một chương): chương được chọn ngay, S bay, thanh cuộn chạy theo
+        const go = (c: number) => {
+            const target = clamp(c, 0, N - 1)
+            const now = performance.now()
+            setState(target)
+            stepLock = now + Math.max(MIN_LOCK_MS, tw.D * 1000 * 0.8)
+            holdUntil = now + 1300
+            lenis.scrollTo(chapterY(target), { duration: 1.1, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
+        }
+        setChapterScroller(go)
+        // Trả true nếu đã nhận input; hero cuộn lên và Studio cuộn xuống thì thả cho cuộn tự nhiên (xuống footer)
+        const step = (dir: number) => {
+            if (calmRef.current || !inStage()) return false
+            const next = state + dir
+            if (next < 0) return false
+            if (next >= N) return window.scrollY < chapterY(N - 1) - 4 ? (go(N - 1), true) : false
+            go(next)
+            return true
+        }
+
+        const onWheel = (e: WheelEvent) => {
+            const now = performance.now()
+            if (now - lastWheel >= WHEEL_GAP_MS) {
+                stream = false
+                native = false
+            }
+            lastWheel = now
+            if (calmRef.current) return
+            if (!inStage()) {
+                native = true // quán tính của cú vuốt từ footer lên không được bước chương
+                return
+            }
+            if (native) return
+            const dir = Math.sign(e.deltaY)
+            if (!dir) return
+            if (now < stepLock || stream) {
+                e.preventDefault()
+                e.stopPropagation()
+                return
+            }
+            if (Math.abs(e.deltaY) < 3) return
+            if (step(dir)) {
+                stream = true
+                e.preventDefault()
+                e.stopPropagation()
+            } else native = true
+        }
+        const onTouchStart = (e: TouchEvent) => {
+            touchY = e.touches[0].clientY
+        }
+        const onTouchMove = (e: TouchEvent) => {
+            if (calmRef.current || !inStage() || touchY == null) return
+            const dir = Math.sign(touchY - e.touches[0].clientY)
+            const releasing = (state === 0 && dir < 0) || (state === N - 1 && dir > 0 && window.scrollY >= chapterY(N - 1) - 4)
+            if (!releasing && e.cancelable) e.preventDefault()
+        }
+        const onTouchEnd = (e: TouchEvent) => {
+            if (touchY == null) return
+            const dy = touchY - e.changedTouches[0].clientY
+            touchY = null
+            if (Math.abs(dy) > SWIPE_PX && performance.now() > stepLock) step(Math.sign(dy))
+        }
+        const onKey = (e: KeyboardEvent) => {
+            const dir = ({ ArrowDown: 1, PageDown: 1, ' ': 1, ArrowUp: -1, PageUp: -1 } as Record<string, number>)[e.key]
+            const el = e.target instanceof Element ? e.target : null
+            if (!dir || e.metaKey || e.ctrlKey || e.altKey || el?.closest('input,textarea,select,[contenteditable="true"]')) return
+            if (e.key === ' ' && el?.closest('button,a')) return
+            if (performance.now() < stepLock && inStage()) return void e.preventDefault()
+            if (step(dir)) e.preventDefault()
+        }
+
+        let raf = 0
+        const tick = (t: number) => {
+            lenis.raf(t)
+            S = twAt(performance.now())[0]
+            stage.current = S
+            revealIfReady(performance.now())
             raf = requestAnimationFrame(tick)
         }
 
-        // ── Cuộn tới giữa phần dừng đọc của chương (nút thanh chương, nav) ──
-        const chapterTop = (i: number) => secs[i].getBoundingClientRect().top + window.scrollY
-        if (journey) {
-            setChapterScroller((c) => {
-                const B = BUDGET[c]
-                scrollToY(c === 0 || !B ? 0 : chapterTop(c) - window.innerHeight + window.innerHeight * (LEAD + B.TR + B.ST * 0.5), 1.6)
-            })
-        }
-
-        const onScroll = () => read()
-
-        read()
-        window.addEventListener('scroll', onScroll, { passive: true })
-        window.addEventListener('resize', read)
-        const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(read) : null
-        secs.forEach((el) => ro?.observe(el))
+        window.addEventListener('wheel', onWheel, { passive: false, capture: true })
+        window.addEventListener('touchstart', onTouchStart, { passive: true })
+        window.addEventListener('touchmove', onTouchMove, { passive: false })
+        window.addEventListener('touchend', onTouchEnd, { passive: true })
+        window.addEventListener('keydown', onKey)
+        window.addEventListener('scroll', readScroll, { passive: true })
+        window.addEventListener('resize', readScroll)
+        readScroll()
+        raf = requestAnimationFrame(tick)
         return () => {
             cancelAnimationFrame(raf)
-            ro?.disconnect()
-            window.removeEventListener('scroll', onScroll)
-            window.removeEventListener('resize', read)
+            window.removeEventListener('wheel', onWheel, { capture: true })
+            window.removeEventListener('touchstart', onTouchStart)
+            window.removeEventListener('touchmove', onTouchMove)
+            window.removeEventListener('touchend', onTouchEnd)
+            window.removeEventListener('keydown', onKey)
+            window.removeEventListener('scroll', readScroll)
+            window.removeEventListener('resize', readScroll)
             setChapterScroller(null)
+            setJourneyChapter(-1)
             setLenis(null)
-            lenis?.destroy()
+            lenis.destroy()
         }
-    }, [journey, barRef, rootRef])
+    }, [journey, barRef, rootRef, calmRef])
 
     return { stage, scrolled }
 }

@@ -21,14 +21,17 @@ export const CAMPUS = {
     cornice: '#E8E0D4',
     flagYellow: '#F2C230',
     gateSign: '#F3EFEA',
-    rimLight: '#FF6B5E',
+    rimLight: '#FFE2C8',
     windowLit: '#FFD27A',
     // Tầng cửa sổ A2 đã đọc bài Daily: vàng ấm đậm để nổi cả ban ngày
     windowTier: '#FFAE1F',
-    sunlight: '#FFD9B8',
+    sunlight: '#FFF0E0',
     pureWhite: '#FFFFFF',
-    skyLight: '#FFE9E0',
-    groundLight: '#5A2A28',
+    skyLight: '#FFF2E6',
+    groundLight: '#B9A08E',
+    // Buổi tối: ánh sáng bán cầu xanh đêm (không đỏ)
+    nightSkyLight: '#6F80C8',
+    nightGroundLight: '#1B2140',
 } as const
 
 // Màu vật thể và ánh sáng của studio Virtual Director (cảnh 3D, không đổi theo giao diện sáng/tối).

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Flame, Menu, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { XpChip } from '@/components/xp-chip'
 import { visibleStreak } from '@/lib/gamification'
 import { centerOf, enterRole } from '@/lib/role-switch'
-import { scrollToSection } from '@/lib/scroll'
+import { getJourneyChapter, scrollToSection, subscribeChapter } from '@/lib/scroll'
 import { useSoundStore } from '@/lib/sfx'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
@@ -49,6 +49,8 @@ const HOME_SECTIONS = ['top', 'daily', 'courses', 'studio']
  */
 function useActiveSection(enabled: boolean) {
     const [active, setActive] = useState('top')
+    // Hành trình cuộn theo chương: chương hiện tại do useScrollStage báo (các panel chồng nhau nên IntersectionObserver không phân biệt được)
+    const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
     useEffect(() => {
         if (!enabled) return
         let observer: IntersectionObserver | undefined
@@ -80,12 +82,12 @@ function useActiveSection(enabled: boolean) {
             observer?.disconnect()
         }
     }, [enabled])
-    return active
+    return chapter >= 0 ? HOME_SECTIONS[chapter] : active
 }
 
 /**
  * Trạng thái cuộn của nav trên trang chủ (một listener scroll passive + rAF):
- * scrolled = đã cuộn quá 8px (nav hero chuyển từ trong suốt sang kính tối); past = đã qua hết hero (nav chuyển sang tone plain).
+ * scrolled = đã cuộn quá 8px (nav hero chuyển từ trong suốt sang kính); past = đã qua hết hero (nav chuyển sang tone plain).
  */
 function useNavScroll(enabled: boolean) {
     const [state, setState] = useState({ scrolled: false, past: false })
@@ -123,17 +125,17 @@ const initials = (name: string) =>
         .slice(0, 2)
         .toUpperCase() || 'OR'
 
-// Lớp màu theo nền: hero là nền tối cố định (chữ trắng), plain theo giao diện sáng/tối
+// Lớp màu theo nền: hero (trang chủ, nav trong suốt đè lên cảnh) và plain đều theo token giao diện sáng/tối
 const TONE = {
     hero: {
-        text: 'text-ink-foreground',
-        link: 'text-ink-foreground/75 hover:text-ink-foreground',
-        active: 'bg-ink-foreground/15 text-ink-foreground',
-        sub: 'text-ink-foreground/70',
-        chip: 'border-ink-foreground/20 bg-ink-foreground/10 text-ink-foreground hover:bg-ink-foreground/20',
+        text: 'text-foreground',
+        link: 'text-muted-foreground hover:text-foreground',
+        active: 'bg-muted text-foreground',
+        sub: 'text-muted-foreground',
+        chip: 'border-border bg-card/80 text-foreground hover:border-brand-300',
         logo: 'logo-mark',
-        avatar: 'bg-ink-foreground text-ink',
-        burger: 'border-ink-foreground/20 bg-ink-foreground/10 text-ink-foreground',
+        avatar: 'bg-foreground text-background',
+        burger: 'border-border bg-card/80 text-foreground',
     },
     plain: {
         text: 'text-foreground',
@@ -155,7 +157,7 @@ export function TopNav() {
     const onHome = pathname === '/'
     const { scrolled } = useNavScroll(onHome)
     const activeSection = useActiveSection(onHome)
-    // Trang chủ nền đỏ PTIT suốt chiều dài (cảnh 3D cố định phía sau) nên nav luôn ở tone hero
+    // Trang chủ có cảnh 3D cố định phía sau suốt chiều dài nên nav luôn ở tone hero (trong suốt, kính khi đã cuộn)
     const tone: NavTone = onHome ? 'hero' : 'plain'
     const t = TONE[tone]
     const tabParam = new URLSearchParams(useLocation().search).get('tab')
