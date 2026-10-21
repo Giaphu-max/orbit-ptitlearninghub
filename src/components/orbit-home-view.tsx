@@ -17,7 +17,7 @@ import { SiteFooter } from '@/components/site-footer'
 /**
  * Trang chủ kể chuyện theo cuộn, 4 chương: Hero → 01 Hôm nay → 02 Khóa học → 03 Studio, rồi footer.
  * Một Canvas 3D cố định phía sau dùng chung cho cả trang; nội dung ở cột trái (desktop). Mọi chương nền đỏ PTIT ở cả hai giao diện.
- * Mỗi chương 01–03 = chuyển cảnh (máy quay chạy, cột chữ ẩn) rồi dừng đọc (máy quay đứng yên, nội dung ghim giữa màn, hiện từng bước theo cuộn).
+ * Mỗi chương 01–03 = chuyển cảnh (máy quay chạy, cột chữ ẩn) rồi dừng đọc (máy quay đứng yên, nội dung ghim giữa màn, hiện từng bước theo nhịp cố định khi vào phần dừng).
  * Màn hẹp: canvas 55svh phía trên. Giảm chuyển động: không bay, không ghim, mỗi chương một khung máy cố định.
  */
 export function OrbitHomeView() {
@@ -27,7 +27,7 @@ export function OrbitHomeView() {
     const [calm, setCalm] = useCalm()
     const calmRef = useRef(calm)
     calmRef.current = calm
-    const { stage, scrolled } = useScrollStage({ journey, calm: calmRef, barRef, rootRef })
+    const { stage, scrolled } = useScrollStage({ journey, barRef, rootRef })
     const { coursePct } = useBuildingCourses()
     const dailyLit = useDailyLit()
     const screenRef = useRef<HTMLDivElement>(null)
@@ -165,7 +165,7 @@ function useDailyLit() {
 /**
  * Chương 0 và chế độ giảm chuyển động: cao tối thiểu 100vh, cột chữ bên trái (desktop) hoặc nằm dưới canvas (màn hẹp).
  * Chương 01–03 trong hành trình: section cao (0,1 + TR + ST + 0,15) màn hình, nội dung ghim giữa màn (sticky);
- * hook useScrollStage điều khiển độ mờ của cột [data-col] và từng phần tử [data-s] theo cuộn.
+ * hook useScrollStage đánh dấu section bằng class on/past, CSS (index.css) hiện từng phần tử [data-s] theo nhịp cố định.
  */
 function Chapter({ id, index, journey, staticMode, wide, hideOnDesktop, children }: { id: string; index: number; journey: boolean; staticMode: boolean; wide?: boolean; hideOnDesktop?: boolean; children: ReactNode }) {
     const width = wide ? 'max-w-[600px]' : 'max-w-[520px]'
@@ -174,8 +174,8 @@ function Chapter({ id, index, journey, staticMode, wide, hideOnDesktop, children
         return (
             <section id={id} data-chapter={index} data-journey className="section-anchor" style={{ height: `${stageHeightSvh(index)}svh` }}>
                 <div className={`container-page sticky top-0 flex h-[100svh] pb-16 ${staticMode ? 'items-start' : 'items-center pt-24'}`} style={staticMode ? { paddingTop: 'calc(55svh + 1.5rem)' } : undefined}>
-                    <div data-col style={{ opacity: 0 }} className={`pointer-events-auto w-full ${width} ${hidden}`}>
-                        {children}
+                    <div data-col className={`pointer-events-auto w-full ${width}`}>
+                        <div className={hidden}>{children}</div>
                     </div>
                 </div>
             </section>

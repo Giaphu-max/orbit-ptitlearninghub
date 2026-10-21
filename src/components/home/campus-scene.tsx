@@ -438,9 +438,11 @@ const DESKTOP_REGION = 0.62
 const DESKTOP_SHIFT = 0.18
 /** Tỉ lệ rộng/cao của vùng trống mà khung chính diện A2 (chế độ tĩnh) được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
 const REF_ASPECT = 1.05
-/** Hệ số làm mượt S theo dt (lerp): nhanh hơn khi đã có Lenis làm mượt cuộn */
+/** Hệ số làm mượt S theo dt (lerp): khi đã có Lenis thì chỉ còn lớp rất nhẹ để camera không trễ so với trang */
 const S_SMOOTH = 3.2
-const S_SMOOTH_LENIS = 7
+const S_SMOOTH_LENIS = 14
+/** Làm mượt độ tối nền khi có chữ (đích chỉ là 0/1) */
+const DIM_SMOOTH = 3
 
 // ── Máy quay: mỗi chuyển cảnh là MỘT động tác đơn giản; đoạn dài thì cắt bằng tối màn (dip) ──
 //   S 0→1: vòng quanh khuôn viên, kết thúc chính diện A2
@@ -585,11 +587,23 @@ const captionAt = (s: number) => CAPTIONS.find(([to]) => s < to)?.[1] ?? 'Phòng
  * Phần "vỏ" quanh cảnh, ghi thẳng vào DOM (chỉ khi giá trị đổi): chú thích máy quay, canvas và dock mờ dần khi footer đi vào.
  * Chế độ làm mờ để CSS (data-calm) lo phần canvas.
  */
-function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, last: { cap: string; stage: string; dock: string; dip: string }) {
+function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, delta: number, last: { cap: string; stage: string; dock: string; dip: string; dim: number; dimCss: string }) {
     const footer = kiosk.footer.current
     const out = footer ? clamp01(1 - footer.getBoundingClientRect().top / window.innerHeight) : 0
     const stageOpacity = calm ? '' : (1 - out * 0.9).toFixed(3)
     const dockOpacity = (1 - out).toFixed(2)
+    // Độ tối nền khi có chữ: hook ghi đích 0/1 (data-on-stage), ở đây làm mượt theo thời gian rồi ghi --on-stage
+    const root = kiosk.root.current
+    if (root) {
+        const target = root.dataset.onStage === '1' ? 1 : 0
+        last.dim += (target - last.dim) * (1 - Math.exp(-Math.min(delta, 0.2) * DIM_SMOOTH))
+        if (Math.abs(target - last.dim) < 0.001) last.dim = target
+        const css = last.dim.toFixed(3)
+        if (css !== last.dimCss) {
+            last.dimCss = css
+            root.style.setProperty('--on-stage', css)
+        }
+    }
     const cap = captionAt(S)
     const dip = dipAt(S).toFixed(3)
     if (dip !== last.dip && kiosk.dip.current) {
@@ -752,7 +766,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     // S đã làm mượt (lerp theo dt) và mức "đã vào trong nhà" (0 ngoài sân → 1 trong sảnh): nắng giảm, đèn trong sảnh nổi lên
     const sm = useRef(stage.current)
     const indoor = useRef(0)
-    const chrome = useRef({ cap: '', stage: '', dock: '', dip: '' })
+    const chrome = useRef({ cap: '', stage: '', dock: '', dip: '', dim: 0, dimCss: '' })
     // Đo FPS: dưới 40 thì giảm chất lượng (shadow map nhỏ, cây không đổ bóng)
     const perf = useRef({ t: 0, n: 0, bad: 0 })
     const [lowQuality, setLowQuality] = useState(false)
@@ -961,7 +975,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         }
         camera.updateMatrixWorld()
         placeKiosk(kiosk, camera, size, S, f, !staticMode && !calmOn)
-        updateChrome(kiosk, S, calmOn, chrome.current)
+        updateChrome(kiosk, S, calmOn, delta, chrome.current)
 
         // ── Nền trời và sương: đỏ PTIT → đỏ sẫm (hết chương Hôm nay) → tối hẳn khi vào nhà (đổi lúc tối màn) ──
         colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, indoor.current)

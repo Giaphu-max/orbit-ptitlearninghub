@@ -111,6 +111,15 @@
     --duration-base: 250ms;
     --duration-slow: 450ms;
     --duration-reward: 900ms;
+    /* Hiện chữ ở trang chủ kể chuyện: vào chậm, ra nhanh; trượt 46px kèm nhòe 8px; mỗi phần tử trễ thêm 90ms */
+    --duration-reveal: 700ms;
+    --duration-reveal-move: 900ms;
+    --duration-reveal-out: 450ms;
+    --duration-reveal-out-move: 600ms;
+    --reveal-offset: 46px;
+    --reveal-blur: 8px;
+    --reveal-delay: 100ms;
+    --reveal-stagger: 90ms;
     /* Màu nhấn theo môn học: chỉ dùng cho chip môn và đường chặng mini ở ô khóa học. ink = chữ trên nền nhạt (đã kiểm ≥4.5:1) */
     --subject-film: 358 80% 43%;
     --subject-film-ink: 358 80% 43%;
@@ -216,6 +225,39 @@
   }
   .stage-glow {
     background: radial-gradient(60% 70% at 70% 30%, hsl(var(--stage-glow) / 0.18), transparent 60%);
+  }
+  /* Chữ chương 01–03 (section[data-journey]): trạng thái rời rạc do useScrollStage đặt (class on / past), không buộc theo vị trí cuộn */
+  [data-journey] [data-col] {
+    visibility: hidden;
+  }
+  [data-journey].on [data-col] {
+    visibility: visible;
+    transition: visibility 0s;
+  }
+  [data-journey] [data-s] {
+    opacity: 0;
+    transform: translate3d(0, var(--reveal-offset), 0);
+    filter: blur(var(--reveal-blur));
+    transition: opacity var(--duration-reveal-out), transform var(--duration-reveal-out-move) var(--ease-out), filter var(--duration-reveal-out);
+    will-change: opacity, transform;
+  }
+  [data-journey].past [data-s] {
+    transform: translate3d(0, calc(var(--reveal-offset) * -1), 0);
+  }
+  [data-journey].on [data-s] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: opacity var(--duration-reveal), transform var(--duration-reveal-move) var(--ease-out), filter var(--duration-reveal);
+    transition-delay: calc(var(--reveal-delay) + var(--n, 0) * var(--reveal-stagger));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-journey] [data-s] {
+      transition: none !important;
+      transform: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
   }
   /* Nội dung đang hiện (--on-stage 0→1, do useScrollStage ghi): cảnh lùi lại, tối và bớt bão hòa */
   #home-stage {

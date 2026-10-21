@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
 import { scrollToY, setChapterScroller, setLenis } from '@/lib/scroll'
@@ -19,11 +19,14 @@ const band = (s: number, a: number, b: number) => clamp((s - a) / (b - a))
  * Mỗi chương (01–03) = hai nhịp: CHUYỂN CẢNH (máy quay chạy, cột chữ ẩn) rồi DỪNG ĐỌC (máy quay đứng yên, nội dung ghim giữa màn).
  * Quãng cuộn tính theo số màn hình: TR = chuyển cảnh, ST = dừng đọc. Chiều cao section = (0.1 + TR + ST + 0.15) × 100vh.
  */
-export const BUDGET = [null, { TR: 1.1, ST: 1.3 }, { TR: 1.2, ST: 0.85 }, { TR: 1.3, ST: 1.1 }] as const
+export const BUDGET = [null, { TR: 0.9, ST: 1.2 }, { TR: 0.9, ST: 1.1 }, { TR: 0.8, ST: 1.2 }] as const
 /** Khoảng S của máy quay trong phần chuyển cảnh của từng chương */
 const TRANSIT = [null, [0, 1], [1, 1.8], [1.8, 3]] as const
 const LEAD = 0.1 // màn hình đầu section trước khi máy quay bắt đầu chạy
-const TAIL = 0.15 // màn hình cuối section: nội dung mờ đi
+const TAIL = 0.15 // màn hình cuối section
+/** Chữ hiện khi máy quay đã đi được 70% quãng chuyển cảnh, và rời đi khi còn 0,3 màn hình cuối section */
+const ON_LEAD = 0.3
+const ON_END = 0.3
 
 /** Chiều cao section chương i (svh) */
 export const stageHeightSvh = (i: number) => {
@@ -45,7 +48,7 @@ function useMedia(query: string) {
 
 /**
  * `narrow`: canvas 55svh phía trên, không dịch cảnh sang phải; `reduce`: giảm chuyển động.
- * `journey` = có hành trình cuộn (máy quay bay, section ghim, Lenis, snap); giảm chuyển động thì không.
+ * `journey` = có hành trình cuộn (máy quay bay, section ghim, Lenis); giảm chuyển động thì không.
  * `staticMode` (narrow hoặc reduce) chỉ quyết định bố cục canvas.
  */
 export function useStageMode() {
@@ -56,8 +59,6 @@ export function useStageMode() {
 
 interface Options {
     journey: boolean
-    /** Chế độ làm mờ cảnh: không snap */
-    calm: MutableRefObject<boolean>
     /** Thanh tiến độ cuộn: hook ghi trực tiếp transform, không qua state. */
     barRef?: RefObject<HTMLElement | null>
     /** Phần tử gốc của trang chủ: hook ghi biến --on-stage và đánh dấu mục thanh chương đang chọn. */
@@ -65,20 +66,21 @@ interface Options {
 }
 
 /**
- * Đọc vị trí cuộn thành S liên tục 0..3 (nhịp chuyển cảnh/dừng đọc theo BUDGET), hiện nội dung từng bước, snap theo chương và
- * cuộn mượt bằng Lenis. Mọi thứ ghi thẳng vào DOM/ref; chỉ `scrolled` là state và đổi rất ít.
+ * Đọc vị trí cuộn thành S liên tục 0..3 (nhịp chuyển cảnh/dừng đọc theo BUDGET) và đánh dấu từng section chương bằng class rời rạc
+ * `on` (đang đọc) / `past` (đã qua); CSS lo phần hiện chữ theo nhịp cố định. Cuộn mượt bằng Lenis, không có snap tự kéo.
+ * Mọi thứ ghi thẳng vào DOM/ref; chỉ `scrolled` là state và đổi rất ít.
  * S ở đây là giá trị đích (chưa làm mượt); cảnh 3D tự làm mượt.
  */
-export function useScrollStage({ journey, calm, barRef, rootRef }: Options) {
+export function useScrollStage({ journey, barRef, rootRef }: Options) {
     const stage = useRef(0)
     const [scrolled, setScrolled] = useState(false)
 
     useEffect(() => {
         const secs = [...document.querySelectorAll<HTMLElement>('[data-chapter]')]
-        const cols = secs.map((s) => s.querySelector<HTMLElement>('[data-col]'))
         let lastScrolled: boolean | null = null
         let lastOnStage = ''
         let lastChap = -1
+        const stepCount: number[] = []
 
         const read = () => {
             const vh = window.innerHeight
@@ -93,24 +95,17 @@ export function useScrollStage({ journey, calm, barRef, rootRef }: Options) {
                     const H = r.height / vh
                     const d1 = LEAD + B.TR
                     if (d > LEAD) st = lerp(TRANSIT[i]![0], TRANSIT[i]![1], smooth(band(d, LEAD, d1)))
-                    const inA = band(d, d1 - 0.05, d1 + 0.12)
-                    const cv = inA * (1 - band(d, H - TAIL, H))
-                    vis[i] = cv
-                    const col = cols[i]
-                    if (col) {
-                        col.style.opacity = cv.toFixed(3)
-                        col.style.transform = `translateY(${(1 - inA - band(d, H - TAIL, H)) * 24}px)`
-                        col.style.visibility = cv < 0.002 ? 'hidden' : ''
-                    }
+                    // Trạng thái rời rạc: trước / on / past. CSS animate với nhịp cố định, không buộc theo vị trí cuộn.
+                    const on = d >= d1 - B.TR * ON_LEAD && d < H - ON_END
+                    secs[i].classList.toggle('on', on)
+                    secs[i].classList.toggle('past', d >= H - ON_END)
+                    vis[i] = on ? 1 : 0
+                    // Thứ tự phần tử cho độ trễ lần lượt (--n)
                     const stepEls = secs[i].querySelectorAll<HTMLElement>('[data-s]')
-                    const n = stepEls.length
-                    const span = Math.min(0.55, B.ST * 0.5)
-                    stepEls.forEach((el, k) => {
-                        const a0 = d1 + k * (span / Math.max(n, 1))
-                        const e = smooth(band(d, a0, a0 + 0.12))
-                        el.style.opacity = e.toFixed(3)
-                        el.style.transform = `translateY(${(1 - e) * 18}px)`
-                    })
+                    if (stepCount[i] !== stepEls.length) {
+                        stepCount[i] = stepEls.length
+                        stepEls.forEach((el, k) => el.style.setProperty('--n', String(k)))
+                    }
                 }
             } else {
                 // Giảm chuyển động: không bay, S nhảy tới số nguyên của chương đang đọc
@@ -130,10 +125,11 @@ export function useScrollStage({ journey, calm, barRef, rootRef }: Options) {
             }
             const root = rootRef.current
             if (root) {
-                const onStage = Math.max(vis[1], vis[3]).toFixed(2)
+                // Đích 0/1: cảnh 3D tự làm mượt theo thời gian rồi ghi --on-stage
+                const onStage = String(Math.max(vis[1], vis[3]))
                 if (onStage !== lastOnStage) {
                     lastOnStage = onStage
-                    root.style.setProperty('--on-stage', onStage)
+                    root.dataset.onStage = onStage
                 }
                 let chap = 0
                 let best = -1
@@ -155,7 +151,7 @@ export function useScrollStage({ journey, calm, barRef, rootRef }: Options) {
         let lenis: Lenis | null = null
         let raf = 0
         if (journey) {
-            lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.85 })
+            lenis = new Lenis({ duration: 1.15, smoothWheel: true })
             setLenis(lenis)
             lenis.on('scroll', read)
             const tick = (t: number) => {
@@ -174,55 +170,7 @@ export function useScrollStage({ journey, calm, barRef, rootRef }: Options) {
             })
         }
 
-        // ── Snap: một cú cuộn = một chương. Dừng giữa chuyển cảnh thì lướt tới phần dừng đọc kế (xuống) / trước (lên) ──
-        let lastY = window.scrollY
-        let dir = 1
-        let snapT = 0
-        let snapping = false
-        const stops = () => {
-            const vh = window.innerHeight
-            const out: [number, number][] = [[0, vh * 0.15]]
-            for (let i = 1; i < secs.length; i++) {
-                const B = BUDGET[i]!
-                const top = chapterTop(i) - vh
-                out.push([top + (LEAD + B.TR + 0.12) * vh, top + (LEAD + B.TR + B.ST + TAIL - 0.18) * vh])
-            }
-            const foot = document.getElementById('home-footer')
-            out.push([foot ? foot.getBoundingClientRect().top + window.scrollY - vh * 0.3 : Infinity, Infinity])
-            return out
-        }
-        const maybeSnap = () => {
-            if (snapping || calm.current || !lenis) return
-            const y = window.scrollY
-            const S_ = stops()
-            if (S_.some(([a, b]) => y >= a - 2 && y <= b + 2)) return
-            let target: number | null = null
-            if (dir > 0) {
-                for (const [a] of S_)
-                    if (a > y) {
-                        target = a
-                        break
-                    }
-            } else {
-                for (let k = S_.length - 1; k >= 0; k--)
-                    if (S_[k][1] < y) {
-                        target = S_[k][1]
-                        break
-                    }
-            }
-            if (target === null || !Number.isFinite(target)) return
-            target = Math.min(target, document.documentElement.scrollHeight - window.innerHeight)
-            snapping = true
-            lenis.scrollTo(target, { duration: 1.5, easing: (t) => 1 - Math.pow(1 - t, 3), onComplete: () => (snapping = false), lock: true })
-        }
-        const onScroll = () => {
-            read()
-            const y = window.scrollY
-            if (Math.abs(y - lastY) > 1) dir = y > lastY ? 1 : -1
-            lastY = y
-            window.clearTimeout(snapT)
-            if (journey && !snapping) snapT = window.setTimeout(maybeSnap, 140)
-        }
+        const onScroll = () => read()
 
         read()
         window.addEventListener('scroll', onScroll, { passive: true })
@@ -231,7 +179,6 @@ export function useScrollStage({ journey, calm, barRef, rootRef }: Options) {
         secs.forEach((el) => ro?.observe(el))
         return () => {
             cancelAnimationFrame(raf)
-            window.clearTimeout(snapT)
             ro?.disconnect()
             window.removeEventListener('scroll', onScroll)
             window.removeEventListener('resize', read)
@@ -239,7 +186,7 @@ export function useScrollStage({ journey, calm, barRef, rootRef }: Options) {
             setLenis(null)
             lenis?.destroy()
         }
-    }, [journey, calm, barRef, rootRef])
+    }, [journey, barRef, rootRef])
 
     return { stage, scrolled }
 }
