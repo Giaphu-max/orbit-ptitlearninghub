@@ -5,6 +5,7 @@ import { getCourse } from '@/data'
 
 export const BUILDING_COURSE_IDS: Record<string, string | null> = {
     'Tòa A2': 'nhiep-anh-va-anh-sang',
+    'Hội trường A2': null,
     'Tòa A3': 'dung-audio-video-phi-tuyen',
     'Hội trường A1': null,
     'Tòa A1': null,
@@ -18,9 +19,10 @@ export function courseOfBuilding(name: string) {
     return id ? getCourse(id) : undefined
 }
 
-/** Hướng mặt đẹp của tòa (độ, 0 = mặt trước nhìn về +z). Máy quay dừng ở các tòa theo thứ tự này (rồi tới thứ tự khai báo). */
+/** Hướng mặt đẹp của tòa (độ, 0 = mặt trước nhìn về +z). Dùng để sắp thứ tự các tòa có khóa (rồi tới thứ tự khai báo). */
 export const BUILDING_FACE_AZ: Record<string, number> = {
     'Tòa A2': 0,
+    'Hội trường A2': 0,
     'Tòa A3': 0,
     'Hội trường A1': 0,
     'Tòa A1': 0,
@@ -28,7 +30,7 @@ export const BUILDING_FACE_AZ: Record<string, number> = {
     'Cổng trường': 0,
 }
 
-/** Các tòa có khóa (trong số `names`) theo thứ tự điểm dừng của máy quay ở chương Khóa học. */
+/** Các tòa có khóa (trong số `names`) theo thứ tự hiển thị ở chương Khóa học. */
 export function courseStops(names: Iterable<string>): string[] {
     const decl = Object.keys(BUILDING_COURSE_IDS)
     const have = new Set(names)

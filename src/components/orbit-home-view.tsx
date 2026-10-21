@@ -1,11 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Camera, Check, ChevronDown, Play, Sparkles } from 'lucide-react'
 import { getConcept, getCourse, lessons } from '@/data'
 import { dailyFor, DAILY_ARTICLE_XP, MISSIONS } from '@/lib/gamification'
 import { CourseArt } from '@/components/courses/course-cover'
 import { BUILDING_COURSE_IDS, courseStops } from '@/lib/campus-courses'
-import type { CourseStops } from '@/components/home/campus-scene'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { DAILY_LIMIT, gapScore, todaysDaily } from '@/lib/next-step'
 import { useScrollStage, useStageMode } from '@/hooks/useScrollStage'
@@ -23,12 +22,11 @@ export function OrbitHomeView() {
     const barRef = useRef<HTMLDivElement>(null)
     const { stage, scrolled } = useScrollStage({ staticMode, barRef })
     const { stopNames, summaryOf, coursePct } = useBuildingCourses()
-    const stops = useCourseStops(stopNames)
     const dailyLit = useDailyLit()
 
     return (
         <div className="relative w-full bg-stage text-ink-foreground">
-            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} stops={stops} dailyLit={dailyLit} coursePct={coursePct} />
+            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} dailyLit={dailyLit} coursePct={coursePct} />
             <div aria-hidden className="stage-glow pointer-events-none fixed inset-0 z-[1]" />
             <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
             <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
@@ -77,37 +75,6 @@ function useBuildingCourses() {
             coursePct: Object.fromEntries(withCourse.map((x) => [x.name, x.sum.pct])) as Readonly<Record<string, number>>,
         }
     }, [summaries])
-}
-
-/**
- * Điểm dừng của máy quay: tên tòa theo thứ tự thẻ + S tại tâm từng thẻ. S tuyến tính theo cuộn trong chương
- * (chương i: S = i − 0.5 → i + 0.5 từ lúc đỉnh chương chạm giữa màn hình tới lúc đáy chạm), nên đo thẳng từ DOM.
- */
-function useCourseStops(names: string[]) {
-    const ref = useRef<CourseStops>({ names, times: [] })
-    useLayoutEffect(() => {
-        ref.current.names = names
-        const measure = () => {
-            const sec = document.getElementById('courses')
-            if (!sec) return
-            const top = sec.getBoundingClientRect().top + window.scrollY
-            ref.current.times = [...document.querySelectorAll<HTMLElement>('[data-stop]')].map((el) => {
-                const r = el.getBoundingClientRect()
-                const p = (r.top + window.scrollY + r.height / 2 - top) / sec.offsetHeight
-                return COURSE_CHAPTER - 0.5 + Math.min(1, Math.max(0, p))
-            })
-        }
-        measure()
-        const ro = new ResizeObserver(measure)
-        const sec = document.getElementById('courses')
-        if (sec) ro.observe(sec)
-        window.addEventListener('resize', measure)
-        return () => {
-            ro.disconnect()
-            window.removeEventListener('resize', measure)
-        }
-    }, [names])
-    return ref
 }
 
 /** Bài Daily hôm nay (đúng thứ tự danh sách) đã đọc chưa → ref cho cảnh 3D, mỗi bài một tầng cửa sổ A2. Ghi ref, không render lại cảnh. */
@@ -335,8 +302,6 @@ function MiniMissions() {
 }
 
 // ─── Chương 2: Khóa học ────────────────────────────────────────────────────
-
-const COURSE_CHAPTER = 2
 
 function CoursesChapter({ stopNames, summaryOf, staticMode }: { stopNames: string[]; summaryOf: (name: string) => CourseSummary | undefined; staticMode: boolean }) {
     const summaries = useCourseSummaries()

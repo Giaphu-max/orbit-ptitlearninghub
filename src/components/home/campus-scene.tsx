@@ -1,4 +1,4 @@
-import { BUILDING_FACE_AZ, courseOfBuilding } from '@/lib/campus-courses'
+import { courseOfBuilding } from '@/lib/campus-courses'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
@@ -6,115 +6,18 @@ import { Html, OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
-import { DEFAULT_SETUP } from '@/lib/studio-setup'
-import { createMaterials, PropBlue, PropColumn, PropGreen, PropYellow, STUDIO_PROP_AT, StudioFigure, StudioPlinth, StudioWalls, tintMaterials } from '@/components/studio/studio-set'
+import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP } from './campus-a2'
+import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
-// Hình khối, màu và số đo giữ nguyên bản gốc; không dùng file model nào.
+// Hình khối, màu và số đo giữ nguyên bản gốc; không dùng file model nào. Tòa A2 (đế rộng, sảnh kính) và Hội trường A2
+// theo bản mẫu docs/mockup/orbit-campus-journey.html (xem campus-a2.tsx).
 // Canvas chạy chế độ legacy + flat (không color management, không tone mapping) và cường độ đèn
 // nhân π để ra đúng màu như bản three r128 mà bản gốc dùng.
 
 const C = CAMPUS
 
-type Vec3 = [number, number, number]
-type MatOpts = { roughness?: number; metalness?: number }
-
-// Vật liệu dùng chung theo (màu, thông số) để hàng trăm khối không tạo hàng trăm vật liệu
-const matCache = new Map<string, THREE.MeshStandardMaterial>()
-function stdMat(color: string, o: MatOpts = {}) {
-    const key = color + JSON.stringify(o)
-    let m = matCache.get(key)
-    if (!m) {
-        m = new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.9, metalness: 0, ...o })
-        matCache.set(key, m)
-    }
-    return m
-}
-
-// ─── Khối cơ bản ───────────────────────────────────────────────────────────
-
-/** Hộp: `at` là tâm đáy (y là mặt dưới), như hàm box() của bản gốc. */
-function Box({ s, c, at = [0, 0, 0], o }: { s: Vec3; c: string; at?: Vec3; o?: MatOpts }) {
-    return (
-        <mesh position={[at[0], at[1] + s[1] / 2, at[2]]} material={stdMat(c, o)} castShadow receiveShadow>
-            <boxGeometry args={s} />
-        </mesh>
-    )
-}
-
-function Cylinder({ r, h, c, at, seg = 10 }: { r: number; h: number; c: string; at: Vec3; seg?: number }) {
-    return (
-        <mesh position={at} material={stdMat(c)} castShadow receiveShadow>
-            <cylinderGeometry args={[r, r, h, seg]} />
-        </mesh>
-    )
-}
-
-/** Mái chóp 4 mặt. */
-function HipRoof({ w, h, d, c, at }: { w: number; h: number; d: number; c: string; at: Vec3 }) {
-    const geo = useMemo(() => {
-        const g = new THREE.ConeGeometry(1, 1, 4)
-        g.rotateY(Math.PI / 4)
-        g.scale(w / Math.SQRT2, h, d / Math.SQRT2)
-        return g
-    }, [w, h, d])
-    return <mesh geometry={geo} position={[at[0], at[1] + h / 2, at[2]]} material={stdMat(c)} castShadow receiveShadow />
-}
-
-/** Mái hai mái / đầu hồi tam giác, đùn dọc theo trục Z (hoặc X khi alongZ = false). */
-function Gable({ len, h, depth, c, at, alongZ = false }: { len: number; h: number; depth: number; c: string; at: Vec3; alongZ?: boolean }) {
-    const geo = useMemo(() => {
-        const s = new THREE.Shape()
-        s.moveTo(-depth / 2, 0)
-        s.lineTo(depth / 2, 0)
-        s.lineTo(0, h)
-        s.lineTo(-depth / 2, 0)
-        const g = new THREE.ExtrudeGeometry(s, { depth: len, bevelEnabled: false })
-        g.translate(0, 0, -len / 2)
-        if (!alongZ) g.rotateY(Math.PI / 2)
-        return g
-    }, [len, h, depth, alongZ])
-    return <mesh geometry={geo} position={at} material={stdMat(c)} castShadow receiveShadow />
-}
-
-// ─── Chữ vẽ lên canvas làm texture ─────────────────────────────────────────
-
-interface TextOpts { w?: number; h?: number; fg?: string; size?: number | number[]; weight?: number }
-
-function makeTextTexture(text: string, { w = 1024, h = 256, fg = CAMPUS.ptitRed, size = 150, weight = 800 }: TextOpts) {
-    const cv = document.createElement('canvas')
-    cv.width = w
-    cv.height = h
-    const ctx = cv.getContext('2d')!
-    ctx.fillStyle = fg
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const lines = text.split('\n')
-    lines.forEach((ln, i) => {
-        const sz = Array.isArray(size) ? size[i] : size
-        ctx.font = `${weight} ${sz}px "Be Vietnam Pro", Arial, sans-serif`
-        ctx.fillText(ln, w / 2, h / 2 + (i - (lines.length - 1) / 2) * sz * 1.15)
-    })
-    const t = new THREE.CanvasTexture(cv)
-    t.colorSpace = THREE.SRGBColorSpace
-    t.anisotropy = 4
-    return t
-}
-
-/** Mặt phẳng dán chữ. Chỉ dựng sau khi font đã tải (xem CampusScene) nên texture dùng đúng font. */
-function TextPlane({ w, h, text, at, opts, doubleSide }: { w: number; h: number; text: string; at: Vec3; opts: TextOpts; doubleSide?: boolean }) {
-    const tex = useMemo(() => makeTextTexture(text, opts), [text, opts])
-    useEffect(() => () => tex.dispose(), [tex])
-    return (
-        <mesh position={at}>
-            <planeGeometry args={[w, h]} />
-            <meshBasicMaterial map={tex} transparent side={doubleSide ? THREE.DoubleSide : THREE.FrontSide} />
-        </mesh>
-    )
-}
-
 // Hằng số ngoài component để useMemo của TextPlane không tính lại mỗi lần render
-const T_SAMSUNG: TextOpts = { fg: CAMPUS.signBlue, size: 64, weight: 800 }
 const T_PTIT: TextOpts = { size: 200 }
 const T_HEART: TextOpts = { size: 170 }
 const T_GATE: TextOpts = { size: [96, 56], h: 300 }
@@ -131,10 +34,12 @@ interface BuildingProps {
     /** % tiến độ khóa của tòa (hiện cạnh tên khóa); undefined nếu tòa không có khóa */
     pct?: number
     registry: React.MutableRefObject<Map<string, THREE.Group>>
+    /** Xoay quanh trục đứng (rad), mặc định mặt trước nhìn về +z */
+    rotY?: number
     children: ReactNode
 }
 
-function Building({ name, anchorY, position, hovered, labelVisible, pct, registry, children }: BuildingProps) {
+function Building({ name, anchorY, position, hovered, labelVisible, pct, registry, rotY = 0, children }: BuildingProps) {
     const ref = useRef<THREE.Group>(null)
     useLayoutEffect(() => {
         const g = ref.current
@@ -152,7 +57,7 @@ function Building({ name, anchorY, position, hovered, labelVisible, pct, registr
     const hidden = !labelVisible && !hovered
     const course = courseOfBuilding(name)
     return (
-        <group ref={ref} position={position}>
+        <group ref={ref} position={position} rotation={[0, rotY, 0]}>
             {children}
             <Html position={[0, anchorY, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
                 <div
@@ -355,11 +260,12 @@ function Cloud({ index, reduce }: { index: number; reduce: boolean }) {
 
 // ─── Mô hình khuôn viên ────────────────────────────────────────────────────
 
-type BuildingName = 'Tòa A2' | 'Tòa A3' | 'Hội trường A1' | 'Tòa A1' | 'Canteen' | 'Cổng trường'
+type BuildingName = 'Tòa A2' | 'Hội trường A2' | 'Tòa A3' | 'Hội trường A1' | 'Tòa A1' | 'Canteen' | 'Cổng trường'
 
-const TREE_SPOTS: [number, number][] = [[-20, 14], [-17, 14], [-13, 13.5], [8, 13.5], [11, 13.6], [14, 13.3], [17.5, 13.6], [20, 12], [-20, 8], [-20, -1], [-19.5, -12], [-16, -14], [-6, -14], [3, -14], [7, -14.5], [19.5, -14], [20, -1], [19.5, 5], [-6, 6], [-5, 0.5], [9, 4], [10, -2], [-7, -5]]
-const LAWNS: [number, number, number, number][] = [[-15, 11, 9, 6], [14, 9, 10, 8], [-16, -3, 8, 6], [15, -4, 8, 6], [-4, -3, 6, 5]]
-const CARS: [string, number, number][] = [[CAMPUS.ptitRed, -1.8, 10.8], [CAMPUS.pureWhite, 0.9, 8.2], [CAMPUS.carDark, 3.8, 10.8], [CAMPUS.carSilver, 5.2, 8.2]]
+// Bố cục theo bản mẫu: đế A2 chiếm x ∈ [-8.6, 12.6], z ∈ [-21.7, 7]; các tòa/cây/bãi cỏ nằm ngoài vùng đó
+const TREE_SPOTS: [number, number][] = [[-21, 15], [-18, 16.5], [-12.5, 16.5], [-5, 14], [-20.5, 3], [-21, -5], [-21, -17.5], [-17, -18.5], [-12, -18.5], [-10.8, 6.5], [-10.8, -2], [-11, -6], [-7, 9], [7.5, 8.5], [13.5, 16], [17, 16.5], [20.5, 15], [20.8, 9], [20.8, 4], [21.2, -9], [10, 13], [-8, 12.5]]
+const LAWNS: [number, number, number, number][] = [[-15, 14, 9, 4], [16, 10, 9, 7], [-15.5, -5, 8, 4]]
+const CARS: [string, number, number][] = [[CAMPUS.ptitRed, -5.5, 11], [CAMPUS.pureWhite, -7.8, 11.2], [CAMPUS.carDark, 8.8, 10.5], [CAMPUS.carSilver, 10.6, 10.8]]
 
 interface WorldProps {
     hovered: BuildingName | null
@@ -368,30 +274,28 @@ interface WorldProps {
     nightRef: React.MutableRefObject<number>
     reduce: boolean
     dailyLit: React.MutableRefObject<boolean[]>
+    /** S đã làm mượt (Scene ghi mỗi khung hình) */
     stage: React.MutableRefObject<number>
     coursePct: Readonly<Record<string, number>>
-    /** Các nhóm thu nhỏ biến mất ở chương Studio (cảnh đặt scale theo S, không qua React) */
-    shrink: { trees: React.RefObject<THREE.Group | null>; clouds: React.RefObject<THREE.Group | null>; ground: React.RefObject<THREE.Group | null> }
     /** Máy yếu: cây không đổ bóng */
     lowQuality: boolean
 }
 
-function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, coursePct, shrink, lowQuality }: WorldProps) {
+function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, coursePct, lowQuality }: WorldProps) {
     const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name), pct: coursePct[name] })
 
     return (
         <>
             {/* Nền, đường, bãi cỏ */}
-            <Box s={[46, 1, 36]} c={C.plateEdge} at={[0, -1.2, 0]} />
-            <Box s={[45, 0.4, 35]} c={C.plate} at={[0, -0.4, 0]} />
-            <group ref={shrink.ground}>
-            <Box s={[45, 0.02, 3]} c={C.road} at={[0, 0, 16]} />
-            <Box s={[9, 0.02, 8]} c={C.pave} at={[2, 0, 9]} />
+            <Box s={[46, 1, 42]} c={C.plateEdge} at={[0, -1.2, -1]} />
+            <Box s={[45, 0.4, 41]} c={C.plate} at={[0, -0.4, -1]} />
+            <Box s={[45, 0.02, 2]} c={C.road} at={[0, 0, 18.4]} />
+            <Box s={[5, 0.02, 11]} c={C.pave} at={[2, 0, 11]} />
             {LAWNS.map(([x, z, w, d], i) => (
                 <Box key={i} s={[w, 0.08, d]} c={i % 2 ? C.grassDark : C.grass} at={[x, 0, z]} />
             ))}
             {Array.from({ length: 7 }, (_, i) => (
-                <Box key={i} s={[0.2, 0.03, 3.4]} c={CAMPUS.pureWhite} at={[-2.5 + i * 1.4, 0, 9.5]} />
+                <Box key={i} s={[0.2, 0.03, 1.8]} c={CAMPUS.pureWhite} at={[-2.5 + i * 1.4, 0, 18.4]} />
             ))}
             {CARS.map(([c, x, z]) => (
                 <group key={c}>
@@ -399,52 +303,47 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     <Box s={[0.85, 0.35, 1.1]} c={c} at={[x, 0.5, z - 0.1]} />
                 </group>
             ))}
-            </group>
 
-            {/* Tòa A2 */}
-            <Building {...b('Tòa A2')} anchorY={17.6} position={[2, 0, 1]}>
-                <Box s={[11, 2.8, 7.4]} c={C.granite} />
-                {Array.from({ length: 5 }, (_, i) => (
-                    <Box key={i} s={[1.5, 1, 0.1]} c={C.win} at={[-4.2 + i * 1.9, 1.4, 3.72]} />
-                ))}
-                <Box s={[3.4, 0.35, 2.4]} c={C.granite} at={[4.2, 2.8, 4.4]} />
-                {[3.1, 5.3].map((x) => (
-                    <Cylinder key={x} r={0.24} h={2.8} c={CAMPUS.pillar} at={[x, 1.4, 5.3]} />
-                ))}
-                {[0, 1, 2, 3].map((s) => (
-                    <Box key={s} s={[3.2 - s * 0.2, 0.18, 0.5]} c={C.roofRed} at={[4.2, s * 0.18, 6 + (3 - s) * 0.45]} />
-                ))}
-                <Box s={[5.6, 1.2, 0.12]} c={C.white} at={[-2.4, 1.6, 3.76]} />
-                <TextPlane w={5.4} h={1.1} text="SAMSUNG LAB · FPT TELECOM LAB" at={[-2.4, 2.2, 3.84]} opts={T_SAMSUNG} />
-                <Box s={[6.8, 11, 4.6]} c={C.cream} at={[0, 2.8, -0.8]} />
-                <Box s={[1.3, 9.6, 3.8]} c={C.cream} at={[-4.05, 2.8, -0.8]} />
-                <Box s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
-                <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.25, metalness: 0.35 }} />
-                <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.35 }} />
-                <Box s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
-                <HipRoof w={5.2} h={1.6} d={3.6} c={C.roofRed} at={[0, 14.3, -1.2]} />
-                <Gable len={0.5} h={1.8} depth={5} c={C.cream} at={[0, 13.8, 1.35]} alongZ />
-                {/* Đồng hồ */}
-                <mesh position={[0, 14.55, 1.65]} rotation={[Math.PI / 2, 0, 0]} material={stdMat(CAMPUS.pureWhite)} castShadow receiveShadow>
-                    <cylinderGeometry args={[0.62, 0.62, 0.12, 24]} />
-                </mesh>
-                <mesh position={[0, 14.55, 1.7]} material={stdMat(C.glass)} castShadow receiveShadow>
-                    <torusGeometry args={[0.62, 0.08, 6, 24]} />
-                </mesh>
-                <Box s={[0.06, 0.45, 0.04]} c={CAMPUS.ink} at={[0, 14.55, 1.74]} />
-                <Box s={[0.36, 0.06, 0.04]} c={CAMPUS.ink} at={[0.16, 14.55, 1.74]} />
-                <TextPlane w={2.4} h={0.6} text="PTIT" at={[0, 13.45, 1.62]} opts={T_PTIT} />
+            {/* Tòa A2: đế rộng + sảnh kính nhìn xuyên vào trong; thân tháp đứng trên mái đế */}
+            <Building {...b('Tòa A2')} anchorY={20.2} position={A2_AT}>
+                <A2Podium stage={stage} />
+                <A2Lobby stage={stage} />
+                <group position={[0, PODIUM_TOP - 2.8, 0]}>
+                    <Box s={[6.8, 11, 4.6]} c={C.cream} at={[0, 2.8, -0.8]} />
+                    <Box s={[1.3, 9.6, 3.8]} c={C.cream} at={[-4.05, 2.8, -0.8]} />
+                    <Box s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
+                    <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.25, metalness: 0.35 }} />
+                    <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.35 }} />
+                    <Box s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
+                    <HipRoof w={5.2} h={1.6} d={3.6} c={C.roofRed} at={[0, 14.3, -1.2]} />
+                    <Gable len={0.5} h={1.8} depth={5} c={C.cream} at={[0, 13.8, 1.35]} alongZ />
+                    {/* Đồng hồ */}
+                    <mesh position={[0, 14.55, 1.65]} rotation={[Math.PI / 2, 0, 0]} material={stdMat(CAMPUS.pureWhite)} castShadow receiveShadow>
+                        <cylinderGeometry args={[0.62, 0.62, 0.12, 24]} />
+                    </mesh>
+                    <mesh position={[0, 14.55, 1.7]} material={stdMat(C.glass)} castShadow receiveShadow>
+                        <torusGeometry args={[0.62, 0.08, 6, 24]} />
+                    </mesh>
+                    <Box s={[0.06, 0.45, 0.04]} c={CAMPUS.ink} at={[0, 14.55, 1.74]} />
+                    <Box s={[0.36, 0.06, 0.04]} c={CAMPUS.ink} at={[0.16, 14.55, 1.74]} />
+                    <TextPlane w={2.4} h={0.6} text="PTIT" at={[0, 13.45, 1.62]} opts={T_PTIT} />
 
-                <A2Windows nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} />
+                    <A2Windows nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} />
+                </group>
 
-                <TextPlane w={3.2} h={0.8} text="I ♥ PTIT" at={[2.8, 0.45, 6.6]} opts={T_HEART} doubleSide />
-                {([[-5.8, CAMPUS.ptitRed], [-5, CAMPUS.flagYellow], [-4.2, CAMPUS.flagBlue]] as const).map(([x, c], i) => (
+                <TextPlane w={3.2} h={0.8} text="I ♥ PTIT" at={[7.6, 0.5, 5.6]} opts={T_HEART} doubleSide />
+                {([[-8.4, CAMPUS.ptitRed], [-7.6, CAMPUS.flagYellow], [-6.8, CAMPUS.flagBlue]] as const).map(([x, c], i) => (
                     <Flag key={x} x={x} color={c} index={i} reduce={reduce} />
                 ))}
             </Building>
 
-            {/* Tòa A3: khối vàng, mái chóp đỏ */}
-            <Building {...b('Tòa A3')} anchorY={7.6} position={[12.5, 0, -9.5]}>
+            {/* Hội trường A2: bên trái A2, cỡ nửa A2 */}
+            <Building {...b('Hội trường A2')} anchorY={10.4} position={[-15.4, 0, 1]}>
+                <HallA2 />
+            </Building>
+
+            {/* Tòa A3: khối vàng, mái chóp đỏ; xoay mặt về phía A2 */}
+            <Building {...b('Tòa A3')} anchorY={7.6} position={[17.5, 0, -6]} rotY={-Math.PI / 2}>
                 <Box s={[13, 4.6, 4.4]} c={C.yellow} />
                 {Array.from({ length: 10 }, (_, i) => (
                     <Box key={i} s={[0.7, 3.4, 0.1]} c={C.win} at={[-5.4 + i * 1.2, 0.6, 2.23]} />
@@ -455,7 +354,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             </Building>
 
             {/* Hội trường A1: dài, trắng, mái đầu hồi đỏ */}
-            <Building {...b('Hội trường A1')} anchorY={6.2} position={[-11, 0, -9]}>
+            <Building {...b('Hội trường A1')} anchorY={6.2} position={[-15.5, 0, -11]}>
                 <Box s={[12, 3.6, 5]} c={C.white} />
                 {Array.from({ length: 8 }, (_, i) => (
                     <Box key={i} s={[0.8, 1.6, 0.1]} c={CAMPUS.hallWindow} at={[-4.9 + i * 1.4, 1, 2.53]} />
@@ -466,7 +365,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             </Building>
 
             {/* Tòa A1: khối trắng thấp có dải ngang */}
-            <Building {...b('Tòa A1')} anchorY={6.4} position={[-11.5, 0, 3.5]}>
+            <Building {...b('Tòa A1')} anchorY={6.4} position={[-16, 0, 8]}>
                 <Box s={[7.5, 5.2, 6]} c={C.white} />
                 {Array.from({ length: 5 }, (_, r) => (
                     <Box key={r} s={[7.6, 0.18, 6.1]} c={C.stripe} at={[0, 0.7 + r * 0.95, 0]} />
@@ -474,12 +373,12 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                 <Box s={[7.6, 0.9, 0.1]} c={CAMPUS.bandGreen} at={[0, 0.2, 3.05]} />
             </Building>
 
-            <Building {...b('Canteen')} anchorY={4.2} position={[-1.5, 0, -11]}>
+            <Building {...b('Canteen')} anchorY={4.2} position={[17.5, 0, -17.5]}>
                 <Box s={[5.5, 2.2, 3.4]} c={C.white} />
                 <HipRoof w={6.4} h={1.4} d={4.2} c={C.roofRed} at={[0, 2.2, 0]} />
             </Building>
 
-            <Building {...b('Cổng trường')} anchorY={5.6} position={[2, 0, 13.2]}>
+            <Building {...b('Cổng trường')} anchorY={5.6} position={[2, 0, 16.5]}>
                 {[-3.4, 3.4].map((x) => (
                     <Box key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
                 ))}
@@ -493,7 +392,6 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             </Building>
 
             {/* Cây */}
-            <group ref={shrink.trees}>
             {TREE_SPOTS.map(([x, z], i) => {
                 const s = 0.8 + ((i * 37) % 10) / 22
                 return (
@@ -507,18 +405,15 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     </group>
                 )
             })}
-            </group>
 
-            <group ref={shrink.clouds}>
-                {[0, 1, 2, 3].map((i) => (
-                    <Cloud key={i} index={i} reduce={reduce} />
-                ))}
-            </group>
+            {[0, 1, 2, 3].map((i) => (
+                <Cloud key={i} index={i} reduce={reduce} />
+            ))}
         </>
     )
 }
 
-// ─── Cảnh: camera theo chương, đèn, xoay theo chuột, hover, ngày/đêm ───────
+// ─── Cảnh: máy quay theo cuộn, đèn, xoay theo chuột, hover, ngày/đêm ────────
 
 const SUN_DAY = new THREE.Color(CAMPUS.sunlight)
 const SUN_NIGHT = new THREE.Color(CAMPUS.moonlight)
@@ -527,113 +422,61 @@ const START_POS = new THREE.Vector3(52, 40, 58)
 const Y_AXIS = new THREE.Vector3(0, 1, 0)
 
 /** Phạm vi cần nằm gọn trong khung ở mọi góc xoay (đơn vị cảnh): bán kính ngang (đế + mây) và nửa chiều cao (tính cả nhãn). */
-const BOUND_RADIUS = 28
+const BOUND_RADIUS = 31
 const BOUND_HALF_HEIGHT = 20
 const FIT_MARGIN = 1.05
 const FOV = 28
 /** Sau khi buông tay, chờ chừng này rồi mới tự xoay tiếp. */
 const RESUME_AUTOROTATE_MS = 3000
-/** S ≤ ngưỡng này là còn ở hero: OrbitControls và tự xoay hoạt động; vượt ngưỡng thì camera chạy theo keyframe. */
+/** S ≤ ngưỡng này là còn ở hero: OrbitControls và tự xoay hoạt động; vượt ngưỡng thì camera chạy theo đường bay. */
 const HERO_EPS = 0.05
 /** Màn rộng: chủ thể nằm ở nửa phải. Vùng trống rộng ~62% khung, tâm dịch sang phải 18% bề rộng. */
 const DESKTOP_REGION = 0.62
 const DESKTOP_SHIFT = 0.18
-/** Tỉ lệ rộng/cao của vùng trống mà các keyframe được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
+/** Tỉ lệ rộng/cao của vùng trống mà khung chính diện A2 (chế độ tĩnh) được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
 const REF_ASPECT = 1.05
+/** Hệ số làm mượt S theo dt (lerp) */
+const S_SMOOTH = 3.2
 
-/** Keyframe máy quay theo tọa độ cầu quanh target: az (độ, 0 = nhìn từ +z, tăng dần về phía +x), el (độ), r, fov */
-interface CamKey {
-    t: Vec3
-    az: number
-    el: number
-    r: number
-    fov: number
-}
-
-/** Hệ số từ mét (studio) sang đơn vị khuôn viên: nhân vật Studio cao ~2 m thành ~10 đơn vị, vừa tầm tòa A2. */
-const K = 5
-const STUDIO_TARGET: Vec3 = [0, 1.1 * K, 0]
-/** Góc máy mặc định của Studio (tiêu cự 50mm, góc/độ cao/khoảng cách theo DEFAULT_SETUP) trong hệ khuôn viên */
-function studioCam(): CamKey {
-    const d = DEFAULT_SETUP
-    return {
-        t: STUDIO_TARGET,
-        // Cùng hướng nhìn và tiêu cự với Studio, lùi 1,7 lần để thấy đủ nhân vật, vật thể và phông.
-        // +360° để quỹ đạo đi tiếp cùng chiều từ chương Khóa học (az 105°) tới đây.
-        az: d.azimuthDeg + 360,
-        el: d.elevationDeg,
-        r: d.distance * K * 1.7,
-        fov: THREE.MathUtils.radToDeg(2 * Math.atan(24 / (2 * d.focalLengthMm))),
-    }
-}
-
-// Match cut chương Studio: vị trí gốc các tòa và đích của chúng (khối vật thể Studio, mét × K)
-const BASE_XZ: Record<string, [number, number]> = { 'Tòa A2': [2, 1], 'Tòa A3': [12.5, -9.5], 'Hội trường A1': [-11, -9], 'Tòa A1': [-11.5, 3.5], Canteen: [-1.5, -11], 'Cổng trường': [2, 13.2] }
-const P_AT = STUDIO_PROP_AT
-const MORPH_TO: Record<string, [number, number]> = {
-    'Tòa A2': [0, 0],
-    'Tòa A3': [P_AT.yellow[0] * K, P_AT.yellow[2] * K],
-    'Tòa A1': [P_AT.blue[0] * K, P_AT.blue[2] * K],
-    'Hội trường A1': [P_AT.column[0] * K, P_AT.column[2] * K],
-}
-/** Cửa kính xanh của A2 (tâm, hệ thế giới) thành trụ xanh */
-const A2_GLASS_AT: Vec3 = [2, 8.3, 2.6]
-/** Khoảng S của match cut và của từng khối */
-const MORPH_FROM = 2.15
-const MORPH_TO_S = 2.95
-/** Máy chỉ di chuyển trong [0.2, 0.8] của mỗi đoạn S∈[i, i+1]; hai đầu đứng yên cho người xem đọc chữ chương. Match cut chạy đúng trong khoảng máy di chuyển của đoạn Khóa học → Studio. */
-const MOVE_FROM = 0.2
-const MOVE_TO = 0.8
-/** Điểm dừng ở từng tòa: góc nâng, tiêu cự và độ nhấc của tòa đang được nhìn */
-const STOP_EL = 20
-const STOP_FOV = 30
-const STOP_LIFT = 1.6
-/** Cường độ đèn nhấn (cd) ở khoảng cách 70: bù cho phần nắng bị giảm 30% */
-const FOCUS_I = 4200
-const SWAY = 0.12 // r tăng tới 12% giữa đường
-/** Đèn Studio mặc định; đèn viền (mặc định 0) bật nhẹ để thấy viền đỏ. Cường độ ×K² vì ánh sáng điểm giảm theo bình phương khoảng cách. */
-const RIM_ON = 30
-const I_KEY = (DEFAULT_SETUP.key / 100) * 140 * K * K
-const I_FILL = (DEFAULT_SETUP.fill / 100) * 40 * K * K
-const I_RIM = (RIM_ON / 100) * 160 * K * K
-const polarAt = (azDeg: number, elDeg: number, radius: number): Vec3 => {
-    const a = THREE.MathUtils.degToRad(azDeg)
-    const e = THREE.MathUtils.degToRad(elDeg)
-    return [Math.sin(a) * Math.cos(e) * radius + STUDIO_TARGET[0], Math.sin(e) * radius + STUDIO_TARGET[1], Math.cos(a) * Math.cos(e) * radius + STUDIO_TARGET[2]]
-}
-const LOOK = DEFAULT_SETUP.look
-const KEY_SIDE = Math.sign(DEFAULT_SETUP.keyAngleDeg) || 1
-const KEY_POS = polarAt(DEFAULT_SETUP.azimuthDeg + DEFAULT_SETUP.keyAngleDeg, LOOK.keyElevationDeg, 6 * K)
-const FILL_POS = polarAt(DEFAULT_SETUP.azimuthDeg - KEY_SIDE * LOOK.fillSideDeg, LOOK.fillElevationDeg, 6 * K)
-const RIM_POS = polarAt(DEFAULT_SETUP.azimuthDeg + 180 + KEY_SIDE * LOOK.rimSideDeg, LOOK.rimElevationDeg, 5 * K)
-const PLATE_LIGHT = new THREE.Color(CAMPUS.plate)
-const PLATE_DARK = new THREE.Color(CAMPUS.plateDark)
-
-/** Máy quay theo chương 1..3 (chương 0 là góc nhìn hero do OrbitControls điều khiển). */
-const CHAPTER_CAMS: CamKey[] = [
-    { t: [2, 8, 2.5], az: 15, el: 14, r: 54, fov: 30 }, // 01 Hôm nay: chính diện A2, hơi chéo phải, thấy trọn 3 tầng cửa sổ
-    { t: [7, 6, -3], az: 105, el: 24, r: 80, fov: 32 }, // 02 Khóa học: từ phía đông, A3 ở tiền cảnh, thấy A2 + A3 và nhãn
-    studioCam(), // 03 Studio: đúng góc máy mặc định của trang Studio
+// ── Đường bay: S 0→1 vòng quanh khuôn viên, S 1→1.72 vào sảnh tới kiosk (S > 1.72 đứng yên ở kiosk) ──
+const ORBIT_EL = 12
+const ORBIT_R = 50
+const ORBIT_FOV = 30
+const APPROACH_END = 1.72
+const A2_FACE = a2Point(0, 6, 1)
+const KSCR = kioskScreenFrame()
+/** Khoảng cách để màn hình kiosk chiếm ~84% chiều cao khung ở FOV 46 */
+const KIOSK_D = KSCR.height / (0.84 * 2 * Math.tan(THREE.MathUtils.degToRad(23)))
+const KIOSK_CAM = KSCR.center.clone().addScaledVector(KSCR.normal, KIOSK_D)
+const ORBIT_END = new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R, Math.cos(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R).add(A2_FACE)
+/** [S, vị trí máy, điểm nhìn]: một đường CatmullRom (centripetal) đi qua tất cả, mốc S nội suy tuyến tính giữa các điểm. */
+const APPROACH: [number, THREE.Vector3, THREE.Vector3][] = [
+    [1.0, ORBIT_END, A2_FACE.clone()],
+    [1.1, a2Point(0, 4.2, 22), a2Point(0, 5, 1)], // hạ xuống sân
+    [1.21, a2Point(0, 2.4, 10), a2Point(0, 2.8, 0)],
+    [1.3, a2Point(0, 1.6, 4.4), a2Point(0, 1.6, -1)], // lên bậc, cửa trượt mở (1.24 → 1.34)
+    [1.36, a2Point(0, 1.35, 1.9), lobbyPoint(0, 3, -6)],
+    [1.43, lobbyPoint(0, 2.3, 12.6), lobbyPoint(0, 3, -6)], // ngưỡng cửa
+    [1.52, lobbyPoint(0, 2.6, 9.6), lobbyPoint(-1, 3, -6)], // dừng ngắn nhìn toàn sảnh
+    [1.63, lobbyPoint(-4.8, 2.8, 3.4), KSCR.center.clone()],
+    [APPROACH_END, KIOSK_CAM, KSCR.center.clone()],
 ]
-/** Một đầu của đoạn quỹ đạo đang nội suy */
-export interface CourseStops {
-    names: string[]
-    /** S tại tâm từng thẻ khóa học, cùng thứ tự với names */
-    times: number[]
+const catmull = (pts: THREE.Vector3[]) => new THREE.CatmullRomCurve3(pts, false, 'centripetal')
+const APPROACH_POS = catmull(APPROACH.map((k) => k[1]))
+const APPROACH_TGT = catmull(APPROACH.map((k) => k[2]))
+/** S → tham số của đường cong (đều theo chỉ số điểm, nội suy tuyến tính giữa hai mốc S liền kề) */
+function approachU(s: number) {
+    let i = 0
+    while (i < APPROACH.length - 2 && s > APPROACH[i + 1][0]) i++
+    return (i + band(s, APPROACH[i][0], APPROACH[i + 1][0])) / (APPROACH.length - 1)
 }
+const approachFov = (s: number) => (s < 1.52 ? lerp(ORBIT_FOV, 56, smoothstep(band(s, 1.24, 1.5))) : lerp(56, 46, smoothstep(band(s, 1.52, 1.7))))
 
-interface CamOut {
-    t: THREE.Vector3
-    az: number
-    el: number
-    r: number
-    fov: number
-}
 const wrapDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180
-const smoothstep = (x: number) => x * x * (3 - 2 * x)
 const RAD = Math.PI / 180
-
+const lerp = THREE.MathUtils.lerp
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
+const smoothstep = (x: number) => x * x * (3 - 2 * x)
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 /** 0→1 khi s đi từ a tới b */
 const band = (s: number, a: number, b: number) => clamp01((s - a) / (b - a))
@@ -654,9 +497,6 @@ interface SceneProps {
     staticMode: boolean
     /** S liên tục 0..3 do useScrollStage cung cấp (ref, không phải state) */
     stage: React.MutableRefObject<number>
-    /** Các tòa nhấc lên ở chương Khóa học */
-    /** Điểm dừng chương Khóa học: tên tòa (đúng thứ tự thẻ ở cột trái) và S tại tâm từng thẻ (đo từ DOM) */
-    stops: React.MutableRefObject<CourseStops>
     /** Bài Daily hôm nay (theo thứ tự) đã đọc chưa: mỗi bài = một tầng cửa sổ A2 */
     dailyLit: React.MutableRefObject<boolean[]>
     /** % tiến độ khóa theo tên tòa, hiện trên nhãn */
@@ -669,9 +509,9 @@ interface SceneProps {
 /**
  * Canvas cố định phủ cả màn hình, nội dung các chương nằm đè lên ở cột trái. Chủ thể được đặt vào "vùng trống"
  * (nửa phải trên màn rộng) bằng view offset của camera; camera hero lùi đủ xa để khối cầu bao khuôn viên nằm gọn
- * trong vùng đó. Các chương sau dùng keyframe, kéo giãn theo tỉ lệ vùng trống.
+ * trong vùng đó.
  */
-function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>, regionAspect: React.MutableRefObject<number>) {
+function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>) {
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const size = useThree((s) => s.size)
 
@@ -685,7 +525,6 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
         const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / tanHalf
         const distance = Math.max(fitW, fitH)
         fitScale.current = Math.max(1, REF_ASPECT / ra)
-        regionAspect.current = ra
 
         camera.aspect = w / h
         // Cắt khung từ vị trí âm = đẩy cảnh sang phải
@@ -702,11 +541,12 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
             controls.current?.update()
         }
         return () => camera.clearViewOffset()
-    }, [camera, size, controls, staticMode, heroPos, fitScale, stage, regionAspect])
+    }, [camera, size, controls, staticMode, heroPos, fitScale, stage])
 }
 
 const _anchor = new THREE.Vector3()
 const _dir = new THREE.Vector3()
+const _look = new THREE.Vector3()
 
 /**
  * Chọn nhãn được hiện: ưu tiên tòa đang hover rồi tới tòa gần camera; bỏ nhãn nằm ngoài khung,
@@ -752,7 +592,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, coursePct, pointer, onOpenCourse }: SceneProps) {
+function Scene({ night, reduce, touch, staticMode, stage, dailyLit, coursePct, pointer, onOpenCourse }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -765,44 +605,16 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
     const resumeTimer = useRef<number>(0)
     const nightRef = useRef(reduce && night ? 1 : 0)
     const nightTarget = useRef(night ? 1 : 0)
-    const mood = useRef(0)
-    const morph = useRef(0)
-    const morphed = useRef(false)
     const ctlOn = useRef(true)
-    // Match cut → Studio: vật thể Studio thật (studio-set), đèn 3 điểm mặc định, nhóm thu nhỏ của khuôn viên
-    const treesG = useRef<THREE.Group>(null)
-    const cloudsG = useRef<THREE.Group>(null)
-    const groundG = useRef<THREE.Group>(null)
-    const shrink = useMemo(() => ({ trees: treesG, clouds: cloudsG, ground: groundG }), [])
-    const plinthG = useRef<THREE.Group>(null)
-    const figureG = useRef<THREE.Group>(null)
-    const blueG = useRef<THREE.Group>(null)
-    const yellowG = useRef<THREE.Group>(null)
-    const greenG = useRef<THREE.Group>(null)
-    const columnG = useRef<THREE.Group>(null)
-    const wallsG = useRef<THREE.Group>(null)
-    const keyL = useRef<THREE.SpotLight>(null)
-    const fillL = useRef<THREE.PointLight>(null)
-    const rimL = useRef<THREE.SpotLight>(null)
-    const studioMats = useMemo(() => {
-        const m = createMaterials()
-        tintMaterials(m, new THREE.Color(DEFAULT_SETUP.look.background))
-        return m
-    }, [])
-    const plateMat = useMemo(() => stdMat(CAMPUS.plate), [])
+    // S đã làm mượt (lerp theo dt) và mức "đã vào trong nhà" (0 ngoài sân → 1 trong sảnh): nắng giảm, đèn trong sảnh nổi lên
+    const sm = useRef(stage.current)
+    const indoor = useRef(0)
     // Đo FPS: dưới 40 thì giảm chất lượng (shadow map nhỏ, cây không đổ bóng)
     const perf = useRef({ t: 0, n: 0, bad: 0 })
     const [lowQuality, setLowQuality] = useState(false)
     const lowRef = useRef(false)
     const heroPos = useRef(START_POS.clone())
     const fitScale = useRef(1)
-    const regionAspect = useRef(1)
-    // Chương Khóa học: hộp bao thật của từng tòa có khóa, tòa đang được nhìn, đèn nhấn và tỉ lệ làm tối khung cảnh
-    const boxes = useRef(new Map<string, { c: THREE.Vector3; H: number; W: number }>())
-    const boxTmp = useMemo(() => new THREE.Box3(), [])
-    const activeName = useRef('')
-    const focusL = useRef<THREE.SpotLight>(null)
-    const focusAt = useMemo(() => new THREE.Vector3(), [])
     const [hovered, setHovered] = useState<BuildingName | null>(null)
     const [visibleLabels, setVisibleLabels] = useState<ReadonlySet<string>>(() => new Set())
     const labelKey = useRef('')
@@ -811,8 +623,6 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
     const ndc = useMemo(() => new THREE.Vector2(-9, -9), [])
     // Màu trời lấy từ token CSS (--stage-*), đọc một lần khi dựng cảnh
     const colors = useMemo(() => ({ sky: tokenColor('--stage-sky', '#9E1218'), mid: tokenColor('--stage-mid', '#4A0A0E'), deep: tokenColor('--stage-deep', '#130D0E'), now: new THREE.Color() }), [])
-    const camA = useMemo<CamOut>(() => ({ t: new THREE.Vector3(), az: 0, el: 0, r: 0, fov: 0 }), [])
-    const camB = useMemo<CamOut>(() => ({ t: new THREE.Vector3(), az: 0, el: 0, r: 0, fov: 0 }), [])
     const camHero = useMemo(() => ({ v: new THREE.Vector3() }), [])
 
     const size = useThree((s) => s.size)
@@ -820,7 +630,7 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
     const domElement = useThree((s) => s.gl.domElement)
     const scene = useThree((s) => s.scene)
 
-    useStageFit(controls, staticMode, heroPos, fitScale, stage, regionAspect)
+    useStageFit(controls, staticMode, heroPos, fitScale, sm)
 
     // Đưa camera về góc nhìn ban đầu (OrbitControls lấy vị trí camera làm điểm xuất phát)
     useLayoutEffect(() => {
@@ -831,16 +641,14 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
     }, [camera, scene, colors])
 
     const applyLights = (n: number) => {
-        // Về cuối trang chủ (chương Studio) ánh sáng dịu bớt cho hợp nền gần đen
-        const dim = 1 - 0.3 * mood.current
-        // Match cut: nắng khuôn viên tắt dần khi bộ đèn Studio bật
-        const off = 1 - morph.current
+        // Vào trong nhà: nắng, trời và đèn viền giảm hẳn để đèn trong sảnh làm chủ
+        const inside = indoor.current
         if (sun.current) {
-            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * dim * (0.04 + 0.96 * off)
+            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * (1 - 0.85 * inside)
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
-        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * dim * (0.2 + 0.8 * off)
-        if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI * off
+        if (hemi.current) hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * (1 - 0.68 * inside)
+        if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI * (1 - inside)
     }
 
     // Màn chuyển giao diện đang che: đặt thẳng ánh sáng mới rồi vẽ đúng một khung (canvas đang dừng)
@@ -868,13 +676,10 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
 
     // Giảm chất lượng: shadow map nhỏ hơn (tạo lại khi đổi kích thước)
     useEffect(() => {
-        if (!lowQuality) return
-        for (const [light, size] of [[sun.current, 1024], [keyL.current, 512]] as const) {
-            if (!light) continue
-            light.shadow.mapSize.set(size, size)
-            light.shadow.map?.dispose()
-            light.shadow.map = null
-        }
+        if (!lowQuality || !sun.current) return
+        sun.current.shadow.mapSize.set(1024, 1024)
+        sun.current.shadow.map?.dispose()
+        sun.current.shadow.map = null
     }, [lowQuality])
 
     // Bấm (không phải kéo) vào tòa có khóa học: mở khóa đó. Tia lấy theo điểm bấm nên cảm ứng cũng dùng được.
@@ -884,6 +689,7 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
             down = { x: e.clientX, y: e.clientY }
         }
         const onClick = (e: MouseEvent) => {
+            if (sm.current > 1.3) return // đã vào trong sảnh: không còn bấm vào mô hình tòa
             if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return
             const r = domElement.getBoundingClientRect()
             const ray = new THREE.Raycaster()
@@ -921,8 +727,14 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
         const g = world.current
         if (!g) return
         const p = pointer.current
-        const S = stage.current
-        const live = S > HERO_EPS // đã rời hero: camera chạy theo keyframe, hero tắt kéo xoay và tự xoay
+
+        // ── S làm mượt theo dt. Chế độ tĩnh: không bay, mọi chương sau hero đứng ở khung chính diện A2 (S = 1) ──
+        const want = staticMode ? Math.min(stage.current, 1) : stage.current
+        sm.current = reduce || staticMode ? want : sm.current + (want - sm.current) * (1 - Math.exp(-Math.min(delta, 0.05) * S_SMOOTH))
+        if (Math.abs(want - sm.current) < 1e-4) sm.current = want
+        const S = sm.current
+        const live = S > HERO_EPS // đã rời hero: camera chạy theo đường bay, hero tắt kéo xoay và tự xoay
+        indoor.current = band(S, 1.33, 1.45)
 
         // ── Máy quay ──
         const ctl = controls.current
@@ -944,40 +756,6 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
                 updateCursor()
             }
         }
-        // ── Điểm dừng chương Khóa học: hộp bao thật của tòa (đo một lần, lúc chưa nhấc/biến hình) ──
-        for (const n of stops.current.names) {
-            const g = registry.current.get(n)
-            if (!g || boxes.current.has(n)) continue
-            boxTmp.setFromObject(g)
-            const c = boxTmp.getCenter(new THREE.Vector3())
-            c.y -= g.position.y
-            const sz = boxTmp.getSize(new THREE.Vector3())
-            boxes.current.set(n, { c, H: sz.y, W: Math.max(sz.x, sz.z) })
-        }
-        const stopNames = (staticMode ? stops.current.names.slice(0, 1) : stops.current.names).filter((n) => boxes.current.has(n))
-        const nStops = stopNames.length
-        // Mốc S của các key: hero 0, Hôm nay 1, từng tòa (tâm thẻ), Studio 3. Không có tòa nào: một key chung ở S=2.
-        const sTimes = nStops ? (staticMode ? [2] : stops.current.times.slice(0, nStops)) : [2]
-        const T = [0, 1, ...sTimes, 3]
-        const lastA = T[T.length - 2]
-        const legL = 3 - lastA
-        // Match cut chạy đúng trong lúc máy lướt từ tòa cuối tới Studio
-        const mvFrom = lastA + MOVE_FROM * legL
-        const mvTo = lastA + MOVE_TO * legL
-        let activeIdx = -1
-        if (nStops && S > 1.3 && S < mvFrom + 0.1 * legL) {
-            let best = Infinity
-            sTimes.forEach((t, k) => {
-                const d = Math.abs(S - t)
-                if (d < best) {
-                    best = d
-                    activeIdx = k
-                }
-            })
-        }
-        activeName.current = activeIdx >= 0 ? stopNames[activeIdx] : ''
-        // Chương Khóa học: 0→1 khi máy rời Hôm nay, về 0 khi máy rời tòa cuối
-        const courseAmt = band(S, 1.3, 1.7) * (1 - band(S, mvFrom - 0.1 * legL, mvFrom + 0.1 * legL))
 
         if (!live) {
             if (touch && !reduce) heroPos.current.applyAxisAngle(Y_AXIS, -delta * 0.12) // cảm ứng: chỉ tự xoay
@@ -986,110 +764,62 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
                 camera.position.copy(heroPos.current)
                 camera.lookAt(TARGET)
             }
-            if (camera.fov !== FOV) {
+            if (camera.fov !== FOV || camera.near !== 1) {
                 camera.fov = FOV
+                camera.near = 1
                 camera.updateProjectionMatrix()
             }
         } else {
-            // Một vòng quỹ đạo liên tục, một chiều: nội suy az/el/r/fov/target riêng rẽ rồi mới tính vị trí từ tọa độ cầu.
-            // heroPos đứng yên từ lúc rời hero nên cuộn ngược về hero quay đúng az lúc rời đi.
-            const hv = camHero.v.copy(heroPos.current).sub(TARGET)
-            const hr = hv.length()
-            const hAz = Math.atan2(hv.x, hv.z) / RAD
-            const hEl = Math.asin(hv.y / hr) / RAD
-            // Hero → Hôm nay: unwrap về az gần nhất; các key sau cộng cùng độ lệch để az luôn tăng
-            const off = hAz + wrapDeg(CHAPTER_CAMS[0].az - hAz) - CHAPTER_CAMS[0].az
-            // Az của các tòa: mặt đẹp + 35°, nhưng luôn lớn hơn key trước ít nhất `step` và nhỏ hơn Studio
-            const step = Math.min(30, (CHAPTER_CAMS[2].az - CHAPTER_CAMS[0].az) / (nStops + 2))
-            const key = (n: number, out: CamOut) => {
-                if (n === 0) {
-                    out.t.copy(TARGET)
-                    out.az = hAz
-                    out.el = hEl
-                    out.r = hr
-                    out.fov = FOV
-                    return
-                }
-                let k: CamKey | null = null
-                let r = 0
-                if (n === 1) k = CHAPTER_CAMS[0]
-                else if (n === T.length - 1) k = CHAPTER_CAMS[2]
-                else if (!nStops) k = CHAPTER_CAMS[1]
-                if (k) {
-                    out.t.set(...k.t)
-                    out.az = k.az + off
-                    out.el = k.el
-                    out.r = k.r * fitScale.current
-                    out.fov = k.fov
-                    return
-                }
-                // Tòa thứ n-2: target = tâm thân tòa (+ độ nhấc), r để tòa chiếm ~55% chiều cao vùng trống và ≤ 75% bề rộng
-                const idx = n - 2
-                const name = stopNames[idx]
-                const bx = boxes.current.get(name)!
-                let az = CHAPTER_CAMS[0].az
-                for (let q = 0; q <= idx; q++) az = Math.max((BUILDING_FACE_AZ[stopNames[q]] ?? 0) + 35, az + step)
-                const el = STOP_EL
-                const fov = STOP_FOV
-                const tanH = Math.tan((fov / 2) * RAD)
-                const hProj = bx.H * Math.cos(el * RAD) + bx.W * 0.6 * Math.sin(el * RAD)
-                r = Math.max(hProj / (2 * tanH * 0.55), bx.W / (2 * tanH * regionAspect.current * 0.75))
-                out.t.set(bx.c.x, bx.c.y + STOP_LIFT, bx.c.z)
-                out.az = az + off
-                out.el = el
-                out.r = r
-                out.fov = fov
+            // heroPos đứng yên từ lúc rời hero nên cuộn ngược về hero quay đúng góc lúc rời đi.
+            let fov: number
+            if (S <= 1) {
+                // Vòng quanh khuôn viên: góc ngang tuyến tính theo cuộn (không chậm dần rồi dừng), kết thúc chính diện A2 (az = 360°)
+                const hv = camHero.v.copy(heroPos.current).sub(TARGET)
+                const hr = hv.length()
+                const hAz = wrapDeg(Math.atan2(hv.x, hv.z) / RAD)
+                const hEl = Math.asin(hv.y / hr) / RAD
+                const t = band(S, HERO_EPS, 1)
+                const az = (hAz + (360 - hAz) * t) * RAD
+                const el = lerp(hEl, ORBIT_EL, t) * RAD
+                const r = lerp(hr, staticMode ? ORBIT_R * fitScale.current : ORBIT_R, t)
+                _look.copy(TARGET).lerp(A2_FACE, t)
+                camera.position.set(_look.x + r * Math.sin(az) * Math.cos(el), _look.y + r * Math.sin(el), _look.z + r * Math.cos(az) * Math.cos(el))
+                fov = lerp(FOV, ORBIT_FOV, t)
+            } else {
+                const s = Math.min(S, APPROACH_END)
+                const u = approachU(s)
+                APPROACH_POS.getPoint(u, camera.position)
+                APPROACH_TGT.getPoint(u, _look)
+                fov = approachFov(s)
             }
-            let j = 0
-            while (j < T.length - 2 && S >= T[j + 1]) j++
-            const f = smoothstep(band((S - T[j]) / (T[j + 1] - T[j]), MOVE_FROM, MOVE_TO))
-            key(j, camA)
-            key(j + 1, camB)
-            const az = camA.az + (camB.az - camA.az) * f
-            const el = camA.el + (camB.el - camA.el) * f
-            const r = (camA.r + (camB.r - camA.r) * f) * (1 + SWAY * Math.sin(Math.PI * f))
-            camA.t.lerp(camB.t, f)
-            const fov = camA.fov + (camB.fov - camA.fov) * f
-            const ce = Math.cos(el * RAD)
-            camera.position.set(camA.t.x + r * Math.sin(az * RAD) * ce, camA.t.y + r * Math.sin(el * RAD), camA.t.z + r * Math.cos(az * RAD) * ce)
-            if (camera.fov !== fov) {
+            // Cận gần hơn khi vào sảnh: màn hình kiosk ở cách máy chưa tới 1 đơn vị
+            const near = S > 1.2 ? 0.1 : 1
+            if (camera.fov !== fov || camera.near !== near) {
                 camera.fov = fov
+                camera.near = near
                 camera.updateProjectionMatrix()
             }
-            camera.lookAt(camA.t)
-            if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, az, el, r, f, stop: activeName.current, T }
+            camera.lookAt(_look)
+            if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, pos: camera.position.toArray(), look: _look.toArray(), fov }
         }
 
-        // ── Nền trời và sương theo chương: đỏ PTIT → đỏ sẫm → gần đen ──
-        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, mvFrom, mvTo)))
+        // ── Nền trời và sương: đỏ PTIT → đỏ sẫm (hết chương Hôm nay) → tối dần khi bước vào sảnh (S 1.36 → 1.46) ──
+        colors.now.copy(colors.sky).lerp(colors.mid, band(S, 0.4, 1.2)).lerp(colors.deep, easeInOutCubic(band(S, 1.36, 1.46)))
         if (scene.background instanceof THREE.Color) scene.background.copy(colors.now)
         if (scene.fog) {
-            const d = camera.position.distanceTo(TARGET)
+            // Sương theo khoảng cách tới tâm khuôn viên; trong sảnh (gần tâm) giữ nguyên mức ở xa để không phủ mờ nội thất
+            const d = Math.max(camera.position.distanceTo(TARGET), 60)
             scene.fog.color.copy(colors.now)
             ;(scene.fog as THREE.Fog).near = d * 1.1
             ;(scene.fog as THREE.Fog).far = d * 3.2
         }
-        const moodNext = courseAmt // chương Khóa học: nền và tòa "Sắp mở" giảm sáng ~30%
-        if (Math.abs(moodNext - mood.current) > 0.002) {
-            mood.current = moodNext
-            applyLights(nightRef.current)
-        }
 
-        // Đèn nhấn vào tòa đang được nhìn (bù phần sáng bị giảm 30% của cả cảnh)
-        if (focusL.current) {
-            const bx = activeName.current ? boxes.current.get(activeName.current) : undefined
-            if (bx) focusAt.lerp(bx.c, reduce ? 1 : 0.12)
-            focusL.current.target.position.copy(focusAt)
-            focusL.current.target.updateMatrixWorld()
-            focusL.current.position.set(-26, 38, 22).normalize().multiplyScalar(70).add(focusAt)
-            focusL.current.intensity = FOCUS_I * courseAmt
-        }
-
-        // ── Hover ──
+        // ── Hover (chỉ khi còn ở ngoài trời) ──
         // Tia từ con trỏ: tòa nào bị trúng thì được nâng lên (không nâng khi đang kéo)
-        ndc.set(p.inside && !dragging.current ? p.x : -9, p.inside && !dragging.current ? p.y : -9)
+        const pick = p.inside && !dragging.current && S < 1.3
+        ndc.set(pick ? p.x : -9, pick ? p.y : -9)
         raycaster.setFromCamera(ndc, camera)
-        const hit = raycaster.intersectObjects([...registry.current.values()], true)[0]
+        const hit = pick ? raycaster.intersectObjects([...registry.current.values()], true)[0] : undefined
         let hb: BuildingName | null = null
         if (hit) {
             let o: THREE.Object3D | null = hit.object
@@ -1101,80 +831,12 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
             updateCursor()
             setHovered(hb)
         }
-        // Chương Khóa học: chỉ tòa đang được nhìn nhấc lên, các tòa khác hạ về vị trí gốc
         registry.current.forEach((grp, name) => {
             const lift = lifts.current.get(name) ?? 0
-            const want = Math.max(name === hb ? 0.9 : 0, name === activeName.current ? STOP_LIFT * courseAmt : 0)
-            const next = lift + (want - lift) * (reduce ? 1 : 0.12)
+            const next = lift + ((name === hb ? 0.9 : 0) - lift) * (reduce ? 1 : 0.12)
             lifts.current.set(name, next)
             grp.position.y = next
         })
-
-        // ── Match cut khuôn viên → phòng chụp Studio (S 2.15 → 2.95; cuộn ngược thì chạy ngược) ──
-        // Máy chỉ lướt tới Studio ở S ∈ [mvFrom, mvTo]: match cut được co đúng vào khoảng đó (Sm chạy 2.1 → 3.0 theo các mốc bên dưới)
-        const Sm = 2.1 + band(S, mvFrom, mvTo) * 0.9
-        const m = easeInOutCubic(band(Sm, MORPH_FROM, MORPH_TO_S))
-        if (S > mvFrom - 0.2 || morphed.current) {
-            morphed.current = S > mvFrom - 0.2
-            if (Math.abs(m - morph.current) > 0.0005 || !morphed.current) {
-                morph.current = m
-                applyLights(nightRef.current)
-            }
-            const grow = (a: number, b: number) => Math.max(easeInOutCubic(band(Sm, a, b)), 0.001)
-            const out = (a: number, b: number) => Math.max(1 - easeInOutCubic(band(Sm, a, b)), 0.001)
-            const set = (g: THREE.Object3D | null, sc: number, x = 0, y = 0, z = 0) => {
-                if (!g) return
-                g.visible = sc > 0.01
-                g.scale.setScalar(sc)
-                g.position.set(x, y, z)
-            }
-            // Cây, mây, đường/bãi cỏ/xe thu nhỏ biến mất
-            const sOut = out(2.1, 2.5)
-            for (const g of [treesG.current, cloudsG.current, groundG.current]) {
-                if (g) {
-                    g.visible = sOut > 0.01
-                    g.scale.setScalar(sOut)
-                }
-            }
-            // Các tòa trượt về đích và thu nhỏ; vật thể Studio tương ứng lớn lên ở đích
-            const buildingScale: Record<string, number> = { 'Tòa A3': out(2.35, 2.8), 'Hội trường A1': out(2.3, 2.8), 'Tòa A1': out(2.3, 2.8), Canteen: sOut, 'Cổng trường': sOut }
-            registry.current.forEach((grp, name) => {
-                const base = BASE_XZ[name]
-                if (!base) return
-                const to = MORPH_TO[name] ?? base
-                grp.position.x = base[0] + (to[0] - base[0]) * m
-                grp.position.z = base[1] + (to[1] - base[1]) * m
-                if (name === 'Tòa A2') {
-                    // A2 thu vào bục: thấp và mảnh dần, ẩn hẳn khi gần xong
-                    grp.scale.set(1 - 0.65 * m, 1 - 0.55 * m, 1 - 0.65 * m)
-                    grp.visible = m < 0.98
-                } else {
-                    const sc = buildingScale[name] ?? 1
-                    grp.scale.setScalar(sc)
-                    grp.visible = sc > 0.01
-                }
-            })
-            const Y = P_AT.yellow
-            set(plinthG.current, K * grow(2.3, 2.8))
-            set(figureG.current, K * grow(2.6, 3))
-            set(yellowG.current, K * grow(2.45, 2.95), Y[0] * K, Y[1] * K, Y[2] * K)
-            set(blueG.current, K * grow(2.4, 2.9), P_AT.blue[0] * K, P_AT.blue[1] * K, P_AT.blue[2] * K)
-            set(columnG.current, K * grow(2.4, 2.95), P_AT.column[0] * K, P_AT.column[1] * K, P_AT.column[2] * K)
-            // Dải kính xanh A2 → trụ xanh
-            set(greenG.current, K * grow(2.3, 2.9), A2_GLASS_AT[0] + (P_AT.green[0] * K - A2_GLASS_AT[0]) * m, A2_GLASS_AT[1] + (P_AT.green[1] * K - A2_GLASS_AT[1]) * m, A2_GLASS_AT[2] + (P_AT.green[2] * K - A2_GLASS_AT[2]) * m)
-            if (wallsG.current) {
-                const e = grow(2.4, 3)
-                wallsG.current.visible = e > 0.01
-                wallsG.current.scale.set(K, K * e, K)
-            }
-            // Mặt đất tối dần
-            plateMat.color.copy(PLATE_LIGHT).lerp(PLATE_DARK, m)
-            // Bộ đèn 3 điểm của Studio
-            if (keyL.current) keyL.current.intensity = I_KEY * m
-            if (fillL.current) fillL.current.intensity = I_FILL * m
-            if (rimL.current) rimL.current.intensity = I_RIM * m
-            if (keyL.current) keyL.current.shadow.autoUpdate = m > 0.01
-        }
 
         // ── Đo FPS (chỉ khi tab đang hiện): hai lần liên tiếp dưới 40fps thì giảm chất lượng ──
         const pf = perf.current
@@ -1190,10 +852,9 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
             pf.n = 0
         }
 
-        // Nhãn: chỉ ở hero và chương Khóa học; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
+        // Nhãn: chỉ ở hero; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
         if (frame.current++ % 6 === 0) {
-            // Hero: mọi nhãn không bị che; chương Khóa học: chỉ nhãn của tòa đang được nhìn (tên khóa + %)
-            const key = S < 0.2 ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : S > 1.3 && S < mvFrom ? activeName.current : ''
+            const key = S < 0.2 ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : ''
             if (key !== labelKey.current) {
                 labelKey.current = key
                 setVisibleLabels(new Set(key ? key.split('|') : []))
@@ -1238,44 +899,17 @@ function Scene({ night, reduce, touch, staticMode, stage, stops, dailyLit, cours
                 position={[-26, 38, 22]}
                 castShadow
                 shadow-mapSize={[2048, 2048]}
-                shadow-camera-left={-30}
-                shadow-camera-right={30}
-                shadow-camera-top={30}
-                shadow-camera-bottom={-30}
+                shadow-camera-left={-32}
+                shadow-camera-right={32}
+                shadow-camera-top={32}
+                shadow-camera-bottom={-32}
                 shadow-camera-near={1}
                 shadow-camera-far={120}
                 shadow-bias={-0.0006}
             />
             <directionalLight ref={rim} color={CAMPUS.rimLight} intensity={0.35 * Math.PI} position={[30, 14, -30]} />
-            <spotLight ref={focusL} color={CAMPUS.sunlight} intensity={0} angle={0.45} penumbra={0.9} />
-            {/* Bộ đèn 3 điểm của Studio (thông số mặc định), tắt cho tới chương Studio */}
-            <spotLight ref={keyL} position={KEY_POS} color={LOOK.keyColor} intensity={0} angle={0.6} penumbra={0.6} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
-            <pointLight ref={fillL} position={FILL_POS} color={LOOK.fillColor} intensity={0} />
-            <spotLight ref={rimL} position={RIM_POS} color={LOOK.rimColor} intensity={0} angle={0.7} penumbra={0.5} />
-            {/* Vật thể Studio thật (studio-set), hiện dần theo match cut */}
-            <group ref={wallsG} visible={false} scale={[K, 0.001, K]}>
-                <StudioWalls mats={studioMats} />
-            </group>
-            <group ref={plinthG} visible={false} scale={0.001}>
-                <StudioPlinth mats={studioMats} />
-            </group>
-            <group ref={figureG} visible={false} scale={0.001}>
-                <StudioFigure mats={studioMats} />
-            </group>
-            <group ref={yellowG} visible={false} scale={0.001}>
-                <PropYellow mats={studioMats} />
-            </group>
-            <group ref={greenG} visible={false} scale={0.001}>
-                <PropGreen mats={studioMats} />
-            </group>
-            <group ref={blueG} visible={false} scale={0.001}>
-                <PropBlue mats={studioMats} />
-            </group>
-            <group ref={columnG} visible={false} scale={0.001}>
-                <PropColumn mats={studioMats} />
-            </group>
             <group ref={world}>
-                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} coursePct={coursePct} shrink={shrink} lowQuality={lowQuality} />
+                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={sm} coursePct={coursePct} lowQuality={lowQuality} />
             </group>
         </>
     )
@@ -1288,13 +922,12 @@ export interface CampusSceneProps {
     reduce: boolean
     staticMode: boolean
     stage: React.MutableRefObject<number>
-    stops: React.MutableRefObject<CourseStops>
     dailyLit: React.MutableRefObject<boolean[]>
     coursePct: Readonly<Record<string, number>>
     onOpenCourse?: (courseId: string) => void
 }
 
-export default function CampusScene({ night, reduce, staticMode, stage, stops, dailyLit, coursePct, onOpenCourse }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, stage, dailyLit, coursePct, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -1349,7 +982,7 @@ export default function CampusScene({ night, reduce, staticMode, stage, stops, d
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} stops={stops} dailyLit={dailyLit} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
+                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} stage={stage} dailyLit={dailyLit} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}
         </div>
