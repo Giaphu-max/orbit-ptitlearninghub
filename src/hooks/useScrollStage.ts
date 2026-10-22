@@ -15,11 +15,12 @@ const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
 /** S của máy quay ở từng chương (cảnh 3D đọc S liên tục 0..3) */
 const STOP = [0, 1, 1.8, 3] as const
 /** Số giây bay giữa hai chương liền nhau: hero→Hôm nay (vòng quanh trường), →Khóa học (qua cổng, cửa kính, kiosk), →Studio */
-const SEG = [2.6, 2.8, 2.4] as const
+const SEG = [1.5, 2.8, 2.4] as const
 const FLIGHT_MIN = 0.6
 const FLIGHT_MAX = 3.6
-/** Chữ vào khi máy quay đã bay được chừng này, để chữ hiện đúng lúc cảnh dừng */
-const REVEAL = 0.72
+/** Chữ vào khi máy quay đã bay được chừng này, để chữ hiện đúng lúc cảnh dừng; theo chương đích. Đoạn hero ↔ Hôm nay ngắn (vòng quay nhanh) nên chữ vào sớm hơn. */
+const REVEAL = [0.72, 0.6, 0.72, 0.72] as const
+const REVEAL_HERO_LEG = 0.6
 /** Hạn mức vận tốc đầu của đoạn bay mới (S/giây) để không giật khi đổi hướng giữa chừng */
 const V_LIMIT = 1.5
 /** Một khoảng nghỉ lâu chừng này giữa hai sự kiện wheel = cú vuốt trước (và quán tính của nó) đã hết */
@@ -117,6 +118,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
 
         let S = 0
         let state = -1
+        let prevState = -1
         let shown = -1
         let tw = { from: 0, to: 0, v0: 0, t0: 0, D: 0 }
         /** Sau go(): bỏ qua việc đọc chương từ vị trí cuộn cho tới khi cuộn xong (chương đã chọn sẵn) */
@@ -151,6 +153,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (i === state) return
             const now = performance.now()
             const first = state < 0
+            prevState = state
             state = i
             const [, v] = twAt(now)
             const to = STOP[i]
@@ -165,10 +168,12 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             markRail(i)
             setJourneyChapter(i)
         }
+        // Hero ↔ Hôm nay (chuyến bay giữa hai chương đầu) dùng mốc 60% cho cả hai chiều
+        const revealAt = () => (state === 1 || (state === 0 && prevState === 1) ? REVEAL_HERO_LEG : REVEAL[state])
         // Panel mới `on` khi chuyến bay đi được REVEAL (hoặc ngay nếu không bay / chế độ làm mờ)
         const revealIfReady = (now: number) => {
             if (shown === state || state < 0) return
-            if (tw.D <= 0 || calmRef.current || (now - tw.t0) / 1000 >= tw.D * REVEAL) {
+            if (tw.D <= 0 || calmRef.current || (now - tw.t0) / 1000 >= tw.D * revealAt()) {
                 panels[state].classList.add('on')
                 shown = state
                 if (rootRef.current) rootRef.current.dataset.onStage = state === 1 || state === 3 ? '1' : '0'
