@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
 
@@ -91,7 +92,7 @@ export function Gable({ len, h, depth, c, at, alongZ = false }: { len: number; h
 // ─── Chữ và họa tiết vẽ lên canvas làm texture ─────────────────────────────
 
 export interface TextOpts {
-    w?: number
+    /** Chiều cao canvas ảo mà `size` được tính theo (mặc định 256); canvas thật luôn theo đúng tỉ lệ mặt phẳng */
     h?: number
     fg?: string
     size?: number | number[]
@@ -100,23 +101,50 @@ export interface TextOpts {
     bg?: string
 }
 
-function makeTextTexture(text: string, { w = 1024, h = 256, fg = CAMPUS.ptitRed, size = 150, weight = 800, bg }: TextOpts) {
+const TEXT_FILL = 0.88 // dòng chữ chỉ được chiếm tối đa 88% bề ngang
+
+/** Canvas đúng tỉ lệ mặt phẳng pw:ph (cạnh dài `long` px). Mỗi dòng tự thu nhỏ cho vừa bề ngang; cả khối căn giữa cả hai chiều. */
+function makeTextTexture(text: string, { h = 256, fg = CAMPUS.ptitRed, size = 150, weight = 800, bg }: TextOpts, pw: number, ph: number, long = 2048, glowColor?: string) {
+    const k = long / Math.max(pw, ph)
+    const cw = Math.round(pw * k)
+    const ch = Math.round(ph * k)
     const cv = document.createElement('canvas')
-    cv.width = w
-    cv.height = h
+    cv.width = cw
+    cv.height = ch
     const ctx = cv.getContext('2d')!
     if (bg) {
         ctx.fillStyle = bg
-        ctx.fillRect(0, 0, w, h)
+        ctx.fillRect(0, 0, cw, ch)
     }
     ctx.fillStyle = fg
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     const lines = text.split('\n')
+    const scale = ch / h
+    const font = (px: number) => `${weight} ${px}px "Be Vietnam Pro", Arial, sans-serif`
+    // Đo từng dòng, thu nhỏ riêng dòng quá rộng; giữ tỉ lệ khoảng cách giữa các dòng
+    const sizes = lines.map((ln, i) => {
+        let sz = (Array.isArray(size) ? size[i] : size) * scale
+        ctx.font = font(sz)
+        const mw = ctx.measureText(ln).width
+        if (mw > cw * TEXT_FILL) sz *= (cw * TEXT_FILL) / mw
+        return sz
+    })
+    const lh = sizes.map((sz) => sz * 1.15)
+    const total = lh.reduce((a, b) => a + b, 0)
+    // Khối chữ cao hơn 88% canvas thì thu nhỏ đồng loạt
+    const f = total > ch * TEXT_FILL ? (ch * TEXT_FILL) / total : 1
+    let y = ch / 2 - (total * f) / 2
+    if (glowColor) {
+        ctx.shadowColor = glowColor
+        ctx.shadowBlur = ch * 0.06
+    }
     lines.forEach((ln, i) => {
-        const sz = Array.isArray(size) ? size[i] : size
-        ctx.font = `${weight} ${sz}px "Be Vietnam Pro", Arial, sans-serif`
-        ctx.fillText(ln, w / 2, h / 2 + (i - (lines.length - 1) / 2) * sz * 1.15)
+        ctx.font = font(sizes[i] * f)
+        y += (lh[i] * f) / 2
+        ctx.fillText(ln, cw / 2, y)
+        if (glowColor) ctx.fillText(ln, cw / 2, y)
+        y += (lh[i] * f) / 2
     })
     const t = new THREE.CanvasTexture(cv)
     t.colorSpace = THREE.SRGBColorSpace
@@ -124,15 +152,53 @@ function makeTextTexture(text: string, { w = 1024, h = 256, fg = CAMPUS.ptitRed,
     return t
 }
 
-/** Mặt phẳng dán chữ. Chỉ dựng sau khi font đã tải (xem CampusScene) nên texture dùng đúng font. */
-export function TextPlane({ w, h, text, at, opts, doubleSide, rotY = 0 }: { w: number; h: number; text: string; at: Vec3; opts: TextOpts; doubleSide?: boolean; rotY?: number }) {
-    const tex = useMemo(() => makeTextTexture(text, opts), [text, opts])
-    useEffect(() => () => tex.dispose(), [tex])
+/**
+ * Mặt phẳng dán chữ. Chỉ dựng sau khi font đã tải (xem CampusScene) nên texture dùng đúng font.
+ * Có `nightRef`: ban đêm chữ chuyển đỏ sáng như đèn LED, thêm quầng sáng cộng (`glow`), cùng nhịp với đèn cửa sổ.
+ */
+export function TextPlane({ w, h, text, at, opts, doubleSide, rotY = 0, nightRef, glow = true }: { w: number; h: number; text: string; at: Vec3; opts: TextOpts; doubleSide?: boolean; rotY?: number; nightRef?: React.MutableRefObject<number>; glow?: boolean }) {
+    const tex = useMemo(() => makeTextTexture(text, opts, w, h), [text, opts, w, h])
+    const litTex = useMemo(() => (nightRef ? makeTextTexture(text, { ...opts, fg: CAMPUS.ptitRedLit }, w, h) : null), [text, opts, w, h, nightRef])
+    const glowTex = useMemo(() => (nightRef && glow ? makeTextTexture(text, { ...opts, fg: CAMPUS.ptitRedLit }, w, h, 1024, CAMPUS.ptitRedGlow) : null), [text, opts, w, h, nightRef, glow])
+    useEffect(() => () => {
+        tex.dispose()
+        litTex?.dispose()
+        glowTex?.dispose()
+    }, [tex, litTex, glowTex])
+    const litMat = useRef<THREE.MeshBasicMaterial>(null)
+    const glowMat = useRef<THREE.MeshBasicMaterial>(null)
+    useFrame(() => {
+        if (!nightRef) return
+        const n = nightRef.current
+        if (litMat.current) {
+            litMat.current.opacity = n
+            litMat.current.visible = n > 0.01
+        }
+        if (glowMat.current) {
+            glowMat.current.opacity = n
+            glowMat.current.visible = n > 0.01
+        }
+    })
+    const side = doubleSide ? THREE.DoubleSide : THREE.FrontSide
     return (
-        <mesh position={at} rotation={[0, rotY, 0]}>
-            <planeGeometry args={[w, h]} />
-            <meshBasicMaterial map={tex} transparent side={doubleSide ? THREE.DoubleSide : THREE.FrontSide} />
-        </mesh>
+        <group position={at} rotation={[0, rotY, 0]}>
+            <mesh>
+                <planeGeometry args={[w, h]} />
+                <meshBasicMaterial map={tex} transparent depthWrite={false} side={side} polygonOffset polygonOffsetFactor={-2} />
+            </mesh>
+            {litTex && (
+                <mesh position={[0, 0, 0.006]}>
+                    <planeGeometry args={[w, h]} />
+                    <meshBasicMaterial ref={litMat} map={litTex} transparent opacity={0} depthWrite={false} toneMapped={false} side={side} polygonOffset polygonOffsetFactor={-3} />
+                </mesh>
+            )}
+            {glowTex && (
+                <mesh position={[0, 0, 0.012]}>
+                    <planeGeometry args={[w, h]} />
+                    <meshBasicMaterial ref={glowMat} map={glowTex} transparent opacity={0} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} side={side} polygonOffset polygonOffsetFactor={-4} />
+                </mesh>
+            )}
+        </group>
     )
 }
 

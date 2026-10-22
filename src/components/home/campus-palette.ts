@@ -14,6 +14,9 @@ export const CAMPUS = {
     hallWindow: '#9FB7C4',
     carSilver: '#B9C4CC',
     ptitRed: '#C4161C',
+    // Chữ biển ban đêm: đỏ sáng như đèn LED và màu quầng
+    ptitRedLit: '#FF4A4A',
+    ptitRedGlow: '#FF2A2A',
     fence: '#C9C3BD',
     pillar: '#D6D2CF',
     gatePost: '#D8C29C',

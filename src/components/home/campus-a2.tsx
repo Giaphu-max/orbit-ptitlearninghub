@@ -69,7 +69,7 @@ const frameM = stdMat(A.frame)
 const mullion = stdMat(A.mullion)
 
 const T_SAMSUNG: TextOpts = { fg: CAMPUS.signBlue, size: 64, weight: 800 }
-const T_HALL: TextOpts = { w: 512, h: 96, size: 46, bg: A.hallSign, fg: A.hallSignText }
+const T_HALL: TextOpts = { h: 96, size: 46, bg: A.hallSign, fg: A.hallSignText }
 
 const lerp = THREE.MathUtils.lerp
 const band = (s: number, a: number, b: number) => Math.max(0, Math.min(1, (s - a) / (b - a)))
