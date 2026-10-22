@@ -7,6 +7,7 @@
  *   ?noreveal   chữ hiện ngay, không transition
  *   ?nolenis    cuộn gốc của trình duyệt (vẫn giữ bước chương)
  *   ?opaque     canvas alpha:false (mặc định bật trên Safari/WebKit)
+ *   ?smoothscroll  bước chương cuộn mượt bằng Lenis như bản cũ (mặc định: nhảy tức thì trong vùng ghim)
  *   ?bench      tự đo lần lượt các cấu hình trên (xem lib/bench.ts), kết quả hiện thành bảng
  */
 const q = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search)
@@ -19,6 +20,7 @@ export const FLAGS = {
     noReveal: q.has('noreveal'),
     noLenis: q.has('nolenis'),
     opaque: q.has('opaque'),
+    smoothScroll: q.has('smoothscroll'),
     bench: q.has('bench'),
 }
 

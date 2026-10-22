@@ -10,6 +10,7 @@ export const BENCH_CONFIGS = [
     { label: 'noreveal', flag: 'noreveal' },
     { label: 'nokiosk', flag: 'nokiosk' },
     { label: 'opaque', flag: 'opaque' },
+    { label: 'smoothscroll', flag: 'smoothscroll' },
 ] as const
 
 export interface BenchRow {
@@ -99,6 +100,6 @@ export function shortUA() {
 const f1 = (n: number) => (n ? n.toFixed(1) : '–')
 export function benchText(rows: BenchRow[]) {
     const head = `${shortUA()} · dpr ${window.devicePixelRatio} · ${window.innerWidth}×${window.innerHeight}`
-    const lines = rows.map((r) => `${r.label.padEnd(9)} bay ${f1(r.flyFps)} fps (1% low ${f1(r.flyLow)}) · yên ${f1(r.stillFps)} fps · giật ${r.jank} · js bay ${r.flyJs.toFixed(1)}ms / yên ${r.stillJs.toFixed(1)}ms`)
+    const lines = rows.map((r) => `${r.label.padEnd(12)} bay ${f1(r.flyFps)} fps (1% low ${f1(r.flyLow)}) · yên ${f1(r.stillFps)} fps · giật ${r.jank} · js bay ${r.flyJs.toFixed(1)}ms / yên ${r.stillJs.toFixed(1)}ms`)
     return [head, ...lines].join('\n')
 }

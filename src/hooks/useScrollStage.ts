@@ -106,6 +106,10 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         let lastScrolled: boolean | null = null
         let barScale = 0
         let barLast = -1
+        // Bước chương nhảy tức thì nên thanh tiến độ không theo scroll: nội suy theo tiến độ chuyến bay (tw.p) từ vị trí cũ tới mới
+        let barAnim = false
+        let barFrom = 0
+        let barTo = 0
         const flushBar = () => {
             if (!barRef?.current || Math.abs(barScale - barLast) < 0.0005) return
             barLast = barScale
@@ -115,7 +119,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             // Không đọc layout: scrollY từ sự kiện, scrollHeight đo sẵn ở page-metrics; thanh tiến độ ghi tối đa một lần mỗi khung (transform scaleX)
             const y = window.scrollY
             page.y = y
-            barScale = page.max > 0 ? clamp(y / page.max) : 0
+            if (!barAnim) barScale = page.max > 0 ? clamp(y / page.max) : 0
             const isScrolled = y > 40
             if (isScrolled !== lastScrolled) {
                 lastScrolled = isScrolled
@@ -302,9 +306,19 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (target === state) landedAt = now
             setState(target, cut)
             lastStepAt = now
-            holdUntil = now + (cut ? 300 : 1300)
-            if (cut) lenis.scrollTo(chapterY(target), { immediate: true, force: true })
-            else lenis.scrollTo(chapterY(target), { duration: 0.9, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
+            // Trong vùng ghim nội dung không dịch chuyển nên nhảy tức thì (cuộn mượt ép Safari vẽ lại trang 500vh mỗi khung); từ ngoài vùng (footer) mới cuộn mượt
+            const instant = cut || (inStage() && !FLAGS.smoothScroll)
+            holdUntil = now + (instant ? 150 : 1300)
+            const y = chapterY(target)
+            if (instant) {
+                barFrom = barScale
+                barTo = page.max > 0 ? clamp(y / page.max) : 0
+                barAnim = tw.D > 0
+                lenis.scrollTo(y, { immediate: true, force: true })
+            } else {
+                barAnim = false
+                lenis.scrollTo(y, { duration: 0.9, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
+            }
         }
         setChapterScroller(go)
         // Đã yên vị ở chương hiện tại chưa (hero: ở đầu trang là yên vị)
@@ -469,6 +483,14 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (now - guideAt > 250) {
                 guideAt = now
                 guide()
+            }
+            if (barAnim) {
+                const k = clamp(tw.p)
+                barScale = barFrom + (barTo - barFrom) * k * k * (3 - 2 * k)
+                if (tw.p >= 1) {
+                    barAnim = false
+                    barScale = barTo
+                }
             }
             flushBar()
         }
