@@ -286,26 +286,17 @@ interface WorldProps {
 /** Vị trí cổng trường (gốc cổng, mặt ngoài hướng +z): đường máy quay chương 02 đi dưới dầm cổng */
 const GATE_AT: Vec3 = [2, 0, 16.5]
 
-/** Tấm biển cổng: ban đêm hắt sáng nhẹ như hộp đèn, kèm một đèn điểm yếu phía trước (không đổ bóng) */
-function GateSign({ nightRef, size = [7.4, 1.6, 0.2], at = [0, 4.9, 0], withLight = true }: { nightRef: React.MutableRefObject<number>; size?: Vec3; at?: Vec3; withLight?: boolean }) {
-    const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: CAMPUS.gateSign, flatShading: true, roughness: 0.9, emissive: CAMPUS.windowLit, emissiveIntensity: 0 }), [])
-    const light = useRef<THREE.PointLight>(null)
+/** Tấm biển nền của chữ: ban đêm tối dần để chữ LED nổi lên (không hắt sáng, không đèn chiếu lên mặt biển) */
+function SignBoard({ nightRef, size, at }: { nightRef: React.MutableRefObject<number>; size: Vec3; at: Vec3 }) {
+    const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: CAMPUS.gateSign, flatShading: true, roughness: 0.9 }), [])
+    const day = useMemo(() => new THREE.Color(CAMPUS.gateSign), [])
+    const night = useMemo(() => new THREE.Color(CAMPUS.signNight), [])
     useEffect(() => () => mat.dispose(), [mat])
-    useFrame(() => {
-        const n = nightRef.current
-        mat.emissiveIntensity = 0.6 * n
-        if (light.current) {
-            light.current.intensity = 1.2 * Math.PI * n
-            light.current.visible = n > 0.01
-        }
-    })
+    useFrame(() => mat.color.copy(day).lerp(night, nightRef.current))
     return (
-        <>
-            <mesh position={at} material={mat} castShadow receiveShadow>
-                <boxGeometry args={size} />
-            </mesh>
-            {withLight && <pointLight ref={light} position={[at[0], at[1], at[2] + 1.6]} color={CAMPUS.windowLit} distance={7} decay={2} intensity={0} />}
-        </>
+        <mesh position={at} material={mat} castShadow receiveShadow>
+            <boxGeometry args={size} />
+        </mesh>
     )
 }
 
@@ -355,13 +346,13 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     <Box s={[0.06, 0.45, 0.04]} c={CAMPUS.ink} at={[0, 14.55, 1.74]} />
                     <Box s={[0.36, 0.06, 0.04]} c={CAMPUS.ink} at={[0.16, 14.55, 1.74]} />
                     {/* Biển nền mỏng nằm trên dải kính (rộng 1.8) làm khung cho chữ */}
-                    <GateSign nightRef={nightRef} size={[1.6, 0.7, 0.06]} at={[0, 12.9, 1.755]} withLight={false} />
+                    <SignBoard nightRef={nightRef} size={[1.6, 0.7, 0.06]} at={[0, 12.9, 1.755]} />
                     <TextPlane w={1.4} h={0.5} text="PTIT" at={[0, 12.9, 1.8]} opts={T_PTIT} nightRef={nightRef} glow={!lowQuality} />
 
                     <A2Windows nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} />
                 </group>
 
-                <TextPlane w={3.2} h={0.8} text="I ♥ PTIT" at={[7.6, 0.5, 5.6]} opts={T_HEART} doubleSide />
+                <TextPlane w={3.2} h={0.8} text="I ♥ PTIT" at={[7.6, 0.5, 5.6]} opts={T_HEART} doubleSide nightRef={nightRef} glow={!lowQuality} />
                 {([[-8.4, CAMPUS.ptitRed], [-7.6, CAMPUS.flagYellow], [-6.8, CAMPUS.flagBlue]] as const).map(([x, c], i) => (
                     <Flag key={x} x={x} color={c} index={i} reduce={reduce} />
                 ))}
@@ -413,7 +404,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     <Box key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
                 ))}
                 <Box s={[8, 0.5, 1]} c={CAMPUS.gateBeam} at={[0, 3.6, 0]} />
-                <GateSign nightRef={nightRef} />
+                <SignBoard nightRef={nightRef} size={[7.4, 1.6, 0.2]} at={[0, 4.9, 0]} />
                 <TextPlane w={7.0} h={1.3} text={'HỌC VIỆN\nCÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG'} at={[0, 4.9, 0.115]} opts={T_GATE} nightRef={nightRef} glow={!lowQuality} />
                 {Array.from({ length: 9 }, (_, i) => (
                     <Box key={i} s={[0.08, 1.4, 0.08]} c={CAMPUS.fence} at={[4.6 + i * 0.55, 0, 0]} />
@@ -522,7 +513,7 @@ function transitCamera(s: number, pos: THREE.Vector3, look: THREE.Vector3) {
             // Đi đều, chậm lại một chút khi tới cửa
             const x = u / CUT2
             const k = x * 0.5 + x * (2 - x) * 0.5
-            const t = gatePos.getUtoTmapping(k)
+            const t = gatePos.getUtoTmapping(k, 0)
             gatePos.getPoint(t, pos)
             gateLook.getPoint(t, look)
             return lerp(ORBIT_FOV, 44, smoothstep(clamp01(k * 1.6)))

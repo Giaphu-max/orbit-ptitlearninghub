@@ -101,10 +101,20 @@ export interface TextOpts {
     bg?: string
 }
 
+const GLOW_SCALE = 1.2 // mặt phẳng quầng lớn hơn chữ 20%
 const TEXT_FILL = 0.88 // dòng chữ chỉ được chiếm tối đa 88% bề ngang
 
 /** Canvas đúng tỉ lệ mặt phẳng pw:ph (cạnh dài `long` px). Mỗi dòng tự thu nhỏ cho vừa bề ngang; cả khối căn giữa cả hai chiều. */
-function makeTextTexture(text: string, { h = 256, fg = CAMPUS.ptitRed, size = 150, weight = 800, bg }: TextOpts, pw: number, ph: number, long = 2048, glowColor?: string) {
+interface TextFx {
+    /** Viền vẽ trước lõi chữ (kiểu LED: viền đỏ, lõi sáng) */
+    stroke?: string
+    /** Quầng: một lượt vẽ cho mỗi độ blur (tỉ lệ theo cỡ chữ) */
+    glow?: { color: string; blurs: number[] }
+    /** Chữ chiếm 1/textScale canvas (canvas to hơn mặt chữ để quầng không bị cắt) */
+    textScale?: number
+}
+
+function makeTextTexture(text: string, { h = 256, fg = CAMPUS.ptitRed, size = 150, weight = 800, bg }: TextOpts, pw: number, ph: number, long = 2048, fx: TextFx = {}) {
     const k = long / Math.max(pw, ph)
     const cw = Math.round(pw * k)
     const ch = Math.round(ph * k)
@@ -120,32 +130,49 @@ function makeTextTexture(text: string, { h = 256, fg = CAMPUS.ptitRed, size = 15
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     const lines = text.split('\n')
-    const scale = ch / h
+    const ts = fx.textScale ?? 1
+    const scale = ch / h / ts
     const font = (px: number) => `${weight} ${px}px "Be Vietnam Pro", Arial, sans-serif`
     // Đo từng dòng, thu nhỏ riêng dòng quá rộng; giữ tỉ lệ khoảng cách giữa các dòng
     const sizes = lines.map((ln, i) => {
         let sz = (Array.isArray(size) ? size[i] : size) * scale
         ctx.font = font(sz)
         const mw = ctx.measureText(ln).width
-        if (mw > cw * TEXT_FILL) sz *= (cw * TEXT_FILL) / mw
+        if (mw > (cw / ts) * TEXT_FILL) sz *= ((cw / ts) * TEXT_FILL) / mw
         return sz
     })
     const lh = sizes.map((sz) => sz * 1.15)
     const total = lh.reduce((a, b) => a + b, 0)
     // Khối chữ cao hơn 88% canvas thì thu nhỏ đồng loạt
-    const f = total > ch * TEXT_FILL ? (ch * TEXT_FILL) / total : 1
-    let y = ch / 2 - (total * f) / 2
-    if (glowColor) {
-        ctx.shadowColor = glowColor
-        ctx.shadowBlur = ch * 0.06
+    const f = total > (ch / ts) * TEXT_FILL ? ((ch / ts) * TEXT_FILL) / total : 1
+    const draw = (fill: boolean) => {
+        let yy = ch / 2 - (total * f) / 2
+        lines.forEach((ln, i) => {
+            ctx.font = font(sizes[i] * f)
+            yy += (lh[i] * f) / 2
+            if (fill) ctx.fillText(ln, cw / 2, yy)
+            else ctx.strokeText(ln, cw / 2, yy)
+            yy += (lh[i] * f) / 2
+        })
     }
-    lines.forEach((ln, i) => {
-        ctx.font = font(sizes[i] * f)
-        y += (lh[i] * f) / 2
-        ctx.fillText(ln, cw / 2, y)
-        if (glowColor) ctx.fillText(ln, cw / 2, y)
-        y += (lh[i] * f) / 2
-    })
+    if (fx.glow) {
+        ctx.fillStyle = fx.glow.color
+        ctx.shadowColor = fx.glow.color
+        for (const bl of fx.glow.blurs) {
+            ctx.shadowBlur = sizes[0] * f * bl
+            draw(true)
+        }
+        ctx.shadowBlur = 0
+        ctx.fillStyle = fg
+        ctx.shadowColor = 'transparent'
+    }
+    if (fx.stroke) {
+        ctx.strokeStyle = fx.stroke
+        ctx.lineJoin = 'round'
+        ctx.lineWidth = sizes[0] * f * 0.1
+        draw(false)
+    }
+    draw(true)
     const t = new THREE.CanvasTexture(cv)
     t.colorSpace = THREE.SRGBColorSpace
     t.anisotropy = 4
@@ -158,8 +185,8 @@ function makeTextTexture(text: string, { h = 256, fg = CAMPUS.ptitRed, size = 15
  */
 export function TextPlane({ w, h, text, at, opts, doubleSide, rotY = 0, nightRef, glow = true }: { w: number; h: number; text: string; at: Vec3; opts: TextOpts; doubleSide?: boolean; rotY?: number; nightRef?: React.MutableRefObject<number>; glow?: boolean }) {
     const tex = useMemo(() => makeTextTexture(text, opts, w, h), [text, opts, w, h])
-    const litTex = useMemo(() => (nightRef ? makeTextTexture(text, { ...opts, fg: CAMPUS.ptitRedLit }, w, h) : null), [text, opts, w, h, nightRef])
-    const glowTex = useMemo(() => (nightRef && glow ? makeTextTexture(text, { ...opts, fg: CAMPUS.ptitRedLit }, w, h, 1024, CAMPUS.ptitRedGlow) : null), [text, opts, w, h, nightRef, glow])
+    const litTex = useMemo(() => (nightRef ? makeTextTexture(text, { ...opts, fg: CAMPUS.ptitLedCore }, w, h, 2048, { stroke: CAMPUS.ptitLedEdge }) : null), [text, opts, w, h, nightRef])
+    const glowTex = useMemo(() => (nightRef && glow ? makeTextTexture(text, { ...opts, fg: CAMPUS.ptitLedCore }, w, h, 1024, { glow: { color: CAMPUS.ptitRedGlow, blurs: [0.25, 0.08] }, textScale: GLOW_SCALE }) : null), [text, opts, w, h, nightRef, glow])
     useEffect(() => () => {
         tex.dispose()
         litTex?.dispose()
@@ -194,7 +221,7 @@ export function TextPlane({ w, h, text, at, opts, doubleSide, rotY = 0, nightRef
             )}
             {glowTex && (
                 <mesh position={[0, 0, 0.012]}>
-                    <planeGeometry args={[w, h]} />
+                    <planeGeometry args={[w * GLOW_SCALE, h * GLOW_SCALE]} />
                     <meshBasicMaterial ref={glowMat} map={glowTex} transparent opacity={0} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} side={side} polygonOffset polygonOffsetFactor={-4} />
                 </mesh>
             )}

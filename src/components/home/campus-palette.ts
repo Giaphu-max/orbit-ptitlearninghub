@@ -15,8 +15,11 @@ export const CAMPUS = {
     carSilver: '#B9C4CC',
     ptitRed: '#C4161C',
     // Chữ biển ban đêm: đỏ sáng như đèn LED và màu quầng
-    ptitRedLit: '#FF4A4A',
-    ptitRedGlow: '#FF2A2A',
+    // Chữ LED: lõi sáng gần trắng hồng, viền đỏ sáng; biển nền ban đêm xám than ấm
+    ptitLedCore: '#FFE1DC',
+    ptitLedEdge: '#FF3B3F',
+    signNight: '#2A2523',
+    ptitRedGlow: '#FF2A30',
     fence: '#C9C3BD',
     pillar: '#D6D2CF',
     gatePost: '#D8C29C',
