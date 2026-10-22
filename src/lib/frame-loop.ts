@@ -8,14 +8,23 @@ type Frame = (t: number) => void
 const subs: { fn: Frame; order: number }[] = []
 let raf = 0
 let last = 0
+let observer: ((gap: number, js: number) => void) | null = null
+
+/** Bên ngoài (bench) nhận thời lượng từng khung (ms) và thời gian JS của khung đó */
+export const setFrameObserver = (fn: ((gap: number, js: number) => void) | null) => {
+    observer = fn
+}
 
 const loop = (t: number) => {
     raf = requestAnimationFrame(loop)
     const t0 = performance.now()
-    const gap = last ? t0 - last : 16.7
+    const first = !last
+    const gap = first ? 16.7 : t0 - last
     last = t0
     for (const s of subs.slice()) s.fn(t)
-    recordFrame(gap, performance.now() - t0)
+    const js = performance.now() - t0
+    recordFrame(gap, js)
+    if (!first) observer?.(gap, js)
 }
 
 /** order nhỏ chạy trước. Trả hàm huỷ đăng ký. */

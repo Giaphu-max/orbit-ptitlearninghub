@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react'
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
-import { setChapterScroller, setJourneyChapter, setLenis } from '@/lib/scroll'
+import { setChapterScroller, setFlyingProbe, setJourneyChapter, setLenis } from '@/lib/scroll'
 import { addFrame } from '@/lib/frame-loop'
 import { page } from '@/lib/page-metrics'
-import { FLAGS, timed } from '@/lib/perf'
+import { benchState, FLAGS, timed } from '@/lib/perf'
 import { stageSignal } from '@/lib/stage-signal'
 
 /** Dưới ngưỡng này trang chủ dùng canvas 55svh phía trên (bố cục màn hẹp); máy quay vẫn bay như desktop. */
@@ -178,6 +178,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         let touchY: number | null = null
 
         const flying = () => tw.D > 0 && tw.p < LANDED_P
+        setFlyingProbe(flying)
         const flightDir = () => Math.sign(tw.to - tw.from)
         // Cubic Hermite từ (from, v0) tới (to, 0) theo tiến độ p: trả [S, vận tốc theo S/giây]
         const twAt = (): [number, number] => {
@@ -335,6 +336,11 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         }
 
         const onWheel = (e: WheelEvent) => {
+            if (benchState.active) {
+                e.preventDefault()
+                e.stopPropagation()
+                return
+            }
             const now = performance.now()
             const idle = now - lastWheel
             lastWheel = now
@@ -409,6 +415,10 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             touchY = e.touches[0].clientY
         }
         const onTouchMove = (e: TouchEvent) => {
+            if (benchState.active) {
+                if (e.cancelable) e.preventDefault()
+                return
+            }
             if (calmRef.current || !inStage() || touchY == null) return
             const dir = Math.sign(touchY - e.touches[0].clientY)
             const releasing = (state === 0 && dir < 0) || (state === N - 1 && dir > 0 && window.scrollY >= chapterY(N - 1) - 4)
@@ -418,7 +428,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (touchY == null) return
             const dy = touchY - e.changedTouches[0].clientY
             touchY = null
-            if (Math.abs(dy) <= SWIPE_PX || calmRef.current || !inStage()) return
+            if (benchState.active || Math.abs(dy) <= SWIPE_PX || calmRef.current || !inStage()) return
             const d = Math.sign(dy)
             if (flying() && d === flightDir()) return addBoost(BOOST_TOUCH)
             if (performance.now() - lastStepAt > MIN_GAP_MS) step(d)
@@ -428,6 +438,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             const el = e.target instanceof Element ? e.target : null
             if (!dir || e.metaKey || e.ctrlKey || e.altKey || el?.closest('input,textarea,select,[contenteditable="true"]')) return
             if (e.key === ' ' && el?.closest('button,a')) return
+            if (benchState.active) return void e.preventDefault()
             if (calmRef.current || !inStage()) return
             if (flying() && dir === flightDir()) {
                 e.preventDefault()
@@ -480,6 +491,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             window.removeEventListener('keydown', onKey)
             window.removeEventListener('resize', readScroll)
             setChapterScroller(null)
+            setFlyingProbe(null)
             setJourneyChapter(-1)
             setLenis(null)
             lenis.destroy()

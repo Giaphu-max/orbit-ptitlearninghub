@@ -15,6 +15,7 @@ import { useTodayDaily } from '@/hooks/useTodayDaily'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusStage } from '@/components/home/campus-stage'
 import { KioskScreen, type KioskBridge } from '@/components/home/kiosk-screen'
+import { BenchRunner } from '@/components/home/bench-runner'
 import { SiteFooter } from '@/components/site-footer'
 
 /**
@@ -57,6 +58,7 @@ export function OrbitHomeView() {
             <div aria-hidden data-cut-veil className="pointer-events-none fixed inset-0 z-[5] bg-stage opacity-0" />
             <div ref={veilRef} aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
             {!staticMode && !FLAGS.noKiosk && <KioskScreen screenRef={screenRef} />}
+            <BenchRunner />
             <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}

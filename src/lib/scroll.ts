@@ -11,6 +11,14 @@ export const setLenis = (l: Lenis | null) => {
     lenis = l
 }
 export const getLenis = () => lenis
+// Dùng cho chế độ đo (?bench): bước chương không cắt cảnh và hỏi máy quay còn đang bay không
+let flyingProbe: (() => boolean) | null = null
+export const setFlyingProbe = (fn: (() => boolean) | null) => {
+    flyingProbe = fn
+}
+export const isCameraFlying = () => flyingProbe?.() ?? false
+export const isChapterReady = () => chapterScroller !== null
+export const goChapter = (index: number, cut = false) => chapterScroller?.(index, cut)
 export const setChapterScroller = (fn: ((index: number, cut?: boolean) => void) | null) => {
     chapterScroller = fn
 }

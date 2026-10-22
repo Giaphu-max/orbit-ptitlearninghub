@@ -7,6 +7,7 @@
  *   ?noreveal   chữ hiện ngay, không transition
  *   ?nolenis    cuộn gốc của trình duyệt (vẫn giữ bước chương)
  *   ?opaque     canvas alpha:false (mặc định bật trên Safari/WebKit)
+ *   ?bench      tự đo lần lượt các cấu hình trên (xem lib/bench.ts), kết quả hiện thành bảng
  */
 const q = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search)
 
@@ -18,7 +19,11 @@ export const FLAGS = {
     noReveal: q.has('noreveal'),
     noLenis: q.has('nolenis'),
     opaque: q.has('opaque'),
+    bench: q.has('bench'),
 }
+
+/** Đang đo tự động: useScrollStage bỏ qua input cuộn của người dùng. Chỉ true khi có ?bench và chưa hiện bảng kết quả. */
+export const benchState = { active: FLAGS.bench }
 
 if (typeof document !== 'undefined' && FLAGS.noReveal) document.documentElement.classList.add('no-reveal')
 
@@ -73,7 +78,7 @@ export function mountPerfHud() {
     d.style.cssText = 'position:fixed;left:8px;top:8px;z-index:9999;padding:6px 8px;border-radius:6px;background:rgba(0,0,0,.72);color:#fff;font:11px/1.45 ui-monospace,Menlo,monospace;pointer-events:none;white-space:pre'
     document.body.appendChild(d)
     const off = Object.entries(FLAGS)
-        .filter(([k, v]) => v && k !== 'perf')
+        .filter(([k, v]) => v && k !== 'perf' && k !== 'bench')
         .map(([k]) => k)
     const id = window.setInterval(() => {
         let t = 0
