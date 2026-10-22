@@ -92,6 +92,50 @@ export function pickTestQuestions(bank: BankQuestion[], count = TEST_QUESTION_CO
     })
 }
 
+export const CHECKPOINT_QUESTION_COUNT = 6
+
+/** Câu sinh viên đã gặp trong video của bài: câu gốc đã làm, cùng các biến thể đã hỏi tới (attempts − 1 biến thể đầu). */
+export function seenQuestionIds(lesson: Lesson, results: Record<string, { attempts: number }>): Set<string> {
+    const seen = new Set<string>()
+    for (const q of lesson.quiz) {
+        const r = results[q.id]
+        if (!r) continue
+        seen.add(q.id)
+        q.variants.slice(0, Math.max(0, r.attempts - 1)).forEach((v) => seen.add(v.id))
+    }
+    return seen
+}
+
+const withShuffledOptions = (q: BankQuestion): TestQuestion => {
+    const order = shuffle(q.options.map((_, i) => i))
+    return { ...q, options: order.map((i) => q.options[i]), correctIndex: order.indexOf(q.correctIndex) }
+}
+
+/**
+ * Test cuối chặng: 6 câu từ ngân hàng của một bài. Mỗi khái niệm ít nhất một câu (khái niệm nhiều hơn số câu thì bốc ngẫu nhiên),
+ * câu còn lại bù thêm; luôn ưu tiên câu sinh viên chưa gặp (đặc biệt biến thể), không trùng đề.
+ */
+export function pickCheckpointQuestions(bank: BankQuestion[], seen: Set<string>, count = CHECKPOINT_QUESTION_COUNT): TestQuestion[] {
+    // Chưa gặp xếp trước; trong cùng nhóm thì ngẫu nhiên
+    const fresh = (qs: BankQuestion[]) => [...shuffle(qs.filter((q) => !seen.has(q.id))), ...shuffle(qs.filter((q) => seen.has(q.id)))]
+    const byConcept = new Map<string, BankQuestion[]>()
+    for (const q of bank) byConcept.set(q.conceptId, [...(byConcept.get(q.conceptId) ?? []), q])
+    const chosen: BankQuestion[] = []
+    const prompts = new Set<string>()
+    const take = (q: BankQuestion | undefined) => {
+        if (!q || chosen.includes(q) || prompts.has(q.prompt)) return false
+        chosen.push(q)
+        prompts.add(q.prompt)
+        return true
+    }
+    for (const qs of shuffle([...byConcept.values()]).slice(0, count)) take(fresh(qs).find((q) => !prompts.has(q.prompt)))
+    for (const q of fresh(bank.filter((x) => !chosen.includes(x)))) {
+        if (chosen.length >= count) break
+        take(q)
+    }
+    return shuffle(chosen).map(withShuffledOptions)
+}
+
 export const testTimeLimit = (questionCount: number) => questionCount * TEST_SECONDS_PER_QUESTION
 
 /** XP: dưới 50% số câu đúng thì không có; còn lại mỗi câu đúng vượt kỷ lục cũ + thưởng một lần khi lần đầu đạt mức cao. Làm lại không đạt kỷ lục thì không có XP. */

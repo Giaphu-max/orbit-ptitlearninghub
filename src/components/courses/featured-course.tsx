@@ -146,14 +146,7 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
                         const strong = l.concepts.filter((c) => (mastery[c.id] ?? 0) >= STRONG_MASTERY).length
                         const state = done ? 'Đã xong' : isCur ? (p > 0 ? `Đang học · ${p}%` : 'Chặng tiếp theo') : 'Chưa học'
                         return (
-                            <Link
-                                key={l.id}
-                                to={`/lesson/${l.id}`}
-                                data-vt={`lesson-${l.id}`}
-                                data-cur={isCur}
-                                style={{ transitionDelay: `${80 + i * 90}ms` }}
-                                className="cm-st group flex flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-4 focus-visible:ring-offset-card"
-                            >
+                            <div key={l.id} data-vt={`lesson-${l.id}`} data-cur={isCur} style={{ transitionDelay: `${80 + i * 90}ms` }} className="cm-st group relative flex flex-col rounded-2xl">
                                 <div className="cm-thumbbox">
                                     <div data-vt-thumb className="cm-thumb relative overflow-hidden rounded-2xl" style={{ background: FALLBACK_BG }}>
                                         <Thumb youtubeId={l.youtubeId} />
@@ -184,7 +177,14 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
                                         {p > 0 ? 'Học tiếp' : 'Bắt đầu'}
                                     </span>
                                 )}
-                            </Link>
+                                {done && (
+                                    <Link to={`/recap/${l.id}`} className="relative z-10 mt-3 inline-flex items-center gap-1.5 self-start rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-bold text-brand-ink transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
+                                        Xem tổng kết
+                                    </Link>
+                                )}
+                                {/* Cả trạm bấm được để vào bài; nút Xem tổng kết nằm trên lớp này */}
+                                <Link to={`/lesson/${l.id}`} aria-label={`Chặng ${i + 1}: ${l.title}`} className="absolute inset-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-4 focus-visible:ring-offset-card" />
+                            </div>
                         )
                     })}
                     <Link

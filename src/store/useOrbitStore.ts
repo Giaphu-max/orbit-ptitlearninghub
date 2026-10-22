@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import { dailyArticles } from '@/data'
+import { dailyArticles, getLesson } from '@/data'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import type { CourseCoverSpec } from '@/lib/cover-kinds'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
@@ -25,6 +25,19 @@ export interface QuizResult {
     /** Số câu đã trả lời (gốc + biến thể) tới khi xong */
     attempts: number
     answeredAt: string
+    /** Phương án sai sinh viên chọn ở lần đầu (chỉ khi outcome là corrected/missed) */
+    firstWrongOption?: string
+    /** Id câu biến thể mà sinh viên sửa đúng (outcome corrected) */
+    fixedByVariantId?: string
+}
+
+/** Ảnh chụp trạng thái lúc bắt đầu một chặng (ghi một lần khi trả lời câu quiz đầu tiên của bài) để màn tổng kết so trước/sau. */
+export interface StageStart {
+    at: string
+    /** Mức nắm vững từng khái niệm của bài lúc bắt đầu; null = chưa có dữ liệu */
+    mastery: Record<string, number | null>
+    badgeIds: string[]
+    xp: number
 }
 
 export interface RecordQuizInput {
@@ -36,6 +49,8 @@ export interface RecordQuizInput {
     attempts: number
     /** id mọi câu gốc trong bài, để biết đã làm hết chưa */
     lessonQuestionIds: string[]
+    firstWrongOption?: string
+    fixedByVariantId?: string
 }
 
 /** Kết quả một lượt test cuối chương. */
@@ -89,6 +104,12 @@ interface OrbitState {
     directorBest: number
     /** Test cuối chương theo khóa (id khóa → kết quả) */
     testRecords: Record<string, TestRecord>
+    /** Trạng thái lúc bắt đầu từng chặng (id bài → ảnh chụp), để tổng kết chặng so trước/sau */
+    stageStart: Record<string, StageStart>
+    /** Test cuối chặng 6 câu theo bài (id bài → kết quả), giữ lượt tốt nhất và gần nhất như test cuối chương */
+    checkpoints: Record<string, TestRecord>
+    /** Chặng đã mở màn tổng kết (hiệu ứng chỉ chạy lần đầu) */
+    recapSeen: Record<string, boolean>
     /** Tiến độ nhiệm vụ trong ngày; sang ngày mới thì tự bắt đầu lại */
     daily: DailyState
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
@@ -117,6 +138,9 @@ interface OrbitState {
     recordDirectorScore: (score: number) => number
     /** Ghi kết quả test cuối chương, cập nhật mức nắm vững (cây kỹ năng) và XP; trả về số XP được cộng */
     recordTestResult: (input: { courseId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
+    /** Ghi kết quả test cuối chặng của một bài (cùng cách cập nhật mức nắm vững và XP như test cuối chương); trả về XP được cộng */
+    recordCheckpointResult: (input: { lessonId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
+    markRecapSeen: (lessonId: string) => void
     resetDemo: () => void
 }
 
@@ -146,6 +170,17 @@ export function makeDemoProfile() {
         quizResults: {} as Record<string, QuizResult>,
         directorBest: 0,
         testRecords: {} as Record<string, TestRecord>,
+        // Đầu chặng 1: mức nắm vững thấp hơn hiện tại để tổng kết có số trước/sau; XP bằng hiện tại vì demo chưa có câu quiz nào được ghi
+        stageStart: {
+            'ban-chat-dung-phi-tuyen': {
+                at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+                mastery: { 'dung-tuyen-tinh': 0.4, 'dung-phi-tuyen': 0.35, 'tinh-phi-huy-hoai': 0.2, 'quy-trinh-dung-bon-giai-doan': null },
+                badgeIds: ['chuoi-7-ngay'],
+                xp: 2480,
+            },
+        } as Record<string, StageStart>,
+        checkpoints: {} as Record<string, TestRecord>,
+        recapSeen: {} as Record<string, boolean>,
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
         lessonReview: {} as Record<string, ReviewStatus>,
         lessonEdits: {} as Record<string, LessonEdits>,
@@ -175,6 +210,30 @@ const safeLocalStorage: StateStorage = {
             // bỏ qua
         }
     },
+}
+
+/** Phần dùng chung của test cuối chương và test cuối chặng: mức nắm vững mới, chuỗi ngày, bản ghi tốt nhất/gần nhất. */
+function applyTest(s: OrbitState, prev: TestRecord | undefined, answers: TestAnswerInput[], durationSec: number, timedOut: boolean) {
+    const conceptMastery = { ...s.conceptMastery }
+    const concepts: TestAttempt['concepts'] = answers.map((a) => {
+        const before = s.conceptMastery[a.conceptId]
+        // Test cuối chặng có thể hỏi hai câu cùng khái niệm: câu sau tính tiếp trên mức vừa cập nhật
+        const after = masteryAfterTest(conceptMastery[a.conceptId], a)
+        // Chưa có dữ liệu về khái niệm và bỏ trống: không có bằng chứng gì để ghi vào cây kỹ năng
+        if (before !== undefined || !a.blank) conceptMastery[a.conceptId] = after
+        return { conceptId: a.conceptId, correct: a.correct, blank: a.blank, before: before ?? null, after }
+    })
+    const { froze: _froze, ...streak } = advanceStreak(s.streak)
+    const correct = answers.filter((a) => a.correct).length
+    const last: TestAttempt = { at: new Date().toISOString(), correct, total: answers.length, durationSec, timedOut, concepts }
+    const bestBetter = !prev || correct / answers.length > prev.bestCorrect / prev.bestTotal
+    const record: TestRecord = {
+        bestCorrect: bestBetter ? correct : prev.bestCorrect,
+        bestTotal: bestBetter ? answers.length : prev.bestTotal,
+        attempts: (prev?.attempts ?? 0) + 1,
+        last,
+    }
+    return { conceptMastery, streak, today: dailyFor(s.daily), correct, record }
 }
 
 export const useOrbitStore = create<OrbitState>()(
@@ -227,14 +286,26 @@ export const useOrbitStore = create<OrbitState>()(
                     return { lessonEdits: edits ? { ...rest, [lessonId]: edits } : rest }
                 }),
 
-            recordQuizResult: ({ lessonId, conceptId, questionId, outcome, attempts, lessonQuestionIds }) => {
+            recordQuizResult: ({ lessonId, conceptId, questionId, outcome, attempts, lessonQuestionIds, firstWrongOption, fixedByVariantId }) => {
                 if (get().quizResults[questionId]) return 0
                 const xp = QUIZ_XP[outcome]
                 set((s) => {
                     const quizResults = {
                         ...s.quizResults,
-                        [questionId]: { lessonId, conceptId, outcome, attempts, answeredAt: new Date().toISOString() },
+                        [questionId]: { lessonId, conceptId, outcome, attempts, answeredAt: new Date().toISOString(), firstWrongOption, fixedByVariantId },
                     }
+                    // Câu quiz đầu tiên của bài: chụp trạng thái trước khi câu này được tính (mức nắm vững, huy hiệu, XP)
+                    const stageStart = s.stageStart[lessonId]
+                        ? s.stageStart
+                        : {
+                              ...s.stageStart,
+                              [lessonId]: {
+                                  at: new Date().toISOString(),
+                                  mastery: Object.fromEntries((getLesson(lessonId)?.concepts ?? []).map((c) => [c.id, s.conceptMastery[c.id] ?? null])),
+                                  badgeIds: s.earnedBadgeIds,
+                                  xp: s.xp,
+                              },
+                          }
                     // Mức nắm vững khái niệm = trung bình các câu đã làm của khái niệm đó
                     const ofConcept = Object.values(quizResults).filter((r) => r.conceptId === conceptId)
                     const mastery = ofConcept.reduce((sum, r) => sum + OUTCOME_MASTERY[r.outcome], 0) / ofConcept.length
@@ -253,6 +324,7 @@ export const useOrbitStore = create<OrbitState>()(
                     }
                     return {
                         quizResults,
+                        stageStart,
                         xp: s.xp + xp,
                         conceptMastery,
                         streak,
@@ -277,40 +349,42 @@ export const useOrbitStore = create<OrbitState>()(
             },
 
             recordTestResult: ({ courseId, answers, durationSec, timedOut }) => {
-                const s0 = get()
-                const correct = answers.filter((a) => a.correct).length
-                const prev = s0.testRecords[courseId]
-                const xp = testXp(correct, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).total
+                const prev = get().testRecords[courseId]
+                const xp = testXp(answers.filter((a) => a.correct).length, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).total
                 set((s) => {
-                    const conceptMastery = { ...s.conceptMastery }
-                    const concepts: TestAttempt['concepts'] = answers.map((a) => {
-                        const before = s.conceptMastery[a.conceptId]
-                        const after = masteryAfterTest(before, a)
-                        // Chưa có dữ liệu về khái niệm và bỏ trống: không có bằng chứng gì để ghi vào cây kỹ năng
-                        if (before !== undefined || !a.blank) conceptMastery[a.conceptId] = after
-                        return { conceptId: a.conceptId, correct: a.correct, blank: a.blank, before: before ?? null, after }
-                    })
-                    const { froze: _froze, ...streak } = advanceStreak(s.streak)
-                    const today = dailyFor(s.daily)
-                    const last: TestAttempt = { at: new Date().toISOString(), correct, total: answers.length, durationSec, timedOut, concepts }
-                    const bestBetter = !prev || correct / answers.length > prev.bestCorrect / prev.bestTotal
-                    const bestCorrect = bestBetter ? correct : prev.bestCorrect
-                    const bestTotal = bestBetter ? answers.length : prev.bestTotal
-                    const testRecords = {
-                        ...s.testRecords,
-                        [courseId]: { bestCorrect, bestTotal, attempts: (prev?.attempts ?? 0) + 1, last },
-                    }
+                    const done = applyTest(s, s.testRecords[courseId], answers, durationSec, timedOut)
+                    const testRecords = { ...s.testRecords, [courseId]: done.record }
                     return {
                         xp: s.xp + xp,
-                        conceptMastery,
-                        streak,
-                        daily: { ...today, answered: today.answered + correct, testsTaken: today.testsTaken + 1 },
-                        earnedBadgeIds: evaluateBadges({ conceptMastery, quizResults: s.quizResults, streak, directorBest: s.directorBest, testBest: bestTestRatio(testRecords) }, s.earnedBadgeIds),
+                        conceptMastery: done.conceptMastery,
+                        streak: done.streak,
+                        daily: { ...done.today, answered: done.today.answered + done.correct, testsTaken: done.today.testsTaken + 1 },
+                        earnedBadgeIds: evaluateBadges({ conceptMastery: done.conceptMastery, quizResults: s.quizResults, streak: done.streak, directorBest: s.directorBest, testBest: bestTestRatio(testRecords) }, s.earnedBadgeIds),
                         testRecords,
                     }
                 })
                 return xp
             },
+
+            recordCheckpointResult: ({ lessonId, answers, durationSec, timedOut }) => {
+                const prev = get().checkpoints[lessonId]
+                const xp = testXp(answers.filter((a) => a.correct).length, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).total
+                set((s) => {
+                    const done = applyTest(s, s.checkpoints[lessonId], answers, durationSec, timedOut)
+                    // Test cuối chặng không tính cho huy hiệu "Vượt ải cuối chương" (chỉ test cuối chương), nhưng mức nắm vững vẫn đổi nên huy hiệu theo khái niệm vẫn xét lại
+                    return {
+                        xp: s.xp + xp,
+                        conceptMastery: done.conceptMastery,
+                        streak: done.streak,
+                        daily: { ...done.today, answered: done.today.answered + done.correct },
+                        earnedBadgeIds: evaluateBadges({ conceptMastery: done.conceptMastery, quizResults: s.quizResults, streak: done.streak, directorBest: s.directorBest, testBest: bestTestRatio(s.testRecords) }, s.earnedBadgeIds),
+                        checkpoints: { ...s.checkpoints, [lessonId]: done.record },
+                    }
+                })
+                return xp
+            },
+
+            markRecapSeen: (lessonId) => set((s) => (s.recapSeen[lessonId] ? s : { recapSeen: { ...s.recapSeen, [lessonId]: true } })),
 
             claimMission: (missionId) => {
                 const mission = MISSIONS.find((m) => m.id === missionId)
@@ -324,9 +398,14 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 4,
-            // Phiên bản cũ chưa có hồ sơ demo: bỏ để dùng hồ sơ mặc định mới
-            migrate: () => makeDemoProfile() as unknown as OrbitState,
+            version: 5,
+            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 lên v5 giữ dữ liệu, thêm tổng kết chặng (stageStart của demo, test cuối chặng, recapSeen).
+            migrate: (persisted, version) => {
+                const demo = makeDemoProfile() as unknown as OrbitState
+                if (version < 4 || !persisted || typeof persisted !== 'object') return demo
+                const old = persisted as Partial<OrbitState>
+                return { ...old, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {} } as OrbitState
+            },
             storage: createJSONStorage(() => safeLocalStorage),
         },
     ),

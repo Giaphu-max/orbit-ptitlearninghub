@@ -87,6 +87,11 @@ UI là điểm mạnh nhất của sản phẩm (nhóm học khoa thiết kế),
    - **Nhiệm vụ hằng ngày**, **huy hiệu** gắn năng lực cụ thể, **bảng xếp hạng lớp** (dữ liệu mẫu, có thể ẩn tên).
 8. **Virtual Director**: studio 3D đơn giản (phông, vật thể, 2–3 đèn), chỉnh tiêu cự/góc máy/đèn, lưới 1/3; chụp canvas → `api/grade-photo.ts` chấm bố cục & ánh sáng, khoanh vùng cần chỉnh.
 
+9. **Test cuối chặng + màn tổng kết chặng** (chặng = một bài trong khóa):
+   - **Test cuối chặng** `/checkpoint/:lessonId`: 6 câu từ ngân hàng câu hỏi của bài (mỗi khái niệm ít nhất 1 câu, ưu tiên câu chưa gặp trong video), dùng lại giao diện làm bài của test cuối chương (60s/câu, đạt từ 80%, XP theo `final-test.ts`), cập nhật mức nắm vững; nộp xong sang `/recap/:lessonId`. Màn thưởng khi xong bài: nút chính "Làm test cuối chặng · 6 câu", nút phụ "Xem tổng kết".
+   - **Tổng kết chặng** `/recap/:lessonId` (`orbit-recap-view.tsx`, số liệu ở `src/lib/recap.ts`): thanh tiến độ khóa, "Xong chặng N.", vòng điểm test, XP chặng (chia theo nguồn), câu trong video, mức nắm vững từng khái niệm trước/sau (vạch 80%, chip mốc video), "Học từ lỗi sai", huy hiệu mới hoặc gần đạt nhất, ôn tiếp (kèm bài Daily ưu tiên ngày mai), chặng kế. Hiệu ứng chỉ chạy lần đầu mở (`recapSeen`).
+   - Store: `stageStart[lessonId]` (mức nắm vững, huy hiệu, XP lúc trả lời câu quiz đầu tiên của bài; hồ sơ demo có sẵn cho `ban-chat-dung-phi-tuyen`), `checkpoints[lessonId]`, `QuizResult.firstWrongOption/fixedByVariantId`. Trang khóa học: chặng đã xong có link "Xem tổng kết".
+
 ### P2 – Nếu còn thời gian
 - Test tổng hợp cuối chương + gợi ý lộ trình ôn tập
 - Prompt-to-Environment (AI trả JSON thông số đèn cho studio)

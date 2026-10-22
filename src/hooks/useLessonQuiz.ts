@@ -3,7 +3,6 @@ import type { Lesson, LessonQuizQuestion } from '@/data/types'
 import { explainAnswer } from '@/lib/api'
 import { questionAt, type QuizOutcome } from '@/lib/quiz'
 import { announceRewards, lessonCompleteScreen } from '@/lib/gamification'
-import { afterLesson } from '@/lib/next-step'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 // Vòng quiz củng cố trong video:
@@ -59,6 +58,8 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
     const prevTimeRef = useRef(currentTime)
     const requestRef = useRef(0)
     const resumeRef = useRef<() => void>(() => {})
+    /** Phương án sai ở lần đầu của từng câu gốc (id câu → chữ phương án), để tổng kết chặng kể lại lỗi sai */
+    const firstWrongRef = useRef<Record<string, string>>({})
 
     const open = useCallback(
         (root: LessonQuizQuestion) => {
@@ -101,14 +102,16 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
                 outcome,
                 attempts,
                 lessonQuestionIds: lesson.quiz.map((q) => q.id),
+                firstWrongOption: outcome === 'correct' ? undefined : firstWrongRef.current[root.id],
+                fixedByVariantId: outcome === 'corrected' ? questionAt(root, attempts - 1)?.id : undefined,
             })
             setReward({ key: Date.now(), xp, outcome, repeat })
 
             // Màn thưởng phủ đỏ chỉ ở khoảnh khắc đáng nhớ: xong bài, lên cấp, huy hiệu mới
             const after = useOrbitStore.getState()
             const lessonDone = !wasDone && (after.lessonProgress[lesson.id]?.completed ?? false)
-            // Bài xong: nút chính sang bài kế (hoặc test cuối chương). Chưa xong (lên cấp/huy hiệu giữa bài): chỉ đóng màn và xem tiếp video
-            const finished = afterLesson(lesson.id)
+            // Bài xong: nút chính làm test cuối chặng 6 câu, nút phụ xem tổng kết. Chưa xong (lên cấp/huy hiệu giữa bài): chỉ đóng màn và xem tiếp video
+            const finished = { label: 'Làm test cuối chặng · 6 câu', to: `/checkpoint/${lesson.id}`, secondary: { label: 'Xem tổng kết', to: `/recap/${lesson.id}` } }
             announceRewards(before, after, lessonDone ? lessonCompleteScreen(lesson, after.quizResults, root.conceptId, finished) : undefined, {
                 source: 'lesson',
                 afterAnswer: true,
@@ -132,6 +135,7 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
                 return
             }
 
+            if (attempt === 0) firstWrongRef.current[root.id] = question.options[chosen]
             const isLast = !questionAt(root, attempt + 1)
             if (isLast) finish(root, 'missed', attempt + 1)
 

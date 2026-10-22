@@ -47,6 +47,31 @@ export function XpChip({ className }: { className: string }) {
         }
     }, [xp])
 
+    // Màn tổng kết chặng phát lại phần XP của chặng vào chip (nảy rồi đếm từ `from` lên `to`)
+    useEffect(() => {
+        let raf = 0
+        const onCount = (e: Event) => {
+            const { from, to } = (e as CustomEvent<{ from: number; to: number }>).detail
+            cancelAnimationFrame(raf)
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || to <= from) return
+            chipRef.current?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)', offset: 0.3 }, { transform: 'scale(1)' }], { duration: 500, easing: 'cubic-bezier(.34,1.8,.5,1)' })
+            const t0 = performance.now()
+            const tick = (now: number) => {
+                const k = Math.min(1, (now - t0) / 900)
+                const n = Math.round(from + (to - from) * (1 - (1 - k) ** 3))
+                shownRef.current = n
+                setShown(n)
+                if (k < 1) raf = requestAnimationFrame(tick)
+            }
+            raf = requestAnimationFrame(tick)
+        }
+        window.addEventListener('orbit:xp-count', onCount)
+        return () => {
+            window.removeEventListener('orbit:xp-count', onCount)
+            cancelAnimationFrame(raf)
+        }
+    }, [])
+
     return (
         <Link ref={chipRef} to="/journey" data-xp-chip className={className}>
             <Zap size={14} className="fill-current" />

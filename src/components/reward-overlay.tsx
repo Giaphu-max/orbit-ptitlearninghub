@@ -354,10 +354,10 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                         <button
                             type="button"
                             tabIndex={armed ? 0 : -1}
-                            onClick={() => go({ to: '/' })}
+                            onClick={() => go({ to: event.next.secondary?.to ?? '/' })}
                             className="rw-btn-ghost flex-1 rounded-[14px] p-4 text-base font-bold transition duration-fast focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ink-foreground/50"
                         >
-                            Về trang chủ
+                            {event.next.secondary?.label ?? 'Về trang chủ'}
                         </button>
                     </div>
                 </div>

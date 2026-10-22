@@ -18,6 +18,8 @@ export interface RewardNext {
     label: string
     to?: string
     onClick?: () => void
+    /** Nút phụ thay cho "Về trang chủ" */
+    secondary?: { label: string; to: string }
 }
 
 /** Một màn nhận thưởng đầy đủ: XP + chi tiết + cấp độ + huy hiệu hoặc mức nắm vững + mở khóa. */

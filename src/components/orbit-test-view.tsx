@@ -21,7 +21,7 @@ import { formatTime } from '@/lib/youtube'
 import { useOrbitStore, type TestAttempt } from '@/store/useOrbitStore'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
-const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.max(0, sec) % 60).padStart(2, '0')}`
+export const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.max(0, sec) % 60).padStart(2, '0')}`
 
 type Phase =
     | { kind: 'intro' }
@@ -141,7 +141,7 @@ function Intro({ courseTitle, bankSize, conceptCount, last, onStart, onShowLast 
     )
 }
 
-function Fact({ icon, label, value, note }: { icon: React.ReactNode; label: string; value: string; note: string }) {
+export function Fact({ icon, label, value, note }: { icon: React.ReactNode; label: string; value: string; note: string }) {
     return (
         <div className="flex flex-col rounded-card border border-border bg-card p-5 shadow-card">
             <dt className="flex items-center gap-2 text-eyebrow uppercase text-muted-foreground">
@@ -156,7 +156,7 @@ function Fact({ icon, label, value, note }: { icon: React.ReactNode; label: stri
 
 // ─── Làm bài ───────────────────────────────────────────────────────────────
 
-function Running({
+export function Running({
     phase,
     onSubmit,
     onQuit,

@@ -13,6 +13,8 @@ const pages = {
     journey: () => import('@/components/orbit-journey-view').then((m) => m.OrbitJourneyView),
     daily: () => import('@/components/orbit-daily-view').then((m) => m.OrbitDailyView),
     test: () => import('@/components/orbit-test-view').then((m) => m.OrbitTestView),
+    checkpoint: () => import('@/components/orbit-checkpoint-view').then((m) => m.OrbitCheckpointView),
+    recap: () => import('@/components/orbit-recap-view').then((m) => m.OrbitRecapView),
     studio: () => import('@/components/orbit-studio-view').then((m) => m.OrbitStudioView),
 }
 const page = (key: keyof typeof pages) => async () => ({ Component: (await pages[key]()) as ComponentType })
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
             { path: '/journey', lazy: page('journey') },
             { path: '/daily/:articleId', lazy: page('daily') },
             { path: '/test/:courseId', lazy: page('test') },
+            { path: '/checkpoint/:lessonId', lazy: page('checkpoint') },
+            { path: '/recap/:lessonId', lazy: page('recap') },
             { path: '/studio', lazy: page('studio') },
             { path: '/teacher', lazy: page('teacher') },
             { path: '*', element: <Navigate to="/" replace /> },
