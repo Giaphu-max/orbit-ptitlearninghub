@@ -24,9 +24,7 @@ const polar = (azDeg: number, elDeg: number, r: number): Vec3 => {
 }
 const KEY_POS = polar(DEFAULT_SETUP.azimuthDeg + DEFAULT_SETUP.keyAngleDeg, LOOK.keyElevationDeg, 6)
 const FILL_POS = polar(DEFAULT_SETUP.azimuthDeg - KEY_SIDE * LOOK.fillSideDeg, LOOK.fillElevationDeg, 6)
-const RIM_POS = polar(DEFAULT_SETUP.azimuthDeg + 180 + KEY_SIDE * LOOK.rimSideDeg, LOOK.rimElevationDeg, 5)
 /** Đèn viền mặc định là 0; bật nhẹ để thấy viền đỏ */
-const RIM_ON = 30
 
 const band = (s: number, a: number, b: number) => Math.max(0, Math.min(1, (s - a) / (b - a)))
 const lerp = THREE.MathUtils.lerp
@@ -59,15 +57,12 @@ export function PracticeRoom({ stage, floorY, worldScale }: { stage: React.Mutab
         [lampMat, mats],
     )
     const keyT = useMemo(() => new THREE.Object3D(), [])
-    const rimT = useMemo(() => new THREE.Object3D(), [])
     const keyL = useRef<THREE.SpotLight>(null)
     const fillL = useRef<THREE.PointLight>(null)
-    const rimL = useRef<THREE.SpotLight>(null)
     const roomPts = useRef<(THREE.PointLight | null)[]>([])
     const ws2 = (K * worldScale) ** 2
     const I_KEY = (DEFAULT_SETUP.key / 100) * 140 * ws2
     const I_FILL = (DEFAULT_SETUP.fill / 100) * 40 * ws2
-    const I_RIM = (RIM_ON / 100) * 160 * ws2
 
     useFrame(() => {
         const S = stage.current
@@ -76,12 +71,8 @@ export function PracticeRoom({ stage, floorY, worldScale }: { stage: React.Mutab
         lampMat.emissiveIntensity = lerp(1.1, 0.15, st)
         if (keyL.current) {
             keyL.current.intensity = I_KEY * st
-            // Chỉ đổ bóng khi đèn thật sự sáng: shadow map luôn được vẽ khi đã được đưa vào shader
-            const shadow = st > 0.01
-            if (keyL.current.castShadow !== shadow) keyL.current.castShadow = shadow
         }
         if (fillL.current) fillL.current.intensity = I_FILL * st
-        if (rimL.current) rimL.current.intensity = I_RIM * st
     })
 
     return (
@@ -134,10 +125,8 @@ export function PracticeRoom({ stage, floorY, worldScale }: { stage: React.Mutab
                     <PropColumn mats={mats} />
                 </group>
                 <primitive object={keyT} position={STUDIO_TARGET} />
-                <primitive object={rimT} position={STUDIO_TARGET} />
-                <spotLight ref={keyL} target={keyT} position={KEY_POS} color={LOOK.keyColor} intensity={0} angle={0.6} penumbra={0.6} shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
+                <spotLight ref={keyL} target={keyT} castShadow position={KEY_POS} color={LOOK.keyColor} intensity={0} angle={0.6} penumbra={0.6} shadow-mapSize={[1024, 1024]} shadow-bias={-0.0004} />
                 <pointLight ref={fillL} position={FILL_POS} color={LOOK.fillColor} intensity={0} />
-                <spotLight ref={rimL} target={rimT} position={RIM_POS} color={LOOK.rimColor} intensity={0} angle={0.7} penumbra={0.5} />
             </group>
 
             {[-22].map((z, i) => (

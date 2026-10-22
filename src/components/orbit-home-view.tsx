@@ -252,7 +252,7 @@ const Title = ({ id, children }: { id?: string; children: string }) => (
 )
 const Lead = ({ children }: { children: ReactNode }) => <p data-s data-compact className="mb-6 mt-4 text-[17px] leading-relaxed text-muted-foreground">{children}</p>
 /** Thẻ sáng (nền card) theo giao diện, nổi lên trên cảnh 3D */
-const lightCard = 'rounded-[20px] border border-border bg-card/95 shadow-raised backdrop-blur-md'
+const lightCard = 'rounded-[20px] border border-border bg-card/95 shadow-raised'
 
 // ─── Chương 0: hero ────────────────────────────────────────────────────────
 

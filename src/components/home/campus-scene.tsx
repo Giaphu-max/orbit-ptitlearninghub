@@ -2,12 +2,13 @@ import { courseOfBuilding } from '@/lib/campus-courses'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Html, OrbitControls } from '@react-three/drei'
+import { Html, OrbitControls, PerformanceMonitor } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
 import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
 import { STUDIO_Z } from './campus-room'
+import { PERF_ON, PerfHud } from './campus-perf'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
@@ -18,6 +19,9 @@ import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type V
 // nhân π để ra đúng màu như bản three r128 mà bản gốc dùng.
 
 const C = CAMPUS
+
+/** Độ phân giải tối đa của canvas (MacBook DPR 2 vẽ ở 1.5 để nhẹ hơn) */
+const DPR_MAX = 1.5
 
 // Hằng số ngoài component để useMemo của TextPlane không tính lại mỗi lần render
 const T_PTIT: TextOpts = { size: 200 }
@@ -784,7 +788,6 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
-    const rim = useRef<THREE.DirectionalLight>(null)
     const controls = useRef<OrbitControlsImpl>(null)
     const registry = useRef(new Map<string, THREE.Group>())
     const lifts = useRef(new Map<string, number>())
@@ -808,6 +811,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const [visibleLabels, setVisibleLabels] = useState<ReadonlySet<string>>(() => new Set())
     const labelKey = useRef('')
     const frame = useRef(0)
+    const shadowSig = useRef('')
     const raycaster = useMemo(() => new THREE.Raycaster(), [])
     const ndc = useMemo(() => new THREE.Vector2(-9, -9), [])
     // Sương lấy từ token trời (--sky-*), nền nội thất từ --stage-deep. Đọc lại khi đổi giao diện sáng/tối (trời ngoài trời là gradient CSS sau canvas trong suốt).
@@ -849,11 +853,10 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
         if (hemi.current) {
-            hemi.current.intensity = (0.75 - n * 0.4) * Math.PI * (1 - 0.68 * inside)
+            hemi.current.intensity = (0.83 - n * 0.4) * Math.PI * (1 - 0.68 * inside)
             hemi.current.color.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_NIGHT, n)
             hemi.current.groundColor.copy(HEMI_GROUND_DAY).lerp(HEMI_GROUND_NIGHT, n)
         }
-        if (rim.current) rim.current.intensity = (0.35 + n * 0.25) * Math.PI * (1 - inside)
     }
 
     // Màn chuyển giao diện đang che: đặt thẳng ánh sáng mới rồi vẽ đúng một khung (canvas đang dừng)
@@ -881,13 +884,17 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
     // Giảm chất lượng: shadow map nhỏ hơn (tạo lại khi đổi kích thước)
     const setDpr = useThree((s) => s.setDpr)
+    const gl = useThree((s) => s.gl)
+    const maxDpr = Math.min(DPR_MAX, window.devicePixelRatio || 1)
     useEffect(() => {
         if (!lowQuality || !sun.current) return
         setDpr(1)
         sun.current.shadow.mapSize.set(1024, 1024)
         sun.current.shadow.map?.dispose()
         sun.current.shadow.map = null
-    }, [lowQuality, setDpr])
+        // autoUpdate đang tắt: phải yêu cầu vẽ lại để shadow map được tạo ngay, không để shader lấy mẫu texture rỗng
+        gl.shadowMap.needsUpdate = true
+    }, [lowQuality, setDpr, gl])
 
     // Bấm (không phải kéo) vào tòa có khóa học: mở khóa đó. Tia lấy theo điểm bấm nên cảm ứng cũng dùng được.
     useEffect(() => {
@@ -1087,11 +1094,15 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         // Chuyển hoàng hôn ↔ buổi tối
         nightRef.current += (nightTarget.current - nightRef.current) * (reduce ? 1 : 0.04)
         applyLights(nightRef.current)
-        // Chỉ một đèn đổ bóng tại một thời điểm: nắng ngoài trời; vào hẳn trong nhà (nắng đã về 0) thì tắt, nhường đèn key của studio.
-        // Đèn castShadow mà không được vẽ shadow map sẽ làm sampler bóng thiếu texture (GL_INVALID_OPERATION), nên luôn bật/tắt cùng lúc với nguồn sáng.
-        const sunShadow = indoor.current < 1
-        if (sun.current && sun.current.castShadow !== sunShadow) sun.current.castShadow = sunShadow
-        void state
+        // Bóng chỉ vẽ lại khi có vật chuyển động đổ bóng (tòa nâng lên khi hover, cửa kính mở), đổi vào/ra nhà hoặc chất lượng, và vài khung đầu.
+        // Số đèn và castShadow cố định (đổi chúng làm three.js biên dịch lại shader gây giật); shadowMap.autoUpdate = false.
+        let liftSum = 0
+        lifts.current.forEach((v) => (liftSum += v))
+        const sig = `${Math.round(liftSum * 200)}|${Math.round(band(sm.current, 1.37, 1.47) * 50)}|${indoor.current}|${lowRef.current ? 1 : 0}`
+        if (sig !== shadowSig.current || frame.current < 10) {
+            shadowSig.current = sig
+            state.gl.shadowMap.needsUpdate = true
+        }
     })
 
     return (
@@ -1118,7 +1129,10 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                     onEnd={onEnd}
                 />
             )}
-            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.75 * Math.PI]} />
+            {/* fps thấp thì hạ độ phân giải về 1, ổn định thì trả lại */}
+            <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => !lowRef.current && setDpr(maxDpr)} />
+            {PERF_ON && <PerfHud />}
+            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.83 * Math.PI]} />
             <directionalLight
                 ref={sun}
                 color={CAMPUS.sunlight}
@@ -1134,7 +1148,6 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 shadow-camera-far={120}
                 shadow-bias={-0.0006}
             />
-            <directionalLight ref={rim} color={CAMPUS.rimLight} intensity={0.35 * Math.PI} position={[30, 14, -30]} />
             <group ref={world}>
                 <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={sm} coursePct={coursePct} lowQuality={lowQuality} />
             </group>
@@ -1156,12 +1169,40 @@ export interface CampusSceneProps {
     onOpenCourse?: (courseId: string) => void
 }
 
+/** Không vẽ khi không ai thấy: tab ẩn, hoặc footer đã phủ kín màn hình. */
+function useSceneHidden(kiosk: KioskBridge) {
+    const [hidden, setHidden] = useState(false)
+    useEffect(() => {
+        let raf = 0
+        const check = () => {
+            raf = 0
+            const top = kiosk.footer.current?.getBoundingClientRect().top ?? 1
+            setHidden(document.hidden || top <= 0)
+        }
+        const queue = () => {
+            if (!raf) raf = requestAnimationFrame(check)
+        }
+        check()
+        window.addEventListener('scroll', queue, { passive: true })
+        window.addEventListener('resize', queue)
+        document.addEventListener('visibilitychange', queue)
+        return () => {
+            cancelAnimationFrame(raf)
+            window.removeEventListener('scroll', queue)
+            window.removeEventListener('resize', queue)
+            document.removeEventListener('visibilitychange', queue)
+        }
+    }, [kiosk])
+    return hidden
+}
+
 export default function CampusScene({ night, reduce, staticMode, flat, stage, dailyLit, kiosk, coursePct, onOpenCourse }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
     const canvasWrap = useRef<HTMLDivElement>(null)
     const frozen = useThemeStore((s) => s.frozen)
+    const hidden = useSceneHidden(kiosk)
 
     // Chờ font Be Vietnam Pro (tối đa 1,5 giây) để chữ trên biển hiệu không bị font dự phòng
     useEffect(() => {
@@ -1201,13 +1242,17 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
         <div ref={canvasWrap} className="absolute inset-0">
             {fontsReady && (
                 <Canvas
-                    frameloop={frozen ? 'never' : 'always'}
+                    frameloop={frozen || hidden ? 'never' : 'always'}
                     legacy
                     flat
                     shadows="percentage"
-                    dpr={[1, 2]}
+                    dpr={[1, DPR_MAX]}
                     camera={{ fov: FOV, position: START_POS.toArray(), near: 1, far: 400 }}
                     gl={{ antialias: true, alpha: true }}
+                    onCreated={({ gl }) => {
+                        gl.shadowMap.autoUpdate = false
+                        gl.shadowMap.needsUpdate = true
+                    }}
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >

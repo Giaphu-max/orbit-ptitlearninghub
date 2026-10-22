@@ -313,7 +313,7 @@ function Kiosk() {
 
 const DOWNLIGHTS: [number, number][] = [[-16.5, 8], [-16.5, 1], [-16.5, -6], [16.5, 8], [16.5, 1], [16.5, -6], [-7, -7.5], [7, -7.5]]
 // Ít đèn điểm để shader không phình (mỗi đèn nhân chi phí biên dịch của mọi vật liệu)
-const LOBBY_LIGHTS: Vec3[] = [[-12, 6, 6], [12, 6, 6], [0, 6, -4]]
+const LOBBY_LIGHTS: Vec3[] = [[-9, 6, 2], [9, 6, 2]]
 const PLANT_LEAVES = Array.from({ length: 9 }, (_, i) => [Math.cos(i * 0.7) * 0.8, 1.25 + (i % 3) * 0.2, 3 + Math.sin(i * 0.7) * 0.8, i % 2] as const)
 
 /** Sảnh A2 (rộng 20 × sâu 11 sau khi thu nhỏ): sáng dần từ lúc máy còn đứng ngoài nhìn qua kính. */
@@ -336,7 +336,7 @@ export function A2Lobby({ stage }: { stage: React.MutableRefObject<number> }) {
     }, [floorMat])
 
     useFrame(() => {
-        const k = lerp(5, 15, band(stage.current, 1.1, 1.43)) * (1 - band(stage.current, 2.2, 2.6) * 0.5)
+        const k = lerp(7.5, 22, band(stage.current, 1.1, 1.43)) * (1 - band(stage.current, 2.2, 2.6) * 0.5)
         for (const l of lights.current) if (l) l.intensity = k
     })
 
@@ -448,7 +448,7 @@ export function A2Lobby({ stage }: { stage: React.MutableRefObject<number> }) {
             <PracticeRoom stage={stage} floorY={FY} worldScale={LOBBY_SCALE} />
 
             {LOBBY_LIGHTS.map(([x, y, z], i) => (
-                <pointLight key={i} ref={(l) => void (lights.current[i] = l)} position={[x, y, z]} color={L.point} intensity={5} distance={18} decay={1.2} />
+                <pointLight key={i} ref={(l) => void (lights.current[i] = l)} position={[x, y, z]} color={L.point} intensity={7.5} distance={22} decay={1.2} />
             ))}
         </group>
     )
