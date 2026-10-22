@@ -5,8 +5,8 @@ import { CourseArt } from '@/components/courses/course-cover'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 
 /**
- * Cầu nối giữa cảnh 3D và DOM: cảnh ghi trực tiếp (trong useFrame, không qua React) transform/độ mờ của màn kiosk, biến CSS --kiosk-focus
- * lên phần tử gốc, độ mờ của canvas theo footer, độ mờ và chú thích của dock.
+ * Cầu nối giữa cảnh 3D và DOM: cảnh ghi trực tiếp (trong useFrame, không qua React) transform/độ mờ của màn kiosk,
+ * độ mờ của các phần tử lá (veil, rail, dim; không dùng biến CSS ở phần tử cha), độ mờ của canvas theo footer, độ mờ và chú thích của dock.
  */
 export interface KioskBridge {
     screen: RefObject<HTMLDivElement | null>
@@ -19,6 +19,11 @@ export interface KioskBridge {
     cap: RefObject<HTMLElement | null>
     /** Lớp tối màn che các điểm cắt cảnh */
     dip: RefObject<HTMLDivElement | null>
+    /** Lớp mờ nền phía trái (stage-veil) và rail chương: opacity = 1 - kiosk focus, ghi thẳng khi đổi quá 0,01 */
+    veil: RefObject<HTMLElement | null>
+    rail: RefObject<HTMLElement | null>
+    /** Lớp màu nền mờ phủ canvas khi có chữ (stage-dim) */
+    dim: RefObject<HTMLDivElement | null>
     /** Chế độ làm mờ cảnh 3D: camera ngừng theo cuộn */
     calm: MutableRefObject<boolean>
 }
@@ -71,7 +76,7 @@ export function KioskScreen({ screenRef }: { screenRef: RefObject<HTMLDivElement
             inert
             role="region"
             aria-label="Khóa học của bạn"
-            style={{ width: KIOSK_W, height: KIOSK_H, opacity: 0, visibility: 'hidden', pointerEvents: 'none', willChange: 'transform', transformStyle: 'flat', contain: 'strict' }}
+            style={{ width: KIOSK_W, height: KIOSK_H, opacity: 0, visibility: 'hidden', pointerEvents: 'none', transformStyle: 'flat', contain: 'strict' }}
             className="fixed left-0 top-0 z-[5] flex origin-top-left flex-col gap-5 overflow-hidden bg-ink p-12 text-ink-foreground"
         >
             <div>

@@ -256,7 +256,6 @@
     opacity: 0;
     transform: translate3d(0, var(--reveal-offset), 0);
     transition: opacity 0.45s, transform 0.6s var(--ease-out);
-    will-change: opacity, transform;
   }
   /* Nhòe chỉ cho tiêu đề và dòng ngắn; thẻ và khối lớn chỉ mờ + trượt (blur trên vùng lớn rất tốn GPU) */
   [data-panel] :is(h1, h2)[data-s],
@@ -293,10 +292,17 @@
     }
   }
   /* Có chữ trên màn: cảnh bớt rực nhẹ bằng một lớp màu nền mờ phủ lên (không dùng filter trên canvas: filter ép cả canvas đi qua một lượt hợp thành riêng).
-     --on-stage 0→1 do cảnh làm mượt. Chế độ làm mờ cảnh 3D (nút ở góc phải dưới trang chủ) cũng chỉ dùng opacity. */
+     Cảnh ghi thẳng opacity (0 → 0,12) vào lớp này khi giá trị đổi, không đặt biến CSS ở phần tử cha. Chế độ làm mờ cảnh 3D (nút ở góc phải dưới trang chủ) cũng chỉ dùng opacity. */
   .stage-dim {
     background-color: hsl(var(--stage-bg));
-    opacity: calc(0.12 * var(--on-stage, 0));
+    opacity: 0;
+  }
+  /* ?noreveal (công cụ đo hiệu năng): chữ hiện ngay, không transition */
+  .no-reveal [data-panel] [data-s] {
+    transition: none !important;
+    filter: none !important;
+    transform: none !important;
+    opacity: 1 !important;
   }
   [data-calm='true'] #home-stage {
     opacity: 0.28;

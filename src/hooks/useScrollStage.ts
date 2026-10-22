@@ -2,6 +2,10 @@ import { useEffect, useRef, useState, type MutableRefObject, type RefObject } fr
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
 import { setChapterScroller, setJourneyChapter, setLenis } from '@/lib/scroll'
+import { addFrame } from '@/lib/frame-loop'
+import { page } from '@/lib/page-metrics'
+import { FLAGS, timed } from '@/lib/perf'
+import { stageSignal } from '@/lib/stage-signal'
 
 /** Dưới ngưỡng này trang chủ dùng canvas 55svh phía trên (bố cục màn hẹp); máy quay vẫn bay như desktop. */
 export const STATIC_QUERY = '(max-width: 859px)'
@@ -81,7 +85,7 @@ interface Options {
     journey: boolean
     /** Thanh tiến độ cuộn: hook ghi trực tiếp transform, không qua state. */
     barRef?: RefObject<HTMLElement | null>
-    /** Phần tử gốc của trang chủ: hook ghi data-on-stage và đánh dấu mục thanh chương đang chọn. */
+    /** Phần tử gốc của trang chủ: hook đánh dấu mục thanh chương đang chọn, tìm lớp che cắt cảnh và dòng hướng dẫn. */
     rootRef: RefObject<HTMLElement | null>
     /** Chế độ "Làm mờ cảnh 3D": không khóa cuộn, chữ hiện ngay */
     calmRef: MutableRefObject<boolean>
@@ -100,11 +104,18 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
 
     useEffect(() => {
         let lastScrolled: boolean | null = null
+        let barScale = 0
+        let barLast = -1
+        const flushBar = () => {
+            if (!barRef?.current || Math.abs(barScale - barLast) < 0.0005) return
+            barLast = barScale
+            barRef.current.style.transform = `scaleX(${barScale.toFixed(4)})`
+        }
         const updateChrome = () => {
-            const vh = window.innerHeight
+            // Không đọc layout: scrollY từ sự kiện, scrollHeight đo sẵn ở page-metrics; thanh tiến độ ghi tối đa một lần mỗi khung (transform scaleX)
             const y = window.scrollY
-            const max = document.documentElement.scrollHeight - vh
-            if (barRef?.current) barRef.current.style.transform = `scaleX(${max > 0 ? clamp(y / max) : 0})`
+            page.y = y
+            barScale = page.max > 0 ? clamp(y / page.max) : 0
             const isScrolled = y > 40
             if (isScrolled !== lastScrolled) {
                 lastScrolled = isScrolled
@@ -130,6 +141,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 })
                 stage.current = clamp(st, 0, CHAPTERS - 1)
                 updateChrome()
+                flushBar()
             }
             read()
             window.addEventListener('scroll', read, { passive: true })
@@ -195,7 +207,9 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             veil.style.opacity = '1'
             void veil.offsetWidth
             veil.style.transition = `opacity ${CUT_FADE_S}s cubic-bezier(0.2, 0.7, 0.2, 1)`
+            veil.style.willChange = 'opacity' // chỉ trong lúc mờ đi
             veil.style.opacity = '0'
+            window.setTimeout(() => (veil.style.willChange = ''), CUT_FADE_S * 1000 + 100)
         }
 
         // Dòng hướng dẫn cho người mới (góc dưới trái): chỉ ghi DOM khi đổi
@@ -235,7 +249,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 p.classList.toggle('past', k < i)
             })
             shown = -1
-            if (rootRef.current) rootRef.current.dataset.onStage = '0'
+            stageSignal.onStage = 0
             markRail(i)
             setJourneyChapter(i)
             guide()
@@ -248,14 +262,15 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (tw.D <= 0 || calmRef.current || tw.p >= revealAt()) {
                 panels[state].classList.add('on')
                 shown = state
-                if (rootRef.current) rootRef.current.dataset.onStage = state === 1 || state === 3 ? '1' : '0'
+                stageSignal.onStage = state === 1 || state === 3 ? 1 : 0
             }
         }
 
-        const dist = () => Math.max(1, journeyEl.offsetHeight - pin.offsetHeight)
-        const top = () => journeyEl.getBoundingClientRect().top + window.scrollY
+        // Số đo layout tính sẵn (page-metrics: khi mount và khi resize), không đọc layout lúc cuộn
+        const dist = () => page.dist
+        const top = () => page.journeyTop
         const chapterY = (c: number) => top() + (dist() * (c + 0.5)) / N
-        const readScroll = () => {
+        const readScroll = timed(() => {
             const p = clamp((window.scrollY - top()) / dist(), 0, 0.999)
             const now = performance.now()
             // Lenis còn đang trượt tới chương đã chọn (khung hình chậm): chưa đọc lại chương từ vị trí cuộn dở dang
@@ -267,14 +282,14 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             }
             updateChrome()
             guide()
-        }
+        })
         const inStage = () => {
             const t = top()
             return window.scrollY >= t - 2 && window.scrollY <= t + dist() + 2
         }
 
         // ── Lenis: cuộn theo thời gian (mỗi nấc wheel trượt ~1,15s), không snap ──
-        const lenis = new Lenis({ duration: 1.15, smoothWheel: true })
+        const lenis = new Lenis({ duration: 1.15, smoothWheel: !FLAGS.noLenis })
         setLenis(lenis)
         lenis.on('scroll', readScroll)
 
@@ -423,9 +438,9 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (step(dir)) e.preventDefault()
         }
 
-        let raf = 0
         let lastT = performance.now()
         let guideAt = 0
+        // Chạy trong vòng rAF chung (lib/frame-loop), trước khung vẽ của canvas
         const tick = (t: number) => {
             lenis.raf(t)
             const now = performance.now()
@@ -444,7 +459,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 guideAt = now
                 guide()
             }
-            raf = requestAnimationFrame(tick)
+            flushBar()
         }
 
         window.addEventListener('wheel', onWheel, { passive: false, capture: true })
@@ -452,18 +467,17 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         window.addEventListener('touchmove', onTouchMove, { passive: false })
         window.addEventListener('touchend', onTouchEnd, { passive: true })
         window.addEventListener('keydown', onKey)
-        window.addEventListener('scroll', readScroll, { passive: true })
+        // Lenis đã phát 'scroll' cho mọi cuộn (kể cả kéo thanh cuộn); resize thì đọc lại số đo
         window.addEventListener('resize', readScroll)
         readScroll()
-        raf = requestAnimationFrame(tick)
+        const stopFrame = addFrame(tick, 0)
         return () => {
-            cancelAnimationFrame(raf)
+            stopFrame()
             window.removeEventListener('wheel', onWheel, { capture: true })
             window.removeEventListener('touchstart', onTouchStart)
             window.removeEventListener('touchmove', onTouchMove)
             window.removeEventListener('touchend', onTouchEnd)
             window.removeEventListener('keydown', onKey)
-            window.removeEventListener('scroll', readScroll)
             window.removeEventListener('resize', readScroll)
             setChapterScroller(null)
             setJourneyChapter(-1)

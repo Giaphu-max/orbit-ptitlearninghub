@@ -10,6 +10,10 @@ import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint
 import { STUDIO_Z } from './campus-room'
 import { PERF_ON, PerfHud } from './campus-perf'
 import { isWebKit } from '@/lib/browser'
+import { FLAGS } from '@/lib/perf'
+import { addFrame } from '@/lib/frame-loop'
+import { footerCover, page } from '@/lib/page-metrics'
+import { stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
@@ -25,6 +29,8 @@ const C = CAMPUS
 /** Safari: thêm ?noaa vào URL để thử tắt antialias nếu ?perf báo dưới 50fps lúc bay */
 const NO_AA = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('noaa')
 const DPR_MAX = isWebKit ? 1.25 : 1.5
+/** Canvas đục (alpha:false) trên Safari/WebKit hoặc ?opaque: trời vẽ trong WebGL (scene.background), không để trình duyệt hợp thành canvas trong suốt với gradient CSS phía sau */
+const OPAQUE = isWebKit || FLAGS.opaque
 
 // Hằng số ngoài component để useMemo của TextPlane không tính lại mỗi lần render
 const T_PTIT: TextOpts = { size: 200 }
@@ -63,16 +69,15 @@ function Building({ name, anchorY, position, hovered, labelVisible, pct, registr
         }
     }, [name, anchorY, registry])
 
-    const hidden = !labelVisible && !hovered
+    // Nhãn chỉ dựng khi đang hiện (chương hero); các chương khác gỡ hẳn để drei không cập nhật transform DOM mỗi khung
+    const showLabel = labelVisible && !FLAGS.noLabels
     const course = courseOfBuilding(name)
     return (
         <group ref={ref} position={position} rotation={[0, rotY, 0]}>
             {children}
+            {showLabel && (
             <Html position={[0, anchorY, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-                <div
-                    className="flex w-max -translate-x-1/2 -translate-y-full flex-col items-center gap-1 transition-opacity duration-200"
-                    style={{ opacity: hidden ? 0 : 1, visibility: hidden ? 'hidden' : 'visible' }}
-                >
+                <div className="flex w-max -translate-x-1/2 -translate-y-full flex-col items-center gap-1">
                     <div
                         className={`w-max max-w-[220px] whitespace-nowrap rounded-xl px-[11px] py-[7px] text-xs font-bold shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)] transition duration-200 ${
                             hovered ? '-translate-y-1.5 bg-brand-600 text-ink-foreground' : 'bg-card/95 text-foreground'
@@ -87,6 +92,7 @@ function Building({ name, anchorY, position, hovered, labelVisible, pct, registr
                     <div className="h-4 w-0.5 bg-ink-foreground/80" />
                 </div>
             </Html>
+            )}
         </group>
     )
 }
@@ -590,15 +596,21 @@ function homography(w: number, h: number, P: number[][]) {
 const kioskFocus = (s: number) => band(s, 1.55, 1.74) * (1 - band(s, 1.86, 2.1))
 
 /** Trạng thái khung hình trước của màn kiosk: chỉ ghi DOM khi giá trị đổi (ghi transform/opacity mỗi khung hình rất tốn trên Safari) */
-const kioskLast = { pts: [] as number[][], opacity: '', visibility: '', live: false, transform: '', S: -1, movedAt: 0 }
+const kioskLast = { pts: [] as number[][], opacity: '', visibility: '', live: false, transform: '', S: -1, movedAt: 0, focus: -1 }
 const sameQuad = (a: number[][], b: number[][]) => a.length === b.length && a.every((p, i) => Math.abs(p[0] - b[i][0]) < 0.05 && Math.abs(p[1] - b[i][1]) < 0.05)
 
 function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: { width: number; height: number }, S: number, f: number, enabled: boolean) {
     const el = kiosk.screen.current
-    kiosk.root.current?.style.setProperty('--kiosk-focus', f.toFixed(3))
+    const K = kioskLast
+    // Veil và rail mờ đi khi zoom kiosk: ghi opacity thẳng vào hai phần tử lá, chỉ khi đổi quá 0,01 (hoặc chạm 0/1)
+    if (Math.abs(f - K.focus) >= 0.01 || (f !== K.focus && (f === 0 || f === 1))) {
+        K.focus = f
+        const o = (1 - f).toFixed(2)
+        if (kiosk.veil.current) kiosk.veil.current.style.opacity = o
+        if (kiosk.rail.current) kiosk.rail.current.style.opacity = o
+    }
     if (!el) return
     const now = performance.now()
-    const K = kioskLast
     if (Math.abs(S - K.S) > 1e-4) K.movedAt = now
     K.S = S
     let op = enabled ? band(S, 1.52, 1.6) * (1 - band(S, 1.92, 2.1)) : 0
@@ -651,20 +663,23 @@ const captionAt = (s: number) => CAPTIONS.find(([to]) => s < to)?.[1] ?? 'Phòng
  * Chế độ làm mờ để CSS (data-calm) lo phần canvas.
  */
 function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, delta: number, last: { cap: string; stage: string; dock: string; dip: string; dim: number; dimCss: string }) {
-    const footer = kiosk.footer.current
-    const out = footer ? clamp01(1 - footer.getBoundingClientRect().top / window.innerHeight) : 0
+    // Footer phủ bao nhiêu màn: từ số đo tính sẵn (page-metrics), không đọc layout
+    const out = footerCover()
     const stageOpacity = calm ? '' : (1 - out * 0.9).toFixed(3)
     const dockOpacity = (1 - out).toFixed(2)
-    // Độ tối nền khi có chữ: hook ghi đích 0/1 (data-on-stage), ở đây làm mượt theo thời gian rồi ghi --on-stage
-    const root = kiosk.root.current
-    if (root) {
-        const target = root.dataset.onStage === '1' ? 1 : 0
+    // Độ tối nền khi có chữ: hook ghi đích 0/1 (stageSignal.onStage), ở đây làm mượt theo thời gian rồi ghi opacity vào .stage-dim
+    // Chế độ làm mờ: CSS (data-calm) lo lớp này nên xóa opacity inline
+    const dimEl = kiosk.dim.current
+    if (dimEl) {
+        const target = stageSignal.onStage
         last.dim += (target - last.dim) * (1 - Math.exp(-Math.min(delta, 0.2) * DIM_SMOOTH))
         if (Math.abs(target - last.dim) < 0.001) last.dim = target
-        const css = last.dim.toFixed(3)
-        if (css !== last.dimCss) {
+        const css = calm ? '' : (last.dim * 0.12).toFixed(3)
+        // Chỉ ghi khi opacity đổi quá 0,002 (lớp này chỉ đi 0 → 0,12, tương đương 0,02 trên thang 0..1) hoặc khi tới đích
+        const prev = last.dimCss === '' ? NaN : Number(last.dimCss)
+        if (css !== last.dimCss && (css === '' || last.dim === target || !(Math.abs(Number(css) - prev) < 0.002))) {
             last.dimCss = css
-            root.style.setProperty('--on-stage', css)
+            dimEl.style.opacity = css
         }
     }
     const cap = captionAt(S)
@@ -696,6 +711,37 @@ const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 const smoothstep = (x: number) => x * x * (3 - 2 * x)
 /** 0→1 khi s đi từ a tới b */
 const band = (s: number, a: number, b: number) => clamp01((s - a) / (b - a))
+
+/** Gradient trời của .stage-sky (linear 180° qua --sky-1..4 + quầng --sky-glow góc trên phải) vẽ vào texture, cho canvas đục */
+function makeSkyTexture() {
+    const cs = getComputedStyle(document.documentElement)
+    const tok = (n: string) => cs.getPropertyValue(n).trim()
+    const W = 256
+    const H = 256
+    const cv = document.createElement('canvas')
+    cv.width = W
+    cv.height = H
+    const ctx = cv.getContext('2d')!
+    const lin = ctx.createLinearGradient(0, 0, 0, H)
+    ;[[0, '--sky-1'], [0.42, '--sky-2'], [0.75, '--sky-3'], [1, '--sky-4']].forEach(([at, n]) => lin.addColorStop(at as number, `hsl(${tok(n as string)})`))
+    ctx.fillStyle = lin
+    ctx.fillRect(0, 0, W, H)
+    const glow = tok('--sky-glow')
+    const alpha = parseFloat(tok('--sky-glow-alpha') || '0')
+    if (glow && alpha > 0) {
+        // radial-gradient(40% 34% at 78% 16%): elip bán kính 40% × 34%, tâm (78%, 16%)
+        ctx.save()
+        ctx.translate(W * 0.78, H * 0.16)
+        ctx.scale(W * 0.4, H * 0.34)
+        const rad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1)
+        rad.addColorStop(0, `hsl(${glow} / ${alpha})`)
+        rad.addColorStop(0.7, `hsl(${glow} / 0)`)
+        ctx.fillStyle = rad
+        ctx.fillRect(-3, -3, 6, 6)
+        ctx.restore()
+    }
+    return new THREE.CanvasTexture(cv)
+}
 
 /** Màu token CSS dạng "H S% L%" → THREE.Color (canvas chạy legacy nên không chuyển không gian màu). */
 function tokenColor(name: string, fallback: string) {
@@ -844,9 +890,15 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const ndc = useMemo(() => new THREE.Vector2(-9, -9), [])
     // Sương lấy từ token trời (--sky-*), nền nội thất từ --stage-deep. Đọc lại khi đổi giao diện sáng/tối (trời ngoài trời là gradient CSS sau canvas trong suốt).
     const colors = useMemo(() => ({ fogA: new THREE.Color(), fogB: new THREE.Color(), deep: tokenColor('--stage-deep', '#130D0E'), now: new THREE.Color() }), [])
+    // Canvas đục: bầu trời (cùng gradient với .stage-sky) vẽ vào texture dùng làm scene.background
+    const skyTex = useRef<THREE.CanvasTexture | null>(null)
     const readSky = () => {
         colors.fogA.copy(tokenColor('--sky-2', '#F2E7DB'))
         colors.fogB.copy(tokenColor('--sky-3', '#F8F2EA'))
+        if (OPAQUE) {
+            skyTex.current?.dispose()
+            skyTex.current = makeSkyTexture()
+        }
     }
     const camHero = useMemo(() => ({ v: new THREE.Vector3() }), [])
 
@@ -862,7 +914,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         camera.position.copy(START_POS)
         camera.lookAt(TARGET)
         readSky()
-        scene.background = null
+        scene.background = OPAQUE ? skyTex.current : null
         scene.fog = new THREE.Fog(colors.fogB, 100, 400)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [camera, scene, colors])
@@ -890,12 +942,13 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     // Màn chuyển giao diện đang che: đặt thẳng ánh sáng mới rồi vẽ đúng một khung (canvas đang dừng)
     const frozen = useThemeStore((s) => s.frozen)
     const advance = useThree((s) => s.advance)
+    const clockRef = useThree((s) => s.clock)
     useEffect(() => {
         nightTarget.current = night ? 1 : 0
         if (reduce || frozen) {
             nightRef.current = nightTarget.current
             applyLights(nightRef.current)
-            if (frozen) advance(performance.now())
+            if (frozen) advance(clockRef.elapsedTime + 0.001)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [night, reduce, frozen])
@@ -1063,7 +1116,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         if (indoor.current) {
             if (!(scene.background instanceof THREE.Color)) scene.background = new THREE.Color()
             scene.background.copy(colors.deep)
-        } else if (scene.background) scene.background = null
+        } else if (scene.background !== (OPAQUE ? skyTex.current : null)) scene.background = OPAQUE ? skyTex.current : null
         if (scene.fog) {
             // Sương theo khoảng cách tới tâm khuôn viên; trong sảnh (gần tâm) giữ nguyên mức ở xa để không phủ mờ nội thất
             const d = Math.max(camera.position.distanceTo(TARGET), 60)
@@ -1112,7 +1165,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
         // Nhãn: chỉ ở hero; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
         if (frame.current++ % 6 === 0) {
-            const key = S < 0.2 ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : ''
+            const key = S < 0.2 && !FLAGS.noLabels ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : ''
             if (key !== labelKey.current) {
                 labelKey.current = key
                 setVisibleLabels(new Set(key ? key.split('|') : []))
@@ -1197,31 +1250,24 @@ export interface CampusSceneProps {
     onOpenCourse?: (courseId: string) => void
 }
 
-/** Không vẽ khi không ai thấy: tab ẩn, hoặc footer đã phủ kín màn hình. */
-function useSceneHidden(kiosk: KioskBridge) {
-    const [hidden, setHidden] = useState(false)
+/**
+ * Vẽ canvas trong vòng rAF chung (lib/frame-loop), sau Lenis và máy quay: Canvas ở frameloop="never", ở đây gọi advance.
+ * Không vẽ khi không ai thấy: tab ẩn, footer đã phủ kín màn (số đo từ page-metrics, không đọc layout), hoặc màn chuyển giao diện đang che.
+ */
+function FrameDriver() {
+    const advance = useThree((s) => s.advance)
+    const clock = useThree((s) => s.clock)
     useEffect(() => {
-        let raf = 0
-        const check = () => {
-            raf = 0
-            const top = kiosk.footer.current?.getBoundingClientRect().top ?? 1
-            setHidden(document.hidden || top <= 0)
-        }
-        const queue = () => {
-            if (!raf) raf = requestAnimationFrame(check)
-        }
-        check()
-        window.addEventListener('scroll', queue, { passive: true })
-        window.addEventListener('resize', queue)
-        document.addEventListener('visibilitychange', queue)
-        return () => {
-            cancelAnimationFrame(raf)
-            window.removeEventListener('scroll', queue)
-            window.removeEventListener('resize', queue)
-            document.removeEventListener('visibilitychange', queue)
-        }
-    }, [kiosk])
-    return hidden
+        let prev = 0
+        return addFrame((t) => {
+            // Delta tối đa 0,1s: khung bị treo lâu (tab ẩn) không tạo delta khổng lồ
+            const dt = Math.min(prev ? (t - prev) / 1000 : 0.016, 0.1)
+            prev = t
+            if (document.hidden || useThemeStore.getState().frozen || page.footerTop - page.y <= 0) return
+            advance(clock.elapsedTime + dt)
+        }, 1)
+    }, [advance, clock])
+    return null
 }
 
 export default function CampusScene({ night, reduce, staticMode, flat, stage, dailyLit, kiosk, coursePct, onOpenCourse }: CampusSceneProps) {
@@ -1229,8 +1275,6 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
     const canvasWrap = useRef<HTMLDivElement>(null)
-    const frozen = useThemeStore((s) => s.frozen)
-    const hidden = useSceneHidden(kiosk)
 
     // Chờ font Be Vietnam Pro (tối đa 1,5 giây) để chữ trên biển hiệu không bị font dự phòng
     useEffect(() => {
@@ -1245,6 +1289,14 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
     }, [])
 
     // Con trỏ theo dõi toàn trang; chỉ tính là "trên cảnh" khi đang ở trên canvas (chữ và thẻ nằm đè nên không nhận hover của cảnh)
+    const cvSize = useRef({ w: 0, h: 0 })
+    useEffect(() => {
+        const wrap = canvasWrap.current
+        if (!wrap) return
+        const ro = new ResizeObserver(([e]) => (cvSize.current = { w: e.contentRect.width, h: e.contentRect.height }))
+        ro.observe(wrap)
+        return () => ro.disconnect()
+    }, [])
     useEffect(() => {
         const move = (e: PointerEvent) => {
             const cv = canvasWrap.current?.querySelector('canvas')
@@ -1252,8 +1304,10 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
                 pointer.current.inside = false
                 return
             }
-            const r = cv.getBoundingClientRect()
-            pointer.current = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -(((e.clientY - r.top) / r.height) * 2 - 1), inside: true }
+            // offsetX/Y theo canvas (không đọc layout bằng getBoundingClientRect); kích thước canvas đo sẵn
+            const { w, h } = cvSize.current
+            if (!w || !h) return
+            pointer.current = { x: (e.offsetX / w) * 2 - 1, y: -((e.offsetY / h) * 2 - 1), inside: true }
         }
         const leave = () => {
             pointer.current.inside = false
@@ -1268,15 +1322,15 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
 
     return (
         <div ref={canvasWrap} className="absolute inset-0">
-            {fontsReady && (
+            {fontsReady && !FLAGS.no3d && (
                 <Canvas
-                    frameloop={frozen || hidden ? 'never' : 'always'}
+                    frameloop="never"
                     legacy
                     flat
                     shadows="percentage"
                     dpr={[1, DPR_MAX]}
                     camera={{ fov: FOV, position: START_POS.toArray(), near: 1, far: 400 }}
-                    gl={{ antialias: !(isWebKit && NO_AA), alpha: true }}
+                    gl={{ antialias: !(isWebKit && NO_AA), alpha: !OPAQUE }}
                     onCreated={({ gl }) => {
                         gl.shadowMap.autoUpdate = false
                         gl.shadowMap.needsUpdate = true
@@ -1284,6 +1338,7 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
+                    <FrameDriver />
                     <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}

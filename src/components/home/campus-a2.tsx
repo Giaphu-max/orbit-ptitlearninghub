@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { A2COL as A, CAMPUS, LOBBY as L } from './campus-palette'
 import { PracticeRoom } from './campus-room'
+import { FLAGS } from '@/lib/perf'
 import { drawKioskSnapshot } from './kiosk-snapshot'
 import { isWebKit } from '@/lib/browser'
 import { STATUS_ORDER, useCourseSummaries } from '@/lib/course-map'
@@ -297,7 +298,7 @@ function Kiosk() {
     // Safari: màn 3D mang ảnh tĩnh của nội dung kiosk; lớp DOM thật chỉ hiện khi máy quay đã dừng (xem placeKiosk)
     const summaries = useCourseSummaries()
     const snap = useMemo(() => {
-        if (!isWebKit) return null
+        if (!isWebKit || FLAGS.noKiosk) return null
         const t = new THREE.CanvasTexture(drawKioskSnapshot([...summaries].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]).slice(0, 4)))
         t.colorSpace = THREE.SRGBColorSpace
         t.anisotropy = 4

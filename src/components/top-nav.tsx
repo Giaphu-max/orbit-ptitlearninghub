@@ -49,9 +49,14 @@ function useNavScroll(enabled: boolean) {
     useEffect(() => {
         if (!enabled) return
         let raf = 0
+        // Chiều cao hero và nav đo khi mount / resize, không đọc layout trong lúc cuộn
+        let heroH = 600
+        let navH = 80
+        const measure = () => {
+            heroH = document.getElementById('top')?.offsetHeight ?? 600
+            navH = document.querySelector('header')?.getBoundingClientRect().height ?? 80
+        }
         const check = () => {
-            const heroH = document.getElementById('top')?.offsetHeight ?? 600
-            const navH = document.querySelector('header')?.getBoundingClientRect().height ?? 80
             const next = { scrolled: window.scrollY > 8, past: window.scrollY > heroH - navH }
             setState((s) => (s.scrolled === next.scrolled && s.past === next.past ? s : next))
         }
@@ -59,13 +64,18 @@ function useNavScroll(enabled: boolean) {
             cancelAnimationFrame(raf)
             raf = requestAnimationFrame(check)
         }
+        const onResize = () => {
+            measure()
+            onScroll()
+        }
+        measure()
         check()
         window.addEventListener('scroll', onScroll, { passive: true })
-        window.addEventListener('resize', onScroll)
+        window.addEventListener('resize', onResize)
         return () => {
             cancelAnimationFrame(raf)
             window.removeEventListener('scroll', onScroll)
-            window.removeEventListener('resize', onScroll)
+            window.removeEventListener('resize', onResize)
         }
     }, [enabled])
     return enabled ? state : { scrolled: false, past: false }

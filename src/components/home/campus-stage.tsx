@@ -66,7 +66,7 @@ export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk, 
     return (
         <div id="home-stage" ref={kiosk.stage} aria-hidden={!enabled} className={`stage-sky pointer-events-none fixed left-0 top-0 w-full ${staticMode ? 'z-20 h-[44svh] border-b border-border shadow-raised' : 'z-0 h-[100svh]'}`}>
             {/* Lớp màu nền mờ khi có chữ trên màn / chế độ làm mờ (thay filter trên canvas) */}
-            <div aria-hidden className="stage-dim pointer-events-none absolute inset-0 z-[1]" />
+            <div ref={kiosk.dim} aria-hidden className="stage-dim pointer-events-none absolute inset-0 z-[1]" />
             <div className="pointer-events-auto absolute inset-0">
                 {enabled ? (
                     <Suspense fallback={null}>

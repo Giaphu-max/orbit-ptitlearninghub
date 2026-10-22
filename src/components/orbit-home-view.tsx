@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Camera, Check, ChevronDown, Play, Sparkles } from 'lucide-react'
 import { getCourse, lessons } from '@/data'
@@ -7,6 +7,8 @@ import { CourseArt } from '@/components/courses/course-cover'
 import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { scrollToSection } from '@/lib/scroll'
+import { trackPage } from '@/lib/page-metrics'
+import { FLAGS, mountPerfHud } from '@/lib/perf'
 import { todaysDaily } from '@/lib/next-step'
 import { CHAPTERS, useScrollStage, useStageMode } from '@/hooks/useScrollStage'
 import { useTodayDaily } from '@/hooks/useTodayDaily'
@@ -37,7 +39,14 @@ export function OrbitHomeView() {
     const dockRef = useRef<HTMLDivElement>(null)
     const capRef = useRef<HTMLSpanElement>(null)
     const dipRef = useRef<HTMLDivElement>(null)
-    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, cap: capRef, dip: dipRef, calm: calmRef }), [])
+    const veilRef = useRef<HTMLDivElement>(null)
+    const railRef = useRef<HTMLElement>(null)
+    const dimRef = useRef<HTMLDivElement>(null)
+    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, cap: capRef, dip: dipRef, veil: veilRef, rail: railRef, dim: dimRef, calm: calmRef }), [])
+
+    // Số đo layout (footer, hành trình, scrollHeight) đo một lần + khi resize; layout effect chạy trước effect của useScrollStage
+    useLayoutEffect(() => trackPage(() => footerRef.current).stop, [])
+    useEffect(() => mountPerfHud(), [])
 
     return (
         <div ref={rootRef} data-calm={calm} className="group/home relative w-full bg-stage text-foreground">
@@ -46,8 +55,8 @@ export function OrbitHomeView() {
             <div ref={dipRef} aria-hidden className="stage-dip pointer-events-none fixed inset-0 z-[1] opacity-0" />
             {/* Lớp màu nền che khi cắt cảnh (nhảy từ 2 chương trở lên): hook useScrollStage đặt đục rồi mờ đi trong 0,5s */}
             <div aria-hidden data-cut-veil className="pointer-events-none fixed inset-0 z-[5] bg-stage opacity-0" />
-            <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" style={{ opacity: 'calc(1 - var(--kiosk-focus, 0))' }} />
-            {!staticMode && <KioskScreen screenRef={screenRef} />}
+            <div ref={veilRef} aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
+            {!staticMode && !FLAGS.noKiosk && <KioskScreen screenRef={screenRef} />}
             <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
@@ -93,7 +102,7 @@ export function OrbitHomeView() {
                 </div>
             )}
 
-            {journey && !staticMode && <ChapterRail />}
+            {journey && !staticMode && <ChapterRail navRef={railRef} />}
 
             {/* Dòng hướng dẫn cho người mới: hook ghi chữ và độ hiện; ẩn ở footer */}
             {journey && (
@@ -140,9 +149,9 @@ function useBuildingCourses() {
 
 /** Mục chương ở mép phải: hiện chương hiện tại (hook đánh dấu data-on), bấm thì cuộn tới giữa phần dừng đọc. Ẩn khi đang zoom kiosk. */
 const RAIL = [['top', 'Trang chủ'], ['daily', '01 Hôm nay'], ['courses', '02 Khóa học'], ['studio', '03 Studio 3D']] as const
-function ChapterRail() {
+function ChapterRail({ navRef }: { navRef: RefObject<HTMLElement | null> }) {
     return (
-        <nav aria-label="Chương" style={{ opacity: 'calc(1 - var(--kiosk-focus, 0))' }} className="fixed right-[max(1.25rem,2.4vw)] top-1/2 z-[6] hidden -translate-y-1/2 flex-col gap-3.5 min-[860px]:flex group-data-[kiosk=on]/home:pointer-events-none">
+        <nav ref={navRef} aria-label="Chương" className="fixed right-[max(1.25rem,2.4vw)] top-1/2 z-[6] hidden -translate-y-1/2 flex-col gap-3.5 min-[860px]:flex group-data-[kiosk=on]/home:pointer-events-none">
             {RAIL.map(([id, label], i) => (
                 <button
                     key={id}
