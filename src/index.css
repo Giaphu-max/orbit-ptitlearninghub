@@ -267,7 +267,9 @@
   [data-panel].past [data-s] {
     transform: translate3d(0, calc(var(--reveal-offset) * -1), 0);
   }
-  [data-panel].on [data-s] {
+  /* Selector thứ hai nâng specificity ngang quy tắc nhòe (:is lấy specificity lớn nhất) để filter: none luôn thắng khi panel đã hiện */
+  [data-panel].on [data-s],
+  [data-panel].on :is(h1, h2, p)[data-s] {
     opacity: 1;
     transform: none;
     filter: none;
