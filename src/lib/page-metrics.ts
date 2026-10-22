@@ -13,10 +13,13 @@ export const page = {
     dist: 1,
     /** scrollHeight - innerHeight */
     max: 0,
+    /** Trang chủ paged (không cuộn tài liệu): footer là tấm phủ fixed, footerP = tiến độ trượt lên 0..1 */
+    paged: false,
+    footerP: 0,
 }
 
 /** Footer còn cách đáy màn bao nhiêu (px, âm = đã vào) → 0..1 mức footer phủ lên màn */
-export const footerCover = () => Math.max(0, Math.min(1, 1 - (page.footerTop - page.y) / page.vh))
+export const footerCover = () => (page.paged ? page.footerP : Math.max(0, Math.min(1, 1 - (page.footerTop - page.y) / page.vh)))
 
 export function trackPage(getFooter: () => HTMLElement | null) {
     const measure = () => {

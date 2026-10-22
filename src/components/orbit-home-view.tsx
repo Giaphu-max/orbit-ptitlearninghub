@@ -32,7 +32,9 @@ export function OrbitHomeView() {
     const [calm, setCalm] = useCalm()
     const calmRef = useRef(calm)
     calmRef.current = calm
-    const { stage } = useScrollStage({ journey, barRef, rootRef, calmRef })
+    // Paged: trang chủ cao đúng 100svh, không cuộn tài liệu (Safari vẽ lại cả màn hình mỗi khi tài liệu cuộn đè lên stage fixed); footer là chương 4
+    const paged = journey && !calm && !FLAGS.docScroll
+    const { stage } = useScrollStage({ journey, paged, barRef, rootRef, calmRef })
     const { coursePct } = useBuildingCourses()
     const dailyLit = useDailyLit()
     const screenRef = useRef<HTMLDivElement>(null)
@@ -60,8 +62,8 @@ export function OrbitHomeView() {
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
             {journey ? (
-                <section id="journey" className="pointer-events-none relative z-10" style={{ height: `${(CHAPTERS + 1) * 100}svh` }}>
-                    <div className={`container-page ${PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center pb-16 pt-24'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
+                <section id="journey" className="pointer-events-none relative z-10" style={{ height: paged ? '100svh' : `${(CHAPTERS + 1) * 100}svh` }}>
+                    <div className={`container-page ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center pb-16 pt-24'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
                         <div className="grid w-full max-w-[600px] items-center">
                             <Panel id="top" index={0} wide>
                                 <HeroChapter />
@@ -106,7 +108,7 @@ export function OrbitHomeView() {
             {/* Dòng hướng dẫn cho người mới: hook ghi chữ và độ hiện; ẩn ở footer */}
             {journey && (
                 <p data-guide aria-live="polite" style={{ opacity: 0 }} className="own-layer pointer-events-none fixed bottom-5 left-[max(1.5rem,4vw)] z-[6] flex max-w-[calc(100vw-3rem)] items-center gap-2 text-xs text-muted-foreground transition-opacity duration-slow">
-                    <ChevronDown size={16} className="shrink-0 text-brand-ink motion-safe:animate-bounce" aria-hidden />
+                    <ChevronDown size={16} style={{ animationIterationCount: 3 }} className="shrink-0 text-brand-ink motion-safe:animate-bounce" aria-hidden />
                     <span data-guide-text>Cuộn để đi vào trường</span>
                 </p>
             )}
@@ -126,7 +128,13 @@ export function OrbitHomeView() {
             )}
 
             {/* Footer nằm trên mọi lớp 3D và màn kiosk; nền đặc, không có dải chuyển màu tràn lên cảnh */}
-            <div id="home-footer" ref={footerRef} className="relative z-[20] flow-root bg-card">
+            {/* Paged: tấm phủ fixed sát đáy, trượt lên bằng transform (hook ghi), cao theo nội dung tối đa 100svh, dài hơn thì cuộn bên trong chính nó */}
+            <div
+                id="home-footer"
+                ref={footerRef}
+                className={paged ? 'own-layer fixed inset-x-0 bottom-0 z-[20] max-h-[100svh] flow-root overflow-y-auto overscroll-contain bg-card' : 'relative z-[20] flow-root bg-card'}
+                style={paged ? { transform: 'translate3d(0,100%,0)' } : undefined}
+            >
                 <SiteFooter />
             </div>
         </div>

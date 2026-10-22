@@ -18,6 +18,12 @@ export const setFlyingProbe = (fn: (() => boolean) | null) => {
 }
 export const isCameraFlying = () => flyingProbe?.() ?? false
 export const isChapterReady = () => chapterScroller !== null
+// Trang chủ đang ở chế độ paged (không cuộn tài liệu, footer là chương 4)
+let pagedMode = false
+export const setPagedMode = (v: boolean) => {
+    pagedMode = v
+}
+export const isPagedMode = () => pagedMode
 export const goChapter = (index: number, cut = false) => chapterScroller?.(index, cut)
 export const setChapterScroller = (fn: ((index: number, cut?: boolean) => void) | null) => {
     chapterScroller = fn

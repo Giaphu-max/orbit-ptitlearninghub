@@ -11,6 +11,7 @@
  *   ?nooverlays ẩn các lớp phủ fixed (overlay, veil, guide, dock, rail, thanh tiến độ)
  *   ?nosky      bỏ gradient trời của .stage-sky (nền đặc)
  *   ?sticky     giữ khung sticky của hành trình (mặc định trên WebKit: fixed/absolute đổi ở hai ranh giới)
+ *   ?docscroll  trang chủ cuộn tài liệu kiểu cũ (mặc định: paged, không cuộn tài liệu)
  *   ?bench      tự đo lần lượt các cấu hình trên (xem lib/bench.ts), kết quả hiện thành bảng
  */
 const q = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search)
@@ -27,6 +28,7 @@ export const FLAGS = {
     noOverlays: q.has('nooverlays'),
     noSky: q.has('nosky'),
     sticky: q.has('sticky'),
+    docScroll: q.has('docscroll'),
     bench: q.has('bench'),
 }
 

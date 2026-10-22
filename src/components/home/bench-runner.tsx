@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { BENCH_CONFIGS, benchText, benchUrl, currentFlag, initBench, makeRow, newPhase, saveBench, shortUA, type BenchRow } from '@/lib/bench'
 import { setFrameObserver } from '@/lib/frame-loop'
 import { benchState, FLAGS } from '@/lib/perf'
-import { getLenis, goChapter, isCameraFlying, isChapterReady } from '@/lib/scroll'
+import { getLenis, goChapter, isCameraFlying, isChapterReady, isPagedMode } from '@/lib/scroll'
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 async function waitFor(cond: () => boolean, timeout: number) {
@@ -66,14 +66,26 @@ function Bench() {
             const studioY = window.scrollY
             const bottom = () => document.documentElement.scrollHeight - window.innerHeight
             inFooter = true
-            getLenis()?.scrollTo(bottom(), { duration: 1.6, force: true })
-            await sleep(200)
-            await waitFor(() => bottom() - window.scrollY < 3, 6000)
-            await sleep(1000)
-            getLenis()?.scrollTo(studioY, { duration: 1.6, force: true })
-            await sleep(200)
-            await waitFor(() => Math.abs(window.scrollY - studioY) < 3, 6000)
-            await sleep(300)
+            if (isPagedMode()) {
+                // Paged: vào/ra chương 4 (footer trượt lên/xuống), không cuộn tài liệu
+                goChapter(4, false)
+                await sleep(150)
+                await waitFor(() => !isCameraFlying(), 5000)
+                await sleep(1000)
+                goChapter(3, false)
+                await sleep(150)
+                await waitFor(() => !isCameraFlying(), 5000)
+                await sleep(300)
+            } else {
+                getLenis()?.scrollTo(bottom(), { duration: 1.6, force: true })
+                await sleep(200)
+                await waitFor(() => bottom() - window.scrollY < 3, 6000)
+                await sleep(1000)
+                getLenis()?.scrollTo(studioY, { duration: 1.6, force: true })
+                await sleep(200)
+                await waitFor(() => Math.abs(window.scrollY - studioY) < 3, 6000)
+                await sleep(300)
+            }
             inFooter = false
             setFrameObserver(null)
             if (cancelled) return

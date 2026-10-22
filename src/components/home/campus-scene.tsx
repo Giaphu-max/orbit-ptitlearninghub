@@ -12,7 +12,7 @@ import { PERF_ON, PerfHud } from './campus-perf'
 import { isWebKit } from '@/lib/browser'
 import { FLAGS } from '@/lib/perf'
 import { addFrame } from '@/lib/frame-loop'
-import { footerCover } from '@/lib/page-metrics'
+import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
@@ -1257,7 +1257,7 @@ function FrameDriver({ kiosk }: { kiosk: KioskBridge }) {
             prev = t
             footerFade(kiosk, kiosk.calm.current)
             // Footer đã phủ quá 60% màn: dừng vẽ cảnh, giữ khung cuối (canvas đang mờ dần bằng opacity của lớp stage)
-            if (document.hidden || useThemeStore.getState().frozen || footerCover() > FOOTER_STOP) return
+            if (document.hidden || useThemeStore.getState().frozen || footerCover() > (page.paged ? 0.999 : FOOTER_STOP)) return
             advance(clock.elapsedTime + dt)
             // Canvas đục đã có khung đầu: trời đã vẽ bằng WebGL, bỏ gradient CSS phía sau
             if (!drew && OPAQUE) {

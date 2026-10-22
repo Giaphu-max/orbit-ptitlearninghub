@@ -297,6 +297,13 @@
   .own-layer {
     will-change: transform;
   }
+  /* Trang chủ paged: không cuộn tài liệu (useScrollStage thêm/bỏ class này trên <html>) */
+  html.home-paged,
+  html.home-paged body {
+    overflow: hidden;
+    height: 100%;
+    overscroll-behavior: none;
+  }
   /* Canvas đục đã vẽ trời bằng WebGL: bỏ gradient CSS phía sau */
   .stage-sky.sky-gl {
     background-image: none;

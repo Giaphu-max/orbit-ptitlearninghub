@@ -14,6 +14,7 @@ export const BENCH_CONFIGS = [
     { label: 'nooverlays', flag: 'nooverlays' },
     { label: 'nosky', flag: 'nosky' },
     { label: 'sticky', flag: 'sticky' },
+    { label: 'docscroll', flag: 'docscroll' },
 ] as const
 
 export interface BenchRow {

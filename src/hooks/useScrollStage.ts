@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type MutableRefObject, type RefObject } from 'react'
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
-import { setChapterScroller, setFlyingProbe, setJourneyChapter, setLenis } from '@/lib/scroll'
+import { setChapterScroller, setFlyingProbe, setJourneyChapter, setLenis, setPagedMode } from '@/lib/scroll'
 import { addFrame } from '@/lib/frame-loop'
 import { page } from '@/lib/page-metrics'
 import { benchState, FLAGS, timed } from '@/lib/perf'
@@ -56,8 +56,10 @@ const BACK = 0.7
 const REVEAL_BACK = 0.5
 const FLIGHT_FLOOR = 0.35
 /** Dòng hướng dẫn góc dưới trái theo chương hiện tại */
-const GUIDE = ['Cuộn để đi vào trường', 'Hôm nay · 1/3 — cuộn tiếp: Khóa học', 'Khóa học · 2/3 — cuộn tiếp: Studio', 'Studio · 3/3 — cuộn tiếp: cuối trang'] as const
+const GUIDE = ['Cuộn để đi vào trường', 'Hôm nay · 1/3 — cuộn tiếp: Khóa học', 'Khóa học · 2/3 — cuộn tiếp: Studio', 'Studio · 3/3 — cuộn tiếp: cuối trang', ''] as const
 const GUIDE_FLYING = 'Cuộn thêm để chạy nhanh hơn'
+/** Footer (chương 4, chế độ paged) trượt lên/xuống trong chừng này (ms) */
+const FOOTER_MS = 600
 /** Lớp che khi cắt cảnh mờ đi trong chừng này (giây) */
 const CUT_FADE_S = 0.5
 const SWIPE_PX = 36
@@ -87,6 +89,8 @@ export function useStageMode() {
 
 interface Options {
     journey: boolean
+    /** Trang chủ không cuộn tài liệu: 5 chương 0..4, chương 4 là footer trượt lên (desktop và cảm ứng). Tắt khi giảm chuyển động / làm mờ cảnh / ?docscroll. */
+    paged: boolean
     /** Thanh tiến độ cuộn: hook ghi trực tiếp transform, không qua state. */
     barRef?: RefObject<HTMLElement | null>
     /** Phần tử gốc của trang chủ: hook đánh dấu mục thanh chương đang chọn, tìm lớp che cắt cảnh và dòng hướng dẫn. */
@@ -102,7 +106,7 @@ interface Options {
  * Đang bay mà có bước mới: thời lượng ×CHAIN; đi lùi ×BACK. Nhảy từ 2 chương trở lên (rail, Home/End, kéo thanh cuộn) = cắt cảnh: S tới thẳng điểm dừng, lớp màu nền mờ đi.
  * Mọi thứ ghi thẳng vào DOM/ref; chỉ `scrolled` là state và đổi rất ít. Giảm chuyển động: không khóa, S nhảy thẳng tới chương đang đọc.
  */
-export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
+export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Options) {
     const stage = useRef(0)
     const [scrolled, setScrolled] = useState(false)
 
@@ -160,7 +164,10 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             }
         }
 
-        const N = panels.length
+        // Paged: thêm chương 4 = footer (máy quay giữ ở Studio). Số panel chữ vẫn là P.
+        const P = panels.length
+        const N = P + (paged ? 1 : 0)
+        const pinSwap = PIN_SWAP && !paged
         panels.forEach((p) => [...p.querySelectorAll<HTMLElement>('[data-s]')].forEach((el, k) => el.style.setProperty('--n', String(k))))
 
         let S = 0
@@ -230,19 +237,67 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         const narrowMq = window.matchMedia(STATIC_QUERY)
         const guide = () => {
             if (!guideEl || !guideText) return
-            const text = flying() ? GUIDE_FLYING : GUIDE[Math.max(0, state)]
+            const text = flying() && state < P ? GUIDE_FLYING : GUIDE[Math.max(0, state)]
             if (guideText.textContent !== text) guideText.textContent = text
             // Màn hẹp chật chỗ: chỉ hiện ở hero để không đè chữ panel
-            const show = inStage() && (!narrowMq.matches || (state <= 0 && !flying()))
+            const show = inStage() && state < P && (!narrowMq.matches || (state <= 0 && !flying()))
             const op = show ? '1' : '0'
             if (guideEl.style.opacity !== op) guideEl.style.opacity = op
         }
+
+        // ── Paged: footer là tấm phủ fixed trượt lên (translateY 100% → 0) bằng JS để biết tiến độ cho stage/frameloop ──
+        const footerEl = paged ? document.getElementById('home-footer') : null
+        let footerP = 0
+        let footerTo = 0
+        let footerWritten = -1
+        let footerAnim: { from: number; to: number; start: number } | null = null
+        let footerScrollable = false
+        const writeFooter = () => {
+            if (!footerEl) return
+            const v = footerP
+            if (Math.abs(v - footerWritten) < 0.0005 && v !== 0 && v !== 1) return
+            footerWritten = v
+            footerEl.style.transform = v >= 1 ? 'translate3d(0,0,0)' : `translate3d(0,${((1 - v) * 100).toFixed(2)}%,0)`
+        }
+        const setFooter = (open: boolean) => {
+            const to = open ? 1 : 0
+            if (!footerEl || to === footerTo) return
+            footerTo = to
+            footerAnim = { from: footerP, to, start: performance.now() }
+            if (!open && footerEl.contains(document.activeElement)) (document.activeElement as HTMLElement).blur()
+        }
+        const tickFooter = (now: number) => {
+            if (!footerAnim) return
+            const a = footerAnim
+            const k = clamp((now - a.start) / (FOOTER_MS * Math.max(0.3, Math.abs(a.to - a.from))))
+            footerP = k >= 1 ? a.to : a.from + (a.to - a.from) * (1 - Math.pow(1 - k, 3))
+            if (k >= 1) {
+                footerAnim = null
+                if (a.to === 0) footerEl!.scrollTop = 0
+            }
+            page.footerP = footerP
+            writeFooter()
+        }
+        let footerRo: ResizeObserver | null = null
+        const onFooterFocus = () => {
+            if (state !== N - 1) go(N - 1)
+        }
+        if (footerEl) {
+            // Footer dài hơn màn thì cuộn bên trong chính nó (không cuộn tài liệu); đo sẵn, không đọc layout lúc wheel
+            footerRo = new ResizeObserver(() => (footerScrollable = footerEl.scrollHeight > footerEl.clientHeight + 1))
+            footerRo.observe(footerEl)
+            footerEl.addEventListener('focusin', onFooterFocus)
+        }
+        page.paged = paged
+        page.footerP = 0
+        setPagedMode(paged)
+        if (paged) document.documentElement.classList.add('home-paged')
 
         let chromeTimer = 0
         const deferChrome = () => {
             window.clearTimeout(chromeTimer)
             chromeTimer = window.setTimeout(() => {
-                markRail(state)
+                markRail(Math.min(state, P - 1))
                 setJourneyChapter(state)
                 guide()
             }, 80)
@@ -250,7 +305,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         // Khung hành trình: WebKit dùng fixed trong vùng ghim, absolute ở đầu/đáy section (chỉ đổi ở ranh giới)
         let pinMode = ''
         const setPin = () => {
-            if (!PIN_SWAP) return
+            if (!pinSwap) return
             const y = window.scrollY
             const t = page.journeyTop
             const m = y < t ? 'before' : y > t + page.dist ? 'after' : 'in'
@@ -270,7 +325,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             prevState = state
             state = i
             const [, v] = twAt()
-            const to = STOP[i]
+            const to = STOP[Math.min(i, STOP.length - 1)]
             backFlight = !first && to < S
             const still = first || cut
             let D = still ? 0 : flightTime(S, to) * (midFlight ? CHAIN : 1) * (backFlight ? BACK : 1)
@@ -280,6 +335,13 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (D <= 0) landedAt = now
             if (still) S = to
             if (cut && !first) flashCut()
+            if (paged) {
+                // Thanh tiến độ theo chương 0..4 + tiến độ chuyến bay
+                barFrom = barScale
+                barTo = i / (N - 1)
+                barAnim = true
+                setFooter(i === N - 1)
+            }
             panels.forEach((p, k) => {
                 p.classList.remove('on')
                 p.classList.toggle('past', k < i)
@@ -294,6 +356,10 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         // Panel mới `on` khi tiến độ bay đạt REVEAL (hoặc ngay nếu không bay / chế độ làm mờ)
         const revealIfReady = () => {
             if (shown === state || state < 0) return
+            if (state >= P) {
+                shown = state // chương footer: không có panel chữ
+                return
+            }
             if (tw.D <= 0 || calmRef.current || tw.p >= revealAt()) {
                 panels[state].classList.add('on')
                 shown = state
@@ -304,15 +370,15 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         // Số đo layout tính sẵn (page-metrics: khi mount và khi resize), không đọc layout lúc cuộn
         const dist = () => page.dist
         const top = () => page.journeyTop
-        const chapterY = (c: number) => top() + (dist() * (c + 0.5)) / N
+        const chapterY = (c: number) => top() + (dist() * (c + 0.5)) / P
         const readScroll = timed(() => {
             setPin()
             const p = clamp((window.scrollY - top()) / dist(), 0, 0.999)
             const now = performance.now()
             // Lenis còn đang trượt tới chương đã chọn (khung hình chậm): chưa đọc lại chương từ vị trí cuộn dở dang
-            const gliding = now < holdUntil + 1500 && lenis.isScrolling === 'smooth'
+            const gliding = now < holdUntil + 1500 && lenis?.isScrolling === 'smooth'
             if (now >= holdUntil && !gliding) {
-                const i = Math.floor(p * N)
+                const i = Math.floor(p * P)
                 // Kéo thanh cuộn / Home / End nhảy từ 2 chương: cắt cảnh
                 setState(i, state >= 0 && Math.abs(i - state) >= 2)
             }
@@ -320,14 +386,15 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             guide()
         })
         const inStage = () => {
+            if (paged) return true
             const t = top()
             return window.scrollY >= t - 2 && window.scrollY <= t + dist() + 2
         }
 
         // ── Lenis: cuộn theo thời gian (mỗi nấc wheel trượt ~1,15s), không snap ──
-        const lenis = new Lenis({ duration: 1.15, smoothWheel: !FLAGS.noLenis })
+        const lenis = paged ? null : new Lenis({ duration: 1.15, smoothWheel: !FLAGS.noLenis })
         setLenis(lenis)
-        lenis.on('scroll', readScroll)
+        lenis?.on('scroll', readScroll)
 
         // Cuộn tới giữa vùng của chương (rail, nav, bước một chương): chương được chọn ngay, S bay, thanh cuộn chạy theo.
         // Nhảy từ 2 chương trở lên thì cắt cảnh: S tới thẳng, cuộn tức thì.
@@ -337,6 +404,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (target === state) landedAt = now
             setState(target, cut)
             lastStepAt = now
+            if (paged) return // không cuộn tài liệu: chỉ đổi chương
             // Trong vùng ghim nội dung không dịch chuyển nên nhảy tức thì (cuộn mượt ép Safari vẽ lại trang 500vh mỗi khung); từ ngoài vùng (footer) mới cuộn mượt
             const instant = cut || (inStage() && !FLAGS.smoothScroll)
             holdUntil = now + (instant ? 150 : 1300)
@@ -345,10 +413,10 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 barFrom = barScale
                 barTo = page.max > 0 ? clamp(y / page.max) : 0
                 barAnim = tw.D > 0
-                lenis.scrollTo(y, { immediate: true, force: true })
+                lenis?.scrollTo(y, { immediate: true, force: true })
             } else {
                 barAnim = false
-                lenis.scrollTo(y, { duration: 0.9, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
+                lenis?.scrollTo(y, { duration: 0.9, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
             }
         }
         setChapterScroller(go)
@@ -434,6 +502,8 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 } else if (fresh && now - lastStepAt > MIN_GAP_MS) step(dir) // cú vuốt mới ngược chiều: bước về chương trước
                 return
             }
+            // Footer (chương 4) dài hơn màn: wheel cuộn bên trong chính nó; chỉ khi ở đầu nội dung và là cú vuốt lên mới về chương 3
+            if (paged && state === N - 1 && footerScrollable && footerEl && (dir > 0 || footerEl.scrollTop > 0)) return
             // Quán tính từ footer đã vào vùng ghim: dừng ở Studio trước khi cho lùi tiếp
             if (fromFooter && dir < 0 && state === N - 1 && now - lastStepAt > MIN_GAP_MS) {
                 fromFooter = false
@@ -466,7 +536,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             }
             if (calmRef.current || !inStage() || touchY == null) return
             const dir = Math.sign(touchY - e.touches[0].clientY)
-            const releasing = (state === 0 && dir < 0) || (state === N - 1 && dir > 0 && window.scrollY >= chapterY(N - 1) - 4)
+            const releasing = paged ? state === N - 1 && footerScrollable : (state === 0 && dir < 0) || (state === N - 1 && dir > 0 && window.scrollY >= chapterY(N - 1) - 4)
             if (!releasing && e.cancelable) e.preventDefault()
         }
         const onTouchEnd = (e: TouchEvent) => {
@@ -475,12 +545,21 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             touchY = null
             if (benchState.active || Math.abs(dy) <= SWIPE_PX || calmRef.current || !inStage()) return
             const d = Math.sign(dy)
+            if (paged && state === N - 1 && footerScrollable && (d > 0 || (footerEl?.scrollTop ?? 0) > 0)) return
             if (flying() && d === flightDir()) return addBoost(BOOST_TOUCH)
             if (performance.now() - lastStepAt > MIN_GAP_MS) step(d)
         }
         const onKey = (e: KeyboardEvent) => {
             const dir = ({ ArrowDown: 1, PageDown: 1, ' ': 1, ArrowUp: -1, PageUp: -1 } as Record<string, number>)[e.key]
             const el = e.target instanceof Element ? e.target : null
+            // Paged: Home / End về chương đầu / chương footer
+            if (paged && (e.key === 'Home' || e.key === 'End') && !e.metaKey && !e.ctrlKey && !e.altKey && !el?.closest('input,textarea,select,[contenteditable="true"]')) {
+                if (benchState.active) return void e.preventDefault()
+                e.preventDefault()
+                go(e.key === 'Home' ? 0 : N - 1)
+                return
+            }
+            if (paged && dir && state === N - 1 && footerScrollable && footerEl && (dir > 0 || footerEl.scrollTop > 0)) return
             if (!dir || e.metaKey || e.ctrlKey || e.altKey || el?.closest('input,textarea,select,[contenteditable="true"]')) return
             if (e.key === ' ' && el?.closest('button,a')) return
             if (benchState.active) return void e.preventDefault()
@@ -498,7 +577,8 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         let guideAt = 0
         // Chạy trong vòng rAF chung (lib/frame-loop), trước khung vẽ của canvas
         const tick = (t: number) => {
-            lenis.raf(t)
+            lenis?.raf(t)
+            tickFooter(performance.now())
             const now = performance.now()
             const dt = Math.min((now - lastT) / 1000, 0.2)
             lastT = now
@@ -534,13 +614,16 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         window.addEventListener('touchend', onTouchEnd, { passive: true })
         window.addEventListener('keydown', onKey)
         // Lenis đã phát 'scroll' cho mọi cuộn (kể cả kéo thanh cuộn); resize thì đọc lại số đo
-        window.addEventListener('resize', readScroll)
-        readScroll()
+        if (paged) setState(0)
+        else {
+            window.addEventListener('resize', readScroll)
+            readScroll()
+        }
         const stopFrame = addFrame(tick, 0)
         return () => {
             stopFrame()
             window.clearTimeout(chromeTimer)
-            if (PIN_SWAP) {
+            if (pinSwap) {
                 pin.style.position = ''
                 pin.style.top = ''
                 pin.style.bottom = ''
@@ -551,13 +634,19 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             window.removeEventListener('touchend', onTouchEnd)
             window.removeEventListener('keydown', onKey)
             window.removeEventListener('resize', readScroll)
+            footerEl?.removeEventListener('focusin', onFooterFocus)
+            footerRo?.disconnect()
+            if (paged) document.documentElement.classList.remove('home-paged')
+            page.paged = false
+            page.footerP = 0
+            setPagedMode(false)
             setChapterScroller(null)
             setFlyingProbe(null)
             setJourneyChapter(-1)
             setLenis(null)
-            lenis.destroy()
+            lenis?.destroy()
         }
-    }, [journey, barRef, rootRef, calmRef])
+    }, [journey, paged, barRef, rootRef, calmRef])
 
     return { stage, scrolled }
 }

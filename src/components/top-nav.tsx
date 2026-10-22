@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Flame, Menu, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { XpChip } from '@/components/xp-chip'
 import { visibleStreak } from '@/lib/gamification'
 import { centerOf, enterRole } from '@/lib/role-switch'
-import { scrollToSection } from '@/lib/scroll'
+import { getJourneyChapter, scrollToSection, subscribeChapter } from '@/lib/scroll'
 import { useSoundStore } from '@/lib/sfx'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
@@ -119,7 +119,9 @@ export function TopNav() {
     const { pathname, hash } = useLocation()
     const [menuOpen, setMenuOpen] = useState(false)
     const onHome = pathname === '/'
-    const { scrolled } = useNavScroll(onHome)
+    // Trang chủ paged không cuộn tài liệu (scrollY luôn 0): nav chuyển sang kính khi đã rời chương hero
+    const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
+    const scrolled = useNavScroll(onHome).scrolled || (onHome && chapter > 0)
     // Trang chủ có cảnh 3D cố định phía sau suốt chiều dài nên nav luôn ở tone hero (trong suốt, kính khi đã cuộn)
     const tone: NavTone = onHome ? 'hero' : 'plain'
     const t = TONE[tone]
