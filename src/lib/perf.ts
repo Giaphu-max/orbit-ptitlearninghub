@@ -8,6 +8,9 @@
  *   ?nolenis    cuộn gốc của trình duyệt (vẫn giữ bước chương)
  *   ?opaque     canvas alpha:false (mặc định bật trên Safari/WebKit)
  *   ?smoothscroll  bước chương cuộn mượt bằng Lenis như bản cũ (mặc định: nhảy tức thì trong vùng ghim)
+ *   ?nooverlays ẩn các lớp phủ fixed (overlay, veil, guide, dock, rail, thanh tiến độ)
+ *   ?nosky      bỏ gradient trời của .stage-sky (nền đặc)
+ *   ?sticky     giữ khung sticky của hành trình (mặc định trên WebKit: fixed/absolute đổi ở hai ranh giới)
  *   ?bench      tự đo lần lượt các cấu hình trên (xem lib/bench.ts), kết quả hiện thành bảng
  */
 const q = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search)
@@ -21,13 +24,21 @@ export const FLAGS = {
     noLenis: q.has('nolenis'),
     opaque: q.has('opaque'),
     smoothScroll: q.has('smoothscroll'),
+    noOverlays: q.has('nooverlays'),
+    noSky: q.has('nosky'),
+    sticky: q.has('sticky'),
     bench: q.has('bench'),
 }
 
 /** Đang đo tự động: useScrollStage bỏ qua input cuộn của người dùng. Chỉ true khi có ?bench và chưa hiện bảng kết quả. */
 export const benchState = { active: FLAGS.bench }
 
-if (typeof document !== 'undefined' && FLAGS.noReveal) document.documentElement.classList.add('no-reveal')
+if (typeof document !== 'undefined') {
+    const cl = document.documentElement.classList
+    if (FLAGS.noReveal) cl.add('no-reveal')
+    if (FLAGS.noOverlays) cl.add('no-overlays')
+    if (FLAGS.noSky) cl.add('no-sky')
+}
 
 const BUCKET_S = 0.5
 const BUCKETS = 4 // 4 × 0,5s = cửa sổ 2 giây

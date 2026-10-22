@@ -11,6 +11,9 @@ export const BENCH_CONFIGS = [
     { label: 'nokiosk', flag: 'nokiosk' },
     { label: 'opaque', flag: 'opaque' },
     { label: 'smoothscroll', flag: 'smoothscroll' },
+    { label: 'nooverlays', flag: 'nooverlays' },
+    { label: 'nosky', flag: 'nosky' },
+    { label: 'sticky', flag: 'sticky' },
 ] as const
 
 export interface BenchRow {
@@ -25,6 +28,14 @@ export interface BenchRow {
     jank: number
     flyFrames: number
     stillFrames: number
+    /** Khung chậm nhất lúc bay (ms) và JS của khung đó */
+    flyWorst: number
+    flyWorstJs: number
+    /** Chặng Studio → hết footer → lên lại Studio */
+    footFps: number
+    footLow: number
+    footJank: number
+    footFrames: number
 }
 export interface BenchState {
     i: number
@@ -70,8 +81,10 @@ export function initBench(): BenchState {
 export interface Phase {
     gaps: number[]
     js: number
+    worstGap: number
+    worstJs: number
 }
-export const newPhase = (): Phase => ({ gaps: [], js: 0 })
+export const newPhase = (): Phase => ({ gaps: [], js: 0, worstGap: 0, worstJs: 0 })
 
 const stats = (p: Phase) => {
     const n = p.gaps.length
@@ -81,11 +94,16 @@ const stats = (p: Phase) => {
     return { fps: 1000 / mean, low: 1000 / (worst.reduce((a, b) => a + b, 0) / worst.length), js: p.js / n }
 }
 
-export function makeRow(label: string, fly: Phase, still: Phase): BenchRow {
+export function makeRow(label: string, fly: Phase, still: Phase, foot: Phase): BenchRow {
     const f = stats(fly)
     const s = stats(still)
+    const o = stats(foot)
     const jank = [...fly.gaps, ...still.gaps].filter((g) => g > 50).length
-    return { label, flyFps: f.fps, flyLow: f.low, flyJs: f.js, stillFps: s.fps, stillLow: s.low, stillJs: s.js, jank, flyFrames: fly.gaps.length, stillFrames: still.gaps.length }
+    return {
+        label, flyFps: f.fps, flyLow: f.low, flyJs: f.js, stillFps: s.fps, stillLow: s.low, stillJs: s.js, jank,
+        flyFrames: fly.gaps.length, stillFrames: still.gaps.length, flyWorst: fly.worstGap, flyWorstJs: fly.worstJs,
+        footFps: o.fps, footLow: o.low, footJank: foot.gaps.filter((g) => g > 50).length, footFrames: foot.gaps.length,
+    }
 }
 
 /** userAgent rút gọn: "Safari 18.3" / "Chrome 130" */
@@ -100,6 +118,9 @@ export function shortUA() {
 const f1 = (n: number) => (n ? n.toFixed(1) : '–')
 export function benchText(rows: BenchRow[]) {
     const head = `${shortUA()} · dpr ${window.devicePixelRatio} · ${window.innerWidth}×${window.innerHeight}`
-    const lines = rows.map((r) => `${r.label.padEnd(12)} bay ${f1(r.flyFps)} fps (1% low ${f1(r.flyLow)}) · yên ${f1(r.stillFps)} fps · giật ${r.jank} · js bay ${r.flyJs.toFixed(1)}ms / yên ${r.stillJs.toFixed(1)}ms`)
+    const lines = rows.map(
+        (r) =>
+            `${r.label.padEnd(12)} bay ${f1(r.flyFps)} fps (1% low ${f1(r.flyLow)}, chậm nhất ${r.flyWorst.toFixed(0)}ms/js ${r.flyWorstJs.toFixed(1)}ms) · yên ${f1(r.stillFps)} fps · giật ${r.jank} · footer ${f1(r.footFps)} fps (1% low ${f1(r.footLow)}, giật ${r.footJank}) · js bay ${r.flyJs.toFixed(1)}ms / yên ${r.stillJs.toFixed(1)}ms`,
+    )
     return [head, ...lines].join('\n')
 }

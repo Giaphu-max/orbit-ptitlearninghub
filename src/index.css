@@ -240,9 +240,6 @@
       radial-gradient(40% 34% at 78% 16%, hsl(var(--sky-glow) / var(--sky-glow-alpha)) 0%, hsl(var(--sky-glow) / 0) 70%),
       linear-gradient(180deg, hsl(var(--sky-1)) 0%, hsl(var(--sky-2)) 42%, hsl(var(--sky-3)) 75%, hsl(var(--sky-4)) 100%);
   }
-  .stage-dip {
-    background-color: hsl(var(--stage-bg));
-  }
   /* Panel chương (useScrollStage đặt class on / past): chồng nhau trong một ô lưới, panel không `on` thì ẩn sau khi hiệu ứng ra xong */
   [data-panel] {
     visibility: hidden;
@@ -291,26 +288,26 @@
       opacity: 1 !important;
     }
   }
-  /* Có chữ trên màn: cảnh bớt rực nhẹ bằng một lớp màu nền mờ phủ lên (không dùng filter trên canvas: filter ép cả canvas đi qua một lượt hợp thành riêng).
-     Cảnh ghi thẳng opacity (0 → 0,12) vào lớp này khi giá trị đổi, không đặt biến CSS ở phần tử cha. Chế độ làm mờ cảnh 3D (nút ở góc phải dưới trang chủ) cũng chỉ dùng opacity. */
-  .stage-dim {
-    background-color: hsl(var(--stage-bg));
-    opacity: 0;
-  }
-  /* ?noreveal (công cụ đo hiệu năng): chữ hiện ngay, không transition */
-  .no-reveal [data-panel] [data-s] {
-    transition: none !important;
-    filter: none !important;
-    transform: none !important;
-    opacity: 1 !important;
-  }
+  /* Có chữ trên màn / chế độ làm mờ: cảnh bớt rực nhờ lớp phủ màu nền duy nhất [data-overlay] (opacity do cảnh ghi, xem stage-signal); không dùng filter trên canvas. */
   [data-calm='true'] #home-stage {
     opacity: 0.28;
     transition: opacity 0.5s;
   }
-  [data-calm='true'] .stage-dim {
-    opacity: 0.45;
-    transition: opacity 0.5s;
+  /* Mỗi phần tử fixed của trang chủ tự một lớp ghép để Safari không vẽ lại chúng khi tài liệu cuộn */
+  .own-layer {
+    will-change: transform;
+  }
+  /* Canvas đục đã vẽ trời bằng WebGL: bỏ gradient CSS phía sau */
+  .stage-sky.sky-gl {
+    background-image: none;
+  }
+  /* ?nosky: nền đặc thay gradient trời; ?nooverlays: ẩn lớp phủ fixed (chỉ để đo hiệu năng) */
+  .no-sky .stage-sky {
+    background-image: none;
+    background-color: hsl(var(--stage-bg));
+  }
+  .no-overlays :is([data-overlay], .stage-veil, [data-guide], [data-dock], [data-rail], [data-bar]) {
+    display: none !important;
   }
   .stage-veil {
     background: linear-gradient(90deg, hsl(var(--stage-bg) / 0.95) 0%, hsl(var(--stage-bg) / 0.84) 30%, hsl(var(--stage-bg) / 0.32) 48%, hsl(var(--stage-bg) / 0) 60%);

@@ -12,8 +12,8 @@ import { PERF_ON, PerfHud } from './campus-perf'
 import { isWebKit } from '@/lib/browser'
 import { FLAGS } from '@/lib/perf'
 import { addFrame } from '@/lib/frame-loop'
-import { footerCover, page } from '@/lib/page-metrics'
-import { stageSignal } from '@/lib/stage-signal'
+import { footerCover } from '@/lib/page-metrics'
+import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
@@ -475,6 +475,8 @@ const DESKTOP_SHIFT = 0.18
 const REF_ASPECT = 1.05
 /** Làm mượt độ tối nền khi có chữ (đích chỉ là 0/1) */
 const DIM_SMOOTH = 3
+/** Footer phủ quá chừng này (0..1) thì ngừng vẽ cảnh 3D */
+const FOOTER_STOP = 0.6
 
 // ── Máy quay: mỗi chuyển cảnh là MỘT động tác đơn giản; đoạn dài thì cắt bằng tối màn (dip) ──
 //   S 0→1: vòng quanh khuôn viên, kết thúc chính diện A2
@@ -659,48 +661,37 @@ const CAPTIONS: [number, string][] = [[0.15, 'Khuôn viên PTIT'], [1, 'Vòng qu
 const captionAt = (s: number) => CAPTIONS.find(([to]) => s < to)?.[1] ?? 'Phòng thực hành'
 
 /**
- * Phần "vỏ" quanh cảnh, ghi thẳng vào DOM (chỉ khi giá trị đổi): chú thích máy quay, canvas và dock mờ dần khi footer đi vào.
- * Chế độ làm mờ để CSS (data-calm) lo phần canvas.
+ * Phần "vỏ" quanh cảnh, ghi thẳng vào DOM (chỉ khi giá trị đổi): chú thích máy quay và lớp phủ màu nền chung
+ * (nền tối nhẹ khi có chữ + che quanh điểm cắt cảnh, xem stage-signal). Chế độ làm mờ: lớp phủ đậm hơn (0,45).
  */
-function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, delta: number, last: { cap: string; stage: string; dock: string; dip: string; dim: number; dimCss: string }) {
-    // Footer phủ bao nhiêu màn: từ số đo tính sẵn (page-metrics), không đọc layout
-    const out = footerCover()
-    const stageOpacity = calm ? '' : (1 - out * 0.9).toFixed(3)
-    const dockOpacity = (1 - out).toFixed(2)
-    // Độ tối nền khi có chữ: hook ghi đích 0/1 (stageSignal.onStage), ở đây làm mượt theo thời gian rồi ghi opacity vào .stage-dim
-    // Chế độ làm mờ: CSS (data-calm) lo lớp này nên xóa opacity inline
-    const dimEl = kiosk.dim.current
-    if (dimEl) {
-        const target = stageSignal.onStage
-        last.dim += (target - last.dim) * (1 - Math.exp(-Math.min(delta, 0.2) * DIM_SMOOTH))
-        if (Math.abs(target - last.dim) < 0.001) last.dim = target
-        const css = calm ? '' : (last.dim * 0.12).toFixed(3)
-        // Chỉ ghi khi opacity đổi quá 0,002 (lớp này chỉ đi 0 → 0,12, tương đương 0,02 trên thang 0..1) hoặc khi tới đích
-        const prev = last.dimCss === '' ? NaN : Number(last.dimCss)
-        if (css !== last.dimCss && (css === '' || last.dim === target || !(Math.abs(Number(css) - prev) < 0.002))) {
-            last.dimCss = css
-            dimEl.style.opacity = css
-        }
-    }
+function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, delta: number, last: { cap: string }) {
+    const target = calm ? 0.45 : 0.12 * stageSignal.onStage
+    overlay.dim += (target - overlay.dim) * (1 - Math.exp(-Math.min(delta, 0.2) * DIM_SMOOTH))
+    if (Math.abs(target - overlay.dim) < 0.001) overlay.dim = target
+    overlay.dip = dipAt(S)
+    flushOverlay()
     const cap = captionAt(S)
-    const dip = dipAt(S).toFixed(3)
-    if (dip !== last.dip && kiosk.dip.current) {
-        last.dip = dip
-        kiosk.dip.current.style.opacity = dip
-    }
-    if (stageOpacity !== last.stage && kiosk.stage.current) {
-        last.stage = stageOpacity
-        kiosk.stage.current.style.opacity = stageOpacity
-    }
-    const dock = kiosk.dock.current
-    if (dock && dockOpacity !== last.dock) {
-        last.dock = dockOpacity
-        dock.style.opacity = dockOpacity
-        dock.style.pointerEvents = out > 0.5 ? 'none' : ''
-    }
     if (cap !== last.cap && kiosk.cap.current) {
         last.cap = cap
         kiosk.cap.current.textContent = cap
+    }
+}
+
+/** Footer đi vào: stage (canvas) mờ dần, dock mờ hẳn. Chạy mỗi khung trong FrameDriver kể cả lúc đã dừng vẽ cảnh; chỉ ghi opacity khi đổi. */
+const fadeLast = { stage: '', dock: '' }
+function footerFade(kiosk: KioskBridge, calm: boolean) {
+    const out = footerCover()
+    const stageOpacity = calm ? '' : (1 - out * 0.9).toFixed(2)
+    const dockOpacity = (1 - out).toFixed(2)
+    if (stageOpacity !== fadeLast.stage && kiosk.stage.current) {
+        fadeLast.stage = stageOpacity
+        kiosk.stage.current.style.opacity = stageOpacity
+    }
+    const dock = kiosk.dock.current
+    if (dock && dockOpacity !== fadeLast.dock) {
+        fadeLast.dock = dockOpacity
+        dock.style.opacity = dockOpacity
+        dock.style.pointerEvents = out > 0.5 ? 'none' : ''
     }
 }
 
@@ -874,7 +865,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     // S đã làm mượt (lerp theo dt) và mức "đã vào trong nhà" (0 ngoài sân → 1 trong sảnh): nắng giảm, đèn trong sảnh nổi lên
     const sm = useRef(stage.current)
     const indoor = useRef(0)
-    const chrome = useRef({ cap: '', stage: '', dock: '', dip: '', dim: 0, dimCss: '' })
+    const chrome = useRef({ cap: '' })
     // Đo FPS: dưới 40 thì giảm chất lượng (shadow map nhỏ, cây không đổ bóng)
     const perf = useRef({ t: 0, n: 0, bad: 0 })
     const [lowQuality, setLowQuality] = useState(false)
@@ -1254,19 +1245,27 @@ export interface CampusSceneProps {
  * Vẽ canvas trong vòng rAF chung (lib/frame-loop), sau Lenis và máy quay: Canvas ở frameloop="never", ở đây gọi advance.
  * Không vẽ khi không ai thấy: tab ẩn, footer đã phủ kín màn (số đo từ page-metrics, không đọc layout), hoặc màn chuyển giao diện đang che.
  */
-function FrameDriver() {
+function FrameDriver({ kiosk }: { kiosk: KioskBridge }) {
     const advance = useThree((s) => s.advance)
     const clock = useThree((s) => s.clock)
     useEffect(() => {
         let prev = 0
+        let drew = false
         return addFrame((t) => {
             // Delta tối đa 0,1s: khung bị treo lâu (tab ẩn) không tạo delta khổng lồ
             const dt = Math.min(prev ? (t - prev) / 1000 : 0.016, 0.1)
             prev = t
-            if (document.hidden || useThemeStore.getState().frozen || page.footerTop - page.y <= 0) return
+            footerFade(kiosk, kiosk.calm.current)
+            // Footer đã phủ quá 60% màn: dừng vẽ cảnh, giữ khung cuối (canvas đang mờ dần bằng opacity của lớp stage)
+            if (document.hidden || useThemeStore.getState().frozen || footerCover() > FOOTER_STOP) return
             advance(clock.elapsedTime + dt)
+            // Canvas đục đã có khung đầu: trời đã vẽ bằng WebGL, bỏ gradient CSS phía sau
+            if (!drew && OPAQUE) {
+                drew = true
+                kiosk.stage.current?.classList.add('sky-gl')
+            }
         }, 1)
-    }, [advance, clock])
+    }, [advance, clock, kiosk])
     return null
 }
 
@@ -1338,7 +1337,7 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <FrameDriver />
+                    <FrameDriver kiosk={kiosk} />
                     <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
                 </Canvas>
             )}

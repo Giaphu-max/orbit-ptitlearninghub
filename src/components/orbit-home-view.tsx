@@ -9,8 +9,9 @@ import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/cour
 import { scrollToSection } from '@/lib/scroll'
 import { trackPage } from '@/lib/page-metrics'
 import { FLAGS, mountPerfHud } from '@/lib/perf'
+import { overlay } from '@/lib/stage-signal'
 import { todaysDaily } from '@/lib/next-step'
-import { CHAPTERS, useScrollStage, useStageMode } from '@/hooks/useScrollStage'
+import { CHAPTERS, PIN_SWAP, useScrollStage, useStageMode } from '@/hooks/useScrollStage'
 import { useTodayDaily } from '@/hooks/useTodayDaily'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusStage } from '@/components/home/campus-stage'
@@ -39,11 +40,9 @@ export function OrbitHomeView() {
     const footerRef = useRef<HTMLDivElement>(null)
     const dockRef = useRef<HTMLDivElement>(null)
     const capRef = useRef<HTMLSpanElement>(null)
-    const dipRef = useRef<HTMLDivElement>(null)
     const veilRef = useRef<HTMLDivElement>(null)
     const railRef = useRef<HTMLElement>(null)
-    const dimRef = useRef<HTMLDivElement>(null)
-    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, cap: capRef, dip: dipRef, veil: veilRef, rail: railRef, dim: dimRef, calm: calmRef }), [])
+    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, cap: capRef, veil: veilRef, rail: railRef, calm: calmRef }), [])
 
     // Số đo layout (footer, hành trình, scrollHeight) đo một lần + khi resize; layout effect chạy trước effect của useScrollStage
     useLayoutEffect(() => trackPage(() => footerRef.current).stop, [])
@@ -52,19 +51,17 @@ export function OrbitHomeView() {
     return (
         <div ref={rootRef} data-calm={calm} className="group/home relative w-full bg-stage text-foreground">
             <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} flat={!journey} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} />
-            {/* Che ngắn quanh điểm cắt cảnh, màu nền trang (cảnh ghi độ mờ mỗi khung hình) */}
-            <div ref={dipRef} aria-hidden className="stage-dip pointer-events-none fixed inset-0 z-[1] opacity-0" />
-            {/* Lớp màu nền che khi cắt cảnh (nhảy từ 2 chương trở lên): hook useScrollStage đặt đục rồi mờ đi trong 0,5s */}
-            <div aria-hidden data-cut-veil className="pointer-events-none fixed inset-0 z-[5] bg-stage opacity-0" />
-            <div ref={veilRef} aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" />
+            {/* MỘT lớp màu nền (chỉ đổi opacity, xem stage-signal): nền tối nhẹ khi có chữ, che quanh điểm cắt cảnh, che khi nhảy chương */}
+            <div ref={(el) => void (overlay.el = el)} data-overlay aria-hidden className="own-layer pointer-events-none fixed inset-0 z-[4] bg-stage opacity-0" />
+            <div ref={veilRef} aria-hidden data-static={staticMode} className="stage-veil own-layer pointer-events-none fixed inset-0 z-[1]" />
             {!staticMode && !FLAGS.noKiosk && <KioskScreen screenRef={screenRef} />}
             <BenchRunner />
-            <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
+            <div ref={barRef} aria-hidden data-bar className="own-layer pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
             {journey ? (
                 <section id="journey" className="pointer-events-none relative z-10" style={{ height: `${(CHAPTERS + 1) * 100}svh` }}>
-                    <div className={`container-page sticky top-0 flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center pb-16 pt-24'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
+                    <div className={`container-page ${PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center pb-16 pt-24'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
                         <div className="grid w-full max-w-[600px] items-center">
                             <Panel id="top" index={0} wide>
                                 <HeroChapter />
@@ -108,14 +105,14 @@ export function OrbitHomeView() {
 
             {/* Dòng hướng dẫn cho người mới: hook ghi chữ và độ hiện; ẩn ở footer */}
             {journey && (
-                <p data-guide aria-live="polite" style={{ opacity: 0 }} className="pointer-events-none fixed bottom-5 left-[max(1.5rem,4vw)] z-[6] flex max-w-[calc(100vw-3rem)] items-center gap-2 text-xs text-muted-foreground transition-opacity duration-slow">
+                <p data-guide aria-live="polite" style={{ opacity: 0 }} className="own-layer pointer-events-none fixed bottom-5 left-[max(1.5rem,4vw)] z-[6] flex max-w-[calc(100vw-3rem)] items-center gap-2 text-xs text-muted-foreground transition-opacity duration-slow">
                     <ChevronDown size={16} className="shrink-0 text-brand-ink motion-safe:animate-bounce" aria-hidden />
                     <span data-guide-text>Cuộn để đi vào trường</span>
                 </p>
             )}
 
             {!staticMode && (
-                <div ref={dockRef} className="fixed bottom-5 right-[max(1.5rem,4vw)] z-[6] flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
+                <div ref={dockRef} data-dock className="own-layer fixed bottom-5 right-[max(1.5rem,4vw)] z-[6] flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
                     <span ref={capRef} aria-hidden />
                     <button
                         type="button"
@@ -128,9 +125,8 @@ export function OrbitHomeView() {
                 </div>
             )}
 
-            {/* Footer nằm trên mọi lớp 3D và màn kiosk; dải chuyển màu ở mép trên */}
+            {/* Footer nằm trên mọi lớp 3D và màn kiosk; nền đặc, không có dải chuyển màu tràn lên cảnh */}
             <div id="home-footer" ref={footerRef} className="relative z-[20] flow-root bg-card">
-                <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-24 h-24 bg-gradient-to-b from-transparent to-card" />
                 <SiteFooter />
             </div>
         </div>
@@ -153,7 +149,7 @@ function useBuildingCourses() {
 const RAIL = [['top', 'Trang chủ'], ['daily', '01 Hôm nay'], ['courses', '02 Khóa học'], ['studio', '03 Studio 3D']] as const
 function ChapterRail({ navRef }: { navRef: RefObject<HTMLElement | null> }) {
     return (
-        <nav ref={navRef} aria-label="Chương" className="fixed right-[max(1.25rem,2.4vw)] top-1/2 z-[6] hidden -translate-y-1/2 flex-col gap-3.5 min-[860px]:flex group-data-[kiosk=on]/home:pointer-events-none">
+        <nav ref={navRef} data-rail aria-label="Chương" className="own-layer fixed right-[max(1.25rem,2.4vw)] top-1/2 z-[6] hidden -translate-y-1/2 flex-col gap-3.5 min-[860px]:flex group-data-[kiosk=on]/home:pointer-events-none">
             {RAIL.map(([id, label], i) => (
                 <button
                     key={id}

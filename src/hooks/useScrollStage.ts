@@ -5,11 +5,15 @@ import { setChapterScroller, setFlyingProbe, setJourneyChapter, setLenis } from 
 import { addFrame } from '@/lib/frame-loop'
 import { page } from '@/lib/page-metrics'
 import { benchState, FLAGS, timed } from '@/lib/perf'
-import { stageSignal } from '@/lib/stage-signal'
+import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
+import { isWebKit } from '@/lib/browser'
 
 /** Dưới ngưỡng này trang chủ dùng canvas 55svh phía trên (bố cục màn hẹp); máy quay vẫn bay như desktop. */
 export const STATIC_QUERY = '(max-width: 859px)'
 const REDUCE_QUERY = '(prefers-reduced-motion: reduce)'
+
+/** WebKit: khung 100svh của hành trình dùng position fixed trong vùng ghim (đổi ở hai ranh giới) thay cho sticky, vì sticky ép Safari vẽ lại khi cuộn */
+export const PIN_SWAP = isWebKit && !FLAGS.sticky
 
 /** Số chương trên trang chủ: Hero, Hôm nay, Khóa học, Studio. */
 export const CHAPTERS = 4
@@ -204,17 +208,20 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             return clamp(d, FLIGHT_MIN, FLIGHT_MAX)
         }
 
-        const veil = rootRef.current?.querySelector<HTMLElement>('[data-cut-veil]')
-        // Che bằng màu nền rồi mờ đi (ease-out); chữ chương mới đã hiện ngay bên trên
+        // Che bằng màu nền rồi mờ đi (ease-out) trên lớp phủ chung; chữ chương mới đã hiện ngay bên trên. Giá trị chạy trong tick, ghi opacity gộp qua flushOverlay.
+        let cutAt = -1
         const flashCut = () => {
-            if (!veil) return
-            veil.style.transition = 'none'
-            veil.style.opacity = '1'
-            void veil.offsetWidth
-            veil.style.transition = `opacity ${CUT_FADE_S}s cubic-bezier(0.2, 0.7, 0.2, 1)`
-            veil.style.willChange = 'opacity' // chỉ trong lúc mờ đi
-            veil.style.opacity = '0'
-            window.setTimeout(() => (veil.style.willChange = ''), CUT_FADE_S * 1000 + 100)
+            cutAt = performance.now()
+            overlay.cut = 1
+            flushOverlay()
+        }
+        const tickCut = (now: number) => {
+            if (cutAt < 0) return
+            const k = (now - cutAt) / (CUT_FADE_S * 1000)
+            if (k >= 1) {
+                cutAt = -1
+                overlay.cut = 0
+            } else overlay.cut = Math.pow(1 - k, 3)
         }
 
         // Dòng hướng dẫn cho người mới (góc dưới trái): chỉ ghi DOM khi đổi
@@ -229,6 +236,30 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             const show = inStage() && (!narrowMq.matches || (state <= 0 && !flying()))
             const op = show ? '1' : '0'
             if (guideEl.style.opacity !== op) guideEl.style.opacity = op
+        }
+
+        let chromeTimer = 0
+        const deferChrome = () => {
+            window.clearTimeout(chromeTimer)
+            chromeTimer = window.setTimeout(() => {
+                markRail(state)
+                setJourneyChapter(state)
+                guide()
+            }, 80)
+        }
+        // Khung hành trình: WebKit dùng fixed trong vùng ghim, absolute ở đầu/đáy section (chỉ đổi ở ranh giới)
+        let pinMode = ''
+        const setPin = () => {
+            if (!PIN_SWAP) return
+            const y = window.scrollY
+            const t = page.journeyTop
+            const m = y < t ? 'before' : y > t + page.dist ? 'after' : 'in'
+            if (m === pinMode) return
+            pinMode = m
+            const st = pin.style
+            st.position = m === 'in' ? 'fixed' : 'absolute'
+            st.top = m === 'after' ? 'auto' : '0'
+            st.bottom = m === 'after' ? '0' : 'auto'
         }
 
         const setState = (i: number, cut = false) => {
@@ -255,9 +286,8 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             })
             shown = -1
             stageSignal.onStage = 0
-            markRail(i)
-            setJourneyChapter(i)
-            guide()
+            // Rail, trạng thái chương cho nav và dòng hướng dẫn không cần ngay: dời khỏi khung đổi chương để khung đó chỉ lo đổi panel
+            deferChrome()
         }
         // Hero ↔ Hôm nay (chuyến bay giữa hai chương đầu) dùng mốc 60% cho cả hai chiều; đi lùi 50%
         const revealAt = () => (backFlight ? REVEAL_BACK : state === 1 || (state === 0 && prevState === 1) ? REVEAL_HERO_LEG : REVEAL[state])
@@ -276,6 +306,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         const top = () => page.journeyTop
         const chapterY = (c: number) => top() + (dist() * (c + 0.5)) / N
         const readScroll = timed(() => {
+            setPin()
             const p = clamp((window.scrollY - top()) / dist(), 0, 0.999)
             const now = performance.now()
             // Lenis còn đang trượt tới chương đã chọn (khung hình chậm): chưa đọc lại chương từ vị trí cuộn dở dang
@@ -476,6 +507,8 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 tw.p = Math.min(1, tw.p + (dt / tw.D) * (1 + boost))
                 if (was < LANDED_P && tw.p >= LANDED_P) landedAt = now
             }
+            tickCut(now)
+            flushOverlay()
             boost *= Math.exp(-dt * BOOST_DECAY) // sức đẩy mờ dần khi ngừng cuộn
             S = twAt()[0]
             stage.current = S
@@ -506,6 +539,12 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         const stopFrame = addFrame(tick, 0)
         return () => {
             stopFrame()
+            window.clearTimeout(chromeTimer)
+            if (PIN_SWAP) {
+                pin.style.position = ''
+                pin.style.top = ''
+                pin.style.bottom = ''
+            }
             window.removeEventListener('wheel', onWheel, { capture: true })
             window.removeEventListener('touchstart', onTouchStart)
             window.removeEventListener('touchmove', onTouchMove)

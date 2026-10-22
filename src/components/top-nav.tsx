@@ -155,7 +155,7 @@ export function TopNav() {
         <header
             style={{ viewTransitionName: 'site-nav' }}
             data-nav={tone === 'plain' ? 'plain' : scrolled ? 'glass' : 'clear'}
-            className={`nav-bar fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] ${t.text}`}
+            className={`nav-bar own-layer fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] ${t.text}`}
         >
             <div className="container-page flex h-full items-center gap-4 lg:gap-6">
                 <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="Orbit, trang chủ">

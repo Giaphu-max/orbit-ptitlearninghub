@@ -6,7 +6,7 @@ import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/cour
 
 /**
  * Cầu nối giữa cảnh 3D và DOM: cảnh ghi trực tiếp (trong useFrame, không qua React) transform/độ mờ của màn kiosk,
- * độ mờ của các phần tử lá (veil, rail, dim; không dùng biến CSS ở phần tử cha), độ mờ của canvas theo footer, độ mờ và chú thích của dock.
+ * độ mờ của các phần tử lá (veil, rail; không dùng biến CSS ở phần tử cha), độ mờ của canvas theo footer, độ mờ và chú thích của dock.
  */
 export interface KioskBridge {
     screen: RefObject<HTMLDivElement | null>
@@ -17,13 +17,9 @@ export interface KioskBridge {
     dock: RefObject<HTMLElement | null>
     /** Chú thích vị trí máy quay trên dock */
     cap: RefObject<HTMLElement | null>
-    /** Lớp tối màn che các điểm cắt cảnh */
-    dip: RefObject<HTMLDivElement | null>
     /** Lớp mờ nền phía trái (stage-veil) và rail chương: opacity = 1 - kiosk focus, ghi thẳng khi đổi quá 0,01 */
     veil: RefObject<HTMLElement | null>
     rail: RefObject<HTMLElement | null>
-    /** Lớp màu nền mờ phủ canvas khi có chữ (stage-dim) */
-    dim: RefObject<HTMLDivElement | null>
     /** Chế độ làm mờ cảnh 3D: camera ngừng theo cuộn */
     calm: MutableRefObject<boolean>
 }

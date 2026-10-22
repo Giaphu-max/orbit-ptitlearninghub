@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { BENCH_CONFIGS, benchText, benchUrl, currentFlag, initBench, makeRow, newPhase, saveBench, shortUA, type BenchRow } from '@/lib/bench'
 import { setFrameObserver } from '@/lib/frame-loop'
 import { benchState, FLAGS } from '@/lib/perf'
-import { goChapter, isCameraFlying, isChapterReady } from '@/lib/scroll'
+import { getLenis, goChapter, isCameraFlying, isChapterReady } from '@/lib/scroll'
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 async function waitFor(cond: () => boolean, timeout: number) {
@@ -34,14 +34,20 @@ function Bench() {
         let cancelled = false
         const fly = newPhase()
         const still = newPhase()
+        const foot = newPhase()
+        let inFooter = false
         ;(async () => {
             await waitFor(() => isChapterReady() && (FLAGS.no3d || !!document.querySelector('canvas')), 20000)
             await sleep(1500)
             if (cancelled) return
             setFrameObserver((gap, js) => {
-                const p = isCameraFlying() ? fly : still
+                const p = inFooter ? foot : isCameraFlying() ? fly : still
                 p.gaps.push(gap)
                 p.js += js
+                if (gap > p.worstGap) {
+                    p.worstGap = gap
+                    p.worstJs = js
+                }
             })
             await sleep(1000)
             for (const c of TOUR) {
@@ -51,9 +57,27 @@ function Bench() {
                 await waitFor(() => !isCameraFlying(), 9000)
                 await sleep(1000)
             }
+            // Chặng footer: Studio → cuộn Lenis xuống hết footer → dừng 1s → cuộn ngược lên Studio
+            if (cancelled) return
+            goChapter(3, false)
+            await sleep(150)
+            await waitFor(() => !isCameraFlying(), 9000)
+            await sleep(500)
+            const studioY = window.scrollY
+            const bottom = () => document.documentElement.scrollHeight - window.innerHeight
+            inFooter = true
+            getLenis()?.scrollTo(bottom(), { duration: 1.6, force: true })
+            await sleep(200)
+            await waitFor(() => bottom() - window.scrollY < 3, 6000)
+            await sleep(1000)
+            getLenis()?.scrollTo(studioY, { duration: 1.6, force: true })
+            await sleep(200)
+            await waitFor(() => Math.abs(window.scrollY - studioY) < 3, 6000)
+            await sleep(300)
+            inFooter = false
             setFrameObserver(null)
             if (cancelled) return
-            const all = [...state.rows, makeRow(BENCH_CONFIGS[state.i].label, fly, still)]
+            const all = [...state.rows, makeRow(BENCH_CONFIGS[state.i].label, fly, still, foot)]
             if (state.i + 1 < BENCH_CONFIGS.length) {
                 saveBench({ i: state.i + 1, rows: all })
                 window.location.replace(benchUrl(state.i + 1))
@@ -112,18 +136,21 @@ function Bench() {
     const n = (v: number) => (v ? v.toFixed(1) : '–')
     return (
         <div className="fixed inset-0 z-[9999] grid place-items-center overflow-auto bg-ink/85 p-4">
-            <div className="w-full max-w-4xl rounded-2xl bg-card p-6 text-foreground shadow-raised">
+            <div className="w-full max-w-6xl rounded-2xl bg-card p-6 text-foreground shadow-raised">
                 <p className="font-mono text-sm text-muted-foreground">
                     {shortUA()} · dpr {window.devicePixelRatio} · {window.innerWidth}×{window.innerHeight}
                 </p>
-                <table className="mt-4 w-full text-left font-mono text-xl">
+                <table className="mt-4 w-full text-left font-mono text-lg">
                     <thead className="text-sm text-muted-foreground">
                         <tr>
                             <th className="py-1">Cấu hình</th>
                             <th>FPS TB bay</th>
                             <th>1% low bay</th>
+                            <th>Chậm nhất</th>
                             <th>FPS yên</th>
-                            <th>Khung giật</th>
+                            <th>Giật</th>
+                            <th>Footer FPS</th>
+                            <th>Footer 1%</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -132,8 +159,11 @@ function Bench() {
                                 <td className="py-2 font-bold">{r.label}</td>
                                 <td>{n(r.flyFps)}</td>
                                 <td>{n(r.flyLow)}</td>
+                                <td>{r.flyWorst.toFixed(0)}ms</td>
                                 <td>{n(r.stillFps)}</td>
                                 <td>{r.jank}</td>
+                                <td>{n(r.footFps)}</td>
+                                <td>{n(r.footLow)}</td>
                             </tr>
                         ))}
                     </tbody>
