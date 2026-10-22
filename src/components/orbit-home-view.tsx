@@ -28,7 +28,7 @@ export function OrbitHomeView() {
     const [calm, setCalm] = useCalm()
     const calmRef = useRef(calm)
     calmRef.current = calm
-    const { stage, scrolled } = useScrollStage({ journey, barRef, rootRef, calmRef })
+    const { stage } = useScrollStage({ journey, barRef, rootRef, calmRef })
     const { coursePct } = useBuildingCourses()
     const dailyLit = useDailyLit()
     const screenRef = useRef<HTMLDivElement>(null)
@@ -95,9 +95,11 @@ export function OrbitHomeView() {
 
             {journey && !staticMode && <ChapterRail />}
 
-            {!staticMode && (
-                <p aria-hidden className={`pointer-events-none fixed bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 text-xs text-muted-foreground transition-opacity duration-slow ${scrolled ? 'opacity-0' : 'opacity-100'}`}>
-                    <ChevronDown size={16} className="motion-safe:animate-bounce" /> Cuộn để xem khuôn viên đổi theo từng chương
+            {/* Dòng hướng dẫn cho người mới: hook ghi chữ và độ hiện; ẩn ở footer */}
+            {journey && (
+                <p data-guide aria-live="polite" style={{ opacity: 0 }} className="pointer-events-none fixed bottom-5 left-[max(1.5rem,4vw)] z-[6] flex max-w-[calc(100vw-3rem)] items-center gap-2 text-xs text-muted-foreground transition-opacity duration-slow">
+                    <ChevronDown size={16} className="shrink-0 text-brand-ink motion-safe:animate-bounce" aria-hidden />
+                    <span data-guide-text>Cuộn để đi vào trường</span>
                 </p>
             )}
 

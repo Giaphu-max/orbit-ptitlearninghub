@@ -23,10 +23,23 @@ const REVEAL = [0.72, 0.6, 0.72, 0.72] as const
 const REVEAL_HERO_LEG = 0.6
 /** Hạn mức vận tốc đầu của đoạn bay mới (S/giây) để không giật khi đổi hướng giữa chừng */
 const V_LIMIT = 1.5
-/** Một khoảng nghỉ lâu chừng này giữa hai sự kiện wheel = cú vuốt trước (và quán tính của nó) đã hết */
-const WHEEL_GAP_MS = 160
-/** Sau một bước chương, bỏ qua input trong chừng này (cùng luồng quán tính hoặc rung tay), rồi nhận bước mới dù máy quay còn bay */
+/** Nghỉ ≥ chừng này giữa hai sự kiện wheel = cú vuốt mới */
+const FRESH_IDLE_MS = 200
+/** Chỉ để chống bấm đúp: bỏ qua input trong chừng này sau một bước chương */
 const MIN_GAP_MS = 260
+/** Máy quay coi là đã tới nơi khi tiến độ p vượt ngưỡng này */
+const LANDED_P = 0.97
+/** Tua nhanh: boost tối đa, tốc độ giảm (mũ, /giây); mỗi nấc chuột, cú vuốt touchpad mới, vuốt cảm ứng, phím cộng thêm */
+const BOOST_MAX = 3
+const BOOST_DECAY = 2.2
+const BOOST_NOTCH = 0.45
+const BOOST_FLICK = 1
+const BOOST_TOUCH = 1.2
+const BOOST_KEY = 0.9
+/** Ở đầu/cuối: chỉ nuốt quán tính của cú vuốt vừa đưa tới (tối đa chừng này từ lúc tới nơi) rồi thả cuộn tự nhiên */
+const END_MOMENTUM_MS = 1200
+/** Chuột: mỗi chương được nằm yên chừng này trước khi lăn đều tay bước tiếp */
+const WHEEL_DWELL_MS = 450
 /** Bước trước chưa quá chừng này thì bước kế tính từ chương đang hướng tới; quá thì phải yên vị ở chương hiện tại trước */
 const SETTLE_AFTER_MS = 1000
 /** Đang bay mà có bước mới: bay nhanh hơn; đi lùi: bay nhanh hơn nữa và chữ hiện sớm hơn */
@@ -34,6 +47,9 @@ const CHAIN = 0.6
 const BACK = 0.7
 const REVEAL_BACK = 0.5
 const FLIGHT_FLOOR = 0.35
+/** Dòng hướng dẫn góc dưới trái theo chương hiện tại */
+const GUIDE = ['Cuộn để đi vào trường', 'Hôm nay · 1/3 — cuộn tiếp: Khóa học', 'Khóa học · 2/3 — cuộn tiếp: Studio', 'Studio · 3/3 — cuộn tiếp: cuối trang'] as const
+const GUIDE_FLYING = 'Cuộn thêm để chạy nhanh hơn'
 /** Lớp che khi cắt cảnh mờ đi trong chừng này (giây) */
 const CUT_FADE_S = 0.5
 const SWIPE_PX = 36
@@ -131,24 +147,31 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         let state = -1
         let prevState = -1
         let shown = -1
-        let tw = { from: 0, to: 0, v0: 0, t0: 0, D: 0 }
+        // Tiến độ p chạy 0→1 theo thời gian × (1 + boost); Hermite, vận tốc khi đổi hướng đều tính từ p
+        let tw = { from: 0, to: 0, v0: 0, p: 1, D: 0 }
+        let boost = 0
         /** Sau go(): bỏ qua việc đọc chương từ vị trí cuộn cho tới khi cuộn xong (chương đã chọn sẵn) */
         let holdUntil = 0
-        let stepLock = 0
         let lastStepAt = -1e9
+        let landedAt = 0
         let backFlight = false
         /** Đã cuộn vào vùng ghim từ footer (quán tính còn chạy): dừng ở Studio trước */
         let fromFooter = false
         let lastWheel = 0
-        let stream = false
-        let native = false
+        let lastAbs = 0
+        let lastDir = 0
+        let rises = 0
+        let sawDecay = false
+        let low = Infinity
         let touchY: number | null = null
 
-        // Cubic Hermite từ (from, v0) tới (to, 0) trong D giây: trả [S, vận tốc theo S/giây]
-        const twAt = (now: number): [number, number] => {
-            const { from, to, v0, t0, D } = tw
+        const flying = () => tw.D > 0 && tw.p < LANDED_P
+        const flightDir = () => Math.sign(tw.to - tw.from)
+        // Cubic Hermite từ (from, v0) tới (to, 0) theo tiến độ p: trả [S, vận tốc theo S/giây]
+        const twAt = (): [number, number] => {
+            const { from, to, v0, D } = tw
             if (D <= 0) return [to, 0]
-            const t = clamp((now - t0) / 1000 / D)
+            const t = clamp(tw.p)
             if (t >= 1) return [to, 0]
             const t2 = t * t
             const t3 = t2 * t
@@ -175,20 +198,36 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             veil.style.opacity = '0'
         }
 
+        // Dòng hướng dẫn cho người mới (góc dưới trái): chỉ ghi DOM khi đổi
+        const guideEl = rootRef.current?.querySelector<HTMLElement>('[data-guide]')
+        const guideText = guideEl?.querySelector<HTMLElement>('[data-guide-text]')
+        const narrowMq = window.matchMedia(STATIC_QUERY)
+        const guide = () => {
+            if (!guideEl || !guideText) return
+            const text = flying() ? GUIDE_FLYING : GUIDE[Math.max(0, state)]
+            if (guideText.textContent !== text) guideText.textContent = text
+            // Màn hẹp chật chỗ: chỉ hiện ở hero để không đè chữ panel
+            const show = inStage() && (!narrowMq.matches || (state <= 0 && !flying()))
+            const op = show ? '1' : '0'
+            if (guideEl.style.opacity !== op) guideEl.style.opacity = op
+        }
+
         const setState = (i: number, cut = false) => {
             if (i === state) return
             const now = performance.now()
             const first = state < 0
-            const flying = !first && now - tw.t0 < tw.D * 1000
+            const midFlight = tw.D > 0 && tw.p < 1
             prevState = state
             state = i
-            const [, v] = twAt(now)
+            const [, v] = twAt()
             const to = STOP[i]
             backFlight = !first && to < S
             const still = first || cut
-            let D = still ? 0 : flightTime(S, to) * (flying ? CHAIN : 1) * (backFlight ? BACK : 1)
+            let D = still ? 0 : flightTime(S, to) * (midFlight ? CHAIN : 1) * (backFlight ? BACK : 1)
             if (D > 0) D = Math.max(D, FLIGHT_FLOOR)
-            tw = { from: S, to, v0: still ? 0 : clamp(v, -V_LIMIT, V_LIMIT), t0: now, D }
+            tw = { from: S, to, v0: still ? 0 : clamp(v, -V_LIMIT, V_LIMIT), p: D > 0 ? 0 : 1, D }
+            boost = 0
+            if (D <= 0) landedAt = now
             if (still) S = to
             if (cut && !first) flashCut()
             panels.forEach((p, k) => {
@@ -199,13 +238,14 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (rootRef.current) rootRef.current.dataset.onStage = '0'
             markRail(i)
             setJourneyChapter(i)
+            guide()
         }
-        // Hero ↔ Hôm nay (chuyến bay giữa hai chương đầu) dùng mốc 60% cho cả hai chiều
+        // Hero ↔ Hôm nay (chuyến bay giữa hai chương đầu) dùng mốc 60% cho cả hai chiều; đi lùi 50%
         const revealAt = () => (backFlight ? REVEAL_BACK : state === 1 || (state === 0 && prevState === 1) ? REVEAL_HERO_LEG : REVEAL[state])
-        // Panel mới `on` khi chuyến bay đi được REVEAL (hoặc ngay nếu không bay / chế độ làm mờ)
-        const revealIfReady = (now: number) => {
+        // Panel mới `on` khi tiến độ bay đạt REVEAL (hoặc ngay nếu không bay / chế độ làm mờ)
+        const revealIfReady = () => {
             if (shown === state || state < 0) return
-            if (tw.D <= 0 || calmRef.current || (now - tw.t0) / 1000 >= tw.D * revealAt()) {
+            if (tw.D <= 0 || calmRef.current || tw.p >= revealAt()) {
                 panels[state].classList.add('on')
                 shown = state
                 if (rootRef.current) rootRef.current.dataset.onStage = state === 1 || state === 3 ? '1' : '0'
@@ -226,6 +266,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 setState(i, state >= 0 && Math.abs(i - state) >= 2)
             }
             updateChrome()
+            guide()
         }
         const inStage = () => {
             const t = top()
@@ -242,12 +283,12 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         const go = (c: number, cut = Math.abs(clamp(c, 0, N - 1) - state) >= 2) => {
             const target = clamp(c, 0, N - 1)
             const now = performance.now()
+            if (target === state) landedAt = now
             setState(target, cut)
             lastStepAt = now
-            stepLock = now + MIN_GAP_MS
             holdUntil = now + (cut ? 300 : 1300)
             if (cut) lenis.scrollTo(chapterY(target), { immediate: true, force: true })
-            else lenis.scrollTo(chapterY(target), { duration: 1.1, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
+            else lenis.scrollTo(chapterY(target), { duration: 0.9, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
         }
         setChapterScroller(go)
         // Đã yên vị ở chương hiện tại chưa (hero: ở đầu trang là yên vị)
@@ -267,51 +308,87 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
                 go(state)
                 return true
             }
-            // Bước trước chưa xong (<1s): tính từ chương đang hướng tới (`state` là chương đích)
+            // Bước kế tính từ chương đang hướng tới (`state` là chương đích)
             const next = state + dir
             if (next < 0) return false
             if (next >= N) return window.scrollY < chapterY(N - 1) - 4 ? (go(N - 1), true) : false
             go(next)
             return true
         }
+        const addBoost = (v: number) => {
+            boost = Math.min(BOOST_MAX, boost + v)
+        }
 
         const onWheel = (e: WheelEvent) => {
             const now = performance.now()
-            if (now - lastWheel >= WHEEL_GAP_MS) {
-                stream = false
-                native = false
-            }
+            const idle = now - lastWheel
             lastWheel = now
             if (calmRef.current) return
             if (!inStage()) {
-                native = true // quán tính của cú vuốt từ footer lên không được bước chương
+                // Quán tính của cú vuốt từ footer lên: nhớ để dừng ở Studio khi vào vùng ghim
                 fromFooter = window.scrollY > top()
                 return
             }
+            if (idle >= FRESH_IDLE_MS) fromFooter = false
             const dir = Math.sign(e.deltaY)
-            if (native) {
-                // Quán tính từ footer đã vào vùng ghim: dừng ở Studio rồi mới cho lùi tiếp
-                if (fromFooter && dir < 0 && state === N - 1) {
-                    fromFooter = false
-                    go(N - 1)
-                    stream = true
-                    e.preventDefault()
-                    e.stopPropagation()
-                }
-                return
-            }
             if (!dir) return
-            if (now < stepLock || stream) {
+            const ad = Math.abs(e.deltaY)
+            // Chuột = nấc rời (wheelDeltaY chia hết cho 120, hoặc deltaMode dòng); còn lại là touchpad
+            const wd = (e as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY
+            const isWheel = e.deltaMode === 1 || (wd !== undefined && wd !== 0 && wd % 120 === 0)
+            // Cú vuốt touchpad mới: nghỉ ≥200ms, đổi chiều thật, hoặc delta tăng 3 lần liền sau khi đã giảm (đặt tay xuống lại)
+            if (idle >= FRESH_IDLE_MS || dir !== lastDir) {
+                rises = 0
+                sawDecay = false
+                low = Infinity
+            }
+            if (ad < lastAbs) sawDecay = true
+            if (sawDecay) low = Math.min(low, ad)
+            rises = ad > lastAbs + 1 ? rises + 1 : 0
+            const fresh = idle >= FRESH_IDLE_MS || (dir !== lastDir && ad > 4) || (sawDecay && rises >= 3 && ad > 18 && ad > low * 1.6 + 6)
+            if (fresh && idle < FRESH_IDLE_MS && dir === lastDir) {
+                sawDecay = false
+                rises = 0
+                low = Infinity
+            }
+            const decaying = !fresh && (ad < lastAbs * 0.985 || ad <= 6)
+            lastAbs = ad
+            lastDir = dir
+            const block = () => {
                 e.preventDefault()
                 e.stopPropagation()
+            }
+
+            if (flying()) {
+                block()
+                if (dir === flightDir()) {
+                    // Tua nhanh chính chuyến bay này: mỗi nấc chuột; touchpad chỉ khi là cú vuốt mới (không tính quán tính của cú đầu)
+                    if (isWheel) addBoost(Math.min(ad / 120, 1) * BOOST_NOTCH)
+                    else if (fresh) addBoost(BOOST_FLICK)
+                } else if (fresh && now - lastStepAt > MIN_GAP_MS) step(dir) // cú vuốt mới ngược chiều: bước về chương trước
                 return
             }
-            if (Math.abs(e.deltaY) < 3) return
-            if (step(dir)) {
-                stream = true
-                e.preventDefault()
-                e.stopPropagation()
-            } else native = true
+            // Quán tính từ footer đã vào vùng ghim: dừng ở Studio trước khi cho lùi tiếp
+            if (fromFooter && dir < 0 && state === N - 1 && now - lastStepAt > MIN_GAP_MS) {
+                fromFooter = false
+                go(N - 1)
+                block()
+                return
+            }
+            if (now - lastStepAt < MIN_GAP_MS) return block()
+            const dwell = now - landedAt
+            // Ở hai đầu (hero cuộn lên, Studio cuộn xuống) thả cuộn tự nhiên, trừ quán tính của cú vuốt vừa đưa tới
+            const atEnd = (state === 0 && dir < 0) || (state === N - 1 && dir > 0)
+            if (atEnd) {
+                if (decaying && dwell < END_MOMENTUM_MS) block()
+                return
+            }
+            if (isWheel) {
+                // Lăn đều tay thì đi tiếp từng chương, mỗi chương được ~0.45s trên màn hình
+                if (!fresh && dwell < WHEEL_DWELL_MS) return block()
+            } else if (!fresh) return block() // touchpad: chỉ cú vuốt mới đi tiếp, quán tính còn lại bị nuốt
+            if (ad < 2) return
+            if (step(dir)) block()
         }
         const onTouchStart = (e: TouchEvent) => {
             touchY = e.touches[0].clientY
@@ -326,23 +403,47 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (touchY == null) return
             const dy = touchY - e.changedTouches[0].clientY
             touchY = null
-            if (Math.abs(dy) > SWIPE_PX && performance.now() >= stepLock) step(Math.sign(dy))
+            if (Math.abs(dy) <= SWIPE_PX || calmRef.current || !inStage()) return
+            const d = Math.sign(dy)
+            if (flying() && d === flightDir()) return addBoost(BOOST_TOUCH)
+            if (performance.now() - lastStepAt > MIN_GAP_MS) step(d)
         }
         const onKey = (e: KeyboardEvent) => {
             const dir = ({ ArrowDown: 1, PageDown: 1, ' ': 1, ArrowUp: -1, PageUp: -1 } as Record<string, number>)[e.key]
             const el = e.target instanceof Element ? e.target : null
             if (!dir || e.metaKey || e.ctrlKey || e.altKey || el?.closest('input,textarea,select,[contenteditable="true"]')) return
             if (e.key === ' ' && el?.closest('button,a')) return
-            if (performance.now() < stepLock && inStage()) return void e.preventDefault()
+            if (calmRef.current || !inStage()) return
+            if (flying() && dir === flightDir()) {
+                e.preventDefault()
+                addBoost(BOOST_KEY)
+                return
+            }
+            if (performance.now() - lastStepAt < MIN_GAP_MS) return void e.preventDefault()
             if (step(dir)) e.preventDefault()
         }
 
         let raf = 0
+        let lastT = performance.now()
+        let guideAt = 0
         const tick = (t: number) => {
             lenis.raf(t)
-            S = twAt(performance.now())[0]
+            const now = performance.now()
+            const dt = Math.min((now - lastT) / 1000, 0.2)
+            lastT = now
+            if (tw.D > 0 && tw.p < 1) {
+                const was = tw.p
+                tw.p = Math.min(1, tw.p + (dt / tw.D) * (1 + boost))
+                if (was < LANDED_P && tw.p >= LANDED_P) landedAt = now
+            }
+            boost *= Math.exp(-dt * BOOST_DECAY) // sức đẩy mờ dần khi ngừng cuộn
+            S = twAt()[0]
             stage.current = S
-            revealIfReady(performance.now())
+            revealIfReady()
+            if (now - guideAt > 250) {
+                guideAt = now
+                guide()
+            }
             raf = requestAnimationFrame(tick)
         }
 
