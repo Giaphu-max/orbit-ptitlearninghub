@@ -3,6 +3,9 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { A2COL as A, CAMPUS, LOBBY as L } from './campus-palette'
 import { PracticeRoom } from './campus-room'
+import { drawKioskSnapshot } from './kiosk-snapshot'
+import { isWebKit } from '@/lib/browser'
+import { STATUS_ORDER, useCourseSummaries } from '@/lib/course-map'
 import { Box, Cylinder, DrawPlane, HipRoof, stdMat, TextPlane, type BoxProps, type TextOpts, type Vec3 } from './campus-prims'
 
 // Phần mới của khuôn viên theo bản mẫu docs/mockup/orbit-campus-journey.html: đế tòa A2 (sảnh lõm, mặt kính nhìn xuyên vào trong,
@@ -291,6 +294,16 @@ function Bench({ x, z, ry }: { x: number; z: number; ry: number }) {
 /** Kiosk khóa học: chân chữ K màu trắng, màn hình 16:10 nghiêng. */
 function Kiosk() {
     const kWhite = stdMat(L.kiosk, { flat: false, roughness: 0.35 })
+    // Safari: màn 3D mang ảnh tĩnh của nội dung kiosk; lớp DOM thật chỉ hiện khi máy quay đã dừng (xem placeKiosk)
+    const summaries = useCourseSummaries()
+    const snap = useMemo(() => {
+        if (!isWebKit) return null
+        const t = new THREE.CanvasTexture(drawKioskSnapshot([...summaries].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]).slice(0, 4)))
+        t.colorSpace = THREE.SRGBColorSpace
+        t.anisotropy = 4
+        return t
+    }, [summaries])
+    useEffect(() => () => snap?.dispose(), [snap])
     return (
         <group position={KIOSK} scale={KS} rotation={[0, KIOSK_RY, 0]}>
             <IB s={[1.5, 0.08, 1.15]} mat={kWhite} at={[0, 0.04, 0]} cast />
@@ -304,7 +317,7 @@ function Kiosk() {
                 <IB s={[SCR_W + 0.14, SCR_H + 0.14, 0.09]} mat={kWhite} cast />
                 <mesh position={[0, 0, 0.05]}>
                     <planeGeometry args={[SCR_W, SCR_H]} />
-                    <meshStandardMaterial color={L.screen} roughness={0.4} metalness={0.1} emissive={L.screenGlow} emissiveIntensity={0.6} />
+                    {snap ? <meshBasicMaterial map={snap} toneMapped={false} /> : <meshStandardMaterial color={L.screen} roughness={0.4} metalness={0.1} emissive={L.screenGlow} emissiveIntensity={0.6} />}
                 </mesh>
             </group>
         </group>

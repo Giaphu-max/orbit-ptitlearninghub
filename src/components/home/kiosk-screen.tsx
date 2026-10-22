@@ -71,7 +71,7 @@ export function KioskScreen({ screenRef }: { screenRef: RefObject<HTMLDivElement
             inert
             role="region"
             aria-label="Khóa học của bạn"
-            style={{ width: KIOSK_W, height: KIOSK_H, opacity: 0, visibility: 'hidden', pointerEvents: 'none' }}
+            style={{ width: KIOSK_W, height: KIOSK_H, opacity: 0, visibility: 'hidden', pointerEvents: 'none', willChange: 'transform', transformStyle: 'flat', contain: 'strict' }}
             className="fixed left-0 top-0 z-[5] flex origin-top-left flex-col gap-5 overflow-hidden bg-ink p-12 text-ink-foreground"
         >
             <div>

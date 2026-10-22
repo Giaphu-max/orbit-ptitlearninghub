@@ -9,6 +9,7 @@ import { CAMPUS } from './campus-palette'
 import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
 import { STUDIO_Z } from './campus-room'
 import { PERF_ON, PerfHud } from './campus-perf'
+import { isWebKit } from '@/lib/browser'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 
@@ -20,8 +21,10 @@ import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type V
 
 const C = CAMPUS
 
-/** Độ phân giải tối đa của canvas (MacBook DPR 2 vẽ ở 1.5 để nhẹ hơn) */
-const DPR_MAX = 1.5
+/** Độ phân giải tối đa của canvas (MacBook DPR 2 vẽ ở 1.5 để nhẹ hơn; Safari 1.25) */
+/** Safari: thêm ?noaa vào URL để thử tắt antialias nếu ?perf báo dưới 50fps lúc bay */
+const NO_AA = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('noaa')
+const DPR_MAX = isWebKit ? 1.25 : 1.5
 
 // Hằng số ngoài component để useMemo của TextPlane không tính lại mỗi lần render
 const T_PTIT: TextOpts = { size: 200 }
@@ -586,11 +589,21 @@ function homography(w: number, h: number, P: number[][]) {
 /** Mức zoom vào kiosk: 0 → 1 trong S 1.55–1.74, rời đi ở S 1.86–2.1 */
 const kioskFocus = (s: number) => band(s, 1.55, 1.74) * (1 - band(s, 1.86, 2.1))
 
+/** Trạng thái khung hình trước của màn kiosk: chỉ ghi DOM khi giá trị đổi (ghi transform/opacity mỗi khung hình rất tốn trên Safari) */
+const kioskLast = { pts: [] as number[][], opacity: '', visibility: '', live: false, transform: '', S: -1, movedAt: 0 }
+const sameQuad = (a: number[][], b: number[][]) => a.length === b.length && a.every((p, i) => Math.abs(p[0] - b[i][0]) < 0.05 && Math.abs(p[1] - b[i][1]) < 0.05)
+
 function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: { width: number; height: number }, S: number, f: number, enabled: boolean) {
     const el = kiosk.screen.current
     kiosk.root.current?.style.setProperty('--kiosk-focus', f.toFixed(3))
     if (!el) return
+    const now = performance.now()
+    const K = kioskLast
+    if (Math.abs(S - K.S) > 1e-4) K.movedAt = now
+    K.S = S
     let op = enabled ? band(S, 1.52, 1.6) * (1 - band(S, 1.92, 2.1)) : 0
+    // Safari: lớp DOM thật chỉ hiện khi máy quay đã dừng ở kiosk (đang bay thì màn 3D mang ảnh tĩnh); khỏi tính matrix3d khi đang ẩn
+    if (isWebKit && now - K.movedAt < 150) op = 0
     // Màn quay lưng lại camera thì ẩn
     if (op > 0 && _toCam.copy(camera.position).sub(KSCR.center).dot(KSCR.normal) <= 0) op = 0
     const pts: number[][] = []
@@ -605,14 +618,29 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
             pts.push([((_corner.x + 1) / 2) * size.width, ((1 - _corner.y) / 2) * size.height])
         }
     }
-    const shown = op * (0.4 + 0.6 * f)
+    const shown = isWebKit ? (op > 0.9 && f > 0.9 ? 1 : 0) : op * (0.4 + 0.6 * f)
     // Chỉ nhận chuột/bàn phím khi đã zoom xong
     const live = f > 0.9 && op > 0.9
-    el.style.opacity = shown.toFixed(3)
-    el.style.visibility = shown > 0.002 ? 'visible' : 'hidden'
-    el.style.pointerEvents = live ? 'auto' : 'none'
-    el.inert = !live
-    if (op > 0) el.style.transform = homography(KIOSK_W, KIOSK_H, pts)
+    const opacity = shown.toFixed(3)
+    const visibility = shown > 0.002 ? 'visible' : 'hidden'
+    if (opacity !== K.opacity) {
+        K.opacity = opacity
+        el.style.opacity = opacity
+    }
+    if (visibility !== K.visibility) {
+        K.visibility = visibility
+        el.style.visibility = visibility
+    }
+    if (live !== K.live) {
+        K.live = live
+        el.style.pointerEvents = live ? 'auto' : 'none'
+        el.inert = !live
+    }
+    // Transform chỉ ghi khi máy quay làm 4 góc dịch quá 0,05px
+    if (op > 0 && !sameQuad(pts, K.pts)) {
+        K.pts = pts
+        el.style.transform = homography(KIOSK_W, KIOSK_H, pts)
+    }
 }
 
 const CAPTIONS: [number, string][] = [[0.15, 'Khuôn viên PTIT'], [1, 'Vòng quanh trường'], [1.5, 'Tòa A2 · cửa kính tự mở'], [2.23, 'Sảnh A2']]
@@ -1139,7 +1167,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 intensity={1.05 * Math.PI}
                 position={[-26, 38, 22]}
                 castShadow
-                shadow-mapSize={[2048, 2048]}
+                shadow-mapSize={isWebKit ? [1024, 1024] : [2048, 2048]}
                 shadow-camera-left={-32}
                 shadow-camera-right={32}
                 shadow-camera-top={32}
@@ -1248,7 +1276,7 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
                     shadows="percentage"
                     dpr={[1, DPR_MAX]}
                     camera={{ fov: FOV, position: START_POS.toArray(), near: 1, far: 400 }}
-                    gl={{ antialias: true, alpha: true }}
+                    gl={{ antialias: !(isWebKit && NO_AA), alpha: true }}
                     onCreated={({ gl }) => {
                         gl.shadowMap.autoUpdate = false
                         gl.shadowMap.needsUpdate = true

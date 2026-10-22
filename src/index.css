@@ -276,6 +276,14 @@
     transition: opacity var(--duration-reveal), transform var(--duration-reveal-move) var(--ease-out), filter var(--duration-reveal);
     transition-delay: calc(var(--reveal-delay) + var(--n, 0) * var(--reveal-stagger));
   }
+  /* Safari: bỏ hẳn blur trong hiệu ứng hiện chữ (filter animate trên WebKit làm lại cả lớp hợp thành mỗi khung hình); chỉ opacity + trượt */
+  .is-webkit [data-panel] [data-s],
+  .is-webkit [data-panel] :is(h1, h2, p)[data-s],
+  .is-webkit [data-panel].on [data-s],
+  .is-webkit [data-panel].on :is(h1, h2, p)[data-s] {
+    filter: none !important;
+    transition-property: opacity, transform !important;
+  }
   @media (prefers-reduced-motion: reduce) {
     [data-panel] [data-s] {
       transition: none !important;
