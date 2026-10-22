@@ -25,7 +25,17 @@ const REVEAL_HERO_LEG = 0.6
 const V_LIMIT = 1.5
 /** Một khoảng nghỉ lâu chừng này giữa hai sự kiện wheel = cú vuốt trước (và quán tính của nó) đã hết */
 const WHEEL_GAP_MS = 160
-const MIN_LOCK_MS = 900
+/** Sau một bước chương, bỏ qua input trong chừng này (cùng luồng quán tính hoặc rung tay), rồi nhận bước mới dù máy quay còn bay */
+const MIN_GAP_MS = 260
+/** Bước trước chưa quá chừng này thì bước kế tính từ chương đang hướng tới; quá thì phải yên vị ở chương hiện tại trước */
+const SETTLE_AFTER_MS = 1000
+/** Đang bay mà có bước mới: bay nhanh hơn; đi lùi: bay nhanh hơn nữa và chữ hiện sớm hơn */
+const CHAIN = 0.6
+const BACK = 0.7
+const REVEAL_BACK = 0.5
+const FLIGHT_FLOOR = 0.35
+/** Lớp che khi cắt cảnh mờ đi trong chừng này (giây) */
+const CUT_FADE_S = 0.5
 const SWIPE_PX = 36
 
 function useMedia(query: string) {
@@ -64,7 +74,8 @@ interface Options {
 /**
  * Cuộn theo trạng thái (như marketingbigday2026): một section cao có khung sticky 100svh, bốn panel chồng nhau.
  * Vị trí cuộn chỉ chọn CHƯƠNG hiện tại; máy quay (S) bay theo thời gian bằng cubic Hermite từ (S, vận tốc hiện tại) tới điểm dừng của chương,
- * và chữ hiện (class `on`) khi chuyến bay đi được 72%. Mỗi cú vuốt bước đúng một chương: input bị chặn khi đang bay hoặc khi còn quán tính của cú vuốt trước.
+ * và chữ hiện (class `on`) khi chuyến bay đi được 72%. Mỗi cú vuốt bước đúng một chương; chỉ chặn input cùng luồng quán tính và trong MIN_GAP sau một bước (không khóa theo thời lượng bay).
+ * Đang bay mà có bước mới: thời lượng ×CHAIN; đi lùi ×BACK. Nhảy từ 2 chương trở lên (rail, Home/End, kéo thanh cuộn) = cắt cảnh: S tới thẳng điểm dừng, lớp màu nền mờ đi.
  * Mọi thứ ghi thẳng vào DOM/ref; chỉ `scrolled` là state và đổi rất ít. Giảm chuyển động: không khóa, S nhảy thẳng tới chương đang đọc.
  */
 export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
@@ -124,6 +135,10 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         /** Sau go(): bỏ qua việc đọc chương từ vị trí cuộn cho tới khi cuộn xong (chương đã chọn sẵn) */
         let holdUntil = 0
         let stepLock = 0
+        let lastStepAt = -1e9
+        let backFlight = false
+        /** Đã cuộn vào vùng ghim từ footer (quán tính còn chạy): dừng ở Studio trước */
+        let fromFooter = false
         let lastWheel = 0
         let stream = false
         let native = false
@@ -149,16 +164,33 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             return clamp(d, FLIGHT_MIN, FLIGHT_MAX)
         }
 
-        const setState = (i: number) => {
+        const veil = rootRef.current?.querySelector<HTMLElement>('[data-cut-veil]')
+        // Che bằng màu nền rồi mờ đi (ease-out); chữ chương mới đã hiện ngay bên trên
+        const flashCut = () => {
+            if (!veil) return
+            veil.style.transition = 'none'
+            veil.style.opacity = '1'
+            void veil.offsetWidth
+            veil.style.transition = `opacity ${CUT_FADE_S}s cubic-bezier(0.2, 0.7, 0.2, 1)`
+            veil.style.opacity = '0'
+        }
+
+        const setState = (i: number, cut = false) => {
             if (i === state) return
             const now = performance.now()
             const first = state < 0
+            const flying = !first && now - tw.t0 < tw.D * 1000
             prevState = state
             state = i
             const [, v] = twAt(now)
             const to = STOP[i]
-            tw = { from: S, to, v0: first ? 0 : clamp(v, -V_LIMIT, V_LIMIT), t0: now, D: first ? 0 : flightTime(S, to) }
-            if (first) S = to
+            backFlight = !first && to < S
+            const still = first || cut
+            let D = still ? 0 : flightTime(S, to) * (flying ? CHAIN : 1) * (backFlight ? BACK : 1)
+            if (D > 0) D = Math.max(D, FLIGHT_FLOOR)
+            tw = { from: S, to, v0: still ? 0 : clamp(v, -V_LIMIT, V_LIMIT), t0: now, D }
+            if (still) S = to
+            if (cut && !first) flashCut()
             panels.forEach((p, k) => {
                 p.classList.remove('on')
                 p.classList.toggle('past', k < i)
@@ -169,7 +201,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             setJourneyChapter(i)
         }
         // Hero ↔ Hôm nay (chuyến bay giữa hai chương đầu) dùng mốc 60% cho cả hai chiều
-        const revealAt = () => (state === 1 || (state === 0 && prevState === 1) ? REVEAL_HERO_LEG : REVEAL[state])
+        const revealAt = () => (backFlight ? REVEAL_BACK : state === 1 || (state === 0 && prevState === 1) ? REVEAL_HERO_LEG : REVEAL[state])
         // Panel mới `on` khi chuyến bay đi được REVEAL (hoặc ngay nếu không bay / chế độ làm mờ)
         const revealIfReady = (now: number) => {
             if (shown === state || state < 0) return
@@ -185,7 +217,14 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         const chapterY = (c: number) => top() + (dist() * (c + 0.5)) / N
         const readScroll = () => {
             const p = clamp((window.scrollY - top()) / dist(), 0, 0.999)
-            if (performance.now() >= holdUntil) setState(Math.floor(p * N))
+            const now = performance.now()
+            // Lenis còn đang trượt tới chương đã chọn (khung hình chậm): chưa đọc lại chương từ vị trí cuộn dở dang
+            const gliding = now < holdUntil + 1500 && lenis.isScrolling === 'smooth'
+            if (now >= holdUntil && !gliding) {
+                const i = Math.floor(p * N)
+                // Kéo thanh cuộn / Home / End nhảy từ 2 chương: cắt cảnh
+                setState(i, state >= 0 && Math.abs(i - state) >= 2)
+            }
             updateChrome()
         }
         const inStage = () => {
@@ -198,19 +237,37 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
         setLenis(lenis)
         lenis.on('scroll', readScroll)
 
-        // Cuộn tới giữa vùng của chương (rail, nav, bước một chương): chương được chọn ngay, S bay, thanh cuộn chạy theo
-        const go = (c: number) => {
+        // Cuộn tới giữa vùng của chương (rail, nav, bước một chương): chương được chọn ngay, S bay, thanh cuộn chạy theo.
+        // Nhảy từ 2 chương trở lên thì cắt cảnh: S tới thẳng, cuộn tức thì.
+        const go = (c: number, cut = Math.abs(clamp(c, 0, N - 1) - state) >= 2) => {
             const target = clamp(c, 0, N - 1)
             const now = performance.now()
-            setState(target)
-            stepLock = now + Math.max(MIN_LOCK_MS, tw.D * 1000 * 0.8)
-            holdUntil = now + 1300
-            lenis.scrollTo(chapterY(target), { duration: 1.1, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
+            setState(target, cut)
+            lastStepAt = now
+            stepLock = now + MIN_GAP_MS
+            holdUntil = now + (cut ? 300 : 1300)
+            if (cut) lenis.scrollTo(chapterY(target), { immediate: true, force: true })
+            else lenis.scrollTo(chapterY(target), { duration: 1.1, force: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) })
         }
         setChapterScroller(go)
+        // Đã yên vị ở chương hiện tại chưa (hero: ở đầu trang là yên vị)
+        const settled = () => {
+            const tol = window.innerHeight * 0.03
+            const y = chapterY(state)
+            return state === 0 ? window.scrollY <= y + tol : Math.abs(window.scrollY - y) <= tol
+        }
         // Trả true nếu đã nhận input; hero cuộn lên và Studio cuộn xuống thì thả cho cuộn tự nhiên (xuống footer)
         const step = (dir: number) => {
             if (calmRef.current || !inStage()) return false
+            const now = performance.now()
+            // Bước trước đã xong mà chưa nằm đúng chương hiện tại (vào từ footer, kéo thanh cuộn): về đúng chương đó trước
+            if (now - lastStepAt > SETTLE_AFTER_MS && !settled()) {
+                if (state === N - 1 && dir > 0 && window.scrollY >= chapterY(N - 1)) return false
+                if (state === 0 && dir < 0) return false
+                go(state)
+                return true
+            }
+            // Bước trước chưa xong (<1s): tính từ chương đang hướng tới (`state` là chương đích)
             const next = state + dir
             if (next < 0) return false
             if (next >= N) return window.scrollY < chapterY(N - 1) - 4 ? (go(N - 1), true) : false
@@ -228,10 +285,21 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (calmRef.current) return
             if (!inStage()) {
                 native = true // quán tính của cú vuốt từ footer lên không được bước chương
+                fromFooter = window.scrollY > top()
                 return
             }
-            if (native) return
             const dir = Math.sign(e.deltaY)
+            if (native) {
+                // Quán tính từ footer đã vào vùng ghim: dừng ở Studio rồi mới cho lùi tiếp
+                if (fromFooter && dir < 0 && state === N - 1) {
+                    fromFooter = false
+                    go(N - 1)
+                    stream = true
+                    e.preventDefault()
+                    e.stopPropagation()
+                }
+                return
+            }
             if (!dir) return
             if (now < stepLock || stream) {
                 e.preventDefault()
@@ -258,7 +326,7 @@ export function useScrollStage({ journey, barRef, rootRef, calmRef }: Options) {
             if (touchY == null) return
             const dy = touchY - e.changedTouches[0].clientY
             touchY = null
-            if (Math.abs(dy) > SWIPE_PX && performance.now() > stepLock) step(Math.sign(dy))
+            if (Math.abs(dy) > SWIPE_PX && performance.now() >= stepLock) step(Math.sign(dy))
         }
         const onKey = (e: KeyboardEvent) => {
             const dir = ({ ArrowDown: 1, PageDown: 1, ' ': 1, ArrowUp: -1, PageUp: -1 } as Record<string, number>)[e.key]

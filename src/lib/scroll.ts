@@ -5,13 +5,13 @@ import type Lenis from 'lenis'
 export const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 let lenis: Lenis | null = null
-let chapterScroller: ((index: number) => void) | null = null
+let chapterScroller: ((index: number, cut?: boolean) => void) | null = null
 
 export const setLenis = (l: Lenis | null) => {
     lenis = l
 }
 export const getLenis = () => lenis
-export const setChapterScroller = (fn: ((index: number) => void) | null) => {
+export const setChapterScroller = (fn: ((index: number, cut?: boolean) => void) | null) => {
     chapterScroller = fn
 }
 

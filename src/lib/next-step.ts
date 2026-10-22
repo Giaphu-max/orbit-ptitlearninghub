@@ -70,7 +70,7 @@ export function missionTarget(missionId: string): string {
     switch (missionId) {
         case 'daily': {
             const next = nextDaily()
-            return next ? `/daily/${next.id}` : '/#daily'
+            return next ? `/daily/${next.id}` : '/today'
         }
         case 'test':
             return `/test/${activeCourseId()}`

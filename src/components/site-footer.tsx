@@ -25,7 +25,7 @@ export function SiteFooter() {
         {
             title: 'Học tập',
             links: [
-                { label: 'Orbit Daily', to: '/#daily' },
+                { label: 'Orbit Daily', to: '/today' },
                 { label: 'Khóa học', to: '/learning' },
                 ...(firstCourse ? [{ label: 'Test cuối chương', to: `/test/${firstCourse.id}` }] : []),
                 { label: 'Hành trình', to: '/journey' },

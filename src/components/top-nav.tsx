@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Flame, Menu, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { XpChip } from '@/components/xp-chip'
 import { visibleStreak } from '@/lib/gamification'
 import { centerOf, enterRole } from '@/lib/role-switch'
-import { getJourneyChapter, scrollToSection, subscribeChapter } from '@/lib/scroll'
+import { scrollToSection } from '@/lib/scroll'
 import { useSoundStore } from '@/lib/sfx'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
@@ -24,66 +24,21 @@ interface NavItem {
 }
 
 const BASE_ITEMS: NavItem[] = [
-    { label: 'Trang chủ', to: '/', section: 'top', match: () => false },
-    { label: 'Hôm nay', to: '/#daily', section: 'daily', match: (p) => p.startsWith('/daily') },
-    { label: 'Khóa học', to: '/#courses', section: 'courses', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') },
-    { label: 'Studio 3D', to: '/#studio', section: 'studio', match: (p) => p.startsWith('/studio') },
+    { label: 'Trang chủ', to: '/', section: 'top', match: (p) => p === '/' },
+    { label: 'Hôm nay', to: '/today', match: (p) => p.startsWith('/today') || p.startsWith('/daily') },
+    { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') || p.startsWith('/checkpoint') || p.startsWith('/recap') },
+    { label: 'Studio 3D', to: '/studio', match: (p) => p.startsWith('/studio') },
 ]
 
 // Giảng viên: nav dẫn tới các mục của trang giảng viên (?tab=) thay cho các phần học tập của sinh viên
 const teacherTab = (tab: string | null, id: 'review' | 'stats' | 'tests') => (id === 'review' ? tab !== 'stats' && tab !== 'tests' : tab === id)
 const TEACHER_ITEMS: NavItem[] = [
-    { label: 'Trang chủ', to: '/', section: 'top', match: () => false },
+    { label: 'Trang chủ', to: '/', section: 'top', match: (p) => p === '/' },
     { label: 'Duyệt nội dung', to: '/teacher', match: () => false, tab: 'review' },
     { label: 'Thống kê lớp', to: '/teacher?tab=stats', match: () => false, tab: 'stats' },
     { label: 'Kết quả test', to: '/teacher?tab=tests', match: () => false, tab: 'tests' },
     { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' },
 ]
-
-/** Các chương trên trang chủ theo thứ tự từ trên xuống (mỗi chương một mục nav). */
-const HOME_SECTIONS = ['top', 'daily', 'courses', 'studio']
-
-/**
- * Phần trang chủ đang nằm ở khoảng 40% chiều cao màn hình (IntersectionObserver).
- * Giữa hai phần (khoảng trống) giữ phần trước đó. Trang chủ tải lười nên chờ các phần xuất hiện.
- */
-function useActiveSection(enabled: boolean) {
-    const [active, setActive] = useState('top')
-    // Hành trình cuộn theo chương: chương hiện tại do useScrollStage báo (các panel chồng nhau nên IntersectionObserver không phân biệt được)
-    const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
-    useEffect(() => {
-        if (!enabled) return
-        let observer: IntersectionObserver | undefined
-        let raf = 0
-        let tries = 0
-        const live = new Set<string>()
-        const connect = () => {
-            const els = HOME_SECTIONS.map((id) => document.getElementById(id)).filter((e): e is HTMLElement => Boolean(e))
-            if (els.length < HOME_SECTIONS.length) {
-                if (tries++ < 180) raf = requestAnimationFrame(connect)
-                return
-            }
-            observer = new IntersectionObserver(
-                (entries) => {
-                    for (const e of entries) {
-                        if (e.isIntersecting) live.add(e.target.id)
-                        else live.delete(e.target.id)
-                    }
-                    const current = HOME_SECTIONS.filter((id) => live.has(id)).pop()
-                    if (current) setActive(current)
-                },
-                { rootMargin: '-40% 0px -59% 0px' },
-            )
-            els.forEach((el) => observer!.observe(el))
-        }
-        connect()
-        return () => {
-            cancelAnimationFrame(raf)
-            observer?.disconnect()
-        }
-    }, [enabled])
-    return chapter >= 0 ? HOME_SECTIONS[chapter] : active
-}
 
 /**
  * Trạng thái cuộn của nav trên trang chủ (một listener scroll passive + rAF):
@@ -152,22 +107,19 @@ const TONE = {
 /** Thanh điều hướng ngang: logo, mục có chữ, chip streak, chip cấp độ + XP, avatar, nút sáng/tối. Mobile thu thành menu. */
 export function TopNav() {
     const { pathname, hash } = useLocation()
-    const navigate = useNavigate()
     const [menuOpen, setMenuOpen] = useState(false)
     const onHome = pathname === '/'
     const { scrolled } = useNavScroll(onHome)
-    const activeSection = useActiveSection(onHome)
     // Trang chủ có cảnh 3D cố định phía sau suốt chiều dài nên nav luôn ở tone hero (trong suốt, kính khi đã cuộn)
     const tone: NavTone = onHome ? 'hero' : 'plain'
     const t = TONE[tone]
     const tabParam = new URLSearchParams(useLocation().search).get('tab')
-    const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : onHome ? it.section === activeSection : it.match(pathname))
+    const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : it.match(pathname))
     const goTo = (e: ReactMouseEvent, it: NavItem) => {
         setMenuOpen(false)
         if (!onHome || !it.section) return
         e.preventDefault()
         scrollToSection(it.section)
-        navigate(it.to, { replace: true, preventScrollReset: true })
     }
     const role = useOrbitStore((s) => s.role)
     const streakState = useOrbitStore((s) => s.streak)

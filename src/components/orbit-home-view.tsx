@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Camera, Check, ChevronDown, Play, Sparkles } from 'lucide-react'
-import { getConcept, getCourse, lessons } from '@/data'
-import { dailyFor, DAILY_ARTICLE_XP, MISSIONS } from '@/lib/gamification'
+import { getCourse, lessons } from '@/data'
+import { dailyFor, MISSIONS } from '@/lib/gamification'
 import { CourseArt } from '@/components/courses/course-cover'
 import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { scrollToSection } from '@/lib/scroll'
-import { DAILY_LIMIT, gapScore, todaysDaily } from '@/lib/next-step'
+import { todaysDaily } from '@/lib/next-step'
 import { CHAPTERS, useScrollStage, useStageMode } from '@/hooks/useScrollStage'
+import { useTodayDaily } from '@/hooks/useTodayDaily'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusStage } from '@/components/home/campus-stage'
 import { KioskScreen, type KioskBridge } from '@/components/home/kiosk-screen'
@@ -43,6 +44,8 @@ export function OrbitHomeView() {
             <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} flat={!journey} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} />
             {/* Che ngắn quanh điểm cắt cảnh, màu nền trang (cảnh ghi độ mờ mỗi khung hình) */}
             <div ref={dipRef} aria-hidden className="stage-dip pointer-events-none fixed inset-0 z-[1] opacity-0" />
+            {/* Lớp màu nền che khi cắt cảnh (nhảy từ 2 chương trở lên): hook useScrollStage đặt đục rồi mờ đi trong 0,5s */}
+            <div aria-hidden data-cut-veil className="pointer-events-none fixed inset-0 z-[5] bg-stage opacity-0" />
             <div aria-hidden data-static={staticMode} className="stage-veil pointer-events-none fixed inset-0 z-[1]" style={{ opacity: 'calc(1 - var(--kiosk-focus, 0))' }} />
             {!staticMode && <KioskScreen screenRef={screenRef} />}
             <div ref={barRef} aria-hidden className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
@@ -326,33 +329,17 @@ function GridThumb() {
 // ─── Chương 1: Hôm nay (Orbit Daily) ───────────────────────────────────────
 
 function DailyChapter() {
-    const read = useOrbitStore((s) => s.dailyRead)
-    const mastery = useOrbitStore((s) => s.conceptMastery)
-
-    // 3 bài mỗi ngày (bài đã đọc từ ngày trước không quay lại)
-    const articles = todaysDaily(read, mastery)
-    const readCount = articles.filter((a) => read[a.id]).length
-    const priority = [...articles.filter((a) => !read[a.id])].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
-    const allDone = articles.length > 0 && !priority
+    const { articles, read, readCount, allDone, noteFor, limit } = useTodayDaily()
 
     return (
         <>
             <Eyebrow>01 · Hôm nay</Eyebrow>
             <Title id="daily-title">{'Ba ô cửa sáng đèn.\nĐọc xong là nghỉ.'}</Title>
             <Lead>Mỗi bài Orbit Daily đọc xong thắp sáng một tầng cửa sổ tòa A2. AI chọn bài theo phần bạn còn hổng.</Lead>
-            <ul data-s className={`${lightCard} flex flex-col gap-1 p-3`} aria-label={`Đã đọc ${readCount} trên ${DAILY_LIMIT} bài hôm nay`}>
+            <ul data-s className={`${lightCard} flex flex-col gap-1 p-3`} aria-label={`Đã đọc ${readCount} trên ${limit} bài hôm nay`}>
                 {articles.map((a, i) => {
                     const done = Boolean(read[a.id])
-                    const weakest = [...a.conceptIds].sort((x, y) => (mastery[x] ?? 0.5) - (mastery[y] ?? 0.5))[0]
-                    const concept = getConcept(weakest)
-                    const m = mastery[weakest]
-                    const note = done
-                        ? `Đã đọc · +${DAILY_ARTICLE_XP} XP`
-                        : a.id === priority?.id && concept
-                          ? m === undefined
-                              ? `Ưu tiên · bạn chưa làm quiz “${concept.name}”`
-                              : `Ưu tiên · “${concept.name}” mới nắm ${Math.round(m * 100)}%`
-                          : `${a.readingMinutes} phút · +${DAILY_ARTICLE_XP} XP`
+                    const note = noteFor(a)
                     return (
                         <li key={a.id}>
                             <Link
