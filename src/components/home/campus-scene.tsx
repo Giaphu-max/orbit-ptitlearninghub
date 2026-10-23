@@ -598,7 +598,7 @@ function homography(w: number, h: number, P: number[][]) {
 const kioskFocus = (s: number) => band(s, 1.55, 1.74) * (1 - band(s, 1.86, 2.1))
 
 /** Trạng thái khung hình trước của màn kiosk: chỉ ghi DOM khi giá trị đổi (ghi transform/opacity mỗi khung hình rất tốn trên Safari) */
-const kioskLast = { pts: [] as number[][], opacity: '', visibility: '', live: false, transform: '', S: -1, movedAt: 0, focus: -1 }
+const kioskLast = { pts: [] as number[][], opacity: '', visibility: '', live: false, transform: '', focus: -1 }
 const sameQuad = (a: number[][], b: number[][]) => a.length === b.length && a.every((p, i) => Math.abs(p[0] - b[i][0]) < 0.05 && Math.abs(p[1] - b[i][1]) < 0.05)
 
 function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: { width: number; height: number }, S: number, f: number, enabled: boolean) {
@@ -612,12 +612,7 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
         if (kiosk.rail.current) kiosk.rail.current.style.opacity = o
     }
     if (!el) return
-    const now = performance.now()
-    if (Math.abs(S - K.S) > 1e-4) K.movedAt = now
-    K.S = S
     let op = enabled ? band(S, 1.52, 1.6) * (1 - band(S, 1.92, 2.1)) : 0
-    // Safari: lớp DOM thật chỉ hiện khi máy quay đã dừng ở kiosk (đang bay thì màn 3D mang ảnh tĩnh); khỏi tính matrix3d khi đang ẩn
-    if (isWebKit && now - K.movedAt < 150) op = 0
     // Màn quay lưng lại camera thì ẩn
     if (op > 0 && _toCam.copy(camera.position).sub(KSCR.center).dot(KSCR.normal) <= 0) op = 0
     const pts: number[][] = []
@@ -632,7 +627,7 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
             pts.push([((_corner.x + 1) / 2) * size.width, ((1 - _corner.y) / 2) * size.height])
         }
     }
-    const shown = isWebKit ? (op > 0.9 && f > 0.9 ? 1 : 0) : op * (0.4 + 0.6 * f)
+    const shown = op * (0.4 + 0.6 * f)
     // Chỉ nhận chuột/bàn phím khi đã zoom xong
     const live = f > 0.9 && op > 0.9
     const opacity = shown.toFixed(3)
