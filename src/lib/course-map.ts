@@ -83,3 +83,15 @@ export function subjectVars(subject: string, accent?: CoverAccent): React.CSSPro
     const key = accent ?? deriveCover(subject).accent
     return { ['--subject' as string]: `var(--subject-${key})`, ['--subject-ink' as string]: `var(--subject-${key}-ink)` }
 }
+
+/** Nhãn "DỰNG PHIM · CHẶNG 1/3" của một khóa (dùng chung với cột chữ). */
+export function courseKicker(summary: CourseSummary) {
+    const { course, lessons: ls, status, curIndex } = summary
+    const sub = status === 'doing' ? `Chặng ${curIndex + 1}/${ls.length}` : status === 'done' ? 'Đã xong' : `${ls.length} bài`
+    return `${course.subject} · ${sub}`
+}
+
+/** Khóa đang học (không có thì khóa đầu theo STATUS_ORDER). */
+export function primaryCourse(list: CourseSummary[]) {
+    return list.find((c) => c.status === 'doing') ?? list[0]
+}

@@ -6,7 +6,7 @@ import { Html, OrbitControls, PerformanceMonitor } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
-import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
+import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, LOBBY_SCALE, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
 import { STUDIO_Z } from './campus-room'
 import { PERF_ON, PerfHud } from './campus-perf'
 import { isWebKit } from '@/lib/browser'
@@ -512,13 +512,20 @@ const CUT2 = 0.62
 const CUT3 = 0.36
 const A2_FACE = a2Point(0, 6, 1)
 const KSCR = kioskScreenFrame()
-/** Khoảng cách để màn hình kiosk chiếm ~84% chiều cao khung ở FOV 46 */
-const KIOSK_D = KSCR.height / (0.84 * 2 * Math.tan(THREE.MathUtils.degToRad(23)))
-/** Hướng nhìn 3/4 vào màn: pháp tuyến xoay -0,2 rad quanh trục dọc của màn và +0,12 quanh trục ngang (không nhìn thẳng góc) */
-const KDIR = KSCR.normal.clone().applyAxisAngle(KSCR.up, -0.2).applyAxisAngle(KSCR.right, 0.12).normalize()
-const KIOSK_CAM = KSCR.center.clone().addScaledVector(KDIR, KIOSK_D * 1.6)
-const KIOSK_FAR = KSCR.center.clone().addScaledVector(KDIR, KIOSK_D * 2.5)
-const KIOSK_BACK = KSCR.center.clone().addScaledVector(KDIR, KIOSK_D * 2.2)
+// Kiosk: máy quay ở độ cao mắt, nhìn chéo 3/4 CHỈ xoay quanh trục đứng của thế giới (camera.up luôn (0,1,0): sàn, cột, quầy thẳng).
+// Cả kiosk (đế → đầu) chiếm ~55% chiều cao khung; điểm nhìn ở giữa thân.
+const KIOSK_FOV = 38
+const KIOSK_AZ = THREE.MathUtils.degToRad(35)
+const KIOSK_EYE_Y = KSCR.baseY + 1.6 * LOBBY_SCALE
+const KIOSK_HEIGHT = KSCR.topY - KSCR.baseY
+const KIOSK_LOOK = new THREE.Vector3(KSCR.center.x, KSCR.baseY + KIOSK_HEIGHT / 2, KSCR.center.z)
+const KIOSK_D = KIOSK_HEIGHT / (0.55 * 2 * Math.tan(THREE.MathUtils.degToRad(KIOSK_FOV / 2)))
+/** Hướng ngang từ kiosk ra máy quay: pháp tuyến mặt trước (chiếu xuống mặt phẳng ngang) xoay KIOSK_AZ quanh trục đứng */
+const KDIR = new THREE.Vector3(KSCR.normal.x, 0, KSCR.normal.z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), KIOSK_AZ)
+const kioskEye = (k: number) => new THREE.Vector3(KIOSK_LOOK.x + KDIR.x * KIOSK_D * k, KIOSK_EYE_Y, KIOSK_LOOK.z + KDIR.z * KIOSK_D * k)
+const KIOSK_CAM = kioskEye(1)
+const KIOSK_FAR = kioskEye(1.2)
+const KIOSK_BACK = kioskEye(1.15)
 const ORBIT_END = new THREE.Vector3(0, Math.sin(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R, Math.cos(THREE.MathUtils.degToRad(ORBIT_EL)) * ORBIT_R).add(A2_FACE)
 const DOOR_IN = a2Point(0, 1.5, 2.3)
 const DOOR_LOOK = a2Point(0, 1.6, -2)
@@ -557,8 +564,8 @@ function transitCamera(s: number, pos: THREE.Vector3, look: THREE.Vector3) {
             return lerp(ORBIT_FOV, 44, smoothstep(clamp01(k * 1.6)))
         }
         pos.copy(KIOSK_FAR).lerp(KIOSK_CAM, easeOut((u - CUT2) / (1 - CUT2)))
-        look.copy(KSCR.center)
-        return 46
+        look.copy(KIOSK_LOOK)
+        return KIOSK_FOV
     }
     if (s >= 3) {
         pos.copy(ROOM_B)
@@ -568,8 +575,8 @@ function transitCamera(s: number, pos: THREE.Vector3, look: THREE.Vector3) {
     const u = band(s, 1.8, 3)
     if (u < CUT3) {
         pos.copy(KIOSK_CAM).lerp(KIOSK_BACK, smoothstep(u / CUT3))
-        look.copy(KSCR.center)
-        return 46
+        look.copy(KIOSK_LOOK)
+        return KIOSK_FOV
     }
     const k = smoothstep((u - CUT3) / (1 - CUT3))
     pos.copy(ROOM_A).lerp(ROOM_B, k)
@@ -617,23 +624,13 @@ function homography(w: number, h: number, P: number[][]) {
     const [a, b, c, d, e, f, g, k] = solve8(A, B)
     return `matrix3d(${a},${d},0,${g},${b},${e},0,${k},0,0,1,0,${c},${f},0,1)`
 }
-/** Mức zoom vào kiosk: 0 → 1 trong S 1.55–1.74, rời đi ở S 1.86–2.1 */
-const kioskFocus = (s: number) => band(s, 1.55, 1.74) * (1 - band(s, 1.86, 2.1))
-
 /** Trạng thái khung hình trước của màn kiosk: chỉ ghi DOM khi giá trị đổi (ghi transform/opacity mỗi khung hình rất tốn trên Safari) */
-const kioskLast = { pts: [] as number[][], opacity: '', visibility: '', live: false, transform: '', focus: -1 }
+const kioskLast = { pts: [] as number[][], opacity: '', visibility: '', transform: '' }
 const sameQuad = (a: number[][], b: number[][]) => a.length === b.length && a.every((p, i) => Math.abs(p[0] - b[i][0]) < 0.05 && Math.abs(p[1] - b[i][1]) < 0.05)
 
-function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: { width: number; height: number }, S: number, f: number, enabled: boolean) {
+function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: { width: number; height: number }, S: number, enabled: boolean) {
     const el = kiosk.screen.current
     const K = kioskLast
-    // Veil và rail mờ đi khi zoom kiosk: ghi opacity thẳng vào hai phần tử lá, chỉ khi đổi quá 0,01 (hoặc chạm 0/1)
-    if (Math.abs(f - K.focus) >= 0.01 || (f !== K.focus && (f === 0 || f === 1))) {
-        K.focus = f
-        const o = (1 - f).toFixed(2)
-        if (kiosk.veil.current) kiosk.veil.current.style.opacity = o
-        if (kiosk.rail.current) kiosk.rail.current.style.opacity = o
-    }
     if (!el) return
     let op = enabled ? band(S, 1.52, 1.6) * (1 - band(S, 1.92, 2.1)) : 0
     // Màn quay lưng lại camera thì ẩn
@@ -650,11 +647,9 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
             pts.push([((_corner.x + 1) / 2) * size.width, ((1 - _corner.y) / 2) * size.height])
         }
     }
-    const shown = op * (0.4 + 0.6 * f)
-    // Chỉ nhận chuột/bàn phím khi đã zoom xong
-    const live = f > 0.9 && op > 0.9
-    const opacity = shown.toFixed(3)
-    const visibility = shown > 0.002 ? 'visible' : 'hidden'
+    // Poster chỉ để trang trí (pointer-events: none), bám theo máy quay suốt quãng bay tới/rời kiosk
+    const opacity = op.toFixed(3)
+    const visibility = op > 0.002 ? 'visible' : 'hidden'
     if (opacity !== K.opacity) {
         K.opacity = opacity
         el.style.opacity = opacity
@@ -662,11 +657,6 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
     if (visibility !== K.visibility) {
         K.visibility = visibility
         el.style.visibility = visibility
-    }
-    if (live !== K.live) {
-        K.live = live
-        el.style.pointerEvents = live ? 'auto' : 'none'
-        el.inert = !live
     }
     // Transform chỉ ghi khi máy quay làm 4 góc dịch quá 0,05px
     if (op > 0 && !sameQuad(pts, K.pts)) {
@@ -1104,20 +1094,18 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 camera.near = near
                 camera.updateProjectionMatrix()
             }
-            // Gần kiosk: trục dọc của máy nghiêng theo màn để màn không bị xiên
-            camera.up.set(0, 1, 0).lerp(KSCR.up, calmOn ? 0 : kioskFocus(S)).normalize()
+            camera.up.set(0, 1, 0)
             camera.lookAt(_look)
             if (import.meta.env.DEV) (window as unknown as { __cam: unknown }).__cam = { S, pos: camera.position.toArray(), look: _look.toArray(), fov }
         }
 
-        // ── Kiosk: zoom tới thì khung nhìn về giữa (hết dịch sang phải), màn DOM bám 4 góc màn 3D ──
-        const f = calmOn ? 0 : kioskFocus(S)
+        // ── Kiosk: khung nhìn dịch sang phải như mọi chương; poster DOM bám 4 góc màn 3D ──
         if (!staticMode) {
-            const ox = -size.width * DESKTOP_SHIFT * (1 - f)
+            const ox = -size.width * DESKTOP_SHIFT
             if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01) camera.setViewOffset(size.width, size.height, ox, 0, size.width, size.height)
         }
         camera.updateMatrixWorld()
-        placeKiosk(kiosk, camera, size, S, f, !staticMode && !calmOn)
+        placeKiosk(kiosk, camera, size, S, !staticMode && !calmOn)
         updateChrome(kiosk, S, calmOn, delta, chrome.current)
 
         // ── Sương theo màu trời; ngoài trời nền trong suốt (thấy gradient trời CSS), vào nhà thì nền nội thất tối (đổi lúc tối màn) ──

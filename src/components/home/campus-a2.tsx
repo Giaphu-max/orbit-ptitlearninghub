@@ -25,7 +25,8 @@ export const KS = 0.72
 export const KIOSK_RY = 0.22
 export const SCR_W = 2.4
 export const SCR_H = 1.5
-export const TILT = THREE.MathUtils.degToRad(48)
+// Màn ngả nhẹ ra sau (kiosk đứng thẳng như mockup docs/mockup/orbit-courses-chapter.html, ~14°)
+export const TILT = THREE.MathUtils.degToRad(14)
 const KIOSK_HEAD_AT: Vec3 = [0, 2.05, 0.05]
 
 /** Điểm trong toạ độ cục bộ của tòa A2 → toạ độ thế giới */
@@ -54,7 +55,10 @@ export function kioskScreenFrame() {
     screen.position.z = 0.05
     head.add(screen)
     lobby.updateMatrixWorld(true)
-    return { center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE, matrix: screen.matrixWorld.clone(), up: new THREE.Vector3(0, 1, 0).transformDirection(screen.matrixWorld), right: new THREE.Vector3(1, 0, 0).transformDirection(screen.matrixWorld) }
+    const base = kiosk.getWorldPosition(new THREE.Vector3())
+    // Đỉnh kiosk = mép trên khung màn (đầu ngả TILT)
+    const topY = head.getWorldPosition(new THREE.Vector3()).y + ((SCR_H + 0.14) / 2) * Math.cos(TILT) * KS * LOBBY_SCALE
+    return { baseY: base.y, topY, center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE, matrix: screen.matrixWorld.clone(), up: new THREE.Vector3(0, 1, 0).transformDirection(screen.matrixWorld), right: new THREE.Vector3(1, 0, 0).transformDirection(screen.matrixWorld) }
 }
 
 const HW = 10.35 // nửa bề ngang đế
@@ -301,7 +305,7 @@ function Kiosk() {
                 <IB s={[1, 1.05, 0.2]} mat={kWhite} cast />
             </group>
             <group position={KIOSK_HEAD_AT} rotation={[-TILT, 0, 0]}>
-                <IB s={[SCR_W + 0.14, SCR_H + 0.14, 0.09]} mat={kWhite} cast />
+                <IB s={[SCR_W + 0.05, SCR_H + 0.05, 0.09]} mat={kWhite} cast />
                 <mesh position={[0, 0, 0.05]}>
                     <planeGeometry args={[SCR_W, SCR_H]} />
                     <meshStandardMaterial color={L.screen} roughness={0.4} metalness={0.1} emissive={L.screenGlow} emissiveIntensity={0.6} />

@@ -4,7 +4,7 @@ import { ArrowRight, Camera, ChevronDown, Play, Sparkles } from 'lucide-react'
 import { getCourse, lessons } from '@/data'
 import { CourseArt } from '@/components/courses/course-cover'
 import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
-import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
+import { courseKicker, primaryCourse, STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { scrollToSection } from '@/lib/scroll'
 import { trackPage } from '@/lib/page-metrics'
 import { FLAGS, mountPerfHud } from '@/lib/perf'
@@ -18,6 +18,7 @@ import { TodayCount, TodayHeroCard, TodayMiniCards, TodayMissionLine } from '@/c
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusStage } from '@/components/home/campus-stage'
 import { KioskScreen, type KioskBridge } from '@/components/home/kiosk-screen'
+import { setKioskCourse } from '@/lib/kiosk-course'
 import { BenchRunner } from '@/components/home/bench-runner'
 import { SiteFooter } from '@/components/site-footer'
 
@@ -73,7 +74,7 @@ export function OrbitHomeView() {
                             <Panel id="daily" index={1}>
                                 <DailyChapter />
                             </Panel>
-                            <Panel id="courses" index={2} hideOnDesktop={!calm && !staticMode}>
+                            <Panel id="courses" index={2} scroll>
                                 <CoursesChapter />
                             </Panel>
                             <Panel id="studio" index={3}>
@@ -270,10 +271,11 @@ function useDailyLit(stage: RefObject<number>, reduce: boolean) {
  * và hiện từng phần tử [data-s] theo nhịp cố định. Panel không `on` thì visibility: hidden (không nhận chuột).
  * Màn hẹp: khung chỉ cao ~56svh nên phần tử [data-compact] (câu dẫn, nhiệm vụ, chú thích) được ẩn để panel vừa khung.
  */
-function Panel({ id, index, wide, hideOnDesktop, children }: { id: string; index: number; wide?: boolean; hideOnDesktop?: boolean; children: ReactNode }) {
+function Panel({ id, index, wide, scroll, children }: { id: string; index: number; wide?: boolean; scroll?: boolean; children: ReactNode }) {
     return (
         <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${wide ? 'max-w-[600px]' : 'max-w-[520px]'}`}>
-            <div className={`pointer-events-auto ${hideOnDesktop ? 'invisible' : ''}`}>{children}</div>
+            {/* scroll: phần tử con không co lại khi cột thấp; thiếu chỗ thì cột tự cuộn bên trong */}
+            <div className={`pointer-events-auto ${scroll ? '-m-1 flex max-h-[calc(100svh-10rem)] flex-col overflow-y-auto p-1 [&>*]:shrink-0' : ''}`}>{children}</div>
         </div>
     )
 }
@@ -281,7 +283,6 @@ function Panel({ id, index, wide, hideOnDesktop, children }: { id: string; index
 /** Không có hành trình (giảm chuyển động): mỗi chương một section cao tối thiểu 100vh, cột chữ bên trái (desktop) hoặc nằm dưới canvas (màn hẹp). */
 function Chapter({ id, index, staticMode, wide, children }: { id: string; index: number; staticMode: boolean; wide?: boolean; children: ReactNode }) {
     const width = wide ? 'max-w-[600px]' : 'max-w-[520px]'
-    const hidden = index === 2 && !staticMode ? 'invisible' : ''
     return (
         <section
             id={id}
@@ -289,7 +290,7 @@ function Chapter({ id, index, staticMode, wide, children }: { id: string; index:
             className={`section-anchor container-page flex min-h-[100svh] pb-16 ${staticMode ? 'scroll-mt-0 items-start' : 'items-center pt-24'}`}
             style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}
         >
-            <div className={`pointer-events-auto w-full ${width} ${hidden}`}>{children}</div>
+            <div className={`pointer-events-auto w-full ${width}`}>{children}</div>
         </section>
     )
 }
@@ -431,56 +432,105 @@ function DailyChapter() {
 function CoursesChapter() {
     const summaries = useCourseSummaries()
     const list = [...summaries].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
-    // Desktop: nội dung này hiện trên màn kiosk 3D (KioskScreen); cột chữ chỉ hiện ở màn hẹp và chế độ làm mờ cảnh
+    const main = primaryCourse(list)
+    const rest = list.filter((c) => c !== main)
     return (
         <>
             <Eyebrow>02 · Khóa học</Eyebrow>
-            <Title id="courses-title">{'Khóa học của bạn'}</Title>
+            <Title id="courses-title">Khóa học của bạn</Title>
             <Lead>Học theo chặng, đích là test cuối chương.</Lead>
-            <div data-s className="flex flex-col gap-3">
-                {list.length === 0 && <p className={`${lightCard} p-5 text-muted-foreground`}>Chưa có khóa học nào được giảng viên xuất bản.</p>}
-                {list.map((c) => (
-                    <CourseRow key={c.course.id} summary={c} />
-                ))}
-                <Link to="/learning" className="inline-flex items-center gap-2 self-start rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-extrabold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
-                    Xem tất cả khóa học <ArrowRight size={15} />
-                </Link>
-            </div>
+            <p data-s className="mb-4 text-[13px] text-muted-foreground">
+                <b className="font-mono text-foreground">{list.length}</b> khóa
+                {main?.status === 'doing' && (
+                    <>
+                        {' '}
+                        · đang ở <b className="font-mono text-foreground">chặng {main.curIndex + 1}/{main.lessons.length}</b> môn {main.course.subject}
+                    </>
+                )}
+            </p>
+            {list.length === 0 && <p data-s className={`${lightCard} p-5 text-muted-foreground`}>Chưa có khóa học nào được giảng viên xuất bản.</p>}
+            {main && (
+                <div data-s>
+                    <MainCourseCard summary={main} />
+                </div>
+            )}
+            {rest.map((c) => (
+                <div data-s key={c.course.id} className="mt-3">
+                    <CourseRow summary={c} />
+                </div>
+            ))}
+            <Link data-s to="/learning" className="mt-4 inline-flex items-center gap-1 self-start border-t border-border pt-3.5 text-sm font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                Xem tất cả khóa học <ArrowRight size={14} />
+            </Link>
         </>
     )
 }
 
-function CourseRow({ summary }: { summary: CourseSummary }) {
-    const { course, lessons: ls, status, pct, curIndex } = summary
+/** Rê chuột / focus một khóa ở cột chữ thì poster trên màn kiosk 3D đổi sang khóa đó; rời thì về khóa đang học. */
+const kioskHover = (id: string) => ({
+    onMouseEnter: () => setKioskCourse(id),
+    onMouseLeave: () => setKioskCourse(null),
+    onFocus: () => setKioskCourse(id),
+    onBlur: () => setKioskCourse(null),
+})
+
+/** Khóa đang học: thẻ lớn nhất cột, bìa tràn ngang chìm vào nền thẻ ở mép dưới. */
+function MainCourseCard({ summary }: { summary: CourseSummary }) {
+    const { course, lessons: ls, pct, curIndex, status } = summary
     const lesson = ls[curIndex] ?? ls[0]
-    const sub = status === 'doing' ? `Chặng ${curIndex + 1}/${ls.length}` : status === 'done' ? 'Đã xong' : `${ls.length} bài`
     const action = status === 'done' ? 'Xem lại' : pct > 0 ? 'Học tiếp' : 'Bắt đầu'
     return (
-        <div className={`${lightCard} group relative grid grid-cols-[84px_1fr] gap-3.5 p-3 transition duration-base ease-out focus-within:ring-2 focus-within:ring-ring/70 hover:-translate-y-0.5 hover:border-brand-300`}>
-            <Link to={`/learning?course=${course.id}`} aria-label={`Xem khóa ${course.title}`} className="absolute inset-0 rounded-[20px] focus-visible:outline-none" />
-            <div className={`pointer-events-none relative h-[84px] w-[84px] overflow-hidden rounded-2xl ${status === 'new' ? 'saturate-[.5]' : ''}`}>
+        <div {...kioskHover(course.id)} className={`${lightCard} group relative overflow-hidden transition duration-base ease-out focus-within:ring-2 focus-within:ring-ring/70 hover:-translate-y-0.5 hover:border-brand-300`}>
+            <Link to={`/learning?course=${course.id}`} aria-label={`Xem khóa ${course.title}`} className="absolute inset-0 z-0 rounded-[20px] focus-visible:outline-none" />
+            <div className="pointer-events-none relative h-32 [@media(max-height:780px)]:h-[84px]">
                 <CourseArt course={course} className="h-full w-full" />
+                <span aria-hidden className="absolute inset-0 bg-gradient-to-b from-card/0 from-40% to-card" />
             </div>
-            <div className="pointer-events-none flex min-w-0 flex-col justify-between gap-1.5">
-                <small className="truncate font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-ink">
-                    {course.subject} · {sub}
-                </small>
-                <span className="flex items-baseline justify-between gap-3">
-                    <b className="line-clamp-2 text-[15px] leading-snug">{course.title}</b>
-                    <span className="font-mono text-lg font-bold">{pct}%</span>
-                </span>
+            <div className="pointer-events-none relative flex flex-col gap-2.5 px-[22px] pb-[22px] pt-1">
+                <small className="font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-ink">{courseKicker(summary)}</small>
+                <b className="text-2xl font-extrabold leading-tight tracking-[-0.02em]">{course.title}</b>
+                {lesson && (
+                    <span className="text-[13px] text-muted-foreground">
+                        Tiếp theo: <b className="font-semibold text-foreground">{lesson.title}</b>
+                    </span>
+                )}
                 <span className="flex items-center gap-3">
-                    <span className="h-1 flex-1 overflow-hidden rounded bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${course.title}`}>
+                    <span className="h-[5px] flex-1 overflow-hidden rounded bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${course.title}`}>
                         <span className="block h-full rounded bg-brand-600" style={{ width: `${pct}%` }} />
                     </span>
+                    <span className="font-mono text-[15px] font-bold">{pct}%</span>
                     {lesson && (
-                        <Link to={`/lesson/${lesson.id}`} data-vt={`lesson-${lesson.id}`} className="pointer-events-auto relative z-10 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-600 px-3 py-1.5 text-xs font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
-                            <Play size={11} className="fill-current" /> {action}
+                        <Link to={`/lesson/${lesson.id}`} data-vt={`lesson-${lesson.id}`} className="pointer-events-auto relative z-10 inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-brand-600 px-4 py-[11px] text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                            <Play size={12} className="fill-current" /> {action}
                         </Link>
                     )}
                 </span>
             </div>
         </div>
+    )
+}
+
+/** Hàng gọn cho các khóa còn lại: thumbnail 64px, subject · số bài, tên khóa, bên phải "Bắt đầu →" hoặc %. */
+function CourseRow({ summary }: { summary: CourseSummary }) {
+    const { course, lessons: ls, status, pct } = summary
+    return (
+        <Link
+            to={`/learning?course=${course.id}`}
+            aria-label={`Xem khóa ${course.title}`}
+            {...kioskHover(course.id)}
+            className={`${lightCard} group grid grid-cols-[64px_1fr_auto] items-center gap-3.5 p-2.5 transition duration-base ease-out hover:-translate-y-0.5 hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70`}
+        >
+            <span className={`block h-16 w-16 overflow-hidden rounded-xl ${status === 'new' ? 'saturate-[.5]' : ''}`}>
+                <CourseArt course={course} className="h-full w-full" />
+            </span>
+            <span className="min-w-0">
+                <small className="block truncate font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-ink">
+                    {course.subject} · {ls.length} bài
+                </small>
+                <b className="mt-1 line-clamp-2 block text-[15px] leading-snug">{course.title}</b>
+            </span>
+            <span className="pr-1 font-mono text-[13px] text-muted-foreground">{pct > 0 ? `${pct}%` : 'Bắt đầu →'}</span>
+        </Link>
     )
 }
 

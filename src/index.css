@@ -781,3 +781,15 @@
   20% { opacity: 1; }
   to { opacity: 0; transform: translateY(140%); }
 }
+
+@layer components {
+  .kiosk-poster-in {
+    animation: kiosk-poster-in 200ms ease-out both;
+  }
+}
+@keyframes kiosk-poster-in {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kiosk-poster-in { animation: none; }
+}
