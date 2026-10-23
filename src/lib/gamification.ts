@@ -110,6 +110,13 @@ export const freezeAvailable = (s: StreakState, now = new Date()) => s.freezeUse
 
 /** XP khi đọc xong một bài Orbit Daily (trả lời đúng câu kiểm tra). */
 export const DAILY_ARTICLE_XP = 20
+/** Số bài Orbit Daily miễn phí mỗi ngày; bài thứ 4 trở đi mở bằng XP. */
+export const DAILY_LIMIT = 3
+/** Giá mở thêm một bài Daily (trừ vào XP tiêu được, không làm tụt cấp). */
+export const EXTRA_READ_COST = 60
+/** Nhiệm vụ ẩn "Tòa A2 sáng đèn": đọc hết mọi bài Daily trong ngày. */
+export const LIGHTS_XP = 100
+export const LIGHTS_BADGE_ID = 'nguoi-thap-den'
 /** Trong đó phần thưởng cho việc trả lời đúng câu kiểm tra (đọc xong bài là phần còn lại). */
 export const DAILY_CHECK_XP = 5
 
@@ -217,6 +224,8 @@ export function badgeProgress(badge: Badge, ctx: BadgeContext): { current: numbe
             return { current: ctx.directorBest >= c.minScore ? 1 : 0, target: 1 }
         case 'test-score':
             return { current: ctx.testBest >= c.minRatio ? 1 : 0, target: 1 }
+        case 'hidden-mission':
+            return { current: 0, target: 1 }
     }
 }
 

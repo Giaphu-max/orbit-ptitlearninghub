@@ -16,6 +16,7 @@ import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
+import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
 // Hình khối, màu và số đo giữ nguyên bản gốc; không dùng file model nào. Tòa A2 (đế rộng, sảnh kính) và Hội trường A2
@@ -124,64 +125,86 @@ function setSlot(mesh: THREE.InstancedMesh, i: number, lit: boolean | null) {
     mesh.setMatrixAt(i, dummy.matrix)
 }
 
-/** 3 tầng cửa sổ A2 = 3 bài Daily hôm nay: slot thuộc tầng nào theo chiều cao (10 tầng nhà chia 3 nhóm, thấp → cao). */
-const TIER_OF_SLOT = WIN_SLOTS.map(([, y]) => Math.min(2, Math.floor(((y - 3.5) / 1.02) / (10 / 3))))
-const TIER_SLOTS = [0, 1, 2].map((t) => WIN_SLOTS.map((_, i) => i).filter((i) => TIER_OF_SLOT[i] === t))
+/** Tầng cửa sổ A2 = bài Daily thứ k đã đọc hôm nay: slot thuộc tầng nào theo chiều cao (mỗi tầng nhà một nhóm, thấp → cao). */
+const TIER_OF_SLOT = WIN_SLOTS.map(([, y]) => Math.min(A2_TIERS - 1, Math.round((y - 3.5) / 1.02)))
 /** Độ sáng hiện tại của từng tầng (0..1). Để ở module: rời trang chủ rồi quay lại thì tầng mới đọc sáng lên mượt từ giá trị cũ. */
-const tierShown = [0, 0, 0]
+const tierShown = new Array<number>(A2_TIERS).fill(0)
 const TIER_EPS_STAGE = 0.78 // chỉ chạy hiệu ứng khi chương Hôm nay đã vào khung nhìn
+/** Mặt đồng hồ trên nóc A2 phát sáng khi mọi tầng đã sáng (0..1, làm mượt trong A2Windows, đọc ở Campus) */
+const clockGlow = { v: 0 }
+/** Vật liệu riêng của mặt đồng hồ (phát sáng theo clockGlow); chỉ ghi khi giá trị đổi */
+const CLOCK_FACE = stdMat(CAMPUS.pureWhite, { emissive: CAMPUS.windowLit, emissiveIntensity: 0 })
 
-function A2Windows({ nightRef, reduce, dailyLit, stage }: { nightRef: React.MutableRefObject<number>; reduce: boolean; dailyLit: React.MutableRefObject<boolean[]>; stage: React.MutableRefObject<number> }) {
+/** Một InstancedMesh cho cả 10 tầng: độ trong suốt theo từng instance (thuộc tính aAlpha) thay vì 10 mesh/10 draw call. */
+function patchTierAlpha(shader: { vertexShader: string; fragmentShader: string }) {
+    shader.vertexShader = shader.vertexShader.replace('void main() {', 'attribute float aAlpha;\nvarying float vTierA;\nvoid main() {').replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvTierA = aAlpha;')
+    shader.fragmentShader = shader.fragmentShader.replace('void main() {', 'varying float vTierA;\nvoid main() {').replace('#include <color_fragment>', '#include <color_fragment>\n\tdiffuseColor.a *= vTierA;')
+}
+
+function A2Windows({ nightRef, reduce, dailyLit, stage }: { nightRef: React.MutableRefObject<number>; reduce: boolean; dailyLit: React.MutableRefObject<DailyLit>; stage: React.MutableRefObject<number> }) {
     const winRef = useRef<THREE.InstancedMesh>(null)
     const litRef = useRef<THREE.InstancedMesh>(null)
-    const tierRefs = useRef<(THREE.InstancedMesh | null)[]>([null, null, null])
-    const tierMats = useRef<(THREE.MeshBasicMaterial | null)[]>([null, null, null])
+    const tierRef = useRef<THREE.InstancedMesh>(null)
+    const alphaRef = useRef<THREE.InstancedBufferAttribute>(null)
     const lit = useRef<boolean[]>(new Array(WIN_SLOTS.length).fill(false))
     const flickerT = useRef(0)
 
     useLayoutEffect(() => {
         const win = winRef.current
         const lm = litRef.current
-        if (!win || !lm) return
+        const tm = tierRef.current
+        if (!win || !lm || !tm) return
         WIN_SLOTS.forEach((_, i) => {
             setSlot(win, i, null)
             setSlot(lm, i, false)
+            // Lớp tầng: đặt đúng chỗ, lệch ra 0.04 để nằm trên lớp đèn ngẫu nhiên
+            const [x, y, z, ry] = WIN_SLOTS[i]
+            dummy.position.set(x + (ry ? 0.04 : 0), y, z + (ry ? 0 : 0.04))
+            dummy.rotation.set(0, ry, 0)
+            dummy.scale.setScalar(1)
+            dummy.updateMatrix()
+            tm.setMatrixAt(i, dummy.matrix)
         })
         win.instanceMatrix.needsUpdate = true
         lm.instanceMatrix.needsUpdate = true
-        // Lớp tầng: đặt đúng chỗ, lệch ra 0.04 để nằm trên lớp đèn ngẫu nhiên
-        TIER_SLOTS.forEach((slots, t) => {
-            const m = tierRefs.current[t]
-            if (!m) return
-            slots.forEach((slot, k) => {
-                const [x, y, z, ry] = WIN_SLOTS[slot]
-                dummy.position.set(x + (ry ? 0.04 : 0), y, z + (ry ? 0 : 0.04))
-                dummy.rotation.set(0, ry, 0)
-                dummy.scale.setScalar(1)
-                dummy.updateMatrix()
-                m.setMatrixAt(k, dummy.matrix)
-            })
-            m.instanceMatrix.needsUpdate = true
-        })
+        tm.instanceMatrix.needsUpdate = true
     }, [])
 
     useFrame((_, delta) => {
-        // Tầng theo bài Daily đã đọc: chỉ đổi opacity vật liệu, không đụng React
+        // Tầng theo bài Daily đã đọc: chỉ đổi alpha từng instance, không đụng React
         const active = stage.current > TIER_EPS_STAGE
         const gate = Math.min(1, Math.max(0, (stage.current - 0.75) / 0.25))
-        for (let t = 0; t < 3; t++) {
-            if (active) {
-                const want = dailyLit.current[t] ? 1 : 0
-                tierShown[t] = reduce ? want : tierShown[t] + (want - tierShown[t]) * (1 - Math.exp(-delta * 3.2))
-                if (Math.abs(want - tierShown[t]) < 0.002) tierShown[t] = want
-            }
-            const mat = tierMats.current[t]
-            const m = tierRefs.current[t]
-            if (mat && m) {
+        const tm = tierRef.current
+        const alpha = alphaRef.current
+        if (tm && alpha) {
+            const d = dailyLit.current
+            const sinceFinale = d.finaleAt ? performance.now() - d.finaleAt : Infinity
+            let changed = false
+            let any = false
+            for (let t = 0; t < A2_TIERS; t++) {
+                if (active) {
+                    // Tầng đã đọc sáng ngay; các tầng còn lại sáng nối tiếp từ dưới lên (mỗi tầng trễ FINALE_STEP_MS) khi nhiệm vụ ẩn đạt
+                    const want = t < d.read || (d.finale && (reduce || sinceFinale >= (t - d.read) * FINALE_STEP_MS)) ? 1 : 0
+                    tierShown[t] = reduce ? want : tierShown[t] + (want - tierShown[t]) * (1 - Math.exp(-delta * 3.2))
+                    if (Math.abs(want - tierShown[t]) < 0.002) tierShown[t] = want
+                }
                 // Sáng dần theo chương (gate), khi sang Studio giữ nguyên
-                mat.opacity = tierShown[t] * gate
-                m.visible = mat.opacity > 0.003
+                const a = tierShown[t] * gate
+                if (a > 0.003) any = true
+                for (let i = 0; i < WIN_SLOTS.length; i++) {
+                    if (TIER_OF_SLOT[i] === t && Math.abs(alpha.array[i] - a) > 0.001) {
+                        alpha.array[i] = a
+                        changed = true
+                    }
+                }
             }
+            if (changed) alpha.needsUpdate = true
+            tm.visible = any
+            // Đồng hồ trên nóc sáng khi tầng cuối cùng đã bật
+            const clockWant = d.finale && tierShown[A2_TIERS - 1] > 0.5 ? 1 : 0
+            clockGlow.v = reduce ? clockWant : clockGlow.v + (clockWant - clockGlow.v) * (1 - Math.exp(-delta * 2.5))
+            const glow = Math.round(clockGlow.v * 140) / 100
+            if (CLOCK_FACE.emissiveIntensity !== glow) CLOCK_FACE.emissiveIntensity = glow
         }
 
         const lm = litRef.current
@@ -208,12 +231,12 @@ function A2Windows({ nightRef, reduce, dailyLit, stage }: { nightRef: React.Muta
                 <boxGeometry args={[0.5, 0.62, 0.08]} />
                 <meshBasicMaterial color={CAMPUS.windowLit} />
             </instancedMesh>
-            {TIER_SLOTS.map((slots, t) => (
-                <instancedMesh key={t} ref={(m) => void (tierRefs.current[t] = m)} args={[undefined, undefined, slots.length]} visible={false}>
-                    <boxGeometry args={[0.5, 0.62, 0.08]} />
-                    <meshBasicMaterial ref={(m) => void (tierMats.current[t] = m)} color={CAMPUS.windowTier} transparent opacity={0} depthWrite={false} />
-                </instancedMesh>
-            ))}
+            <instancedMesh ref={tierRef} args={[undefined, undefined, WIN_SLOTS.length]} visible={false}>
+                <boxGeometry args={[0.5, 0.62, 0.08]}>
+                    <instancedBufferAttribute ref={alphaRef} attach="attributes-aAlpha" args={[new Float32Array(WIN_SLOTS.length), 1]} />
+                </boxGeometry>
+                <meshBasicMaterial color={CAMPUS.windowTier} transparent depthWrite={false} onBeforeCompile={patchTierAlpha} />
+            </instancedMesh>
         </>
     )
 }
@@ -288,7 +311,7 @@ interface WorldProps {
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     nightRef: React.MutableRefObject<number>
     reduce: boolean
-    dailyLit: React.MutableRefObject<boolean[]>
+    dailyLit: React.MutableRefObject<DailyLit>
     /** S đã làm mượt (Scene ghi mỗi khung hình) */
     stage: React.MutableRefObject<number>
     coursePct: Readonly<Record<string, number>>
@@ -350,7 +373,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     <HipRoof w={5.2} h={1.6} d={3.6} c={C.roofRed} at={[0, 14.3, -1.2]} />
                     <Gable len={0.5} h={1.8} depth={5} c={C.cream} at={[0, 13.8, 1.35]} alongZ />
                     {/* Đồng hồ */}
-                    <mesh position={[0, 14.55, 1.65]} rotation={[Math.PI / 2, 0, 0]} material={stdMat(CAMPUS.pureWhite)} castShadow receiveShadow>
+                    <mesh position={[0, 14.55, 1.65]} rotation={[Math.PI / 2, 0, 0]} material={CLOCK_FACE} castShadow receiveShadow>
                         <cylinderGeometry args={[0.62, 0.62, 0.12, 24]} />
                     </mesh>
                     <mesh position={[0, 14.55, 1.7]} material={stdMat(C.glass)} castShadow receiveShadow>
@@ -748,7 +771,7 @@ interface SceneProps {
     /** S liên tục 0..3 do useScrollStage cung cấp (ref, không phải state) */
     stage: React.MutableRefObject<number>
     /** Bài Daily hôm nay (theo thứ tự) đã đọc chưa: mỗi bài = một tầng cửa sổ A2 */
-    dailyLit: React.MutableRefObject<boolean[]>
+    dailyLit: React.MutableRefObject<DailyLit>
     /** Màn kiosk (DOM) được định vị lên màn 3D */
     kiosk: KioskBridge
     /** % tiến độ khóa theo tên tòa, hiện trên nhãn */
@@ -1230,7 +1253,7 @@ export interface CampusSceneProps {
     staticMode: boolean
     flat: boolean
     stage: React.MutableRefObject<number>
-    dailyLit: React.MutableRefObject<boolean[]>
+    dailyLit: React.MutableRefObject<DailyLit>
     kiosk: KioskBridge
     coursePct: Readonly<Record<string, number>>
     onOpenCourse?: (courseId: string) => void

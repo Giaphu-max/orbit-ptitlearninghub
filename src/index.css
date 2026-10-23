@@ -717,3 +717,67 @@
   background-size: 200% 100%;
   animation: studio-skel 1.2s linear infinite;
 }
+
+/* ─── Hôm nay: thẻ khóa / thẻ xong, chip XP trên nav ─── */
+:root {
+  /* Thẻ bài mở thêm (khóa) và thẻ "đã đọc hết": nền tối cố định ở cả hai giao diện */
+  --locked-1: 330 8% 16%;
+  --locked-2: 345 7% 10%;
+  --done-1: 143 20% 17%;
+  --done-2: 143 20% 11%;
+  --success-light: 148 55% 61%;
+}
+@layer components {
+  .card-locked {
+    background: linear-gradient(160deg, hsl(var(--locked-1)), hsl(var(--locked-2)));
+    border: 1px solid hsl(var(--ink-foreground) / 0.14);
+    transition: transform var(--duration-reward) cubic-bezier(0.22, 1, 0.36, 1), opacity var(--duration-reward) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card-locked[data-opening='true'] {
+    transform: scale(0.98);
+    opacity: 0.5;
+  }
+  .card-done {
+    background: linear-gradient(150deg, hsl(var(--done-1)), hsl(var(--done-2)));
+  }
+  .lock-shackle {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  [data-opening='true'] .lock-shackle {
+    transform: translateY(-4px);
+  }
+  .xp-chip-fly {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    pointer-events: none;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .xp-chip-fly[data-kind='earn'] {
+    animation: xp-chip-up 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .xp-chip-fly[data-kind='spend'] {
+    animation: xp-chip-down 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card-locked,
+    .lock-shackle {
+      transition: none;
+    }
+    .xp-chip-fly {
+      display: none;
+    }
+  }
+}
+@keyframes xp-chip-up {
+  from { opacity: 0; transform: translateY(-50%); }
+  20% { opacity: 1; }
+  to { opacity: 0; transform: translateY(-200%); }
+}
+@keyframes xp-chip-down {
+  from { opacity: 0; transform: translateY(-50%); }
+  20% { opacity: 1; }
+  to { opacity: 0; transform: translateY(140%); }
+}

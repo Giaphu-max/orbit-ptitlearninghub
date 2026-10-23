@@ -1,8 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Camera, Check, ChevronDown, Play, Sparkles } from 'lucide-react'
+import { ArrowRight, Camera, ChevronDown, Play, Sparkles } from 'lucide-react'
 import { getCourse, lessons } from '@/data'
-import { dailyFor, MISSIONS } from '@/lib/gamification'
 import { CourseArt } from '@/components/courses/course-cover'
 import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
 import { STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
@@ -10,9 +9,12 @@ import { scrollToSection } from '@/lib/scroll'
 import { trackPage } from '@/lib/page-metrics'
 import { FLAGS, mountPerfHud } from '@/lib/perf'
 import { overlay } from '@/lib/stage-signal'
-import { todaysDaily } from '@/lib/next-step'
+import { dailyArticles } from '@/data'
+import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
+import { announceRewards, LIGHTS_XP, localDate } from '@/lib/gamification'
 import { CHAPTERS, PIN_SWAP, useScrollStage, useStageMode } from '@/hooks/useScrollStage'
 import { useTodayDaily } from '@/hooks/useTodayDaily'
+import { TodayCount, TodayHeroCard, TodayMiniCards, TodayMissionLine } from '@/components/daily/today-board'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusStage } from '@/components/home/campus-stage'
 import { KioskScreen, type KioskBridge } from '@/components/home/kiosk-screen'
@@ -36,7 +38,7 @@ export function OrbitHomeView() {
     const paged = journey && !calm && !FLAGS.docScroll
     const { stage } = useScrollStage({ journey, paged, barRef, rootRef, calmRef })
     const { coursePct } = useBuildingCourses()
-    const dailyLit = useDailyLit()
+    const dailyLit = useDailyLit(stage, reduce)
     const screenRef = useRef<HTMLDivElement>(null)
     const stageRef = useRef<HTMLDivElement>(null)
     const footerRef = useRef<HTMLDivElement>(null)
@@ -196,13 +198,68 @@ function useCalm() {
     return [calm, setCalm] as const
 }
 
-/** Bài Daily hôm nay (đúng thứ tự danh sách) đã đọc chưa → ref cho cảnh 3D, mỗi bài một tầng cửa sổ A2. Ghi ref, không render lại cảnh. */
-function useDailyLit() {
+/**
+ * Trạng thái đèn tầng tòa A2 cho cảnh 3D: số bài Daily đã đọc hôm nay = số tầng sáng từ dưới lên. Ghi ref, không render lại cảnh.
+ * Cũng lo nhiệm vụ ẩn: đọc hết mọi bài Daily trong ngày (lần đầu) thì khi chương Hôm nay hiện ra, các tầng còn lại sáng nối tiếp,
+ * đồng hồ phát sáng, ~1s sau hiện màn thưởng +100 XP kèm huy hiệu. Không báo trước ở đâu.
+ */
+function useDailyLit(stage: RefObject<number>, reduce: boolean) {
     const read = useOrbitStore((s) => s.dailyRead)
-    const mastery = useOrbitStore((s) => s.conceptMastery)
-    const ref = useRef<boolean[]>([])
+    const lightsDay = useOrbitStore((s) => s.lightsDay)
+    const ref = useRef<DailyLit>({ read: 0, finale: false, finaleAt: 0 })
+    const playing = useRef(false)
+    const today = localDate()
+    const readToday = dailyArticles.filter((a) => read[a.id] === today).length
+    const claimed = lightsDay === today
+    const pending = !claimed && readToday > 0 && dailyArticles.every((a) => read[a.id])
     // Ghi trong render (đồng bộ) để cảnh vừa dựng đã có giá trị đúng; ref không gây render
-    ref.current = todaysDaily(read, mastery).map((a) => Boolean(read[a.id]))
+    ref.current.read = readToday
+    if (!playing.current) {
+        ref.current.finale = claimed
+        ref.current.finaleAt = 0
+    }
+
+    useEffect(() => {
+        if (!pending) return
+        const lit = ref.current
+        let timer = 0
+        const poll = window.setInterval(() => {
+            // Chỉ phát khi chương Hôm nay đang nằm trong khung nhìn
+            const s = stage.current ?? 0
+            if (playing.current || s < 0.95 || s > 1.4) return
+            window.clearInterval(poll)
+            playing.current = true
+            lit.finale = true
+            lit.finaleAt = reduce ? 0 : performance.now()
+            const rows = Math.max(0, A2_TIERS - readToday)
+            const wait = (reduce ? 0 : rows * FINALE_STEP_MS + 700) + 1000
+            timer = window.setTimeout(() => {
+                const before = useOrbitStore.getState()
+                if (before.claimLights() === 0) {
+                    playing.current = false
+                    return
+                }
+                const after = useOrbitStore.getState()
+                announceRewards(
+                    before,
+                    after,
+                    { context: 'NHIỆM VỤ ẨN', headline: 'Tòa A2 sáng đèn', rows: [{ label: 'Thắp sáng mọi tầng của tòa A2', xp: LIGHTS_XP }] },
+                    { source: 'mission', next: { label: 'Tuyệt', to: '/' } },
+                )
+                playing.current = false
+            }, wait)
+        }, 250)
+        return () => {
+            window.clearInterval(poll)
+            window.clearTimeout(timer)
+            // Rời trang giữa chừng: lần sau vào lại sẽ phát lại từ đầu
+            if (playing.current) {
+                playing.current = false
+                lit.finale = false
+                lit.finaleAt = 0
+            }
+        }
+    }, [pending, readToday, reduce, stage])
     return ref
 }
 
@@ -346,69 +403,26 @@ function GridThumb() {
 // ─── Chương 1: Hôm nay (Orbit Daily) ───────────────────────────────────────
 
 function DailyChapter() {
-    const { articles, read, readCount, allDone, noteFor, limit } = useTodayDaily()
+    const today = useTodayDaily()
 
     return (
         <>
             <Eyebrow>01 · Hôm nay</Eyebrow>
-            <Title id="daily-title">{'Ba ô cửa sáng đèn.\nĐọc xong là nghỉ.'}</Title>
-            <Lead>Mỗi bài Orbit Daily đọc xong thắp sáng một tầng cửa sổ tòa A2. AI chọn bài theo phần bạn còn hổng.</Lead>
-            <ul data-s className={`${lightCard} flex flex-col gap-1 p-3`} aria-label={`Đã đọc ${readCount} trên ${limit} bài hôm nay`}>
-                {articles.map((a, i) => {
-                    const done = Boolean(read[a.id])
-                    const note = noteFor(a)
-                    return (
-                        <li key={a.id}>
-                            <Link
-                                to={`/daily/${a.id}`}
-                                data-vt={`daily-${a.id}`}
-                                className={`group grid grid-cols-[36px_1fr_auto] items-center gap-3 rounded-2xl p-2.5 transition duration-fast hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${done ? 'opacity-70' : ''}`}
-                            >
-                                <span className={`flex h-9 w-9 items-center justify-center rounded-[10px] font-mono text-xs ${done ? 'bg-brand-600 text-ink-foreground' : 'bg-muted'}`}>{done ? <Check size={16} /> : String(i + 1).padStart(2, '0')}</span>
-                                <span className="min-w-0">
-                                    <b className="block text-[15px] leading-snug">{a.title}</b>
-                                    <small className="mt-0.5 block text-xs text-muted-foreground">{note}</small>
-                                </span>
-                                <span className="inline-flex items-center gap-1 text-xs font-extrabold text-brand-ink">{done ? 'Đọc lại' : 'Đọc'} <ArrowRight size={13} className="transition group-hover:translate-x-0.5" /></span>
-                            </Link>
-                        </li>
-                    )
-                })}
-            </ul>
-            {allDone && <p data-s className="mt-3 text-sm font-semibold text-muted-foreground">Hôm nay đủ rồi. Hẹn bạn ngày mai.</p>}
-            <div data-s data-compact>
-                <MiniMissions />
+            <Title id="daily-title">3 bài đọc ngắn cho hôm nay</Title>
+            <Lead>Mỗi bài khoảng 1 phút. AI chọn theo chỗ bạn còn hổng.</Lead>
+            <div data-s>
+                <TodayCount today={today} />
+            </div>
+            <div data-s className="mt-4">
+                <TodayHeroCard today={today} />
+            </div>
+            <div data-s className="mt-3">
+                <TodayMiniCards today={today} />
+            </div>
+            <div data-s data-compact className="mt-4">
+                <TodayMissionLine today={today} />
             </div>
         </>
-    )
-}
-
-/** Nhiệm vụ hôm nay, bản gọn cho nền tối (chỉ đọc; nhận thưởng ở trang Hành trình). */
-function MiniMissions() {
-    const dailyRaw = useOrbitStore((s) => s.daily)
-    useOrbitStore((s) => s.lessonProgress)
-    useOrbitStore((s) => s.dailyRead)
-    const daily = dailyFor(dailyRaw)
-    const doneCount = MISSIONS.filter((m) => m.progress(daily) >= m.target).length
-    return (
-        <div className="mt-4 rounded-[20px] border border-border bg-card/90 px-4 py-3">
-            <p className="flex items-center justify-between text-xs font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
-                Nhiệm vụ hôm nay
-                <span className="font-mono">{doneCount}/{MISSIONS.length}</span>
-            </p>
-            <ul className="mt-2 flex flex-col gap-1.5">
-                {MISSIONS.map((m) => {
-                    const done = m.progress(daily) >= m.target
-                    return (
-                        <li key={m.id} className={`flex items-center gap-2 text-sm ${done ? 'text-muted-foreground' : 'text-foreground'}`}>
-                            <span aria-hidden className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${done ? 'bg-brand-600' : 'border border-muted-foreground'}`}>{done && <Check size={11} />}</span>
-                            <span className={done ? 'line-through decoration-muted-foreground' : ''}>{m.title}</span>
-                        </li>
-                    )
-                })}
-            </ul>
-            <Link to="/journey" className="mt-2.5 inline-flex items-center gap-1 text-xs font-extrabold text-brand-ink hover:underline">Xem hành trình <ArrowRight size={12} /></Link>
-        </div>
     )
 }
 

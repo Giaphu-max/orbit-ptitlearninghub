@@ -3,6 +3,7 @@ import type { KioskBridge } from './kiosk-screen'
 import { CAMPUS } from './campus-palette'
 import { useNavigate } from 'react-router-dom'
 import { useThemeStore } from '@/store/useThemeStore'
+import type { DailyLit } from '@/lib/daily-lit'
 
 // Phần 3D tải riêng (three.js + R3F nặng), chỉ kéo về khi hero được dựng.
 const CampusScene = lazy(() => import('./campus-scene'))
@@ -47,7 +48,7 @@ interface CampusStageProps {
     reduce: boolean
     /** Không bay máy quay (giảm chuyển động): mọi chương dùng khung chính diện A2 */
     flat: boolean
-    dailyLit: React.MutableRefObject<boolean[]>
+    dailyLit: React.MutableRefObject<DailyLit>
     /** Màn kiosk (DOM) mà cảnh 3D định vị mỗi khung hình */
     kiosk: KioskBridge
     coursePct: Readonly<Record<string, number>>

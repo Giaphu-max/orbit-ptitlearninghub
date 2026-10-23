@@ -104,6 +104,9 @@ function badgeInfo(b: Badge, s: State): RecapBadge {
         case 'test-score':
             rows = [{ label: 'Test cuối chương tốt nhất', value: `${pct(ctx.testBest)}% / ${pct(c.minRatio)}%` }]
             break
+        case 'hidden-mission':
+            rows = []
+            break
     }
     return { badge: b, rows, current, target }
 }
@@ -155,7 +158,7 @@ export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapDa
     const startBadges = new Set(start?.badgeIds ?? s.earnedBadgeIds)
     const newBadges = s.earnedBadgeIds.filter((id) => !startBadges.has(id)).map((id) => badges.find((b) => b.id === id)).filter((b): b is Badge => Boolean(b)).map((b) => badgeInfo(b, s))
     const nearBadge = badges
-        .filter((b) => !s.earnedBadgeIds.includes(b.id))
+        .filter((b) => !s.earnedBadgeIds.includes(b.id) && !b.hidden)
         .map((b) => badgeInfo(b, s))
         .sort((a, b) => b.current / b.target - a.current / a.target)[0]
 

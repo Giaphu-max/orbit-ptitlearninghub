@@ -110,6 +110,8 @@ export type BadgeCriterion =
     | { type: 'streak'; days: number }
     | { type: 'director-score'; minScore: number }
     | { type: 'test-score'; minRatio: number }
+    /** Nhiệm vụ ẩn: chỉ nhận qua hành động riêng, không tự xét theo số liệu */
+    | { type: 'hidden-mission' }
 
 export interface Badge {
     id: string
@@ -117,6 +119,8 @@ export interface Badge {
     /** Năng lực cụ thể mà huy hiệu chứng nhận */
     description: string
     criterion: BadgeCriterion
+    /** Huy hiệu ẩn: không hiện trong danh sách cho tới khi nhận */
+    hidden?: boolean
 }
 
 /** Thống kê lớp (dữ liệu mẫu) để giảng viên thấy khái niệm nào sinh viên hay sai. */

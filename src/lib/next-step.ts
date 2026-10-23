@@ -1,31 +1,34 @@
 import { dailyArticles, courses, getCourse, getLessonsOfCourse, lessons } from '@/data'
 import type { DailyArticle, Lesson } from '@/data/types'
-import { localDate } from '@/lib/gamification'
+import { DAILY_LIMIT, localDate } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 // "Bước tiếp theo" cho mọi điểm kết thúc (màn thưởng, nhiệm vụ): luôn dẫn người dùng tới việc kế tiếp
 // trong đúng ngữ cảnh, không đẩy về danh sách chung. Đọc trạng thái từ store, dùng được ngoài component.
 
-export const DAILY_LIMIT = 3
+export { DAILY_LIMIT, EXTRA_READ_COST } from '@/lib/gamification'
+
+/** Số bài mua thêm hôm nay (sang ngày mới thì về 0). */
+export const extraReadsToday = (unlocks: { date: string; count: number }) => (unlocks.date === localDate() ? unlocks.count : 0)
 
 /** Bài ưu tiên = bài có khái niệm bạn còn yếu nhất (chưa làm quiz thì coi như 50%). */
 export function gapScore(a: DailyArticle, mastery: Record<string, number>) {
     return a.conceptIds.reduce((sum, id) => sum + (1 - (mastery[id] ?? 0.5)), 0) / Math.max(1, a.conceptIds.length)
 }
 
-/** 3 bài mỗi ngày: bài đã đọc hôm nay, rồi bài chưa đọc ưu tiên theo lỗ hổng kiến thức. */
-export function todaysDaily(read: Record<string, string>, mastery: Record<string, number>): DailyArticle[] {
+/** Bài mỗi ngày (3 miễn phí + bài mua thêm): bài đã đọc hôm nay, rồi bài chưa đọc ưu tiên theo lỗ hổng kiến thức. */
+export function todaysDaily(read: Record<string, string>, mastery: Record<string, number>, extra = 0): DailyArticle[] {
     const today = localDate()
     return [
         ...dailyArticles.filter((a) => read[a.id] === today),
         ...dailyArticles.filter((a) => !read[a.id]).sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery)),
-    ].slice(0, DAILY_LIMIT)
+    ].slice(0, DAILY_LIMIT + extra)
 }
 
 /** Bài Daily chưa đọc ưu tiên nhất trong lượt hôm nay (undefined khi đã đủ lượt hoặc hết bài). */
 export function nextDaily(): DailyArticle | undefined {
-    const { dailyRead, conceptMastery } = useOrbitStore.getState()
-    return todaysDaily(dailyRead, conceptMastery)
+    const { dailyRead, conceptMastery, dailyUnlocks } = useOrbitStore.getState()
+    return todaysDaily(dailyRead, conceptMastery, extraReadsToday(dailyUnlocks))
         .filter((a) => !dailyRead[a.id])
         .sort((a, b) => gapScore(b, conceptMastery) - gapScore(a, conceptMastery))[0]
 }

@@ -5,7 +5,7 @@ import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import type { CourseCoverSpec } from '@/lib/cover-kinds'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 import { masteryAfterTest, testXp, type TestAnswerInput } from '@/lib/final-test'
-import { advanceStreak, bestTestRatio, dailyFor, directorXp, emptyDaily, evaluateBadges, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
+import { advanceStreak, bestTestRatio, dailyFor, DAILY_LIMIT, directorXp, emptyDaily, evaluateBadges, EXTRA_READ_COST, LIGHTS_BADGE_ID, LIGHTS_XP, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
 // Lưu localStorage; mọi thao tác storage bọc try/catch để chế độ ẩn danh
@@ -86,7 +86,14 @@ interface OrbitState {
     learnerName: string
     /** Bài Orbit Daily đã đọc xong: id → ngày (YYYY-MM-DD) */
     dailyRead: Record<string, string>
+    /** Tổng XP đã kiếm (tính cấp độ); không giảm khi tiêu XP */
     xp: number
+    /** XP đã tiêu (mở bài Daily thêm). XP tiêu được = xp − xpSpent, xem `xpBalance` */
+    xpSpent: number
+    /** Bài Daily mua thêm theo ngày; sang ngày mới thì tính lại từ 0 */
+    dailyUnlocks: { date: string; count: number }
+    /** Ngày đã nhận nhiệm vụ ẩn "Tòa A2 sáng đèn" (các tầng giữ sáng trong ngày đó) */
+    lightsDay: string | null
     streak: {
         count: number
         /** Ngày học gần nhất, dạng YYYY-MM-DD theo giờ máy */
@@ -124,6 +131,10 @@ interface OrbitState {
     /** Hoàn thành một bài Orbit Daily; trả về XP được cộng (0 nếu đã đọc rồi) */
     completeDailyArticle: (articleId: string, xp: number) => number
     addXp: (amount: number) => void
+    /** Mở thêm một bài Daily bằng XP; false nếu không đủ XP hoặc hết bài */
+    unlockExtraRead: () => boolean
+    /** Nhận nhiệm vụ ẩn khi đã đọc hết mọi bài Daily; trả về XP được cộng (0 nếu chưa đủ điều kiện hoặc hôm nay đã nhận) */
+    claimLights: () => number
     saveLessonPosition: (lessonId: string, positionSec: Seconds) => void
     setLessonReview: (lessonId: string, status: ReviewStatus) => void
     /** patch = null: bỏ chỉnh sửa bìa, quay về bìa mặc định */
@@ -146,6 +157,9 @@ interface OrbitState {
 
 const STORAGE_KEY = 'orbit-demo-state'
 
+/** XP tiêu được: tổng đã kiếm trừ phần đã tiêu. */
+export const xpBalance = (s: Pick<OrbitState, 'xp' | 'xpSpent'>) => s.xp - s.xpSpent
+
 export const DEFAULT_LEARNER_NAME = 'Phú'
 
 /**
@@ -161,6 +175,9 @@ export function makeDemoProfile() {
         // Bài Daily đầu tiên (id đổi mỗi lần tạo lại nội dung nên lấy từ dữ liệu)
         dailyRead: Object.fromEntries(dailyArticles.slice(0, 1).map((a) => [a.id, today])) as Record<string, string>,
         xp: 2480,
+        xpSpent: 0,
+        dailyUnlocks: { date: '', count: 0 },
+        lightsDay: null as string | null,
         streak: { count: 12, lastStudyDate: today as string | null, freezeUsedWeek: null as string | null },
         // 202s / 439s ≈ 46%
         lessonProgress: { 'ban-chat-dung-phi-tuyen': { lastPositionSec: 202, completed: false } } as Record<string, LessonProgress>,
@@ -263,6 +280,25 @@ export const useOrbitStore = create<OrbitState>()(
                     const { [courseId]: old, ...rest } = s.courseCovers
                     return { courseCovers: patch ? { ...rest, [courseId]: { ...old, ...patch } } : rest }
                 }),
+
+            unlockExtraRead: () => {
+                const s = get()
+                const bought = s.dailyUnlocks.date === localDate() ? s.dailyUnlocks.count : 0
+                if (xpBalance(s) < EXTRA_READ_COST || DAILY_LIMIT + bought >= dailyArticles.length) return false
+                // Báo chip XP trên nav đây là trả XP (khác với đặt lại demo): chip "−n" rơi xuống
+                window.dispatchEvent(new CustomEvent('orbit:xp-spend', { detail: { amount: EXTRA_READ_COST } }))
+                set((st) => ({ xpSpent: st.xpSpent + EXTRA_READ_COST, dailyUnlocks: { date: localDate(), count: bought + 1 } }))
+                return true
+            },
+
+            claimLights: () => {
+                const s = get()
+                const today = localDate()
+                const readToday = dailyArticles.filter((a) => s.dailyRead[a.id] === today).length
+                if (s.lightsDay === today || readToday === 0 || !dailyArticles.every((a) => s.dailyRead[a.id])) return 0
+                set((st) => ({ xp: st.xp + LIGHTS_XP, lightsDay: today, earnedBadgeIds: st.earnedBadgeIds.includes(LIGHTS_BADGE_ID) ? st.earnedBadgeIds : [...st.earnedBadgeIds, LIGHTS_BADGE_ID] }))
+                return LIGHTS_XP
+            },
 
             addXp: (amount) => set((s) => ({ xp: Math.max(0, s.xp + amount) })),
 
@@ -398,13 +434,13 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 5,
-            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 lên v5 giữ dữ liệu, thêm tổng kết chặng (stageStart của demo, test cuối chặng, recapSeen).
+            version: 6,
+            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng (stageStart của demo, test cuối chặng, recapSeen); v6 thêm XP tiêu được (xpSpent), bài Daily mua thêm và nhiệm vụ ẩn.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {} } as OrbitState
+                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {} } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },

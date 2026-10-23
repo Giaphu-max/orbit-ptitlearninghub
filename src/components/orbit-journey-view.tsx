@@ -236,14 +236,17 @@ function Badges() {
     const directorBest = useOrbitStore((s) => s.directorBest)
     const testRecords = useOrbitStore((s) => s.testRecords)
 
+    // Huy hiệu ẩn chỉ xuất hiện sau khi đã nhận
+    const shown = badges.filter((b) => !b.hidden || earned.includes(b.id))
+
     return (
         <section aria-labelledby="badges-title">
             <div className="flex items-end justify-between gap-3">
                 <h2 id="badges-title" className="text-title text-foreground">Huy hiệu</h2>
-                <p className="font-mono text-sm text-muted-foreground">{earned.length}/{badges.length}</p>
+                <p className="font-mono text-sm text-muted-foreground">{earned.filter((id) => shown.some((b) => b.id === id)).length}/{shown.length}</p>
             </div>
             <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {badges.map((b) => {
+                {shown.map((b) => {
                     const has = earned.includes(b.id)
                     const { current, target } = badgeProgress(b, { conceptMastery, quizResults, streak, directorBest, testBest: bestTestRatio(testRecords) })
                     return (
