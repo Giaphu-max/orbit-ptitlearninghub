@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
+import { Menu, Play, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
 import { StreakFlame } from '@/components/streak-flame'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { XpChip } from '@/components/xp-chip'
 import { visibleStreak } from '@/lib/gamification'
+import { resumeLesson } from '@/lib/next-step'
 import { centerOf, enterRole } from '@/lib/role-switch'
 import { getJourneyChapter, scrollToSection, subscribeChapter } from '@/lib/scroll'
 import { useSoundStore } from '@/lib/sfx'
@@ -41,45 +42,42 @@ const TEACHER_ITEMS: NavItem[] = [
     { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' },
 ]
 
-/**
- * Trạng thái cuộn của nav trên trang chủ (một listener scroll passive + rAF):
- * scrolled = đã cuộn quá 8px (nav hero chuyển từ trong suốt sang kính); past = đã qua hết hero (nav chuyển sang tone plain).
- */
-function useNavScroll(enabled: boolean) {
-    const [state, setState] = useState({ scrolled: false, past: false })
+/** Trang thường: đã cuộn quá 60px (một listener scroll passive + rAF, không đọc layout). */
+function useScrolledPast(enabled: boolean, px: number) {
+    const [past, setPast] = useState(false)
     useEffect(() => {
-        if (!enabled) return
+        if (!enabled) {
+            setPast(false)
+            return
+        }
         let raf = 0
-        // Chiều cao hero và nav đo khi mount / resize, không đọc layout trong lúc cuộn
-        let heroH = 600
-        let navH = 80
-        const measure = () => {
-            heroH = document.getElementById('top')?.offsetHeight ?? 600
-            navH = document.querySelector('header')?.getBoundingClientRect().height ?? 80
-        }
-        const check = () => {
-            const next = { scrolled: window.scrollY > 8, past: window.scrollY > heroH - navH }
-            setState((s) => (s.scrolled === next.scrolled && s.past === next.past ? s : next))
-        }
+        const check = () => setPast(window.scrollY > px)
         const onScroll = () => {
             cancelAnimationFrame(raf)
             raf = requestAnimationFrame(check)
         }
-        const onResize = () => {
-            measure()
-            onScroll()
-        }
-        measure()
         check()
         window.addEventListener('scroll', onScroll, { passive: true })
-        window.addEventListener('resize', onResize)
         return () => {
             cancelAnimationFrame(raf)
             window.removeEventListener('scroll', onScroll)
-            window.removeEventListener('resize', onResize)
         }
-    }, [enabled])
-    return enabled ? state : { scrolled: false, past: false }
+    }, [enabled, px])
+    return enabled && past
+}
+
+/** Màn hẹp (<860px): nav luôn là viên kính thu gọn. */
+function useNarrow() {
+    const query = '(max-width: 859px)'
+    return useSyncExternalStore(
+        (cb) => {
+            const m = window.matchMedia(query)
+            m.addEventListener('change', cb)
+            return () => m.removeEventListener('change', cb)
+        },
+        () => window.matchMedia(query).matches,
+        () => false,
+    )
 }
 
 const initials = (name: string) =>
@@ -91,42 +89,22 @@ const initials = (name: string) =>
         .slice(0, 2)
         .toUpperCase() || 'OR'
 
-// Lớp màu theo nền: hero (trang chủ, nav trong suốt đè lên cảnh) và plain đều theo token giao diện sáng/tối
-const TONE = {
-    hero: {
-        text: 'text-foreground',
-        link: 'text-muted-foreground hover:text-foreground',
-        active: 'bg-muted text-foreground',
-        sub: 'text-muted-foreground',
-        chip: 'border-border bg-card/80 text-foreground hover:border-brand-300',
-        logo: 'logo-mark',
-        avatar: 'bg-foreground text-background',
-        burger: 'border-border bg-card/80 text-foreground',
-    },
-    plain: {
-        text: 'text-foreground',
-        link: 'text-muted-foreground hover:text-foreground',
-        active: 'bg-muted text-foreground',
-        sub: 'text-muted-foreground',
-        chip: 'border-border bg-card text-foreground hover:border-brand-300',
-        logo: 'logo-mark',
-        avatar: 'bg-foreground text-background',
-        burger: 'border-border bg-card text-foreground',
-    },
-} as const
+const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])'
 
-/** Thanh điều hướng ngang: logo, mục có chữ, chip streak, chip cấp độ + XP, avatar, nút sáng/tối. Mobile thu thành menu. */
+/**
+ * Thanh điều hướng biến hình. Đầu trang: full-width trong suốt (logo, mục ngang, chip streak/XP, theme, avatar).
+ * Thu gọn: viên kính giữa trên cùng (Học tiếp · logo PTIT · Menu + avatar) và panel kính xổ xuống.
+ * Điều kiện thu gọn: trang thường cuộn >60px; trang chủ paged (không cuộn tài liệu) khi chương ≥ 1; màn <860px luôn thu gọn.
+ */
 export function TopNav() {
-    const { pathname, hash } = useLocation()
+    const { pathname, hash, search } = useLocation()
     const [menuOpen, setMenuOpen] = useState(false)
     const onHome = pathname === '/'
-    // Trang chủ paged không cuộn tài liệu (scrollY luôn 0): nav chuyển sang kính khi đã rời chương hero
     const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
-    const scrolled = useNavScroll(onHome).scrolled || (onHome && chapter > 0)
-    // Trang chủ có cảnh 3D cố định phía sau suốt chiều dài nên nav luôn ở tone hero (trong suốt, kính khi đã cuộn)
-    const tone: NavTone = onHome ? 'hero' : 'plain'
-    const t = TONE[tone]
-    const tabParam = new URLSearchParams(useLocation().search).get('tab')
+    const scrolled = useScrolledPast(true, 60)
+    const narrow = useNarrow()
+    const collapsed = narrow || scrolled || (onHome && chapter >= 1)
+    const tabParam = new URLSearchParams(search).get('tab')
     const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : it.match(pathname))
     const goTo = (e: ReactMouseEvent, it: NavItem) => {
         setMenuOpen(false)
@@ -136,12 +114,53 @@ export function TopNav() {
     }
     const role = useOrbitStore((s) => s.role)
     const streakState = useOrbitStore((s) => s.streak)
+    useOrbitStore((s) => s.lessonProgress)
+    const resume = role === 'teacher' ? undefined : resumeLesson()
 
     const items = role === 'teacher' ? TEACHER_ITEMS : BASE_ITEMS
     const streak = visibleStreak(streakState).count
 
-    // Đóng menu khi đổi trang
+    const rootRef = useRef<HTMLDivElement>(null)
+    const menuBtn = useRef<HTMLButtonElement>(null)
+    const panelRef = useRef<HTMLDivElement>(null)
+
+    const closeMenu = useCallback((refocus = false) => {
+        setMenuOpen(false)
+        if (refocus) menuBtn.current?.focus()
+    }, [])
+
+    // Đóng menu khi đổi trang hoặc khi nav trở về dạng rộng
     useEffect(() => setMenuOpen(false), [pathname, hash])
+    useEffect(() => {
+        if (!collapsed) setMenuOpen(false)
+    }, [collapsed])
+
+    // Menu mở: Esc / bấm ra ngoài đóng; Tab xoay vòng trong panel; vào panel thì focus mục đầu tiên
+    useEffect(() => {
+        if (!menuOpen) return
+        const onDown = (e: MouseEvent) => !rootRef.current?.contains(e.target as Node) && closeMenu()
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') return closeMenu(true)
+            if (e.key !== 'Tab' || !panelRef.current) return
+            const els = [menuBtn.current, ...Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))].filter((el): el is HTMLElement => !!el)
+            const first = els[0]
+            const last = els[els.length - 1]
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault()
+                last.focus()
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault()
+                first.focus()
+            }
+        }
+        document.addEventListener('mousedown', onDown)
+        document.addEventListener('keydown', onKey)
+        panelRef.current?.querySelector<HTMLElement>('a[href]')?.focus()
+        return () => {
+            document.removeEventListener('mousedown', onDown)
+            document.removeEventListener('keydown', onKey)
+        }
+    }, [menuOpen, closeMenu])
 
     // Giảng viên không có chuỗi ngày/XP
     const chips = role === 'teacher' ? null : (
@@ -149,94 +168,135 @@ export function TopNav() {
             <Link
                 to="/journey"
                 title={`Chuỗi ${streak} ngày học`}
-                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition duration-fast ${
-                    streak > 0 ? 'border-brand-100 bg-brand-50 text-brand-ink hover:border-brand-300' : t.chip
+                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold transition duration-fast hover:border-brand-300 ${
+                    streak > 0 ? 'ptit-streak-chip' : 'border border-border bg-card text-foreground'
                 }`}
             >
                 <StreakFlame lit={streak > 0} />
                 Chuỗi {streak} ngày
             </Link>
-            <XpChip className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition-colors duration-fast ${t.chip}`} />
+            <XpChip className="ptit-xp-badge inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold transition-colors duration-fast" />
         </>
     )
+
+    const state = collapsed ? 'pill' : 'wide'
+    const linkCls = 'whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70'
+    const name = useOrbitStore((s) => s.learnerName)
 
     return (
         <header
             style={{ viewTransitionName: 'site-nav' }}
-            data-nav={tone === 'plain' ? 'plain' : scrolled ? 'glass' : 'clear'}
-            className={`nav-bar own-layer fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] ${t.text}`}
+            data-nav={state}
+            className={`own-layer pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center text-foreground ${onHome ? 'nav-over-3d' : ''}`}
         >
-            <div className="container-page flex h-full items-center gap-4 lg:gap-6">
-                <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ">
-                    <BrandLogo />
-                    <span className="leading-tight">
-                        <span className="block text-xl font-black leading-none tracking-tight text-brand-ink">PTIT</span>
-                        <span className={`mt-1 hidden whitespace-nowrap text-[11px] xl:block ${t.sub}`}>Học viện Công nghệ BCVT</span>
-                    </span>
-                </Link>
+            <div ref={rootRef} className="nav-shell pointer-events-auto" data-state={state}>
+                {/* Nền kính của viên thu gọn: mờ vào/ra theo trạng thái */}
+                <div aria-hidden className={`ptit-glass-navbar-pill absolute inset-0 transition-opacity duration-300 ${collapsed ? 'opacity-100' : 'opacity-0'}`} />
 
-                <nav aria-label="Điều hướng chính" className="hidden items-center gap-1 lg:flex">
-                    {items.map((it) => (
-                        <Link
-                            key={it.label}
-                            to={it.to}
-                            onClick={(e) => goTo(e, it)}
-                            aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
-                            className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 xl:px-4 ${isActive(it) ? t.active : t.link}`}
-                        >
-                            {it.label}
-                        </Link>
-                    ))}
-                </nav>
-
-                <div className="ml-auto hidden items-center gap-2.5 lg:flex">
-                    {chips}
-                    <ThemeToggle tone={tone} />
-                    <AccountMenu tone={tone} />
-                </div>
-
-                <div className="ml-auto flex items-center gap-2 lg:hidden">
-                    <ThemeToggle tone={tone} />
-                    <button
-                        type="button"
-                        aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
-                        aria-expanded={menuOpen}
-                        onClick={() => setMenuOpen((v) => !v)}
-                        className={`flex h-10 w-10 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${t.burger}`}
-                    >
-                        {menuOpen ? <X size={18} /> : <Menu size={18} />}
-                    </button>
-                </div>
-            </div>
-
-            {menuOpen && (
-                <div className="absolute inset-x-3 top-full z-50 -mt-2 rounded-card border border-border bg-card p-4 text-foreground shadow-raised lg:hidden">
-                    <nav aria-label="Điều hướng chính (menu)" className="flex flex-col">
+                {/* Dạng rộng */}
+                <div className="nav-layer nav-layer-wide gap-4 px-10 lg:gap-6">
+                    <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ" tabIndex={collapsed ? -1 : 0}>
+                        <BrandLogo />
+                        <span className="leading-tight">
+                            <span className="block text-xl font-black leading-none tracking-tight text-brand-ink">PTIT</span>
+                            <span className="mt-1 hidden whitespace-nowrap text-[11px] text-muted-foreground xl:block">Học viện Công nghệ BCVT</span>
+                        </span>
+                    </Link>
+                    <nav aria-label="Điều hướng chính" className="flex items-center gap-1">
                         {items.map((it) => (
                             <Link
                                 key={it.label}
                                 to={it.to}
+                                tabIndex={collapsed ? -1 : 0}
                                 onClick={(e) => goTo(e, it)}
                                 aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
-                                className={`rounded-xl px-4 py-3 text-[15px] font-semibold ${isActive(it) ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+                                className={`${linkCls} ${isActive(it) ? 'bg-brand-50 font-semibold text-brand-ink' : 'font-medium text-muted-foreground hover:text-foreground'}`}
                             >
                                 {it.label}
                             </Link>
                         ))}
                     </nav>
-                    {chips && <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3 [&_a]:border-border [&_a]:bg-card [&_a]:text-foreground">{chips}</div>}
-                    <div className="mt-3 border-t border-border pt-3">
-                        <AccountPanel onClose={() => setMenuOpen(false)} />
+                    <div className="ml-auto flex items-center gap-2.5">
+                        {chips}
+                        <ThemeToggle tone="hero" />
+                        <AccountMenu />
                     </div>
                 </div>
-            )}
+
+                {/* Dạng viên kính thu gọn */}
+                <div className="nav-layer nav-layer-pill justify-between gap-2 px-3 pl-3.5">
+                    {resume ? (
+                        <Link
+                            to={`/lesson/${resume.id}`}
+                            tabIndex={collapsed ? 0 : -1}
+                            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-[13px] font-semibold text-brand-ink transition duration-fast hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                        >
+                            <Play size={13} className="fill-current" aria-hidden /> Học tiếp
+                        </Link>
+                    ) : (
+                        <span className="w-2 shrink-0" />
+                    )}
+                    <Link to="/" tabIndex={collapsed ? 0 : -1} aria-label="PTIT, trang chủ" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                        <BrandLogo className="!h-8 !w-8 !rounded-lg" />
+                        <span className="text-lg font-black leading-none tracking-tight text-brand-ink">PTIT</span>
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                        <button
+                            ref={menuBtn}
+                            type="button"
+                            tabIndex={collapsed ? 0 : -1}
+                            aria-expanded={menuOpen}
+                            aria-haspopup="true"
+                            aria-controls="nav-menu-panel"
+                            onClick={() => setMenuOpen((v) => !v)}
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold text-foreground transition duration-fast hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                        >
+                            Menu {menuOpen ? <X size={15} aria-hidden /> : <Menu size={15} aria-hidden />}
+                        </button>
+                        <span aria-hidden className="flex aspect-square h-8 w-8 items-center justify-center rounded-full bg-foreground text-[11px] font-extrabold text-background">
+                            {initials(name)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Panel kính xổ xuống ngay dưới viên kính */}
+                {collapsed && menuOpen && (
+                    <div
+                        ref={panelRef}
+                        id="nav-menu-panel"
+                        role="dialog"
+                        aria-label="Menu điều hướng"
+                        className="nav-menu-panel ptit-glass-card absolute inset-x-0 top-full mt-2 max-h-[calc(100svh-96px)] overflow-y-auto p-4 text-foreground"
+                    >
+                        <nav aria-label="Điều hướng chính (menu)" className="flex flex-col">
+                            {items.map((it) => (
+                                <Link
+                                    key={it.label}
+                                    to={it.to}
+                                    onClick={(e) => goTo(e, it)}
+                                    aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
+                                    className={`rounded-xl px-4 py-3 text-[15px] font-semibold ${isActive(it) ? 'bg-brand-50 text-brand-ink' : 'text-foreground hover:bg-muted'}`}
+                                >
+                                    {it.label}
+                                </Link>
+                            ))}
+                        </nav>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                            {chips}
+                            <ThemeToggle tone="plain" className="relative ml-auto" />
+                        </div>
+                        <div className="mt-3 border-t border-border pt-3">
+                            <AccountPanel onClose={() => closeMenu()} />
+                        </div>
+                    </div>
+                )}
+            </div>
         </header>
     )
 }
 
 /** Avatar + menu tài khoản giả lập (đổi tên, đổi vai trò, đặt lại demo). */
-function AccountMenu({ tone }: { tone: NavTone }) {
-    const t = TONE[tone]
+function AccountMenu() {
     const name = useOrbitStore((s) => s.learnerName)
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
@@ -260,7 +320,7 @@ function AccountMenu({ tone }: { tone: NavTone }) {
                 aria-label={`Tài khoản của ${name}`}
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
-                className={`flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-extrabold shadow-card transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${t.avatar}`}
+                className={`flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-extrabold shadow-card transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 bg-foreground text-background`}
             >
                 {initials(name)}
             </button>

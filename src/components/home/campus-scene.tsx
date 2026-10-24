@@ -74,14 +74,10 @@ function Building({ name, anchorY, position, hovered, labelVisible, registry, ro
             {showLabel && (
             <Html position={[0, anchorY, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
                 <div className="flex w-max -translate-x-1/2 -translate-y-full flex-col items-center gap-1">
-                    <div
-                        className={`w-max max-w-[220px] whitespace-nowrap rounded-xl px-[11px] py-[7px] text-xs font-bold shadow-[0_10px_24px_-12px_rgba(0,0,0,0.6)] transition duration-200 ${
-                            hovered ? '-translate-y-1.5 bg-brand-600 text-ink-foreground' : 'bg-card/95 text-foreground'
-                        }`}
-                    >
+                    <div data-dot data-active={hovered} className="ptit-pin w-max max-w-[220px] whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold">
                         {name}
                     </div>
-                    <div className="h-4 w-0.5 bg-ink-foreground/80" />
+                    <div className="h-4 w-0.5 bg-brand-600/60" />
                 </div>
             </Html>
             )}
@@ -280,7 +276,7 @@ function Cloud({ index, reduce }: { index: number; reduce: boolean }) {
             {CLOUD_PUFFS.map(([x, y, z, r], i) => (
                 <mesh key={i} position={[x, y, z]}>
                     <icosahedronGeometry args={[r, 0]} />
-                    <meshStandardMaterial color={CAMPUS.pureWhite} flatShading transparent opacity={0.92} />
+                    <meshStandardMaterial color={CAMPUS.pureWhite} flatShading />
                 </mesh>
             ))}
         </group>
@@ -907,11 +903,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         // Vào trong nhà: nắng, trời và đèn viền giảm hẳn để đèn trong sảnh làm chủ
         const inside = indoor.current
         if (sun.current) {
-            sun.current.intensity = (1.05 - n * 0.75) * Math.PI * (1 - inside)
+            sun.current.intensity = (1.2 - n * 0.9) * Math.PI * (1 - inside)
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
         if (hemi.current) {
-            hemi.current.intensity = (0.83 - n * 0.4) * Math.PI * (1 - 0.68 * inside)
+            hemi.current.intensity = (0.85 - n * 0.42) * Math.PI * (1 - 0.68 * inside)
             hemi.current.color.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_NIGHT, n)
             hemi.current.groundColor.copy(HEMI_GROUND_DAY).lerp(HEMI_GROUND_NIGHT, n)
         }
@@ -1164,11 +1160,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             {/* fps thấp thì hạ độ phân giải về 1, ổn định thì trả lại */}
             <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => !lowRef.current && setDpr(maxDpr)} />
             {PERF_ON && <PerfHud />}
-            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.83 * Math.PI]} />
+            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.85 * Math.PI]} />
             <directionalLight
                 ref={sun}
                 color={CAMPUS.sunlight}
-                intensity={1.05 * Math.PI}
+                intensity={1.2 * Math.PI}
                 position={[-26, 38, 22]}
                 castShadow
                 shadow-mapSize={isWebKit ? [1024, 1024] : [2048, 2048]}

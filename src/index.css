@@ -46,15 +46,17 @@
     --hero-glow: 358 80% 43%;
     --hero-glow-deep: 358 83% 27%;
     --hero-top: 358 40% 12%;
-    /* Sân khấu trang chủ (giao diện sáng): trời kem ấm ban ngày. --sky-1..4 từ trên xuống, --sky-glow là quầng nắng góc trên phải.
-       Cảnh 3D đọc --sky-2/--sky-3 để pha sương, --stage-deep là nền nội thất. */
-    --sky-1: 31 42% 86%;
-    --sky-2: 31 47% 90%;
-    --sky-3: 34 50% 95%;
-    --sky-4: 33 53% 97%;
-    --sky-glow: 0 0% 100%;
+    /* Sân khấu trang chủ (giao diện sáng): trắng lạnh #FAFAFC, quầng hồng nhạt (--canvas-glow) sau canvas 3D. --sky-1..4 từ trên xuống
+       (canvas đục của Safari vẽ gradient này vào scene.background), --sky-glow là quầng góc trên phải.
+       Cảnh 3D đọc --sky-2/--sky-3 để pha sương (về #FAFAFC), --stage-deep là nền nội thất. */
+    --sky-1: 350 100% 97%;
+    --sky-2: 240 25% 98%;
+    --sky-3: 240 25% 98%;
+    --sky-4: 240 25% 98%;
+    --sky-glow: 350 100% 97%;
     --sky-glow-alpha: 0.9;
-    --stage-bg: 33 53% 97%;
+    --stage-bg: 240 25% 98%;
+    --canvas-glow: radial-gradient(circle at 68% 50%, #fff0f2 0%, #fff7ed 35%, #fafafc 75%);
     --stage-deep: 353 19% 6%;
     --reward-from: 358 67% 51%;
     --reward-mid: 358 80% 43%;
@@ -67,24 +69,44 @@
     --brand-soft: 0 47% 96%;
 
     /* Nền và chữ: trắng + trung tính ấm */
-    --background: 0 0% 100%;
+    --background: 240 25% 98%;
     --foreground: 225 17% 26%;
     /* Tiêu đề navy của LMS (text-strong) */
     --foreground-strong: 226 78% 18%;
-    --surface: 0 0% 96%;
+    --surface: 240 25% 98%;
     --card: 0 0% 100%;
     --card-foreground: 225 17% 26%;
     --popover: 0 0% 100%;
     --popover-foreground: 225 17% 26%;
-    --muted: 60 5% 96%;
+    --muted: 228 22% 95%;
     --muted-foreground: 230 12% 45%;
-    --border: 300 5% 90%;
-    --input: 300 5% 90%;
+    --border: 228 16% 90%;
+    --input: 228 16% 90%;
+
+    /* Vàng thưởng: chấm/icon và badge XP */
+    --gold: 40 82% 57%;
+    --xp-bg: 48 96% 89%;
+    --xp-border: 48 96% 76%;
+    --xp-ink: 26 90% 37%;
+
+    /* Kính (thanh nav thu gọn, thẻ nổi trên cảnh 3D) và nhãn 3D (.ptit-pin, không blur để nhẹ cho Safari) */
+    --glass-bg: rgb(255 255 255 / 0.78);
+    --glass-bg-scrolled: rgb(255 255 255 / 0.85);
+    --glass-border: rgb(255 255 255 / 0.88);
+    --glass-shadow: 0 10px 30px -5px rgb(188 38 38 / 0.07), 0 4px 12px -2px rgb(10 26 80 / 0.05);
+    --glass-blur: blur(14px) saturate(180%);
+    --glass-inset: rgb(188 38 38 / 0.05);
+    --rail-idle: 222 19% 83%;
+    --pill-border: rgb(255 255 255 / 0.9);
+    --pill-shadow: 0 12px 32px -4px rgb(10 26 80 / 0.08);
+    --pin-bg: rgb(255 255 255 / 0.92);
+    --pin-border: #ffffff;
+    --pin-shadow: 0 4px 12px rgb(10 26 80 / 0.08);
 
     /* Vai trò shadcn */
     --primary: var(--brand);
     --primary-foreground: var(--brand-foreground);
-    --secondary: 60 5% 96%;
+    --secondary: 228 22% 95%;
     --secondary-foreground: 225 17% 26%;
     --accent: var(--brand-soft);
     --accent-foreground: 358 80% 33%;
@@ -177,6 +199,25 @@
     --sky-glow: 225 57% 72%;
     --sky-glow-alpha: 0.28;
     --stage-bg: 227 46% 8%;
+    --canvas-glow:
+      radial-gradient(40% 34% at 78% 16%, hsl(var(--sky-glow) / var(--sky-glow-alpha)) 0%, hsl(var(--sky-glow) / 0) 70%),
+      linear-gradient(180deg, hsl(var(--sky-1)) 0%, hsl(var(--sky-2)) 42%, hsl(var(--sky-3)) 75%, hsl(var(--sky-4)) 100%);
+
+    --gold: 40 82% 57%;
+    --xp-bg: 38 60% 16%;
+    --xp-border: 38 55% 28%;
+    --xp-ink: 43 96% 70%;
+    --glass-bg: rgb(28 24 22 / 0.78);
+    --glass-bg-scrolled: rgb(28 24 22 / 0.85);
+    --glass-border: rgb(255 255 255 / 0.1);
+    --glass-shadow: 0 10px 30px -5px rgb(0 0 0 / 0.4), 0 4px 12px -2px rgb(0 0 0 / 0.3);
+    --glass-inset: rgb(255 255 255 / 0.04);
+    --rail-idle: 20 6% 32%;
+    --pill-border: rgb(255 255 255 / 0.12);
+    --pill-shadow: 0 12px 32px -4px rgb(0 0 0 / 0.45);
+    --pin-bg: rgb(28 24 22 / 0.92);
+    --pin-border: rgb(255 255 255 / 0.14);
+    --pin-shadow: 0 4px 12px rgb(0 0 0 / 0.4);
 
     --background: 20 14% 6%;
     --foreground: 30 15% 94%;
@@ -239,9 +280,7 @@
     background-color: hsl(var(--stage-bg));
   }
   .stage-sky {
-    background-image:
-      radial-gradient(40% 34% at 78% 16%, hsl(var(--sky-glow) / var(--sky-glow-alpha)) 0%, hsl(var(--sky-glow) / 0) 70%),
-      linear-gradient(180deg, hsl(var(--sky-1)) 0%, hsl(var(--sky-2)) 42%, hsl(var(--sky-3)) 75%, hsl(var(--sky-4)) 100%);
+    background-image: var(--canvas-glow);
   }
   /* Panel chương (useScrollStage đặt class on / past): chồng nhau trong một ô lưới, panel không `on` thì ẩn sau khi hiệu ứng ra xong */
   [data-panel] {
@@ -702,26 +741,134 @@
   }
 }
 
-/* Nền thanh nav: trong suốt trên đầu hero, kính theo giao diện khi đã cuộn trong hero, nền thường sau hero.
-   Mọi trạng thái cùng một bộ thuộc tính để chuyển 200ms mượt, không giật; trang chủ (đè lên cảnh 3D) không dùng backdrop-filter. */
-.nav-bar {
-  background-color: transparent;
-  border-bottom: 1px solid transparent;
-  box-shadow: 0 8px 24px -12px transparent;
-  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+/* Thanh nav biến hình (top-nav.tsx): data-state="wide" = full-width trong suốt; "pill" = viên kính thu gọn giữa trên cùng.
+   Chuyển bằng width/top/height .4s cubic-bezier(.16,1,.3,1); nội dung hai trạng thái chồng nhau và mờ qua lại. */
+.nav-shell {
+  position: relative;
+  width: 100%;
+  max-width: 1440px;
+  height: var(--nav-h);
+  margin-top: 0;
+  border-radius: 0;
+  border: 1px solid transparent;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    margin-top 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
 }
-.nav-bar[data-nav='glass'] {
-  /* Nền gần đục thay cho kính mờ: backdrop-filter đè lên canvas 3D buộc GPU làm mờ lại mỗi khung hình */
-  background-color: hsl(var(--background) / 0.94);
-  border-bottom-color: hsl(var(--border));
-  box-shadow: 0 8px 24px -12px hsl(var(--foreground) / 0.12);
+.nav-shell[data-state='pill'] {
+  width: min(90vw, 560px);
+  max-width: min(90vw, 560px);
+  height: 56px;
+  margin-top: 16px;
 }
-.nav-bar[data-nav='plain'] {
-  background-color: hsl(var(--background) / 0.9);
-  border-bottom-color: hsl(var(--border));
-  -webkit-backdrop-filter: blur(8px) saturate(100%);
-  backdrop-filter: blur(8px) saturate(100%);
+.nav-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.25s ease;
 }
+.nav-shell[data-state='wide'] .nav-layer-pill,
+.nav-shell[data-state='pill'] .nav-layer-wide {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0s 0.2s;
+}
+.nav-menu-panel {
+  background: hsl(var(--card) / 0.97);
+  transform-origin: top center;
+  animation: nav-drop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes nav-drop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-shell,
+  .nav-layer { transition: none !important; }
+  .nav-menu-panel { animation: none; }
+}
+
+/* Kính trắng lạnh (nhẹ, ngả đỏ): thẻ "Học tiếp", popup nổi trên cảnh 3D, thanh nav thu gọn; nhãn 3D .ptit-pin không dùng backdrop-filter */
+@layer components {
+  .ptit-glass-card {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow), inset 0 0 0 1px var(--glass-inset);
+    border-radius: 20px;
+  }
+  .ptit-glass-navbar-pill {
+    background: var(--glass-bg-scrolled);
+    -webkit-backdrop-filter: blur(16px) saturate(190%);
+    backdrop-filter: blur(16px) saturate(190%);
+    border: 1px solid var(--pill-border);
+    box-shadow: var(--pill-shadow);
+    border-radius: 9999px;
+  }
+  .ptit-pin {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--pin-bg);
+    border: 1px solid var(--pin-border);
+    box-shadow: var(--pin-shadow);
+    color: hsl(var(--foreground));
+    transition: border-color 0.2s, color 0.2s, transform 0.2s;
+  }
+  .ptit-pin[data-dot]::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 9999px;
+    background: #bc2626;
+  }
+  .ptit-pin:hover,
+  .ptit-pin[data-active='true'] {
+    border-color: #bc2626;
+    color: #bc2626;
+    transform: scale(1.05);
+  }
+  .ptit-pin-quiet:hover { border-color: #f3dbdb; color: hsl(var(--muted-foreground)); transform: none; }
+  /* Chữ nhấn "25 phút.": gradient #BC2626 → #DE221A ở giao diện sáng, đỏ nhạt theo token ở giao diện tối */
+  .ptit-gradient-text {
+    background-image: linear-gradient(90deg, #bc2626, #de221a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .dark .ptit-gradient-text {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    color: hsl(var(--brand-ink));
+  }
+  .ptit-xp-badge {
+    background: hsl(var(--xp-bg));
+    border: 1px solid hsl(var(--xp-border));
+    color: hsl(var(--xp-ink));
+  }
+  .ptit-streak-chip {
+    background: rgb(var(--brand-50));
+    border: 1px solid rgb(var(--brand-100));
+    color: rgb(var(--brand-700));
+  }
+  .dark .ptit-streak-chip { color: hsl(var(--brand-ink)); }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ptit-glass-card,
+  .ptit-glass-navbar-pill { background: rgb(255 255 255 / 0.95); }
+  .dark .ptit-glass-card,
+  .dark .ptit-glass-navbar-pill { background: rgb(28 24 22 / 0.95); }
+}
+/* Safari + trang chủ: viên kính nằm trên canvas WebGL, bỏ blur (nền gần đục) để giữ ~60fps */
+.is-webkit .nav-over-3d .ptit-glass-navbar-pill {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgb(255 255 255 / 0.95);
+}
+.is-webkit.dark .nav-over-3d .ptit-glass-navbar-pill { background: rgb(28 24 22 / 0.95); }
 
 
 /* Studio 3D: trạng thái chờ AI dựng ánh sáng, vệt quét khi chấm ảnh, skeleton. Chỉ transform + opacity; reduced-motion đã tắt animation ở trên. */

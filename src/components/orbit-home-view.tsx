@@ -109,7 +109,7 @@ export function OrbitHomeView() {
             {journey && (
                 <p data-guide aria-live="polite" style={{ opacity: 0 }} className="own-layer pointer-events-none fixed bottom-5 left-1/2 z-[6] flex max-w-[calc(100vw-3rem)] -translate-x-1/2 flex-col items-center gap-1.5 text-center text-xs text-muted-foreground transition-opacity duration-slow">
                     <span className="guide-mouse" aria-hidden />
-                    <span data-guide-text>Cuộn để khám phá các chức năng</span>
+                    <span data-guide-text className="ptit-pin ptit-pin-quiet rounded-full px-3 py-1.5">Cuộn để khám phá các chức năng</span>
                 </p>
             )}
 
@@ -119,7 +119,7 @@ export function OrbitHomeView() {
                         type="button"
                         aria-pressed={calm}
                         onClick={() => setCalm(!calm)}
-                        className="rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                        className="ptit-pin ptit-pin-quiet rounded-full px-3 py-1.5 text-xs font-bold text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                     >
                         {calm ? 'Hiện mô hình 3D' : 'Ẩn mô hình 3D'}
                     </button>
@@ -155,7 +155,7 @@ function ChapterRail({ navRef }: { navRef: RefObject<HTMLElement | null> }) {
                     className="group/r flex items-center justify-end gap-2.5 font-mono text-[11px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 data-[on=true]:text-foreground"
                 >
                     <span className="translate-x-1.5 opacity-0 transition duration-base group-hover/r:translate-x-0 group-hover/r:opacity-100 group-data-[on=true]/r:translate-x-0 group-data-[on=true]/r:opacity-100">{label}</span>
-                    <i className="h-0.5 w-6 rounded bg-foreground/25 transition-all duration-base group-data-[on=true]/r:w-10 group-data-[on=true]/r:bg-brand-600" />
+                    <i className="h-0.5 w-6 rounded bg-[hsl(var(--rail-idle))] transition-all duration-base group-data-[on=true]/r:w-10 group-data-[on=true]/r:bg-brand-600" />
                 </button>
             ))}
         </nav>
@@ -328,12 +328,12 @@ function HeroChapter() {
 
     return (
         <div className="flex min-w-0 flex-col gap-6">
-            <h1 data-s className="text-[clamp(2.75rem,4.6vw,4.75rem)] font-black leading-[0.96] tracking-[-0.045em] [text-wrap:balance]">
+            <h1 data-s className="text-[clamp(2.75rem,4.6vw,4.75rem)] font-black leading-[0.96] tracking-[-0.045em] text-strong [text-wrap:balance]">
                 Chào {name}.
                 <br />
                 Hôm nay chỉ cần
                 <br />
-                <span className="text-brand-ink">25 phút.</span>
+                <span className="ptit-gradient-text">25 phút.</span>
             </h1>
             <p data-s className="max-w-xl text-lg leading-relaxed text-muted-foreground">Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.</p>
 
@@ -342,23 +342,23 @@ function HeroChapter() {
                     to={`/lesson/${resume.id}`}
                     data-s
                     data-vt={`lesson-${resume.id}`}
-                    className="group relative mt-1 flex items-center gap-4 overflow-hidden rounded-[22px] bg-card p-3 pr-4 text-foreground shadow-raised transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                    className="ptit-glass-card group relative mt-1 flex items-center gap-4 overflow-hidden p-3 pr-4 text-foreground transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                 >
                     <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-[40%] animate-sheen bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
                     <GridThumb />
                     <span className="min-w-0 flex-1">
-                        <span className="block truncate text-eyebrow uppercase text-brand-ink">
+                        <span className="block truncate text-eyebrow uppercase tracking-[0.05em] text-brand-ink">
                             {resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu'} · {getCourse(resume.courseId)?.title ?? 'Khóa học'}
                         </span>
                         <span className="mt-1.5 line-clamp-2 text-lg font-bold leading-snug">{resume.title}</span>
                         <span className="mt-3 flex items-center gap-3">
                             <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ bài đang học">
-                                <span className="block h-full rounded-full bg-brand-600" style={{ width: `${pct}%` }} />
+                                <span className="block h-full rounded-full bg-gradient-to-r from-brand-600 to-[hsl(var(--gold))]" style={{ width: `${pct}%` }} />
                             </span>
                             <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
                         </span>
                     </span>
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground shadow-brand transition duration-base group-hover:scale-105">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground shadow-[0_6px_16px_rgb(188_38_38/0.3)] transition duration-base group-hover:scale-[1.06] group-hover:bg-brand-700">
                         <Play size={20} className="ml-0.5 fill-current" />
                     </span>
                 </Link>
@@ -377,7 +377,7 @@ function GridThumb() {
             <span
                 className="absolute inset-0 bg-[length:33.333%_33.333%] opacity-100"
                 style={{
-                    backgroundImage: 'linear-gradient(hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--ink-foreground) / 0.3) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(hsl(var(--gold) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--gold) / 0.3) 1px, transparent 1px)',
                 }}
             />
             <span className="absolute left-[66.66%] top-[33.33%] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink-foreground shadow-card" />

@@ -1,9 +1,9 @@
 // Bảng màu mô hình khuôn viên PTIT: một nguồn duy nhất cho cảnh 3D và ảnh tĩnh dự phòng.
 // Đây là màu của "vật thể" trong cảnh (không đổi theo giao diện sáng/tối); chỉ ánh sáng đổi khi sang buổi tối.
 export const CAMPUS = {
-    plate: '#EFE7E1', plateDark: '#3A3030', plateEdge: '#8E0E13', pave: '#E2D8D0', road: '#6B5F5C', grass: '#8DBF8F', grassDark: '#6FA474',
-    cream: '#F4EEE4', granite: '#8C8583', glass: '#2E8C70', win: '#3F8F79', roofRed: '#C23A2C',
-    yellow: '#EFC86E', white: '#F7F4EF', stripe: '#BDB5AE', trunk: '#7A5544', tree: '#5E9E6A', tree2: '#7DB27A',
+    plate: '#F8FAFC', plateDark: '#3A3030', plateEdge: '#9F2925', pave: '#E2D8D0', road: '#6B5F5C', grass: '#8DBF8F', grassDark: '#6FA474',
+    cream: '#FFFDF9', granite: '#8C8583', glass: '#2E8C70', win: '#3F8F79', roofRed: '#DC2626',
+    yellow: '#F6CC5C', white: '#FFFDF9', stripe: '#BDB5AE', trunk: '#7A5544', tree: '#5E9E6A', tree2: '#7DB27A',
     // Chi tiết nhỏ, biển hiệu và ánh sáng
     ink: '#1A1412',
     signBlue: '#1A3E8C',
@@ -31,10 +31,10 @@ export const CAMPUS = {
     windowLit: '#FFD27A',
     // Tầng cửa sổ A2 đã đọc bài Daily: vàng ấm đậm để nổi cả ban ngày
     windowTier: '#FFAE1F',
-    sunlight: '#FFF0E0',
+    sunlight: '#FFFBEB',
     pureWhite: '#FFFFFF',
-    skyLight: '#FFF2E6',
-    groundLight: '#B9A08E',
+    skyLight: '#FFFFFF',
+    groundLight: '#C7CAD6',
     // Buổi tối: ánh sáng bán cầu xanh đêm (không đỏ)
     nightSkyLight: '#6F80C8',
     nightGroundLight: '#1B2140',
@@ -50,7 +50,7 @@ export const STUDIO = {
 
 // Tòa A2 (đế rộng, sảnh kính) và Hội trường A2: màu vật thể, lấy từ bản mẫu docs/mockup/orbit-campus-journey.html.
 export const A2COL = {
-    beige: '#E6D6C0', stone: '#D8C6AE', parapet: '#F2E8DA', winG: '#6FAE96', glassM: '#4F9C82',
+    beige: '#FFFDF9', stone: '#E7E5E4', parapet: '#FFFFFF', winG: '#6FAE96', glassM: '#4F9C82',
     step: '#C9493F', mat: '#B8463D', frame: '#3A3A3A', mullion: '#5A5A5A', handle: '#BBBBBB',
     facade: '#6F9C93', door: '#2E5A54', column: '#FFFFFF',
     hallSign: '#C4161C', hallSignText: '#FFFFFF', hallDoor: '#3A3030',
