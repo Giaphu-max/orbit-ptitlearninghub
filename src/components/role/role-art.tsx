@@ -26,6 +26,7 @@ export function RoleArt() {
     const art = useRef<HTMLDivElement>(null)
     const cv = useRef<HTMLCanvasElement>(null)
     const started = useRef(false)
+    const logo = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const el = art.current
@@ -116,16 +117,31 @@ export function RoleArt() {
                 draw(1.01)
                 return
             }
-            timers.push(window.setTimeout(() => el.classList.add('collage'), 1100))
+            timers.push(window.setTimeout(() => el.classList.add('collage'), 350))
             timers.push(
                 window.setTimeout(() => {
                     el.classList.add('split')
                     typing = true
                     t0 = performance.now()
-                }, 1900),
+                }, 850),
             )
             raf = requestAnimationFrame(tick)
         }
+        // Logo trôi ngược chiều chuột, tối đa ±16px
+        let move = 0
+        let mx = 0
+        let my = 0
+        const onMove = (e: PointerEvent) => {
+            const r = el.getBoundingClientRect()
+            mx = (e.clientX - r.left) / r.width - 0.5
+            my = (e.clientY - r.top) / r.height - 0.5
+            if (!move)
+                move = requestAnimationFrame(() => {
+                    move = 0
+                    if (logo.current) logo.current.style.translate = `${mx * -32}px ${my * -24}px`
+                })
+        }
+        if (!reduce) el.addEventListener('pointermove', onMove, { passive: true })
         const ro = new ResizeObserver(() => {
             if (!started.current) return
             build()
@@ -151,6 +167,8 @@ export function RoleArt() {
             cancelAnimationFrame(raf)
             timers.forEach(clearTimeout)
             ro.disconnect()
+            el.removeEventListener('pointermove', onMove)
+            cancelAnimationFrame(move)
         }
     }, [])
 
@@ -163,7 +181,12 @@ export function RoleArt() {
             onPointerLeave={() => started.current && art.current?.classList.add('collage', 'split')}
         >
             <canvas ref={cv} />
-            {LOGO_URL && <img className="rs-art-logo" src={LOGO_URL} alt="" width={600} height={763} />}
+            {LOGO_URL && (
+                <div ref={logo} className="rs-art-logo">
+                    <img src={LOGO_URL} alt="" width={600} height={763} />
+                    <span className="rs-glint" />
+                </div>
+            )}
             <PortraitCollage />
         </div>
     )

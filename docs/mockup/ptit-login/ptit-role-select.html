@@ -28,36 +28,35 @@ button{font:inherit}
   padding-block:clamp(120px,16vh,180px) clamp(48px,8vh,96px);padding-left:max(28px,6.5vw,env(safe-area-inset-left,0px));padding-right:clamp(24px,4vw,72px)}
 .top{position:absolute;top:0;left:0;right:0;padding-block:clamp(22px,3vh,40px);padding-left:max(28px,6.5vw,env(safe-area-inset-left,0px))}
 .top img{height:clamp(44px,4vw,58px);width:auto;display:block}
-h1{margin:0;font-size:clamp(38px,3.9vw,70px);line-height:1.04;letter-spacing:-.04em;font-weight:900;color:var(--ink-strong);text-wrap:balance;max-width:14ch}
+h1{margin:0;font-size:clamp(46px,5vw,92px);line-height:1;letter-spacing:-.045em;font-weight:900;color:var(--ink-strong);text-wrap:balance;max-width:10ch}
 h1 em{font-style:normal;color:var(--red-600)}
-.lead{margin:0;font-size:clamp(15px,1.1vw,18px);line-height:1.6;color:var(--ink);max-width:44ch}
-.roles{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:clamp(16px,3vh,36px);max-width:640px}
-.role{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;cursor:pointer;
-  background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:20px;color:var(--ink);
-  box-shadow:0 1px 2px rgba(10,26,80,.04),0 8px 22px rgba(10,26,80,.06);transition:transform .35s var(--ease),border-color .25s,box-shadow .35s var(--ease)}
-.role:hover{transform:translateY(-4px);border-color:var(--red-100);box-shadow:0 2px 4px rgba(10,26,80,.06),0 18px 40px rgba(188,38,38,.12)}
-.role[data-role=teacher]:hover{border-color:#C9CDE0;box-shadow:0 2px 4px rgba(10,26,80,.06),0 18px 40px rgba(10,26,80,.12)}
-.role .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:var(--red-50);color:var(--red-600)}
+.lead{margin:0;font-size:clamp(16px,1.2vw,20px);line-height:1.6;color:var(--ink);max-width:44ch}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:clamp(22px,4vh,44px);max-width:700px}
+.role{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;cursor:pointer;
+  background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:clamp(22px,1.8vw,30px);color:var(--ink);min-height:200px;
+  box-shadow:0 1px 2px rgba(10,26,80,.04),0 10px 26px rgba(10,26,80,.07);transition:transform .35s var(--ease),border-color .25s,box-shadow .35s var(--ease),background .3s}
+.role .row1{display:flex;justify-content:space-between;align-items:center;width:100%}
+.role .ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--red-50);color:var(--red-600);transition:background .3s,color .3s}
 .role[data-role=teacher] .ic{background:#EEF0F7;color:var(--ink-strong)}
-.role b{font-size:clamp(22px,1.6vw,26px);line-height:1.1;letter-spacing:-.025em;font-weight:900;color:var(--ink-strong);margin-top:4px}
-.role p{margin:0;font-size:14px;line-height:1.5;color:var(--muted);flex:1}
-.role .go{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:8px;font-weight:800;font-size:15px;color:#fff;background:var(--red-600);border-radius:12px;padding:12px 16px;box-shadow:0 10px 22px -12px rgba(188,38,38,.8);transition:background .25s}
-.role:hover .go{background:var(--red-700)}
-.role[data-role=teacher] .go{background:var(--ink-strong);box-shadow:0 10px 22px -12px rgba(10,26,80,.7)}
-.role[data-role=teacher]:hover .go{background:#06103A}
-.role .go i{font-style:normal;transition:transform .3s var(--ease)}
-.role:hover .go i{transform:translateX(4px)}
+.role .arr{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);color:var(--ink-strong);transition:transform .35s var(--ease),background .3s,color .3s,border-color .3s}
+.role b{font-size:clamp(26px,2.1vw,36px);line-height:1.05;letter-spacing:-.03em;font-weight:900;color:var(--ink-strong);margin-top:10px}
+.role p{margin:0;font-size:15px;line-height:1.5;color:var(--muted)}
+.role:hover{transform:translateY(-5px);border-color:var(--red-600);box-shadow:0 2px 4px rgba(10,26,80,.06),0 22px 44px rgba(188,38,38,.16)}
+.role:hover .ic,.role:hover .arr{background:var(--red-600);color:#fff;border-color:var(--red-600)}
+.role:hover .arr{transform:rotate(-45deg)}
+.role[data-role=teacher]:hover{border-color:var(--ink-strong);box-shadow:0 2px 4px rgba(10,26,80,.06),0 22px 44px rgba(10,26,80,.16)}
+.role[data-role=teacher]:hover .ic,.role[data-role=teacher]:hover .arr{background:var(--ink-strong);border-color:var(--ink-strong)}
 .role[disabled]{cursor:default}
 .dim .role:not(.picked){opacity:.35}
 .picked{border-color:var(--red-600)!important}
 /* art panel */
 .art{position:relative;overflow:hidden;min-height:100%}
 .art canvas{position:absolute;inset:0;width:100%;height:100%}
-.art .logo{position:absolute;width:36%;left:3%;top:10%;height:auto;opacity:0;transform:translateY(16px);transition:opacity 1s var(--ease),transform 1.2s var(--ease)}
+.art .logo{position:absolute;width:50%;left:14%;top:4%;height:auto;opacity:0;transform:translateY(16px);transition:opacity 1s var(--ease),transform 1.2s var(--ease)}
 .portrait{position:absolute;bottom:0;right:0;height:92%;max-width:100%;aspect-ratio:700/880;overflow:visible}
 .portrait{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%);mask-image:linear-gradient(90deg,transparent 0,#000 16%)}
 .portrait .pc{opacity:0;transition:opacity .8s var(--ease)}
-.portrait .pm{opacity:0;transition:opacity 1.1s var(--ease)}
+.portrait .pm{opacity:0;transition:opacity .7s var(--ease)}
 .portrait .s{opacity:0;transform-box:fill-box;transform-origin:center;transition:transform 1s var(--ease),opacity .3s}
 .portrait .paper{fill:#F4F1EB}
 .portrait .data text{font:600 10px "JetBrains Mono",monospace;fill:#373D4E;opacity:.7}
@@ -69,7 +68,16 @@ h1 em{font-style:normal;color:var(--red-600)}
 #tCut2{opacity:0;transition:opacity .6s .1s}
 .art.split #tCut2{opacity:1}
 .portrait .knot{fill:#15171F;opacity:0;transition:opacity .4s 1.6s}
-.art.live .logo{opacity:1;transform:none}
+.art.live .logo{opacity:1;transform:none;animation:logoDrift 9s 1s ease-in-out infinite alternate}
+@keyframes logoDrift{0%{rotate:0deg;scale:1}50%{rotate:-2.2deg;scale:1.025}100%{rotate:1.6deg;scale:1.01}}
+.art .glint{position:absolute;width:56px;height:56px;pointer-events:none;opacity:0;transform:translate(-50%,-50%)}
+.art .glint::before,.art .glint::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:3px;border-radius:3px;background:radial-gradient(closest-side,#fff,rgba(255,255,255,0));transform:translate(-50%,-50%)}
+.art .glint::after{transform:translate(-50%,-50%) rotate(90deg)}
+.art.live .glint{animation:glint 6s 2.2s ease-in-out infinite}
+@keyframes glint{0%,88%,100%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(0)}93%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(45deg)}}
+.art .ghost{position:absolute;left:auto;bottom:auto;right:-11%;top:3%;width:34%;height:auto;opacity:0;filter:blur(1.6px);rotate:12deg;transition:opacity 1.4s .3s var(--ease)}
+.art.live .ghost{opacity:.78;animation:ghostDrift 14s ease-in-out infinite alternate}
+@keyframes ghostDrift{from{translate:0 0;rotate:12deg}to{translate:-10px 8px;rotate:8deg}}
 .art.live .pc{opacity:1}
 .art.collage .pm{opacity:1}
 .art.collage .s{opacity:1}
@@ -79,7 +87,7 @@ h1 em{font-style:normal;color:var(--red-600)}
 .art.split .sH{transform:translate(-12px,10px) rotate(-6deg)}
 .art.split .tri{opacity:1;transform:none}
 .art.split .data{opacity:1}
-.art.split .thread{stroke-dashoffset:0;transition:stroke-dashoffset 1.6s .5s cubic-bezier(.65,0,.35,1)}
+.art.split .thread{stroke-dashoffset:0;transition:stroke-dashoffset 1.3s .25s cubic-bezier(.65,0,.35,1)}
 .art.split .knot{opacity:1}
 .art.collage .pc{opacity:1}
 /* ---------- intro (role curtain) ---------- */
@@ -173,16 +181,18 @@ h1 em{font-style:normal;color:var(--red-600)}
 <section class="screen rs" id="rs" aria-labelledby="h1">
   <header class="top"><img src="ptit-lockup.svg" alt="Học viện Công nghệ Bưu chính Viễn thông"></header>
   <div class="left">
-    <h1 id="h1">Hệ thống học tập có <em>trợ giảng AI</em></h1>
-    <p class="lead">Bài giảng của Học viện, trợ giảng AI bám đúng nội dung bài và lộ trình ôn tập theo chỗ bạn còn hổng.</p>
+    <h1 id="h1">Nền tảng học tập <em>thông minh</em></h1>
+    <p class="lead">Bài giảng, trợ giảng AI, quiz củng cố, bài đọc mỗi ngày và studio thực hành của Học viện trong một nơi.</p>
     <div class="roles" id="roles">
-      <button class="role" data-role="student"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span><b>Sinh viên</b><p>Học có trợ giảng AI, quiz củng cố, tích XP theo mức hiểu bài.</p><span class="go">Vào với vai trò sinh viên <i>→</i></span></button>
-      <button class="role" data-role="teacher"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20v13H2z"/><path d="M7 21h10M12 16v5"/></svg></span><b>Giảng viên</b><p>Duyệt nội dung AI tạo, xem lớp hay sai khái niệm nào.</p><span class="go">Vào với vai trò giảng viên <i>→</i></span></button>
+      <button class="role" data-role="student"><span class="row1"><span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span><span class="arr" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span><b>Sinh viên</b><p>Học có trợ giảng AI, quiz củng cố, tích XP theo mức hiểu bài.</p></button>
+      <button class="role" data-role="teacher"><span class="row1"><span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20v13H2z"/><path d="M7 21h10M12 16v5"/></svg></span><span class="arr" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span><b>Giảng viên</b><p>Duyệt nội dung AI tạo, xem lớp hay sai khái niệm nào.</p></button>
     </div>
   </div>
   <div class="art" id="art" aria-hidden="true">
     <canvas id="ascii"></canvas>
-    <img class="logo" src="ptit-logo.webp" alt="" width="600" height="763">
+    <canvas class="ghost" id="ghost"></canvas>
+    <img class="logo" id="bglogo" src="ptit-logo.webp" alt="" width="600" height="763">
+    <span class="glint" id="glint"></span>
     <svg class="portrait" id="portrait" viewBox="0 0 700 880" preserveAspectRatio="xMidYMax meet">
       <defs>
         <clipPath id="cpR"><polygon id="tR"/></clipPath>
@@ -253,6 +263,19 @@ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $=id=>document.getElementById(id);
 
 /* torn */
+/* corner ghost logo: the real logo drawn once, pixels dropped out with noise that grows toward the lower-left (dissolve), CSS blur on top */
+(function(){const img=new Image();img.onload=()=>{const c=$('ghost'),w=360,h=Math.round(360*763/600);c.width=w;c.height=h;const g=c.getContext('2d');g.drawImage(img,0,0,w,h);
+  const d=g.getImageData(0,0,w,h),a=d.data;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;if(!a[i+3])continue;const t=(1-x/w)*.55+(y/h)*.75-.25; /* 0 at top-right, >1 at lower-left */
+    const n=Math.random();if(n<t){a[i+3]=0;}else if(n<t+.12){a[i+3]*=.35;}}
+  g.putImageData(d,0,0);};img.src='ptit-logo.webp';})();
+/* glint sits on the logo star; logo and ghost drift slightly against the pointer */
+(function(){const art=$('art'),lg=$('bglogo'),gl=$('glint'),gh=$('ghost');
+  function place(){const a=art.getBoundingClientRect(),r=lg.getBoundingClientRect();gl.style.left=(r.left-a.left+r.width*.585)+'px';gl.style.top=(r.top-a.top+r.height*.385)+'px';}
+  addEventListener('resize',place);lg.complete?place():lg.addEventListener('load',place);setTimeout(place,1300);
+  if(!reduce)art.addEventListener('pointermove',e=>{const r=art.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    lg.style.translate=`${x*-16}px ${y*-12}px`;gh.style.marginRight=`${x*10}px`;},{passive:true});})();
+
 /* torn-paper shapes: every edge is subdivided and jittered, like paper torn by hand; a slightly larger copy is the white paper back */
 (function(){
   let seed=29;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
@@ -305,8 +328,8 @@ const $=id=>document.getElementById(id);
     requestAnimationFrame(tick);}
   function run(){build();draw(0);art.classList.add('live');
     if(reduce){art.classList.add('collage','split');draw(1.01);return;}
-    setTimeout(()=>art.classList.add('collage'),1100);
-    setTimeout(()=>{art.classList.add('split');typing=true;t0=performance.now();},1900);
+    setTimeout(()=>art.classList.add('collage'),350);
+    setTimeout(()=>{art.classList.add('split');typing=true;t0=performance.now();},850);
     requestAnimationFrame(tick);}
   addEventListener('resize',()=>{build();draw(1.01);});
   /* hover: pieces slide home and the colour photo comes back; leave: collage again */

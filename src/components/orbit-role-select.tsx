@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, GraduationCap, Presentation, type LucideIcon } from 'lucide-react'
+import { GhostLogo } from '@/components/role/ghost-logo'
 import { RoleArt } from '@/components/role/role-art'
 import { LOCKUP_URL } from '@/lib/brand'
 import { centerOf, enterRole } from '@/lib/role-switch'
@@ -35,9 +36,9 @@ export function OrbitRoleSelect() {
             </header>
             <div className="rs-left">
                 <h1 id="rs-h1" className="rs-h1">
-                    Hệ thống học tập có <em>trợ giảng AI</em>
+                    Nền tảng học tập <em>thông minh</em>
                 </h1>
-                <p className="rs-lead">Bài giảng của Học viện, trợ giảng AI bám đúng nội dung bài và lộ trình ôn tập theo chỗ bạn còn hổng.</p>
+                <p className="rs-lead">Bài giảng, trợ giảng AI, quiz củng cố, bài đọc mỗi ngày và studio thực hành của Học viện trong một nơi.</p>
                 <div className={`rs-roles ${picked ? 'dim' : ''}`}>
                     {ROLES.map(({ role, title, description, icon: Icon }) => (
                         <button
@@ -51,20 +52,22 @@ export function OrbitRoleSelect() {
                             }}
                             className={`rs-role ${picked === role ? 'picked' : ''}`}
                         >
-                            <span className="rs-ic">
-                                <Icon size={22} strokeWidth={2} />
+                            <span className="rs-row1">
+                                <span className="rs-ic">
+                                    <Icon size={26} strokeWidth={2} />
+                                </span>
+                                <span className="rs-arr" aria-hidden="true">
+                                    <ArrowRight size={20} strokeWidth={2.4} />
+                                </span>
                             </span>
                             <b>{title}</b>
                             <p>{description}</p>
-                            <span className="rs-go">
-                                Vào với vai trò {title.toLowerCase()}
-                                <ArrowRight size={16} />
-                            </span>
                         </button>
                     ))}
                 </div>
             </div>
             <RoleArt />
+            <GhostLogo />
         </section>
     )
 }
