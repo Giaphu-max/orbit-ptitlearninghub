@@ -15,7 +15,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Thang đỏ PTIT, 600 là màu gốc #BC2626
+        // Thang đỏ PTIT, 600 là màu gốc #E2261C
         brand: {
           ...scale('brand', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]),
           /** Màu chữ/nhấn đỏ trên nền theo giao diện (sáng hơn ở chế độ tối để đủ tương phản) */

@@ -3,9 +3,9 @@
  * Màn này luôn dùng bảng màu sáng riêng của mockup (giao diện tối làm ở đợt sau). Chỉ animate transform / opacity / stroke-dashoffset.
  */
 .rs {
-  --rs-red-50: #fbf1f1;
-  --rs-red-100: #f3dbdb;
-  --rs-red-600: #e2261c;
+  --rs-red-50: #fff1ef;
+  --rs-red-100: #ffdcd7;
+  --rs-red-600: #d41f16;
   --rs-red-700: #c81b12;
   --rs-navy: #0a1a50;
   --rs-ink: #373d4e;
@@ -110,9 +110,9 @@
   animation: rs-float 5s ease-in-out infinite alternate;
 }
 .rs-role[data-role='teacher'] {
-  --rs-block: #0f1f5c;
-  background: linear-gradient(150deg, #1c2e78 0%, #0f1f5c 55%, #071240 100%);
-  box-shadow: 0 2px 4px rgb(10 26 80 / 0.12), 0 16px 34px rgb(10 26 80 / 0.34);
+  --rs-block: #1f63db;
+  background: linear-gradient(135deg, #3f86f5 0%, #1f63db 55%, #1748b0 100%);
+  box-shadow: 0 2px 4px rgb(10 26 80 / 0.1), 0 18px 40px -16px rgb(31 99 219 / 0.55);
   animation-delay: -2.5s;
 }
 @keyframes rs-float {
@@ -136,7 +136,7 @@
   padding: 2px;
   border-radius: inherit;
   pointer-events: none;
-  background: conic-gradient(from var(--a), transparent 0deg 240deg, #ffd27a 310deg, #fff 360deg);
+  background: conic-gradient(from var(--a), transparent 0deg 240deg, #f4d431 310deg, #fff 360deg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -242,7 +242,7 @@
 }
 .rs-role[data-role='teacher']:hover:not(:disabled),
 .rs-role[data-role='teacher']:focus-visible {
-  box-shadow: 0 4px 8px rgb(10 26 80 / 0.18), 0 28px 56px rgb(10 26 80 / 0.5);
+  box-shadow: 0 4px 8px rgb(10 26 80 / 0.14), 0 28px 56px -18px rgb(31 99 219 / 0.6);
 }
 .rs-role:hover:not(:disabled) .rs-spot,
 .rs-role:focus-visible .rs-spot {
@@ -255,15 +255,15 @@
 }
 .rs-role:hover:not(:disabled) .rs-arr,
 .rs-role:focus-visible .rs-arr {
-  background: #ffd27a;
-  color: #3a2408;
+  background: #f4d431;
+  color: #5a4300;
   transform: translateX(4px);
 }
 .rs-role:active:not(:disabled) {
   transform: scale(0.985);
 }
 .rs-role:focus-visible {
-  outline: 2px solid #2f6fdb;
+  outline: 2px solid #1f63db;
   outline-offset: 3px;
 }
 .rs-role:disabled {

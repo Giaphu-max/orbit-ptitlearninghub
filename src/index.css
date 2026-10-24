@@ -19,7 +19,7 @@
     --tw-ring-offset-shadow: 0 0 #0000 !important;
   }
   :root {
-    /* Màu thương hiệu: đỏ PTIT #BC2626 (chữ lockup Học viện), đỏ logo #DE221A; xem docs/design-system/orbit-code.md */
+    /* Màu thương hiệu: đỏ tươi #E2261C (brand-600), chữ đỏ #D41F16; xem docs/design-system/orbit-code.md */
     /* Thang màu theo giao diện, dạng kênh RGB (xem tailwind.config.js) */
     --brand-50: 255 241 239;
     --brand-100: 255 220 215;
@@ -42,10 +42,10 @@
     --info: 201 80% 32%;
 
     /* Màn nhận XP (và nền hero cũ .bg-hero): luôn nền tối/đỏ ở cả hai giao diện */
-    --hero-base: 12 36% 5%;
-    --hero-glow: 358 80% 43%;
-    --hero-glow-deep: 358 83% 27%;
-    --hero-top: 358 40% 12%;
+    --hero-base: 226 45% 7%;
+    --hero-glow: 3 79% 51%;
+    --hero-glow-deep: 4 83% 43%;
+    --hero-top: 4 60% 14%;
     /* Sân khấu trang chủ (giao diện sáng): trắng lạnh #FAFAFC, quầng hồng nhạt (--canvas-glow) sau canvas 3D. --sky-1..4 từ trên xuống
        (canvas đục của Safari vẽ gradient này vào scene.background), --sky-glow là quầng góc trên phải.
        Cảnh 3D đọc --sky-2/--sky-3 để pha sương (về #FAFAFC), --stage-deep là nền nội thất. */
@@ -62,9 +62,9 @@
     --stage-deep: 353 19% 6%;
     --reward-from: 7 100% 64%;
     --reward-mid: 3 79% 51%;
-    --reward-to: 3 80% 36%;
-    /* Vàng lóe của phần XP vừa cộng trên thanh cấp độ (#FFD27A), cố định ở cả hai giao diện */
-    --reward-gain: 37 100% 74%;
+    --reward-to: 4 83% 43%;
+    /* Vàng lóe của phần XP vừa cộng trên thanh cấp độ (vàng thưởng #F4D431), cố định ở cả hai giao diện */
+    --reward-gain: 51 90% 57%;
 
     --brand: 3 79% 51%;
     --brand-foreground: 0 0% 100%;
@@ -159,8 +159,8 @@
     --reveal-delay: 100ms;
     --reveal-stagger: 90ms;
     /* Màu nhấn theo môn học: chỉ dùng cho chip môn và đường chặng mini ở ô khóa học. ink = chữ trên nền nhạt (đã kiểm ≥4.5:1) */
-    --subject-film: 358 80% 43%;
-    --subject-film-ink: 358 80% 43%;
+    --subject-film: 3 81% 47%;
+    --subject-film-ink: 3 81% 47%;
     --subject-photo: 28 92% 48%;
     --subject-photo-ink: 24 90% 31%;
     --subject-audio: 221 75% 49%;
@@ -181,8 +181,8 @@
   /* Giao diện tối: chỉ đổi giá trị token, component không phải sửa */
   .dark {
     color-scheme: dark;
-    --subject-film: 358 80% 52%;
-    --subject-film-ink: 358 90% 68%;
+    --subject-film: 4 79% 52%;
+    --subject-film-ink: 4 90% 68%;
     --subject-photo: 28 92% 55%;
     --subject-photo-ink: 28 95% 68%;
     --subject-audio: 262 80% 70%;
@@ -196,8 +196,8 @@
     --brand-100: 58 20 22;
     --brand-200: 83 26 29;
     --brand-300: 122 37 40;
-    --brand-ink: 358 90% 68%;
-    --brand-soft: 358 45% 16%;
+    --brand-ink: 6 90% 68%;
+    --brand-soft: 4 50% 16%;
 
 
     --info: 199 80% 68%;
@@ -244,16 +244,16 @@
 
     --secondary: 20 8% 16%;
     --secondary-foreground: 30 15% 94%;
-    --accent-foreground: 358 90% 80%;
-    --ring: 358 80% 55%;
+    --accent-foreground: 6 90% 80%;
+    --ring: 4 79% 56%;
 
     --success: 152 55% 45%;
     --warning: 38 92% 55%;
-    --destructive: 358 80% 55%;
+    --destructive: 4 79% 56%;
 
     --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.3), 0 4px 16px hsl(0 0% 0% / 0.35);
     --shadow-raised: 0 2px 4px hsl(0 0% 0% / 0.35), 0 16px 40px hsl(0 0% 0% / 0.5);
-    --shadow-brand: 0 8px 24px hsl(358 80% 43% / 0.4);
+    --shadow-brand: 0 8px 24px rgb(226 38 28 / 0.4);
   }
 }
 
@@ -859,7 +859,7 @@
     color: #d41f16;
     transform: scale(1.05);
   }
-  .ptit-pin-quiet:hover { border-color: #f3dbdb; color: hsl(var(--muted-foreground)); transform: none; }
+  .ptit-pin-quiet:hover { border-color: rgb(var(--brand-100)); color: hsl(var(--muted-foreground)); transform: none; }
   /* Chữ nhấn "25 phút.": gradient #D41F16 → #E2261C ở giao diện sáng, đỏ nhạt theo token ở giao diện tối */
   .mm-ribbon-bg {
     background-image: var(--mm-ribbon);
@@ -1028,7 +1028,7 @@
   animation: flame-breathe 1.1s ease-in-out infinite alternate;
 }
 .flame-inner {
-  fill: #eaae3c;
+  fill: hsl(var(--gold));
   transform-origin: 50% 95%;
   animation: flame-lick 0.7s ease-in-out infinite alternate;
 }
@@ -1079,13 +1079,13 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #eaae3c;
+  background: hsl(var(--gold));
 }
 .xp-dot-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: #eaae3c;
+  background: hsl(var(--gold));
   opacity: 0;
   pointer-events: none;
 }

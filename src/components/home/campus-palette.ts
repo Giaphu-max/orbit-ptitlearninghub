@@ -47,7 +47,7 @@ export const CAMPUS = {
 // Màu vật thể và ánh sáng của studio Virtual Director (cảnh 3D, không đổi theo giao diện sáng/tối).
 export const STUDIO = {
     floor: '#D9D2CB', backdrop: '#B9B0A8', plinth: '#8E0E13',
-    skin: '#E8B99A', hair: '#2E211A', suit: '#2B2B33', scarf: '#C4161C',
+    skin: '#E8B99A', hair: '#2E211A', suit: '#2B2B33', scarf: '#C81B12',
     propBlue: '#3E7BD6', propYellow: '#EFC86E', propGreen: '#5E9E6A', column: '#F4EEE4',
     key: '#FFE2C2', fill: '#CFE0FF', rim: '#FFB3A8', ambient: '#FFFFFF',
 } as const
@@ -72,5 +72,5 @@ export const LOBBY = {
     loveBg: '#8F96A3', loveTile: '255,255,255', loveRed: '#E0262E', loveRed2: '#B8141B', loveDark: '#1A0A0A',
     houseRoof: '#9C9893', kiosk: '#F3F2EF', screen: '#0B0B0D', screenGlow: '#140A0B',
     roomFloor: '#C79B72', roomCeil: '#F2EEE9', desk: '#F4F0EA', deskLeg: '#888888', roomLamp: '#FFF6E8', roomPoint: '#FFF3E0',
-    roomRed: '#C4161C', roomText: '#FFFFFF', point: '#FFF1E2', corridor: '#C79B72',
+    roomRed: '#C81B12', roomText: '#FFFFFF', point: '#FFF1E2', corridor: '#C79B72',
 } as const

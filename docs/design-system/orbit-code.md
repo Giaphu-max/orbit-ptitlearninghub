@@ -8,12 +8,12 @@
 |---|---|---|---|
 | `--brand-50` | 253 243 242 | 255 241 239 (#FFF1EF) | nền banner LMS |
 | `--brand-100` | 251 227 226 | 255 220 215 (#FFDCD7) | đầu thẻ LMS |
-| `--brand-200` | 246 196 195 | 236 214 215 (#ECD6D7) | mục chọn QLĐT |
+| `--brand-200` | 246 196 195 | 255 196 189 (#FFC4BD) | mục chọn, viền nhạt |
 | `--brand-500` | 212 47 49 | 240 74 62 (#F04A3E) | đỏ sáng (gradient, minh họa, mô hình 3D) |
 | `--brand-600` | 196 22 28 | 226 38 28 (#E2261C) | đỏ chính, gần đỏ logo #DE221A |
 | `--brand-700` | 161 17 23 | 200 27 18 (#C81B12) | hover / đè lên |
-| `--brand-800` | 129 15 20 | 122 31 28 (#7A1F1C) | nội suy |
-| `--brand-900` | 94 12 16 | 74 19 17 (#4A1311) | nền thưởng |
+| `--brand-800` | 129 15 20 | 154 21 14 (#9A150E) | nội suy |
+| `--brand-900` | 94 12 16 | 92 15 11 (#5C0F0B) | nền thưởng |
 
 `--brand`, `--primary`, `--ring` (HSL): đổi sang `3 79% 51%` (#E2261C). `--brand-ink` sáng `3 81% 47%` (#D41F16, ≥5:1 trên trắng), tối `5 100% 75%` (#FF8A80).
 
@@ -33,7 +33,7 @@
 
 ## Vàng thưởng
 
-- `--reward-gain` và màu đèn cửa sổ A2 (`CAMPUS.windowTier`) dùng #EAAE3C (gold-500); chip XP nền #FCF1D9 chữ #3A2408.
+- `--reward-gain` và màu đèn cửa sổ A2 (`CAMPUS.windowTier`) dùng vàng thưởng #F4D431 (gold-500); chip XP nền #F4D431 chữ #5A4300. Màn nhận XP: `--reward-from/mid/to` = #FF5A47 → #E2261C → #C81B12, không còn đỏ nâu. Màn chọn vai trò: Sinh viên gradient #FF5A47→#E2261C→#C81B12, Giảng viên xanh khoa #3F86F5→#1F63DB→#1748B0.
 
 ## Giao diện tối
 

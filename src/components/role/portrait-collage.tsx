@@ -86,7 +86,7 @@ export function PortraitCollage() {
                 <clipPath id="rc-W"><polygon points={SHAPE.tW} /></clipPath>
                 <clipPath id="rc-cut"><polygon points={SHAPE.tCut} /></clipPath>
                 <clipPath id="rc-top"><path clipRule="evenodd" d={SHAPE.topOnly} /></clipPath>
-                <pattern id="rc-dots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.7" fill="#DE221A" /></pattern>
+                <pattern id="rc-dots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.7" fill="#F04A3E" /></pattern>
                 <mask id="rc-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="880">
                     <rect width="700" height="880" fill="#fff" />
                     <polygon className="rs-cut2" points={SHAPE.tCut} fill="#000" />

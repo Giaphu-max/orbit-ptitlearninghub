@@ -1,7 +1,7 @@
 // Pháo giấy vẽ trên canvas, chép từ docs/mockup/orbit-focus-reward.html.
 // Canvas không dùng được token CSS nên bảng màu giấy (trắng, vàng, hồng nhạt) nằm cố định ở đây.
 
-const COLORS = ['#FFFFFF', '#FFD27A', '#FFB4A8', '#FF6B6B', '#FFF1C9']
+const COLORS = ['#FFFFFF', '#F4D431', '#FFB4A8', '#FF6B6B', '#FFF1C9']
 
 interface Piece {
     x: number
