@@ -207,7 +207,7 @@ export function TopNav() {
                                 tabIndex={collapsed ? -1 : 0}
                                 onClick={(e) => goTo(e, it)}
                                 aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
-                                className={`${linkCls} ${isActive(it) ? 'relative font-extrabold text-brand-ink after:absolute after:bottom-0 after:left-1/2 after:h-[5px] after:w-[5px] after:-translate-x-1/2 after:rounded-full after:bg-brand-600' : 'font-medium text-foreground hover:text-strong'}`}
+                                className={`${linkCls} ${isActive(it) ? 'font-extrabold text-brand-ink' : 'font-medium text-foreground hover:text-strong'}`}
                             >
                                 {it.label}
                             </Link>
