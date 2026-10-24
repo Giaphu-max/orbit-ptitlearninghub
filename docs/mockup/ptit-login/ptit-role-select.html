@@ -62,6 +62,30 @@ h1 em{font-style:normal;color:var(--red-600)}
 .role:hover::after{opacity:1}
 .role>*{position:relative;z-index:1}
 .role:active{transform:translateY(-2px) scale(.985)}
+
+/* ---- strong role blocks: solid brand fills, a travelling light on the border, a pulsing arrow, idle float in turn ---- */
+@property --a{syntax:"<angle>";inherits:false;initial-value:0deg}
+.role{--fill:linear-gradient(150deg,#D63A2F 0%,#BC2626 45%,#8E1B17 100%);border:2px solid transparent;
+  background:var(--fill) padding-box,conic-gradient(from var(--a),transparent 0 62%,rgba(255,210,122,.0) 64%,#FFD27A 74%,#fff 78%,transparent 86%) border-box;
+  color:#fff;box-shadow:0 18px 40px -18px rgba(188,38,38,.75);animation:spin 4.5s linear infinite,float 5s ease-in-out infinite}
+.role[data-role=teacher]{--fill:linear-gradient(150deg,#1C2E78 0%,#0F1F5C 50%,#071240 100%);box-shadow:0 18px 40px -18px rgba(10,26,80,.7);animation-delay:-2.2s,-2.5s}
+@keyframes spin{to{--a:360deg}}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -6px}}
+.role b{color:#fff}
+.role p{color:rgba(255,255,255,.82)}
+.role .ic,.role[data-role=teacher] .ic{background:rgba(255,255,255,.16);color:#fff}
+.role .arr{background:#fff;border-color:#fff;color:var(--red-600);box-shadow:0 0 0 0 rgba(255,255,255,.55);animation:ring 2.4s ease-out infinite}
+.role[data-role=teacher] .arr{color:var(--ink-strong);animation-delay:1.2s}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(255,255,255,.6)}70%,100%{box-shadow:0 0 0 14px rgba(255,255,255,0)}}
+.role::before{background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.28) 48%,rgba(255,255,255,.08) 54%,transparent 65%)!important}
+.role::after,.role[data-role=teacher]::after{background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.22),transparent 60%)}
+.role:hover,.role[data-role=teacher]:hover{border-color:transparent;transform:translateY(-6px) scale(1.02);box-shadow:0 30px 60px -20px rgba(188,38,38,.85)}
+.role[data-role=teacher]:hover{box-shadow:0 30px 60px -20px rgba(10,26,80,.8)}
+.role:hover .ic,.role[data-role=teacher]:hover .ic{background:#fff;color:var(--red-600)}
+.role[data-role=teacher]:hover .ic{color:var(--ink-strong)}
+.role:hover .arr,.role[data-role=teacher]:hover .arr{background:#FFD27A;border-color:#FFD27A;color:#3A2408;transform:translateX(4px)}
+.dim .role:not(.picked){opacity:.3}
+@media (prefers-reduced-motion:reduce){.role,.role .arr{animation:none}}
 .role[disabled]{cursor:default}
 .dim .role:not(.picked){opacity:.35}
 .picked{border-color:var(--red-600)!important}
@@ -109,25 +133,32 @@ h1 em{font-style:normal;color:var(--red-600)}
 .art.split .thread{stroke-dashoffset:0;transition:stroke-dashoffset 1.3s .25s cubic-bezier(.65,0,.35,1)}
 .art.split .knot{opacity:1}
 .art.collage .pc{opacity:1}
-/* ---------- intro (role curtain) ---------- */
-.intro{position:fixed;inset:0;z-index:20;pointer-events:none;visibility:hidden}
+/* ---------- intro (role curtain): institute on top, the greeting is the hero, a busy-but-quiet PTIT field behind ---------- */
+.intro{position:fixed;inset:0;z-index:20;pointer-events:none;visibility:hidden;color:#fff;overflow:hidden}
 .intro.on{visibility:visible;pointer-events:auto;cursor:pointer}
-.intro .red{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 45%,var(--red-600) 0%,var(--red-700) 62%,var(--red-900) 100%);clip-path:circle(0px at var(--x,50%) var(--y,50%))}
-.intro .rings{position:absolute;left:50%;top:44%;width:min(92vw,980px);aspect-ratio:1.6;transform:translate(-50%,-50%) rotate(-24deg)}
+.intro .red{position:absolute;inset:0;background:radial-gradient(110% 90% at 30% 40%,#C9302A 0%,var(--red-600) 35%,var(--red-700) 70%,#5E1512 100%)}
+.intro .ibg{position:absolute;inset:0;width:100%;height:100%;opacity:0}
+.intro .rings{position:absolute;right:-22vw;top:50%;width:min(120vw,1500px);aspect-ratio:1.6;transform:translateY(-50%) rotate(-24deg);opacity:.9}
 .intro .rings ellipse{fill:none;stroke:#fff;stroke-linecap:round}
-.intro .badge{position:absolute;left:50%;top:44%;width:min(36vw,260px);aspect-ratio:1;border-radius:50%;background:#fff;transform:translate(-50%,-50%) scale(0);
-  display:grid;place-items:center;box-shadow:0 30px 80px -20px rgba(0,0,0,.45);overflow:hidden}
-.intro .badge img{width:62%;height:auto}
-.intro .badge .shine{position:absolute;inset:-20%;background:linear-gradient(115deg,rgba(255,255,255,0) 40%,rgba(255,255,255,.85) 50%,rgba(255,255,255,0) 60%);transform:translateX(-120%)}
-.intro .badge .glint{left:calc(50% + 2.2%);top:calc(50% - 4%);width:46px;height:46px;transform:translate(-50%,-50%)}
-.intro .words{position:absolute;left:50%;top:calc(44% + min(18vw,130px) + 34px);transform:translateX(-50%);width:min(92vw,860px);text-align:center;color:#fff}
-.intro .w1{font-weight:900;font-size:clamp(18px,2.6vw,34px);letter-spacing:.02em;line-height:1.2}
-.intro .w2{margin-top:8px;font-size:clamp(12px,1.25vw,16px);opacity:.82;letter-spacing:.04em}
-.intro .w3{margin-top:22px;font:700 13px/18px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-100)}
-.intro .w1,.intro .w2,.intro .w3{opacity:0}
-.intro .skip{position:absolute;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));font:600 12px/16px var(--mono);color:rgba(255,255,255,.75);background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 12px;opacity:0;cursor:pointer}
-.intro .bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--star);transform-origin:left;transform:scaleX(0);opacity:.9}
-
+.intro .ghost2{position:absolute;right:-6vw;bottom:-14vh;width:min(42vw,620px);height:auto;opacity:0;filter:blur(1.2px) brightness(0) invert(1);mix-blend-mode:soft-light}
+.intro .top{position:absolute;top:clamp(28px,6vh,64px);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;opacity:0;white-space:nowrap}
+.intro .badge{width:52px;height:52px;border-radius:14px;background:#fff;display:grid;place-items:center;flex:none;box-shadow:0 10px 30px -10px rgba(0,0,0,.5);position:relative;overflow:hidden}
+.intro .badge img{width:74%;height:auto}
+.intro .badge .shine{position:absolute;inset:-30%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.9) 50%,transparent 60%);transform:translateX(-120%)}
+.intro .w1{font-weight:800;font-size:clamp(13px,1.15vw,17px);letter-spacing:.06em;line-height:1.25}
+.intro .w2{font-size:clamp(11px,.9vw,13px);opacity:.78;letter-spacing:.04em}
+.intro .hero{position:absolute;left:max(28px,8vw);right:max(28px,8vw);top:50%;transform:translateY(-54%)}
+.intro .w3{margin:0;font-weight:900;font-size:clamp(72px,12vw,220px);line-height:.92;letter-spacing:-.05em}
+.intro .w3 .ch{display:inline-block;opacity:0;transform:translateY(.5em)}
+.intro .w3 .nm{color:#FFD27A}
+.intro .w4{margin-top:clamp(18px,3vh,32px);display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:clamp(16px,1.5vw,24px);font-weight:600;opacity:0}
+.intro .w4 .chip{color:#fff;font:700 12px/16px var(--mono);letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:6px 12px}
+.intro .w4 b{font-weight:800;color:#FFD27A}
+.intro .skip{position:absolute;right:max(20px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));font:600 12px/16px var(--mono);color:rgba(255,255,255,.8);background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 12px;opacity:0;cursor:pointer}
+.intro .load{position:absolute;left:max(28px,8vw);bottom:calc(26px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;font:600 12px/16px var(--mono);letter-spacing:.08em;color:rgba(255,255,255,.75);opacity:0}
+.intro .load i{display:block;width:140px;height:3px;border-radius:2px;background:rgba(255,255,255,.2);overflow:hidden}
+.intro .bar{display:block;height:100%;width:100%;background:var(--star);transform-origin:left;transform:scaleX(0)}
+@media (max-width:700px){.intro .top{width:calc(100% - 40px);white-space:normal;justify-content:center}.intro .w1{font-size:12px}.intro .w2{display:none}.intro .rings{right:-60vw}.intro .w3{font-size:clamp(52px,16vw,72px)}#loadTx{display:none}}
 /* ---------- home (after entering) ---------- */
 .home{background:var(--paper)}
 .nav{position:absolute;top:0;left:0;right:0;height:72px;display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);
@@ -201,7 +232,7 @@ h1 em{font-style:normal;color:var(--red-600)}
   <canvas class="ghost" id="ghost" aria-hidden="true"></canvas>
   <header class="top"><img src="ptit-lockup.svg" alt="Học viện Công nghệ Bưu chính Viễn thông"></header>
   <div class="left">
-    <h1 id="h1"><span class="l">Lớp học số của</span> <em class="l">sinh viên PTIT</em></h1>
+    <h1 id="h1"><span class="l">Học online cùng</span> <em class="l">sinh viên PTIT</em></h1>
     <p class="lead">Xem lại bài của thầy cô, hỏi trợ giảng AI ngay lúc chưa hiểu, thực hành trong studio 3D và ôn đúng chỗ mình còn hổng.</p>
     <div class="roles" id="roles">
       <button class="role" data-role="student"><span class="row1"><span class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span><span class="arr" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span><b>Sinh viên</b><p>Học có trợ giảng AI, quiz củng cố, tích XP theo mức hiểu bài.</p></button>
@@ -242,14 +273,17 @@ h1 em{font-style:normal;color:var(--red-600)}
 <!-- ============ INTRO ============ -->
 <div class="intro" id="intro" role="dialog" aria-label="Đang vào hệ thống" aria-hidden="true">
   <div class="red" id="red"></div>
-  <svg class="rings" viewBox="-160 -100 320 200" aria-hidden="true">
-    <ellipse id="r1" rx="150" ry="86" stroke-width="2.2" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/>
-    <ellipse id="r2" rx="128" ry="72" stroke-width="1" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="opacity:.5"/>
+  <canvas class="ibg" id="ibg" aria-hidden="true"></canvas>
+  <svg class="rings" id="irings" viewBox="-160 -100 320 200" aria-hidden="true">
+    <ellipse id="r1" rx="150" ry="86" stroke-width="1.6" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="opacity:.55"/>
+    <ellipse id="r2" rx="128" ry="72" stroke-width=".8" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="opacity:.3"/>
+    <ellipse id="r3" rx="104" ry="58" stroke-width=".6" stroke-dasharray=".6 3.4" style="opacity:.35"/>
   </svg>
-  <div class="badge" id="badge"><img src="ptit-logo.webp" alt=""><span class="shine" id="shine"></span><span class="glint" id="glint"></span></div>
-  <div class="words"><div class="w1" id="w1">HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG</div><div class="w2" id="w2">Posts and Telecommunications Institute of Technology</div><div class="w3" id="w3">Chào Gia Phú</div></div>
+  <img class="ghost2" id="ghost2" src="ptit-logo.webp" alt="">
+  <div class="top" id="itop"><div class="badge" id="badge"><img src="ptit-logo.webp" alt=""><span class="shine" id="shine"></span></div><div><div class="w1" id="w1">HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG</div><div class="w2" id="w2">Posts and Telecommunications Institute of Technology</div></div></div>
+  <div class="hero"><h2 class="w3" id="w3"></h2><div class="w4" id="w4"></div></div>
+  <div class="load" id="load"><i><span class="bar" id="bar"></span></i><span id="loadTx">Đang mở lớp học của bạn</span></div>
   <button class="skip" id="skip">Bỏ qua ⏎</button>
-  <div class="bar" id="bar"></div>
 </div>
 
 <!-- ============ HOME ============ -->
@@ -270,7 +304,7 @@ h1 em{font-style:normal;color:var(--red-600)}
     <span class="tag" style="left:72%;top:60%">Tòa A3</span>
     <span class="tag" style="left:20%;top:70%">Canteen</span>
     <span class="tag" style="left:48%;top:74%">Cổng Học viện</span>
-    <div class="hello rise" id="hello"><small>Khuôn viên PTIT · cảnh 3D giữ nguyên</small><h2 id="h2">Chào Gia Phú, học tiếp nhé.</h2><p>Nhãn tòa nhà chỉ ghi tên, không còn bấm sang khóa học.</p></div>
+    <div class="hello rise" id="hello"><small>Khuôn viên PTIT · cảnh 3D giữ nguyên</small><h2 id="h2">Chào Phú, học tiếp nhé.</h2><p>Nhãn tòa nhà chỉ ghi tên, không còn bấm sang khóa học.</p></div>
   </div>
   <div class="hint"><span class="mouse"></span>Cuộn để khám phá các chức năng</div>
   <div class="dock"><button>Ẩn mô hình 3D</button></div>
@@ -362,27 +396,48 @@ document.querySelectorAll('.role').forEach(el=>el.addEventListener('pointermove'
 /* ---------- intro: one timeline, ~3.6s, every step transform/opacity/clip-path; click, Enter or Esc skips ---------- */
 let anims=[], skipping=false, done=null;
 const A=(el,k,o)=>{const a=el.animate(k,Object.assign({fill:'both',easing:'cubic-bezier(.22,1,.36,1)'},o));anims.push(a);return a;};
-function playIntro(origin,name){
-  const intro=$('intro'); $('w3').textContent=name; intro.classList.add('on'); intro.setAttribute('aria-hidden','false');
-  intro.style.setProperty('--x',origin.x+'px'); intro.style.setProperty('--y',origin.y+'px');
+/* background field: white dot grid + falling ascii columns, drawn on one canvas, stops when the intro closes */
+let ibgRaf=0;
+function startField(){const c=$('ibg'),g=c.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2),W=innerWidth,H=innerHeight;c.width=W*dpr;c.height=H*dpr;g.setTransform(dpr,0,0,dpr,0,0);
+  const dots=document.createElement('canvas');dots.width=c.width;dots.height=c.height;const d=dots.getContext('2d');d.setTransform(dpr,0,0,dpr,0,0);d.fillStyle='rgba(255,255,255,.16)';
+  for(let y=10;y<H;y+=18)for(let x=10;x<W;x+=18)d.fillRect(x,y,1.3,1.3);
+  const CH='01<>/\\{}[]#=+*?:;ACGTXZ%&'.split(''),cols=[];
+  for(let x=W*.55;x<W;x+=14){if(Math.random()<.5)continue;cols.push({x,y:Math.random()*H,v:30+Math.random()*70,len:6+Math.random()*16|0,a:.12+Math.random()*.22,ch:Array.from({length:24},()=>CH[(Math.random()*CH.length)|0])});}
+  let last=performance.now();
+  const f=now=>{const dt=Math.min(.05,(now-last)/1000);last=now;g.clearRect(0,0,W,H);g.drawImage(dots,0,0,W,H);g.font='600 12px "JetBrains Mono", monospace';g.textAlign='center';
+    for(const col of cols){col.y+=col.v*dt;if(col.y-col.len*14>H)col.y=-20;if(Math.random()<.04)col.ch[(Math.random()*col.len)|0]=CH[(Math.random()*CH.length)|0];
+      for(let i=0;i<col.len;i++){g.fillStyle=`rgba(255,255,255,${col.a*(i===0?2.2:1-i/col.len)})`;g.fillText(col.ch[i],col.x,col.y-i*14);}}
+    ibgRaf=requestAnimationFrame(f);};ibgRaf=requestAnimationFrame(f);}
+function setGreeting(role){const w3=$('w3'),w4=$('w4');
+  const words=role==='teacher'?[['Chào',''],['thầy/cô','nm']]:[['Chào',''],['Phú','nm']];
+  w3.innerHTML=words.map(([t,c],i)=>`<span class="${c}" style="white-space:nowrap">${[...t].map(ch=>`<span class="ch">${ch}</span>`).join('')}${i===words.length-1?'<span class="ch" style="color:#fff">,</span>':''}</span>`).join(' ');
+  w4.innerHTML=role==='teacher'?'<span class="chip">Giảng viên</span><span>Có <b>3 nội dung AI</b> đang chờ thầy cô duyệt</span>'
+    :'<span class="chip">Sinh viên · Đa phương tiện</span><span>Học tiếp <b>Dựng audio và video phi tuyến</b> nhé</span>';
+  $('loadTx').textContent=role==='teacher'?'Đang mở trang giảng viên':'Đang mở lớp học của bạn';}
+function playIntro(origin,role){
+  const intro=$('intro'); setGreeting(role); intro.classList.add('on'); intro.setAttribute('aria-hidden','false');
   const R=Math.hypot(Math.max(origin.x,innerWidth-origin.x),Math.max(origin.y,innerHeight-origin.y));
   anims=[]; skipping=false;
   return new Promise(res=>{done=res;
-    if(reduce){A(intro,[{opacity:0},{opacity:1},{opacity:1},{opacity:0}],{duration:900});setTimeout(finish,900);swapAt(400);return;}
-    A($('red'),[{clipPath:`circle(0px at ${origin.x}px ${origin.y}px)`},{clipPath:`circle(${R}px at ${origin.x}px ${origin.y}px)`}],{duration:700,easing:'cubic-bezier(.65,0,.35,1)'});
-    A($('r1'),[{strokeDashoffset:1},{strokeDashoffset:0}],{duration:1100,delay:350});
-    A($('r2'),[{strokeDashoffset:1},{strokeDashoffset:0}],{duration:1100,delay:520});
-    A(document.querySelector('.intro .rings'),[{transform:'translate(-50%,-50%) rotate(-60deg) scale(.7)'},{transform:'translate(-50%,-50%) rotate(-24deg) scale(1)'}],{duration:1500,delay:300});
-    A($('badge'),[{transform:'translate(-50%,-50%) scale(0)'},{transform:'translate(-50%,-50%) scale(1.06)',offset:.7},{transform:'translate(-50%,-50%) scale(1)'}],{duration:800,delay:800});
-    A($('shine'),[{transform:'translateX(-120%)'},{transform:'translateX(120%)'}],{duration:900,delay:1500,easing:'ease-in-out'});
-    A($('glint'),[{opacity:0,transform:'translate(-50%,-50%) scale(.2) rotate(0)'},{opacity:1,transform:'translate(-50%,-50%) scale(1.3) rotate(45deg)',offset:.5},{opacity:0,transform:'translate(-50%,-50%) scale(.4) rotate(90deg)'}],{duration:700,delay:1700,easing:'ease-out'});
-    A(document.querySelector('.intro .rings svg')||document.querySelector('.intro .rings'),[{opacity:1},{opacity:.35}],{duration:600,delay:1400,composite:'replace'});
-    A($('w1'),[{opacity:0,transform:'translateY(16px)'},{opacity:1,transform:'none'}],{duration:600,delay:1500});
-    A($('w2'),[{opacity:0,transform:'translateY(12px)'},{opacity:.82,transform:'none'}],{duration:600,delay:1700});
-    A($('w3'),[{opacity:0,letterSpacing:'.4em'},{opacity:1,letterSpacing:'.16em'}],{duration:700,delay:2000});
-    A($('skip'),[{opacity:0},{opacity:1}],{duration:400,delay:900});
-    A($('bar'),[{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:3000,easing:'linear'});
-    timers.push(setTimeout(()=>{swapAt(0);exit();},3000));
+    if(reduce){[...document.querySelectorAll('#w3 .ch')].forEach(c=>{c.style.opacity=1;c.style.transform='none'});for(const id of ['itop','w4'])$(id).style.opacity=1;
+      A(intro,[{opacity:0},{opacity:1},{opacity:1},{opacity:0}],{duration:1400});setTimeout(finish,1400);swapAt(700);return;}
+    startField();
+    A($('red'),[{clipPath:`circle(0px at ${origin.x}px ${origin.y}px)`},{clipPath:`circle(${R}px at ${origin.x}px ${origin.y}px)`}],{duration:650,easing:'cubic-bezier(.65,0,.35,1)'});
+    A($('ibg'),[{opacity:0},{opacity:1}],{duration:800,delay:300});
+    A($('irings'),[{transform:'translateY(-50%) rotate(-60deg) scale(.8)'},{transform:'translateY(-50%) rotate(-24deg) scale(1)'}],{duration:1600,delay:250});
+    A($('irings'),[{rotate:'0deg'},{rotate:'8deg'}],{duration:6000,delay:1850,easing:'linear'});
+    A($('r1'),[{strokeDashoffset:1},{strokeDashoffset:0}],{duration:1200,delay:300});
+    A($('r2'),[{strokeDashoffset:1},{strokeDashoffset:0}],{duration:1200,delay:450});
+    A($('ghost2'),[{opacity:0,transform:'translateY(30px) rotate(-8deg)'},{opacity:.35,transform:'none'}],{duration:1400,delay:400});
+    /* institute line drops in first, then the greeting types up letter by letter, then the personal line */
+    A($('itop'),[{opacity:0,transform:'translate(-50%,-14px)'},{opacity:1,transform:'translate(-50%,0)'}],{duration:600,delay:300});
+    A($('shine'),[{transform:'translateX(-120%)'},{transform:'translateX(120%)'}],{duration:900,delay:900,easing:'ease-in-out'});
+    [...document.querySelectorAll('#w3 .ch')].forEach((c,i)=>A(c,[{opacity:0,transform:'translateY(.5em) rotate(6deg)'},{opacity:1,transform:'none'}],{duration:620,delay:450+i*55,easing:'cubic-bezier(.3,1.4,.5,1)'}));
+    A($('w4'),[{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'none'}],{duration:600,delay:1250});
+    A($('load'),[{opacity:0},{opacity:1}],{duration:400,delay:700});
+    A($('skip'),[{opacity:0},{opacity:1}],{duration:400,delay:800});
+    A($('bar'),[{transform:'scaleX(0)'},{transform:'scaleX(1)'}],{duration:4500,easing:'linear'});
+    timers.push(setTimeout(()=>{swapAt(0);exit();},4500));
   });
 }
 let timers=[];
@@ -390,20 +445,20 @@ function swapAt(ms){timers.push(setTimeout(()=>{$('rs').hidden=true;$('home').hi
 /* exit: badge flies into the header logo tile, the red retracts as a hole opening from the tile */
 function exit(){
   const b=$('badge').getBoundingClientRect(), t=$('tile').getBoundingClientRect();
-  const dx=(t.left+t.width/2)-(b.left+b.width/2), dy=(t.top+t.height/2)-(b.top+b.height/2), s=t.width/b.width;
+  const dx=(t.left+t.width/2)-(b.left+b.width/2), dy=(t.top+t.height/2)-(b.top+b.height/2), sc=t.width/b.width;
   const cx=t.left+t.width/2, cy=t.top+t.height/2, R=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy));
   $('home').querySelector('.tile').style.opacity=0;
-  const fly=A($('badge'),[{transform:'translate(-50%,-50%) scale(1)'},{transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(${s})`,borderRadius:'50%'}],{duration:650,easing:'cubic-bezier(.65,0,.35,1)'});
-  for(const id of ['w1','w2','w3','skip']) A($(id),[{opacity:1},{opacity:0}],{duration:250});
-  A(document.querySelector('.intro .rings'),[{opacity:1,transform:'translate(-50%,-50%) rotate(-24deg) scale(1)'},{opacity:0,transform:'translate(-50%,-50%) rotate(10deg) scale(1.6)'}],{duration:650});
-  /* red: a growing hole centred on the logo tile */
+  const fly=A($('badge'),[{transform:'none'},{transform:`translate(${dx}px,${dy}px) scale(${sc})`}],{duration:650,easing:'cubic-bezier(.65,0,.35,1)'});
+  for(const id of ['w1','w2','w4','skip','load','ghost2','ibg']) A($(id),[{opacity:1},{opacity:0}],{duration:260});
+  A($('w3'),[{opacity:1,transform:'none'},{opacity:0,transform:'translateY(-30px) scale(1.04)'}],{duration:420,easing:'cubic-bezier(.55,0,.75,.2)'});
+  A($('irings'),[{opacity:.9},{opacity:0}],{duration:500});
   A($('red'),[{maskImage:`radial-gradient(circle at ${cx}px ${cy}px, transparent 0px, #000 0px)`,webkitMaskImage:`radial-gradient(circle at ${cx}px ${cy}px, transparent 0px, #000 0px)`},
               {maskImage:`radial-gradient(circle at ${cx}px ${cy}px, transparent ${R}px, #000 ${R}px)`,webkitMaskImage:`radial-gradient(circle at ${cx}px ${cy}px, transparent ${R}px, #000 ${R}px)`}],{duration:650,delay:250,easing:'cubic-bezier(.55,0,.75,.2)'});
   const fade=A($('red'),[{opacity:1},{opacity:0}],{duration:200,delay:780});
   fly.finished.then(()=>{$('home').querySelector('.tile').style.opacity=1;});
   fade.finished.then(finish).catch(()=>{});
 }
-function finish(){const intro=$('intro');anims.forEach(a=>a.cancel());anims=[];timers.forEach(clearTimeout);timers=[];
+function finish(){const intro=$('intro');cancelAnimationFrame(ibgRaf);anims.forEach(a=>a.cancel());anims=[];timers.forEach(clearTimeout);timers=[];
   intro.classList.remove('on');intro.setAttribute('aria-hidden','true');$('rs').hidden=true;$('home').hidden=false;$('home').querySelector('.tile').style.opacity=1;
   landHome(); if(done){done();done=null;}}
 function skip(){if(skipping||!$('intro').classList.contains('on'))return;skipping=true;timers.forEach(clearTimeout);timers=[];
@@ -421,8 +476,8 @@ function landHome(){const h=$('hello');h.classList.remove('rise');void h.offsetW
 document.querySelectorAll('.role').forEach(btn=>btn.addEventListener('click',()=>{
   document.querySelectorAll('.role').forEach(b=>b.disabled=true);btn.classList.add('picked');$('roles').classList.add('dim');
   const r=btn.getBoundingClientRect(); const name=btn.dataset.role==='teacher'?'Chào thầy/cô':'Chào Gia Phú';
-  $('w3').textContent=name; $('h2').textContent=btn.dataset.role==='teacher'?'Chào thầy/cô, hôm nay duyệt gì?':'Chào Gia Phú, học tiếp nhé.';
-  setTimeout(()=>playIntro({x:r.left+r.width/2,y:r.top+r.height/2},name),reduce?0:180);
+  $('h2').textContent=btn.dataset.role==='teacher'?'Chào thầy/cô, hôm nay duyệt gì?':'Chào Phú, học tiếp nhé.';
+  setTimeout(()=>playIntro({x:r.left+r.width/2,y:r.top+r.height/2},btn.dataset.role),reduce?0:180);
 }));
 $('replay').addEventListener('click',()=>{$('home').hidden=true;$('rs').hidden=false;$('roles').classList.remove('dim');
   document.querySelectorAll('.role').forEach(b=>{b.disabled=false;b.classList.remove('picked');});
