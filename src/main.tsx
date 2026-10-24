@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@/lib/browser'
-import '@/lib/paper'
 import { armFeedback } from '@/lib/feedback'
 import { armAudio } from '@/lib/sfx'
 import '@fontsource/be-vietnam-pro/400.css'

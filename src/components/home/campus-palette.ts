@@ -1,7 +1,7 @@
 // Bảng màu mô hình khuôn viên PTIT: một nguồn duy nhất cho cảnh 3D và ảnh tĩnh dự phòng.
 // Đây là màu của "vật thể" trong cảnh (không đổi theo giao diện sáng/tối); chỉ ánh sáng đổi khi sang buổi tối.
 export const CAMPUS = {
-    plate: '#E4E7EE', plateDark: '#3A3030', plateEdge: '#9F2925', pave: '#CFC8BC', road: '#6B5F5C', grass: '#A9D18E', grassDark: '#93BF78',
+    plate: '#C7765E', plateDark: '#3A3030', plateEdge: '#9F2925', pave: '#BDB6AA', road: '#6B5F5C', grass: '#A9D18E', grassDark: '#A9D18E', lawnEdge: '#8FB873',
     cream: '#E9DFCF', granite: '#8C8583', glass: '#4F9C82', win: '#6E9FB5', roofRed: '#D9473A', edge: '#9AA0B4', shadowInk: '#0A1A50', grid: '#D5D9E3',
     yellow: '#F1D27A', white: '#EFE6D6', stripe: '#B9C3D1', trunk: '#7A5544', tree: '#7FB069', tree2: '#5E8F4E',
     // Màu sơn thật: Tòa A1 (xám xanh), hội trường/canteen (kem), cổng

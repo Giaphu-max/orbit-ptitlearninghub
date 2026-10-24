@@ -4,7 +4,6 @@ import { ArrowRight, Camera, Play, Sparkles } from 'lucide-react'
 import { getCourse, lessons } from '@/data'
 import { CourseArt } from '@/components/courses/course-cover'
 import { courseKicker, primaryCourse, STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
-import { scrollToSection } from '@/lib/scroll'
 import { trackPage } from '@/lib/page-metrics'
 import { FLAGS, mountPerfHud } from '@/lib/perf'
 import { overlay } from '@/lib/stage-signal'
@@ -43,8 +42,7 @@ export function OrbitHomeView() {
     const footerRef = useRef<HTMLDivElement>(null)
     const dockRef = useRef<HTMLDivElement>(null)
     const veilRef = useRef<HTMLDivElement>(null)
-    const railRef = useRef<HTMLElement>(null)
-    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, veil: veilRef, rail: railRef, calm: calmRef }), [])
+    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, veil: veilRef, calm: calmRef }), [])
 
     // Số đo layout (footer, hành trình, scrollHeight) đo một lần + khi resize; layout effect chạy trước effect của useScrollStage
     useLayoutEffect(() => trackPage(() => footerRef.current).stop, [])
@@ -103,8 +101,6 @@ export function OrbitHomeView() {
                 </div>
             )}
 
-            {journey && !staticMode && <ChapterRail navRef={railRef} />}
-
             {/* Dòng hướng dẫn cho người mới: hook ghi chữ và độ hiện; ẩn ở footer */}
             {journey && (
                 <p data-guide aria-live="polite" style={{ opacity: 0 }} className="own-layer pointer-events-none fixed bottom-5 left-1/2 z-[6] flex max-w-[calc(100vw-3rem)] -translate-x-1/2 flex-col items-center gap-1.5 text-center text-xs text-muted-foreground transition-opacity duration-slow">
@@ -137,28 +133,6 @@ export function OrbitHomeView() {
                 <SiteFooter />
             </div>
         </div>
-    )
-}
-
-/** Mục chương ở mép phải: hiện chương hiện tại (hook đánh dấu data-on), bấm thì cuộn tới giữa phần dừng đọc. Ẩn khi đang zoom kiosk. */
-const RAIL = [['top', 'Trang chủ'], ['daily', '01 Hôm nay'], ['courses', '02 Khóa học'], ['studio', '03 Studio 3D']] as const
-function ChapterRail({ navRef }: { navRef: RefObject<HTMLElement | null> }) {
-    return (
-        <nav ref={navRef} data-rail aria-label="Chương" className="ptit-rail own-layer fixed right-[max(1.25rem,2.4vw)] top-1/2 z-[8] hidden -translate-y-1/2 flex-col gap-3.5 rounded-2xl px-3 py-2.5 min-[860px]:flex group-data-[kiosk=on]/home:pointer-events-none">
-            {RAIL.map(([id, label], i) => (
-                <button
-                    key={id}
-                    type="button"
-                    data-rail-link
-                    data-on={i === 0}
-                    onClick={() => scrollToSection(id)}
-                    className="group/r flex items-center justify-end gap-2.5 font-mono text-[11px] font-semibold text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
-                >
-                    <span className="translate-x-1.5 opacity-0 transition duration-base group-hover/r:translate-x-0 group-hover/r:opacity-100 group-data-[on=true]/r:translate-x-0 group-data-[on=true]/r:opacity-100">{label}</span>
-                    <i className="h-0.5 w-3.5 rounded bg-[hsl(var(--rail-idle))] transition-all duration-base group-data-[on=true]/r:w-7 group-data-[on=true]/r:bg-brand-600" />
-                </button>
-            ))}
-        </nav>
     )
 }
 

@@ -50,15 +50,13 @@
        (canvas đục của Safari vẽ gradient này vào scene.background), --sky-glow là quầng góc trên phải.
        Cảnh 3D đọc --sky-2/--sky-3 để pha sương (về #FAFAFC), --stage-deep là nền nội thất. */
     --sky-1: 350 100% 97%;
-    --sky-2: 45 17% 95%;
-    --sky-3: 45 17% 95%;
-    --sky-4: 45 17% 95%;
+    --sky-2: 240 25% 98%;
+    --sky-3: 240 25% 98%;
+    --sky-4: 240 25% 98%;
     --sky-glow: 350 100% 97%;
     --sky-glow-alpha: 0.9;
-    --stage-bg: 45 17% 95%;
-    /* Quầng hồng ở tâm khuôn viên + vệt vàng nhạt góc trên phải, trên nền giấy #F5F4F1 */
-    --canvas-glow: radial-gradient(ellipse 42% 50% at 70% 52%, #fbe3e1 0%, rgb(251 227 225 / 0.55) 45%, rgb(251 227 225 / 0) 100%),
-      radial-gradient(ellipse 38% 34% at 80% 22%, #fff3dc 0%, rgb(255 243 220 / 0) 100%), linear-gradient(#f5f4f1, #f5f4f1);
+    --stage-bg: 240 25% 98%;
+    --canvas-glow: radial-gradient(circle at 68% 50%, #fff0f2 0%, #fff7ed 35%, #fafafc 75%);
     --stage-deep: 353 19% 6%;
     --reward-from: 358 67% 51%;
     --reward-mid: 358 80% 43%;
@@ -71,11 +69,11 @@
     --brand-soft: 0 47% 96%;
 
     /* Nền và chữ: trắng + trung tính ấm */
-    --background: 45 17% 95%;
+    --background: 240 25% 98%;
     --foreground: 225 17% 26%;
     /* Tiêu đề navy của LMS (text-strong) */
     --foreground-strong: 226 78% 18%;
-    --surface: 45 17% 95%;
+    --surface: 240 25% 98%;
     --card: 0 0% 100%;
     --card-foreground: 225 17% 26%;
     --popover: 0 0% 100%;
@@ -98,7 +96,6 @@
     --glass-shadow: 0 10px 30px -5px rgb(188 38 38 / 0.07), 0 4px 12px -2px rgb(10 26 80 / 0.05);
     --glass-blur: blur(14px) saturate(180%);
     --glass-inset: rgb(188 38 38 / 0.05);
-    --rail-idle: 222 19% 83%;
     --pill-border: rgb(255 255 255 / 0.9);
     --pill-shadow: 0 12px 32px -4px rgb(10 26 80 / 0.08);
     --pin-bg: rgb(255 255 255 / 0.92);
@@ -214,7 +211,6 @@
     --glass-border: rgb(255 255 255 / 0.1);
     --glass-shadow: 0 10px 30px -5px rgb(0 0 0 / 0.4), 0 4px 12px -2px rgb(0 0 0 / 0.3);
     --glass-inset: rgb(255 255 255 / 0.04);
-    --rail-idle: 20 6% 32%;
     --pill-border: rgb(255 255 255 / 0.12);
     --pill-shadow: 0 12px 32px -4px rgb(0 0 0 / 0.45);
     --pin-bg: rgb(28 24 22 / 0.92);
@@ -282,24 +278,7 @@
     background-color: hsl(var(--stage-bg));
   }
   .stage-sky {
-    background-image: var(--paper-grain, none), var(--canvas-glow);
-  }
-  /* Lưới chấm #0A1A50 ~6%, bước 18px, chỉ nửa phải, mờ dần về phía cột chữ (lớp tĩnh nằm sau canvas) */
-  .stage-dots {
-    background-image: radial-gradient(circle, rgb(10 26 80 / 0.06) 1.3px, transparent 1.6px);
-    background-size: 18px 18px;
-    -webkit-mask-image: linear-gradient(90deg, transparent 30%, #000 62%);
-    mask-image: linear-gradient(90deg, transparent 30%, #000 62%);
-  }
-  /* Giấy: vân hạt (canvas 256px vẽ một lần ở main.tsx → --paper-grain), chấm đen alpha thấp = multiply ~30% */
-  .paper-bg {
-    background-image: var(--paper-grain, none);
-  }
-  /* Rail chương: viên trắng nổi trên cảnh, không hiệu ứng hover */
-  .ptit-rail {
-    background: var(--pin-bg);
-    border: 1px solid var(--pin-border);
-    box-shadow: var(--pin-shadow);
+    background-image: var(--canvas-glow);
   }
   /* Panel chương (useScrollStage đặt class on / past): chồng nhau trong một ô lưới, panel không `on` thì ẩn sau khi hiệu ứng ra xong */
   [data-panel] {
@@ -374,7 +353,7 @@
     background-image: none;
     background-color: hsl(var(--stage-bg));
   }
-  .no-overlays :is([data-overlay], .stage-veil, [data-guide], [data-dock], [data-rail], [data-bar]) {
+  .no-overlays :is([data-overlay], .stage-veil, [data-guide], [data-dock], [data-bar]) {
     display: none !important;
   }
   .stage-veil {

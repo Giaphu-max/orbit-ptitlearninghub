@@ -301,3 +301,70 @@ export function DrawPlane({ w, h, cw, ch, draw, at, rotY = 0 }: { w: number; h: 
         </mesh>
     )
 }
+
+// ─── Nền sân: CanvasTexture vẽ một lần (không dùng ảnh ngoài), lặp, mipmap + anisotropy 4 ──────────
+
+function makeTileTexture(draw: (ctx: CanvasRenderingContext2D, n: number) => void, repeat: [number, number]) {
+    const N = 512
+    const cv = document.createElement('canvas')
+    cv.width = cv.height = N
+    draw(cv.getContext('2d')!, N)
+    const t = new THREE.CanvasTexture(cv)
+    t.colorSpace = THREE.SRGBColorSpace
+    t.wrapS = t.wrapT = THREE.RepeatWrapping
+    t.repeat.set(...repeat)
+    t.anisotropy = 4
+    t.generateMipmaps = true
+    t.minFilter = THREE.LinearMipmapLinearFilter
+    return t
+}
+const rng = (seed: number) => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)
+
+/** Sân chính: gạch block đỏ đất nung #C7765E, mạch #E2B3A2, hàng so le, vài viên đậm/nhạt ngẫu nhiên. 16 viên × 32 hàng trên mỗi tile 512px. */
+export function makeBrickTexture(repeat: [number, number]) {
+    return makeTileTexture((ctx, n) => {
+        const bw = 32
+        const bh = 16
+        const rnd = rng(7)
+        ctx.fillStyle = '#E2B3A2'
+        ctx.fillRect(0, 0, n, n)
+        for (let r = 0; r < n / bh; r++) {
+            const off = r % 2 ? bw / 2 : 0
+            for (let c = -1; c < n / bw + 1; c++) {
+                const x = c * bw + off
+                const y = r * bh
+                const k = rnd()
+                ctx.fillStyle = k < 0.14 ? '#B9664F' : k < 0.3 ? '#D08770' : '#C7765E'
+                // Viên gạch nằm trong mạch 2px; vẽ cả bản sao qua mép tile để lặp liền mạch
+                ctx.fillRect(x + 1, y + 1, bw - 2, bh - 2)
+                if (x + bw > n) ctx.fillRect(x - n + 1, y + 1, bw - 2, bh - 2)
+            }
+        }
+    }, repeat)
+}
+
+/** Lối đi: đá lát xám ấm #BDB6AA, ô lớn 64px, mạch #A69E91. */
+export function makeStoneTexture(repeat: [number, number]) {
+    return makeTileTexture((ctx, n) => {
+        const s = 64
+        const rnd = rng(11)
+        ctx.fillStyle = '#A69E91'
+        ctx.fillRect(0, 0, n, n)
+        for (let r = 0; r < n / s; r++)
+            for (let c = 0; c < n / s; c++) {
+                const k = rnd()
+                ctx.fillStyle = k < 0.2 ? '#B3ACA0' : k < 0.4 ? '#C6BFB3' : '#BDB6AA'
+                ctx.fillRect(c * s + 2, r * s + 2, s - 4, s - 4)
+            }
+    }, repeat)
+}
+
+/** Mặt phẳng nằm ngang (sàn sân/lối đi) có texture, nhận bóng. `at` là tâm; y nâng nhẹ để không z-fight. */
+export function GroundPlane({ s, at, tex }: { s: [number, number]; at: Vec3; tex: THREE.Texture }) {
+    const mat = useMemo(() => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0 }), [tex])
+    return (
+        <mesh position={at} rotation={[-Math.PI / 2, 0, 0]} material={mat} receiveShadow>
+            <planeGeometry args={s} />
+        </mesh>
+    )
+}

@@ -133,9 +133,6 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
                 setScrolled(isScrolled)
             }
         }
-        const markRail = (chap: number) => {
-            rootRef.current?.querySelectorAll<HTMLElement>('[data-rail-link]').forEach((a, i) => a.setAttribute('data-on', String(i === chap)))
-        }
 
         const journeyEl = document.getElementById('journey')
         const pin = journeyEl?.firstElementChild as HTMLElement | null | undefined
@@ -296,7 +293,6 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         const settleChapter = () => {
             window.clearTimeout(chromeTimer)
             chromeTimer = window.setTimeout(() => {
-                markRail(Math.min(state, P - 1))
                 setJourneyChapter(state)
                 guide()
             }, 80)

@@ -14,7 +14,7 @@ import { addFrame } from '@/lib/frame-loop'
 import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
-import { Box, Cylinder, GroundBlob, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
+import { Box, Cylinder, GroundBlob, GroundPlane, Gable, HipRoof, makeBrickTexture, makeStoneTexture, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
@@ -325,21 +325,29 @@ function SignBoard({ nightRef, size, at }: { nightRef: React.MutableRefObject<nu
     )
 }
 
+// Texture sân (vẽ một lần ở module, dùng lại giữa các lần dựng lại cảnh): gạch tile 14,4 đơn vị, đá lát tile 10 đơn vị
+let brickTex: THREE.Texture | null = null
+let stoneTex: THREE.Texture | null = null
+
 function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
     const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name) })
+    brickTex ??= makeBrickTexture([45 / 14.4, 41 / 14.4])
+    stoneTex ??= makeStoneTexture([0.5, 1.1])
 
     return (
         <>
-            {/* Bóng mềm dưới đế khuôn viên (ellipse #0A1A50 ~12%) để mô hình nổi khỏi nền */}
-            <GroundBlob foot={[80, 72, 0, -1]} y={-1.8} opacity={0.12} />
             {/* Nền, đường, bãi cỏ */}
             <Box s={[46, 1, 42]} c={C.plateEdge} at={[0, -1.2, -1]} />
             <Box s={[45, 0.4, 41]} c={C.plate} at={[0, -0.4, -1]} />
-            <gridHelper args={[45, 22, C.grid, C.grid]} position={[0, 0.01, -1]} scale={[1, 1, 41 / 45]} material-transparent material-opacity={0.5} />
+            {/* Sân gạch đỏ đất nung (texture lặp) nằm ngay trên mặt đế; lối đi đá lát từ cổng vào A2 */}
+            <GroundPlane s={[45, 41]} at={[0, 0.005, -1]} tex={brickTex} />
             <Box s={[45, 0.02, 2]} c={C.road} at={[0, 0, 18.4]} />
-            <Box s={[5, 0.02, 11]} c={C.pave} at={[2, 0, 11]} />
-            {LAWNS.map(([x, z, w, d], i) => (
-                <Box key={i} s={[w, 0.08, d]} c={i % 2 ? C.grassDark : C.grass} at={[x, 0, z]} />
+            <GroundPlane s={[5, 11]} at={[2, 0.03, 11]} tex={stoneTex} />
+            {LAWNS.map(([x, z, w, d]) => (
+                <group key={`${x}_${z}`}>
+                    <Box s={[w + 0.5, 0.06, d + 0.5]} c={C.lawnEdge} at={[x, 0, z]} />
+                    <Box s={[w, 0.09, d]} c={C.grass} at={[x, 0, z]} />
+                </group>
             ))}
             {Array.from({ length: 7 }, (_, i) => (
                 <Box key={i} s={[0.2, 0.03, 1.8]} c={CAMPUS.pureWhite} at={[-2.5 + i * 1.4, 0, 18.4]} />
@@ -472,7 +480,6 @@ const HEMI_GROUND_DAY = new THREE.Color(CAMPUS.groundLight)
 const HEMI_GROUND_NIGHT = new THREE.Color(CAMPUS.nightGroundLight)
 const TARGET = new THREE.Vector3(0, 3, 0)
 const START_POS = new THREE.Vector3(52, 40, 58)
-const Y_AXIS = new THREE.Vector3(0, 1, 0)
 
 /** Phạm vi cần nằm gọn trong khung ở mọi góc xoay (đơn vị cảnh): bán kính ngang (đế + mây) và nửa chiều cao (tính cả nhãn). */
 const BOUND_RADIUS = 31
@@ -490,7 +497,7 @@ const POLAR_RANGE = 0.17
 const TEXT_GAP = 48
 /** Khuôn viên (cả cạnh đế) chiếm tối đa chừng này bề ngang ở hero: mô hình là bối cảnh, không phải tiêu điểm */
 const HERO_MAX_W = 0.48
-/** Chừa bên phải cho rail chương (px) */
+/** Chừa tối thiểu bên phải khung (px) */
 const RIGHT_GAP = 72
 const FIT_RADIUS = BOUND_RADIUS
 const RETURN_RATE = 2.2
