@@ -14,7 +14,7 @@ import { addFrame } from '@/lib/frame-loop'
 import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
-import { Box, Cylinder, GroundBlob, GroundPlane, Gable, HipRoof, makeBrickTexture, makeStoneTexture, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
+import { Box, Cylinder, GroundBlob, GroundPlane, Gable, HipRoof, makeConcreteTexture, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
@@ -35,7 +35,7 @@ const OPAQUE = isWebKit || FLAGS.opaque
 // Hằng số ngoài component để useMemo của TextPlane không tính lại mỗi lần render
 const T_PTIT: TextOpts = { size: 200 }
 const T_HEART: TextOpts = { size: 170 }
-const T_GATE: TextOpts = { size: [120, 62], h: 256 }
+const T_GATE_W: TextOpts = { size: [120, 62], h: 256, fg: CAMPUS.pureWhite }
 
 // ─── Tòa nhà (có nâng khi hover và nhãn) ───────────────────────────────────
 
@@ -312,9 +312,9 @@ interface WorldProps {
 const GATE_AT: Vec3 = [2, 0, 16.5]
 
 /** Tấm biển nền của chữ: ban đêm tối dần để chữ LED nổi lên (không hắt sáng, không đèn chiếu lên mặt biển) */
-function SignBoard({ nightRef, size, at }: { nightRef: React.MutableRefObject<number>; size: Vec3; at: Vec3 }) {
-    const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: CAMPUS.gateSign, flatShading: true, roughness: 0.9 }), [])
-    const day = useMemo(() => new THREE.Color(CAMPUS.gateSign), [])
+function SignBoard({ nightRef, size, at, color = CAMPUS.gateSign }: { nightRef: React.MutableRefObject<number>; size: Vec3; at: Vec3; color?: string }) {
+    const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.9 }), [color])
+    const day = useMemo(() => new THREE.Color(color), [color])
     const night = useMemo(() => new THREE.Color(CAMPUS.signNight), [])
     useEffect(() => () => mat.dispose(), [mat])
     useFrame(() => mat.color.copy(day).lerp(night, nightRef.current))
@@ -326,23 +326,39 @@ function SignBoard({ nightRef, size, at }: { nightRef: React.MutableRefObject<nu
 }
 
 // Texture sân (vẽ một lần ở module, dùng lại giữa các lần dựng lại cảnh): gạch tile 14,4 đơn vị, đá lát tile 10 đơn vị
-let brickTex: THREE.Texture | null = null
-let stoneTex: THREE.Texture | null = null
+let concreteTex: THREE.Texture | null = null
+
+/** Cây hoa sưa: tán xanh nhạt điểm chùm hoa trắng (khối cầu nhỏ trắng xen xanh), cao hơn cây thường */
+const SUA_SPOTS: [number, number, number][] = [[-1.6, 8.6, 1.35], [5.6, 12.2, 1.25], [-1.6, 13.6, 1.4]]
+const SUA_PUFFS: [number, number, number, number][] = [[0, 0, 0, 1.15], [0.8, -0.35, 0.3, 0.8], [-0.75, -0.2, -0.35, 0.8], [0.15, 0.75, 0.2, 0.75], [-0.3, 0.1, 0.85, 0.7], [0.45, 0.3, -0.7, 0.7]]
+function SuaTree({ x, z, s, lowQuality }: { x: number; z: number; s: number; lowQuality: boolean }) {
+    return (
+        <group position={[x, 0, z]} scale={s}>
+            <mesh position={[0, 0.9, 0]} material={stdMat(C.trunk)} castShadow={!lowQuality} receiveShadow>
+                <cylinderGeometry args={[0.13, 0.2, 1.8, 6]} />
+            </mesh>
+            {SUA_PUFFS.map(([px, py, pz, r], i) => (
+                <mesh key={i} position={[px, 2.5 + py, pz]} material={stdMat(i % 2 ? C.suaWhite : C.suaGreen)} castShadow={!lowQuality} receiveShadow>
+                    <icosahedronGeometry args={[r, 0]} />
+                </mesh>
+            ))}
+        </group>
+    )
+}
 
 function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
     const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name) })
-    brickTex ??= makeBrickTexture([45 / 14.4, 41 / 14.4])
-    stoneTex ??= makeStoneTexture([0.5, 1.1])
+    concreteTex ??= makeConcreteTexture([45 / 12, 41 / 12])
 
     return (
         <>
             {/* Nền, đường, bãi cỏ */}
             <Box s={[46, 1, 42]} c={C.plateEdge} at={[0, -1.2, -1]} />
             <Box s={[45, 0.4, 41]} c={C.plate} at={[0, -0.4, -1]} />
-            {/* Sân gạch đỏ đất nung (texture lặp) nằm ngay trên mặt đế; lối đi đá lát từ cổng vào A2 */}
-            <GroundPlane s={[45, 41]} at={[0, 0.005, -1]} tex={brickTex} />
+            {/* Sân bê tông xám (texture lặp) nằm ngay trên mặt đế; lối xe nhựa đường từ cổng vào A2 */}
+            <GroundPlane s={[45, 41]} at={[0, 0.005, -1]} tex={concreteTex} />
             <Box s={[45, 0.02, 2]} c={C.road} at={[0, 0, 18.4]} />
-            <GroundPlane s={[5, 11]} at={[2, 0.03, 11]} tex={stoneTex} />
+            <Box s={[5, 0.03, 11]} c={C.pave} at={[2, 0, 11]} />
             {LAWNS.map(([x, z, w, d]) => (
                 <group key={`${x}_${z}`}>
                     <Box s={[w + 0.5, 0.06, d + 0.5]} c={C.lawnEdge} at={[x, 0, z]} />
@@ -367,11 +383,13 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     <Box edges s={[6.8, 11, 4.6]} c={C.cream} at={[0, 2.8, -0.8]} />
                     <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[-4.05, 2.8, -0.8]} />
                     <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
-                    <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.25, metalness: 0.35 }} />
-                    <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.35 }} />
+                    <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.25, metalness: 0.3 }} />
+                    <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.3 }} />
                     <Box edges s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
-                    <HipRoof w={5.2} h={1.6} d={3.6} c={C.roofRed} at={[0, 14.3, -1.2]} />
-                    <Gable len={0.5} h={1.8} depth={5} c={C.cream} at={[0, 13.8, 1.35]} alongZ />
+                    {/* Mái bằng như ảnh thật: khối mái trắng, tam giác trắng phía trước, viền đỏ mảnh */}
+                    <Box s={[6.2, 0.6, 4.0]} c={C.roofFlat} at={[0, 14.3, -0.9]} />
+                    <Box s={[6.9, 0.07, 4.9]} c={C.ptitRed} at={[0, 14.3, -0.8]} />
+                    <Gable len={0.5} h={1.8} depth={5} c={C.roofFlat} at={[0, 13.8, 1.35]} alongZ />
                     {/* Đồng hồ */}
                     <mesh position={[0, 14.55, 1.65]} rotation={[Math.PI / 2, 0, 0]} material={CLOCK_FACE} castShadow receiveShadow>
                         <cylinderGeometry args={[0.62, 0.62, 0.12, 24]} />
@@ -382,7 +400,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     <Box s={[0.06, 0.45, 0.04]} c={CAMPUS.ink} at={[0, 14.55, 1.74]} />
                     <Box s={[0.36, 0.06, 0.04]} c={CAMPUS.ink} at={[0.16, 14.55, 1.74]} />
                     {/* Biển nền mỏng nằm trên dải kính (rộng 1.8) làm khung cho chữ */}
-                    <SignBoard nightRef={nightRef} size={[1.6, 0.7, 0.06]} at={[0, 12.9, 1.755]} />
+                    <SignBoard nightRef={nightRef} size={[1.6, 0.7, 0.06]} at={[0, 12.9, 1.755]} color={C.signWhite} />
                     <TextPlane w={1.4} h={0.5} text="PTIT" at={[0, 12.9, 1.8]} opts={T_PTIT} nightRef={nightRef} glow={!lowQuality} />
 
                     <A2Windows nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={stage} />
@@ -402,6 +420,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             {/* Tòa A3: khối vàng, mái chóp đỏ; xoay mặt về phía A2 */}
             <Building {...b('Tòa A3')} anchorY={7.6} position={[17.5, 0, -6]} rotY={-Math.PI / 2} foot={[16, 8]}>
                 <Box edges s={[13, 4.6, 4.4]} c={C.yellow} />
+                <Box s={[13.3, 0.28, 4.7]} c={C.ptitRed} at={[0, 4.32, 0]} />
                 {Array.from({ length: 10 }, (_, i) => (
                     <Box key={i} s={[0.7, 3.4, 0.1]} c={C.win} at={[-5.4 + i * 1.2, 0.6, 2.23]} />
                 ))}
@@ -427,7 +446,9 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                 {Array.from({ length: 5 }, (_, r) => (
                     <Box key={r} s={[7.6, 0.18, 6.1]} c={C.a1Trim} at={[0, 0.7 + r * 0.95, 0]} />
                 ))}
-                <Box s={[7.6, 0.9, 0.1]} c={CAMPUS.bandGreen} at={[0, 0.2, 3.05]} />
+                {Array.from({ length: 4 }, (_, r) => (
+                    <Box key={`w${r}`} s={[6.8, 0.55, 0.1]} c={CAMPUS.hallWindow} at={[0, 1.0 + r * 0.95, 3.04]} o={{ roughness: 0.25, metalness: 0.3 }} />
+                ))}
             </Building>
 
             <Building {...b('Canteen')} anchorY={4.2} position={[17.5, 0, -17.5]} foot={[9, 7]}>
@@ -441,7 +462,8 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                 ))}
                 <Box edges s={[8, 0.5, 1]} c={CAMPUS.gateBeam} at={[0, 3.6, 0]} />
                 <SignBoard nightRef={nightRef} size={[7.4, 1.6, 0.2]} at={[0, 4.9, 0]} />
-                <TextPlane w={7.0} h={1.3} text={'HỌC VIỆN\nCÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG'} at={[0, 4.9, 0.115]} opts={T_GATE} nightRef={nightRef} glow={!lowQuality} />
+                <Box s={[7.4, 0.32, 0.12]} c={C.gateBlue} at={[0, 3.66, 0.56]} />
+                <TextPlane w={7.0} h={1.3} text={'HỌC VIỆN\nCÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG'} at={[0, 4.9, 0.115]} opts={T_GATE_W} nightRef={nightRef} glow={!lowQuality} />
                 {Array.from({ length: 9 }, (_, i) => (
                     <Box key={i} s={[0.08, 1.4, 0.08]} c={CAMPUS.fence} at={[4.6 + i * 0.55, 0, 0]} />
                 ))}
@@ -462,6 +484,10 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                     </group>
                 )
             })}
+
+            {SUA_SPOTS.map(([x, z, s]) => (
+                <SuaTree key={`${x}_${z}`} x={x} z={z} s={s} lowQuality={lowQuality} />
+            ))}
 
             {[0, 1, 2, 3].map((i) => (
                 <Cloud key={i} index={i} reduce={reduce} />

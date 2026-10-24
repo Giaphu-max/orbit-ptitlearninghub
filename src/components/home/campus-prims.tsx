@@ -320,42 +320,48 @@ function makeTileTexture(draw: (ctx: CanvasRenderingContext2D, n: number) => voi
 }
 const rng = (seed: number) => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)
 
-/** Sân chính: gạch block đỏ đất nung #C7765E, mạch #E2B3A2, hàng so le, vài viên đậm/nhạt ngẫu nhiên. 16 viên × 32 hàng trên mỗi tile 512px. */
-export function makeBrickTexture(repeat: [number, number]) {
+/**
+ * Sân bê tông xám sáng #C4C8CF: nhiễu hạt ±4% độ sáng, vài vết loang mờ lớn (#BBC0C8 / #CDD1D7), ron chia ô lớn #B2B7C0.
+ * Một tile 512px = 12 đơn vị cảnh, 3 ô mỗi chiều (≈4 đơn vị/ô); các vết loang vẽ cả bản sao qua mép để lặp liền mạch.
+ */
+export function makeConcreteTexture(repeat: [number, number]) {
     return makeTileTexture((ctx, n) => {
-        const bw = 32
-        const bh = 16
-        const rnd = rng(7)
-        ctx.fillStyle = '#E2B3A2'
+        const rnd = rng(23)
+        ctx.fillStyle = '#C4C8CF'
         ctx.fillRect(0, 0, n, n)
-        for (let r = 0; r < n / bh; r++) {
-            const off = r % 2 ? bw / 2 : 0
-            for (let c = -1; c < n / bw + 1; c++) {
-                const x = c * bw + off
-                const y = r * bh
-                const k = rnd()
-                ctx.fillStyle = k < 0.14 ? '#B9664F' : k < 0.3 ? '#D08770' : '#C7765E'
-                // Viên gạch nằm trong mạch 2px; vẽ cả bản sao qua mép tile để lặp liền mạch
-                ctx.fillRect(x + 1, y + 1, bw - 2, bh - 2)
-                if (x + bw > n) ctx.fillRect(x - n + 1, y + 1, bw - 2, bh - 2)
+        for (let i = 0; i < 26; i++) {
+            const x = rnd() * n
+            const y = rnd() * n
+            const r = 50 + rnd() * 90
+            const col = rnd() < 0.5 ? '187,192,200' : '205,209,215'
+            for (const [dx, dy] of [[0, 0], [n, 0], [-n, 0], [0, n], [0, -n]]) {
+                const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r)
+                g.addColorStop(0, `rgba(${col},0.55)`)
+                g.addColorStop(1, `rgba(${col},0)`)
+                ctx.fillStyle = g
+                ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2)
             }
         }
-    }, repeat)
-}
-
-/** Lối đi: đá lát xám ấm #BDB6AA, ô lớn 64px, mạch #A69E91. */
-export function makeStoneTexture(repeat: [number, number]) {
-    return makeTileTexture((ctx, n) => {
-        const s = 64
-        const rnd = rng(11)
-        ctx.fillStyle = '#A69E91'
-        ctx.fillRect(0, 0, n, n)
-        for (let r = 0; r < n / s; r++)
-            for (let c = 0; c < n / s; c++) {
-                const k = rnd()
-                ctx.fillStyle = k < 0.2 ? '#B3ACA0' : k < 0.4 ? '#C6BFB3' : '#BDB6AA'
-                ctx.fillRect(c * s + 2, r * s + 2, s - 4, s - 4)
+        // Hạt: cộng/trừ tới ±4% độ sáng
+        const img = ctx.getImageData(0, 0, n, n)
+        for (let i = 0; i < n * n; i++) {
+            const d = (rnd() - 0.5) * 2 * 0.04 * 255
+            img.data[i * 4] += d
+            img.data[i * 4 + 1] += d
+            img.data[i * 4 + 2] += d
+        }
+        ctx.putImageData(img, 0, 0)
+        // Ron: đường mờ 2px ở 0, n/3, 2n/3 (đường ở 0 vẽ cả hai mép tile)
+        ctx.fillStyle = 'rgba(178,183,192,0.75)'
+        for (let k = 0; k < 3; k++) {
+            const o = Math.round((k * n) / 3)
+            ctx.fillRect(o - 1, 0, 2, n)
+            ctx.fillRect(0, o - 1, n, 2)
+            if (k === 0) {
+                ctx.fillRect(n - 1, 0, 1, n)
+                ctx.fillRect(0, n - 1, n, 1)
             }
+        }
     }, repeat)
 }
 
