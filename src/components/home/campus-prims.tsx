@@ -91,13 +91,16 @@ function getBlobTex() {
 }
 const blobMat = new THREE.MeshBasicMaterial({ color: CAMPUS.shadowInk, transparent: true, opacity: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 })
 /** Bóng tiếp đất [rộng, sâu, lệch x, lệch z] dưới chân tòa (hệ tọa độ của tòa) */
-export function GroundBlob({ foot }: { foot: [number, number, number?, number?] }) {
+export function GroundBlob({ foot, y = 0.1, opacity }: { foot: [number, number, number?, number?]; y?: number; opacity?: number }) {
     const mat = useMemo(() => {
         blobMat.map = getBlobTex()
-        return blobMat
-    }, [])
+        if (opacity === undefined) return blobMat
+        const m = blobMat.clone()
+        m.opacity = opacity
+        return m
+    }, [opacity])
     return (
-        <mesh position={[foot[2] ?? 0, 0.1, foot[3] ?? 0]} rotation={[-Math.PI / 2, 0, 0]} material={mat} renderOrder={1}>
+        <mesh position={[foot[2] ?? 0, y, foot[3] ?? 0]} rotation={[-Math.PI / 2, 0, 0]} material={mat} renderOrder={1}>
             <planeGeometry args={[foot[0], foot[1]]} />
         </mesh>
     )

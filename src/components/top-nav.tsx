@@ -102,9 +102,10 @@ export function TopNav() {
     const [menuOpen, setMenuOpen] = useState(false)
     const onHome = pathname === '/'
     const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
-    const scrolled = useScrolledPast(true, 60)
+    // Trang chủ hành trình: chỉ đọc chương đã chốt (không đọc scrollY); các trang khác và trang chủ giảm chuyển động (chapter = -1) đọc scrollY
+    const scrolled = useScrolledPast(!onHome || chapter < 0, 60)
     const narrow = useNarrow()
-    const collapsed = narrow || scrolled || (onHome && chapter >= 1)
+    const collapsed = narrow || (onHome && chapter >= 0 ? chapter >= 1 : scrolled)
     const tabParam = new URLSearchParams(search).get('tab')
     const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : it.match(pathname))
     const goTo = (e: ReactMouseEvent, it: NavItem) => {

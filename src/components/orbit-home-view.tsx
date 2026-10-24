@@ -35,7 +35,7 @@ export function OrbitHomeView() {
     const calmRef = useRef(calm)
     calmRef.current = calm
     // Paged: trang chủ cao đúng 100svh, không cuộn tài liệu (Safari vẽ lại cả màn hình mỗi khi tài liệu cuộn đè lên stage fixed); footer là chương 4
-    const paged = journey && !calm && !FLAGS.docScroll
+    const paged = journey && !FLAGS.docScroll
     const { stage } = useScrollStage({ journey, paged, barRef, rootRef, calmRef })
     const dailyLit = useDailyLit(stage, reduce)
     const screenRef = useRef<HTMLDivElement>(null)
@@ -144,7 +144,7 @@ export function OrbitHomeView() {
 const RAIL = [['top', 'Trang chủ'], ['daily', '01 Hôm nay'], ['courses', '02 Khóa học'], ['studio', '03 Studio 3D']] as const
 function ChapterRail({ navRef }: { navRef: RefObject<HTMLElement | null> }) {
     return (
-        <nav ref={navRef} data-rail aria-label="Chương" className="own-layer fixed right-[max(1.25rem,2.4vw)] top-1/2 z-[6] hidden -translate-y-1/2 flex-col gap-3.5 min-[860px]:flex group-data-[kiosk=on]/home:pointer-events-none">
+        <nav ref={navRef} data-rail aria-label="Chương" className="ptit-rail own-layer fixed right-[max(1.25rem,2.4vw)] top-1/2 z-[8] hidden -translate-y-1/2 flex-col gap-3.5 rounded-2xl px-3 py-2.5 min-[860px]:flex group-data-[kiosk=on]/home:pointer-events-none">
             {RAIL.map(([id, label], i) => (
                 <button
                     key={id}
@@ -152,10 +152,10 @@ function ChapterRail({ navRef }: { navRef: RefObject<HTMLElement | null> }) {
                     data-rail-link
                     data-on={i === 0}
                     onClick={() => scrollToSection(id)}
-                    className="group/r flex items-center justify-end gap-2.5 font-mono text-[11px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 data-[on=true]:text-foreground"
+                    className="group/r flex items-center justify-end gap-2.5 font-mono text-[11px] font-semibold text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                 >
                     <span className="translate-x-1.5 opacity-0 transition duration-base group-hover/r:translate-x-0 group-hover/r:opacity-100 group-data-[on=true]/r:translate-x-0 group-data-[on=true]/r:opacity-100">{label}</span>
-                    <i className="h-0.5 w-6 rounded bg-[hsl(var(--rail-idle))] transition-all duration-base group-data-[on=true]/r:w-10 group-data-[on=true]/r:bg-brand-600" />
+                    <i className="h-0.5 w-3.5 rounded bg-[hsl(var(--rail-idle))] transition-all duration-base group-data-[on=true]/r:w-7 group-data-[on=true]/r:bg-brand-600" />
                 </button>
             ))}
         </nav>

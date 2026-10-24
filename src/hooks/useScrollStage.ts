@@ -56,8 +56,7 @@ const BACK = 0.7
 const REVEAL_BACK = 0.5
 const FLIGHT_FLOOR = 0.35
 /** Dòng hướng dẫn góc dưới trái theo chương hiện tại */
-const GUIDE = ['Cuộn để khám phá các chức năng', 'Hôm nay · 1/3 — cuộn tiếp: Khóa học', 'Khóa học · 2/3 — cuộn tiếp: Studio', 'Studio · 3/3 — cuộn tiếp: cuối trang', ''] as const
-const GUIDE_FLYING = 'Cuộn thêm để chạy nhanh hơn'
+const GUIDE_TEXT = 'Cuộn để khám phá các chức năng'
 /** Footer (chương 4, chế độ paged) trượt lên/xuống trong chừng này (ms) */
 const FOOTER_MS = 600
 /** Lớp che khi cắt cảnh mờ đi trong chừng này (giây) */
@@ -234,13 +233,11 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         // Dòng hướng dẫn cho người mới (góc dưới trái): chỉ ghi DOM khi đổi
         const guideEl = rootRef.current?.querySelector<HTMLElement>('[data-guide]')
         const guideText = guideEl?.querySelector<HTMLElement>('[data-guide-text]')
-        const narrowMq = window.matchMedia(STATIC_QUERY)
         const guide = () => {
             if (!guideEl || !guideText) return
-            const text = flying() && state < P ? GUIDE_FLYING : GUIDE[Math.max(0, state)]
-            if (guideText.textContent !== text) guideText.textContent = text
-            // Màn hẹp chật chỗ: chỉ hiện ở hero để không đè chữ panel
-            const show = inStage() && state < P && (!narrowMq.matches || (state <= 0 && !flying()))
+            // Chỉ chương 0 (đã chốt) có dòng hướng dẫn; từ chương 01 trở đi rail đã đủ
+            if (guideText.textContent !== GUIDE_TEXT) guideText.textContent = GUIDE_TEXT
+            const show = inStage() && shown === 0 && state === 0 && !flying()
             const op = show ? '1' : '0'
             if (guideEl.style.opacity !== op) guideEl.style.opacity = op
         }
@@ -293,8 +290,10 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         setPagedMode(paged)
         if (paged) document.documentElement.classList.add('home-paged')
 
+        // MỘT giá trị "chương đã chốt" cho navbar, rail, dòng hướng dẫn và cột chữ: cập nhật đúng lúc chữ của chương mới bắt đầu hiện
+        // (revealIfReady), dời 80ms khỏi khung đó để khung đổi panel không phải dựng lại React.
         let chromeTimer = 0
-        const deferChrome = () => {
+        const settleChapter = () => {
             window.clearTimeout(chromeTimer)
             chromeTimer = window.setTimeout(() => {
                 markRail(Math.min(state, P - 1))
@@ -327,7 +326,8 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             const [, v] = twAt()
             const to = STOP[Math.min(i, STOP.length - 1)]
             backFlight = !first && to < S
-            const still = first || cut
+            // Làm mờ cảnh: cảnh 3D đứng yên nên không bay, chương đổi tức thì
+            const still = first || cut || calmRef.current
             let D = still ? 0 : flightTime(S, to) * (midFlight ? CHAIN : 1) * (backFlight ? BACK : 1)
             if (D > 0) D = Math.max(D, FLIGHT_FLOOR)
             tw = { from: S, to, v0: still ? 0 : clamp(v, -V_LIMIT, V_LIMIT), p: D > 0 ? 0 : 1, D }
@@ -348,8 +348,7 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             })
             shown = -1
             stageSignal.onStage = 0
-            // Rail, trạng thái chương cho nav và dòng hướng dẫn không cần ngay: dời khỏi khung đổi chương để khung đó chỉ lo đổi panel
-            deferChrome()
+            guide()
         }
         // Hero ↔ Hôm nay (chuyến bay giữa hai chương đầu) dùng mốc 60% cho cả hai chiều; đi lùi 50%
         const revealAt = () => (backFlight ? REVEAL_BACK : state === 1 || (state === 0 && prevState === 1) ? REVEAL_HERO_LEG : REVEAL[state])
@@ -358,12 +357,14 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             if (shown === state || state < 0) return
             if (state >= P) {
                 shown = state // chương footer: không có panel chữ
+                settleChapter()
                 return
             }
             if (tw.D <= 0 || calmRef.current || tw.p >= revealAt()) {
                 panels[state].classList.add('on')
                 shown = state
                 stageSignal.onStage = state === 1 || state === 3 ? 1 : 0
+                settleChapter()
             }
         }
 
@@ -428,7 +429,7 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         }
         // Trả true nếu đã nhận input; hero cuộn lên và Studio cuộn xuống thì thả cho cuộn tự nhiên (xuống footer)
         const step = (dir: number) => {
-            if (calmRef.current || !inStage()) return false
+            if (!inStage()) return false
             const now = performance.now()
             // Bước trước đã xong mà chưa nằm đúng chương hiện tại (vào từ footer, kéo thanh cuộn): về đúng chương đó trước
             if (now - lastStepAt > SETTLE_AFTER_MS && !settled()) {
@@ -457,7 +458,6 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             const now = performance.now()
             const idle = now - lastWheel
             lastWheel = now
-            if (calmRef.current) return
             if (!inStage()) {
                 // Quán tính của cú vuốt từ footer lên: nhớ để dừng ở Studio khi vào vùng ghim
                 fromFooter = window.scrollY > top()
@@ -534,7 +534,7 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
                 if (e.cancelable) e.preventDefault()
                 return
             }
-            if (calmRef.current || !inStage() || touchY == null) return
+            if (!inStage() || touchY == null) return
             const dir = Math.sign(touchY - e.touches[0].clientY)
             const releasing = paged ? state === N - 1 && footerScrollable : (state === 0 && dir < 0) || (state === N - 1 && dir > 0 && window.scrollY >= chapterY(N - 1) - 4)
             if (!releasing && e.cancelable) e.preventDefault()
@@ -543,7 +543,7 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             if (touchY == null) return
             const dy = touchY - e.changedTouches[0].clientY
             touchY = null
-            if (benchState.active || Math.abs(dy) <= SWIPE_PX || calmRef.current || !inStage()) return
+            if (benchState.active || Math.abs(dy) <= SWIPE_PX || !inStage()) return
             const d = Math.sign(dy)
             if (paged && state === N - 1 && footerScrollable && (d > 0 || (footerEl?.scrollTop ?? 0) > 0)) return
             if (flying() && d === flightDir()) return addBoost(BOOST_TOUCH)
@@ -563,7 +563,7 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             if (!dir || e.metaKey || e.ctrlKey || e.altKey || el?.closest('input,textarea,select,[contenteditable="true"]')) return
             if (e.key === ' ' && el?.closest('button,a')) return
             if (benchState.active) return void e.preventDefault()
-            if (calmRef.current || !inStage()) return
+            if (!inStage()) return
             if (flying() && dir === flightDir()) {
                 e.preventDefault()
                 addBoost(BOOST_KEY)
@@ -591,6 +591,13 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             flushOverlay()
             boost *= Math.exp(-dt * BOOST_DECAY) // sức đẩy mờ dần khi ngừng cuộn
             S = twAt()[0]
+            if (!Number.isFinite(S)) {
+                // Chốt chặn: tween hỏng thì đặt thẳng về điểm dừng của chương hiện tại
+                if (import.meta.env.DEV) console.warn('[useScrollStage] S không hợp lệ:', S, 'chương', state, '→ về điểm dừng gần nhất')
+                S = STOP[clamp(Math.max(0, state), 0, STOP.length - 1)]
+                tw = { from: S, to: S, v0: 0, p: 1, D: 0 }
+            }
+            S = clamp(S, 0, STOP[STOP.length - 1])
             stage.current = S
             revealIfReady()
             if (now - guideAt > 250) {

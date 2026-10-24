@@ -330,6 +330,8 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
 
     return (
         <>
+            {/* Bóng mềm dưới đế khuôn viên (ellipse #0A1A50 ~12%) để mô hình nổi khỏi nền */}
+            <GroundBlob foot={[80, 72, 0, -1]} y={-1.8} opacity={0.12} />
             {/* Nền, đường, bãi cỏ */}
             <Box s={[46, 1, 42]} c={C.plateEdge} at={[0, -1.2, -1]} />
             <Box s={[45, 0.4, 41]} c={C.plate} at={[0, -0.4, -1]} />
@@ -1019,6 +1021,12 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         if (!calmOn) {
             sm.current = want // useScrollStage đã tween S theo thời gian nên không làm mượt thêm
         }
+        // Chốt chặn: S hỏng (NaN/Infinity) thì về chương gần nhất, S ngoài [0, 3] thì kẹp lại
+        if (!Number.isFinite(sm.current)) {
+            if (import.meta.env.DEV) console.warn('[campus] S không hợp lệ:', sm.current, '→ đặt về chương gần nhất')
+            sm.current = Number.isFinite(want) ? want : 0
+        }
+        sm.current = THREE.MathUtils.clamp(sm.current, 0, 3)
         const S = sm.current
         const live = S > HERO_EPS // đã rời hero: camera chạy theo đường bay, hero tắt kéo xoay và tự xoay
         // Vào/ra nhà đổi ngay tại điểm cắt, lúc màn đang tối hẳn
@@ -1038,6 +1046,18 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 // Về hero: camera đang ở (gần) đúng góc hero, bật lại kéo xoay + tự xoay
                 ctl.enabled = true
                 ctl.target.copy(TARGET)
+                // Về hero bằng cắt cảnh (logo, rail, Home): máy quay còn nằm ở chương cũ (trong sảnh, sát kiosk...) nên đặt lại thẳng góc hero mặc định
+                // (giữ khoảng cách hero đã fit), bỏ góc kéo chuột và damping cũ. Bay về từ từ thì máy quay đã ở đúng heroPos, không đổi gì.
+                const hd = heroPos.current.distanceTo(TARGET)
+                const hdist = Number.isFinite(hd) && hd > 5 ? hd : START_POS.distanceTo(TARGET)
+                const cp = camera.position
+                if (!Number.isFinite(cp.x + cp.y + cp.z) || cp.distanceTo(heroPos.current) > 1) {
+                    cp.copy(TARGET).add(_off.copy(HERO_OFF).setLength(hdist))
+                    heroPos.current.copy(cp)
+                }
+                camera.up.set(0, 1, 0)
+                camera.lookAt(TARGET)
+                returning.current = false
                 returning.current = !dragging.current
                 ctl.update()
                 ctlOn.current = true

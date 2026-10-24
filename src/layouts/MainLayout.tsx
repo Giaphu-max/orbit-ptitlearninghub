@@ -17,7 +17,7 @@ export function MainLayout() {
     if (!role) return <OrbitRoleSelect />
 
     return (
-        <div className="relative isolate flex min-h-[100svh] w-full flex-col bg-surface font-sans text-foreground">
+        <div className="paper-bg relative isolate flex min-h-[100svh] w-full flex-col bg-surface font-sans text-foreground">
             {/* ── Global Premium Ambient Glow Background ── */}
             <div aria-hidden className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
                 {/* Soft Rose glow on top right */}
