@@ -50,21 +50,28 @@
 }
 .rs-h1 {
   margin: 0;
-  max-width: 10ch;
-  font-size: clamp(46px, 5vw, 92px);
-  line-height: 1;
+  font-size: clamp(44px, 4.9vw, 92px);
+  line-height: 1.02;
   letter-spacing: -0.045em;
   font-weight: 900;
   color: var(--rs-navy);
-  text-wrap: balance;
+}
+.rs-h1 .l {
+  display: block;
+  white-space: nowrap;
 }
 .rs-h1 em {
   font-style: normal;
   color: var(--rs-red-600);
 }
+@media (max-width: 620px) {
+  .rs-h1 .l {
+    white-space: normal;
+  }
+}
 .rs-lead {
   margin: 0;
-  max-width: 44ch;
+  max-width: 50ch;
   font-size: clamp(16px, 1.2vw, 20px);
   line-height: 1.6;
   color: var(--rs-ink);
@@ -72,26 +79,109 @@
 .rs-roles {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  max-width: 700px;
-  margin-top: clamp(22px, 4vh, 44px);
+  gap: 20px;
+  max-width: 780px;
+  margin-top: clamp(24px, 4.5vh, 48px);
 }
+@property --a {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+/* Khối vai trò: màu đặc, cả khối là một button */
 .rs-role {
+  --rs-block: #bc2626;
   position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
-  min-height: 200px;
-  padding: clamp(22px, 1.8vw, 30px);
+  min-height: 236px;
+  padding: clamp(24px, 2vw, 34px);
   text-align: left;
   cursor: pointer;
-  color: var(--rs-ink);
-  background: #fff;
-  border: 1.5px solid var(--rs-line);
+  color: #fff;
+  background: linear-gradient(150deg, #d63a2f 0%, #bc2626 55%, #8e1b17 100%);
+  border: 0;
   border-radius: 22px;
-  box-shadow: 0 1px 2px rgb(10 26 80 / 0.04), 0 10px 26px rgb(10 26 80 / 0.07);
-  transition: transform 0.35s var(--rs-ease), border-color 0.25s, box-shadow 0.35s var(--rs-ease), opacity 0.3s;
+  box-shadow: 0 2px 4px rgb(10 26 80 / 0.08), 0 16px 34px rgb(188 38 38 / 0.28);
+  transition: transform 0.35s var(--rs-ease), box-shadow 0.35s var(--rs-ease), opacity 0.3s;
+  animation: rs-float 5s ease-in-out infinite alternate;
+}
+.rs-role[data-role='teacher'] {
+  --rs-block: #0f1f5c;
+  background: linear-gradient(150deg, #1c2e78 0%, #0f1f5c 55%, #071240 100%);
+  box-shadow: 0 2px 4px rgb(10 26 80 / 0.12), 0 16px 34px rgb(10 26 80 / 0.34);
+  animation-delay: -2.5s;
+}
+@keyframes rs-float {
+  from {
+    translate: 0 -6px;
+  }
+  to {
+    translate: 0 6px;
+  }
+}
+.rs-role > * {
+  position: relative;
+  z-index: 1;
+}
+/* Viền 2px: conic-gradient chạy vòng, vệt vàng → trắng (trình duyệt không hỗ trợ @property thì đứng yên) */
+.rs-role::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(from var(--a), transparent 0deg 240deg, #ffd27a 310deg, #fff 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: rs-ring 4.5s linear infinite;
+}
+.rs-role[data-role='teacher']::before {
+  animation-delay: -2.25s;
+}
+@keyframes rs-ring {
+  to {
+    --a: 360deg;
+  }
+}
+/* Vệt sáng chéo lướt qua khối mỗi 6,4s */
+.rs-role::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.28) 48%, rgb(255 255 255 / 0.06) 52%, transparent 65%);
+  transform: translateX(-120%);
+  animation: rs-sheen 6.4s ease-in-out infinite;
+}
+.rs-role[data-role='teacher']::after {
+  animation-delay: 3.2s;
+}
+@keyframes rs-sheen {
+  0%,
+  62% {
+    transform: translateX(-120%);
+  }
+  82%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+/* Quầng sáng trắng theo chuột khi hover */
+.rs-spot {
+  position: absolute;
+  inset: 0;
+  z-index: 0 !important;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), rgb(255 255 255 / 0.22), transparent 60%);
 }
 .rs-row1 {
   display: flex;
@@ -102,70 +192,75 @@
 .rs-ic {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   border-radius: 16px;
-  background: var(--rs-red-50);
-  color: var(--rs-red-600);
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
   transition: background 0.3s, color 0.3s;
-}
-.rs-role[data-role='teacher'] .rs-ic {
-  background: #eef0f7;
-  color: var(--rs-navy);
 }
 .rs-arr {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  border: 1.5px solid var(--rs-line);
-  color: var(--rs-navy);
-  transition: transform 0.35s var(--rs-ease), background 0.3s, color 0.3s, border-color 0.3s;
+  background: #fff;
+  color: var(--rs-block);
+  transition: transform 0.35s var(--rs-ease), background 0.3s, color 0.3s;
+  animation: rs-halo 2.4s ease-out infinite;
+}
+.rs-role[data-role='teacher'] .rs-arr {
+  animation-delay: 1.2s;
+}
+@keyframes rs-halo {
+  from {
+    box-shadow: 0 0 0 0 rgb(255 255 255 / 0.55);
+  }
+  to {
+    box-shadow: 0 0 0 14px rgb(255 255 255 / 0);
+  }
 }
 .rs-role b {
   margin-top: 10px;
-  font-size: clamp(26px, 2.1vw, 36px);
+  font-size: clamp(28px, 2.4vw, 42px);
   line-height: 1.05;
   letter-spacing: -0.03em;
   font-weight: 900;
-  color: var(--rs-navy);
+  color: #fff;
 }
 .rs-role p {
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
-  color: var(--rs-muted);
+  color: rgb(255 255 255 / 0.82);
 }
 .rs-role:hover:not(:disabled),
 .rs-role:focus-visible {
-  transform: translateY(-5px);
-  border-color: var(--rs-red-600);
-  box-shadow: 0 2px 4px rgb(10 26 80 / 0.06), 0 22px 44px rgb(188 38 38 / 0.16);
-}
-.rs-role:hover:not(:disabled) .rs-ic,
-.rs-role:hover:not(:disabled) .rs-arr,
-.rs-role:focus-visible .rs-ic,
-.rs-role:focus-visible .rs-arr {
-  background: var(--rs-red-600);
-  color: #fff;
-  border-color: var(--rs-red-600);
-}
-.rs-role:hover:not(:disabled) .rs-arr,
-.rs-role:focus-visible .rs-arr {
-  transform: translateX(3px);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 4px 8px rgb(10 26 80 / 0.14), 0 28px 56px rgb(188 38 38 / 0.42);
 }
 .rs-role[data-role='teacher']:hover:not(:disabled),
 .rs-role[data-role='teacher']:focus-visible {
-  border-color: var(--rs-navy);
-  box-shadow: 0 2px 4px rgb(10 26 80 / 0.06), 0 22px 44px rgb(10 26 80 / 0.16);
+  box-shadow: 0 4px 8px rgb(10 26 80 / 0.18), 0 28px 56px rgb(10 26 80 / 0.5);
 }
-.rs-role[data-role='teacher']:hover:not(:disabled) .rs-ic,
-.rs-role[data-role='teacher']:hover:not(:disabled) .rs-arr,
-.rs-role[data-role='teacher']:focus-visible .rs-ic,
-.rs-role[data-role='teacher']:focus-visible .rs-arr {
-  background: var(--rs-navy);
-  border-color: var(--rs-navy);
+.rs-role:hover:not(:disabled) .rs-spot,
+.rs-role:focus-visible .rs-spot {
+  opacity: 1;
+}
+.rs-role:hover:not(:disabled) .rs-ic,
+.rs-role:focus-visible .rs-ic {
+  background: #fff;
+  color: var(--rs-block);
+}
+.rs-role:hover:not(:disabled) .rs-arr,
+.rs-role:focus-visible .rs-arr {
+  background: #ffd27a;
+  color: #3a2408;
+  transform: translateX(4px);
+}
+.rs-role:active:not(:disabled) {
+  transform: scale(0.985);
 }
 .rs-role:focus-visible {
   outline: 2px solid #2f6fdb;
@@ -176,9 +271,6 @@
 }
 .rs-roles.dim .rs-role:not(.picked) {
   opacity: 0.35;
-}
-.rs-role.picked {
-  border-color: var(--rs-red-600);
 }
 
 /* Logo "ma" ở góc dưới trái của cả trang, nằm dưới chữ và các khối vai trò */
@@ -278,20 +370,6 @@
     transform: translate(-50%, -50%) scale(1.2) rotate(45deg);
   }
 }
-@keyframes rs-logo-breathe {
-  0% {
-    rotate: 0deg;
-    scale: 1;
-  }
-  50% {
-    rotate: -2.2deg;
-    scale: 1.025;
-  }
-  100% {
-    rotate: 1.6deg;
-    scale: 1.01;
-  }
-}
 .rs-portrait {
   position: absolute;
   right: 0;
@@ -360,7 +438,6 @@
 .rs-art.split .rs-art-logo {
   opacity: 1;
   transform: none;
-  animation: rs-logo-breathe 9s 2.2s ease-in-out infinite alternate;
 }
 .rs-art.live .pc,
 .rs-art.collage .pc {
@@ -438,7 +515,11 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rs-ghost {
+  .rs-ghost,
+  .rs-role,
+  .rs-role::before,
+  .rs-role::after,
+  .rs-arr {
     animation: none !important;
   }
   .rs *,

@@ -36,9 +36,9 @@ export function OrbitRoleSelect() {
             </header>
             <div className="rs-left">
                 <h1 id="rs-h1" className="rs-h1">
-                    Nền tảng học tập <em>thông minh</em>
+                    <span className="l">Học online cùng</span> <em className="l">sinh viên PTIT</em>
                 </h1>
-                <p className="rs-lead">Bài giảng, trợ giảng AI, quiz củng cố, bài đọc mỗi ngày và studio thực hành của Học viện trong một nơi.</p>
+                <p className="rs-lead">Xem lại bài của thầy cô, hỏi trợ giảng AI ngay lúc chưa hiểu, thực hành trong studio 3D và ôn đúng chỗ mình còn hổng.</p>
                 <div className={`rs-roles ${picked ? 'dim' : ''}`}>
                     {ROLES.map(({ role, title, description, icon: Icon }) => (
                         <button
@@ -50,11 +50,18 @@ export function OrbitRoleSelect() {
                                 setPicked(role)
                                 void enterRole(role, { origin: centerOf(e.currentTarget), navigate })
                             }}
+                            onPointerMove={(e) => {
+                                // Quầng sáng trắng theo chuột (--mx/--my)
+                                const r = e.currentTarget.getBoundingClientRect()
+                                e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`)
+                                e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`)
+                            }}
                             className={`rs-role ${picked === role ? 'picked' : ''}`}
                         >
+                            <span className="rs-spot" aria-hidden="true" />
                             <span className="rs-row1">
                                 <span className="rs-ic">
-                                    <Icon size={26} strokeWidth={2} />
+                                    <Icon size={28} strokeWidth={2} />
                                 </span>
                                 <span className="rs-arr" aria-hidden="true">
                                     <ArrowRight size={20} strokeWidth={2.4} />

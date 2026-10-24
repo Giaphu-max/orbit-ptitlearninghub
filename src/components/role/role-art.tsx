@@ -27,6 +27,7 @@ export function RoleArt() {
     const cv = useRef<HTMLCanvasElement>(null)
     const started = useRef(false)
     const logo = useRef<HTMLDivElement>(null)
+    const splitFn = useRef<((on: boolean, delay?: number) => void) | null>(null)
 
     useEffect(() => {
         const el = art.current
@@ -44,6 +45,31 @@ export function RoleArt() {
         let last = 0
         let cancelled = false
         const timers: number[] = []
+        // Logo thở bằng WAAPI (rotate/scale riêng, không đè transform lúc chui ra); bỏ split thì đưa về 0°/1 bằng transition 0,6s thay vì cắt đột ngột
+        let breathe: Animation | null = null
+        const setSplit = (on: boolean, delay = 2200) => {
+            el.classList.toggle('split', on)
+            const lg = logo.current
+            if (!lg || reduce) return
+            if (on) {
+                breathe?.cancel()
+                breathe = lg.animate(
+                    [
+                        { rotate: '0deg', scale: 1 },
+                        { rotate: '-2.2deg', scale: 1.025, offset: 0.5 },
+                        { rotate: '1.6deg', scale: 1.01 },
+                    ],
+                    { duration: 9000, delay, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' },
+                )
+            } else if (breathe) {
+                const cs = getComputedStyle(lg)
+                const from = { rotate: cs.rotate === 'none' ? '0deg' : cs.rotate, scale: cs.scale === 'none' ? '1' : cs.scale }
+                breathe.cancel()
+                breathe = lg.animate([from, { rotate: '0deg', scale: '1' }], { duration: 600, easing: 'ease-out' })
+                breathe.onfinish = () => (breathe = null)
+            }
+        }
+        splitFn.current = setSplit
 
         const build = () => {
             const rect = el.getBoundingClientRect()
@@ -120,7 +146,7 @@ export function RoleArt() {
             timers.push(window.setTimeout(() => el.classList.add('collage'), 350))
             timers.push(
                 window.setTimeout(() => {
-                    el.classList.add('split')
+                    setSplit(true)
                     typing = true
                     t0 = performance.now()
                 }, 850),
@@ -166,6 +192,8 @@ export function RoleArt() {
             cancelled = true
             cancelAnimationFrame(raf)
             timers.forEach(clearTimeout)
+            breathe?.cancel()
+            splitFn.current = null
             ro.disconnect()
             el.removeEventListener('pointermove', onMove)
             cancelAnimationFrame(move)
@@ -177,8 +205,16 @@ export function RoleArt() {
             ref={art}
             className="rs-art"
             aria-hidden="true"
-            onPointerEnter={() => started.current && art.current?.classList.remove('split', 'collage')}
-            onPointerLeave={() => started.current && art.current?.classList.add('collage', 'split')}
+            onPointerEnter={() => {
+                if (!started.current) return
+                art.current?.classList.remove('collage')
+                splitFn.current?.(false)
+            }}
+            onPointerLeave={() => {
+                if (!started.current) return
+                art.current?.classList.add('collage')
+                splitFn.current?.(true, 1200)
+            }}
         >
             <canvas ref={cv} />
             {LOGO_URL && (
