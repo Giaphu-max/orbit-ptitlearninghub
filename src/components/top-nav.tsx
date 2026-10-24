@@ -113,6 +113,13 @@ export function TopNav() {
         e.preventDefault()
         scrollToSection(it.section)
     }
+    // Logo luôn về chương 0 của trang chủ: đang ở trang chủ thì nhảy chương (kiểu cắt khi cách ≥2 chương, do useScrollStage lo), trang khác thì navigate('/')
+    const goHome = (e: ReactMouseEvent) => {
+        setMenuOpen(false)
+        if (!onHome) return
+        e.preventDefault()
+        scrollToSection('top')
+    }
     const role = useOrbitStore((s) => s.role)
     const streakState = useOrbitStore((s) => s.streak)
     useOrbitStore((s) => s.lessonProgress)
@@ -196,7 +203,7 @@ export function TopNav() {
 
                 {/* Dạng rộng */}
                 <div className="nav-layer nav-layer-wide gap-4 px-10 lg:gap-6">
-                    <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ" tabIndex={collapsed ? -1 : 0}>
+                    <Link to="/" onClick={goHome} className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ" tabIndex={collapsed ? -1 : 0}>
                         <BrandLogo />
                         <span className="leading-tight">
                             <span className="block text-xl font-black leading-none tracking-tight text-brand-ink">PTIT</span>
@@ -237,7 +244,7 @@ export function TopNav() {
                     ) : (
                         <span className="w-2 shrink-0" />
                     )}
-                    <Link to="/" tabIndex={collapsed ? 0 : -1} aria-label="PTIT, trang chủ" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                    <Link to="/" onClick={goHome} tabIndex={collapsed ? 0 : -1} aria-label="PTIT, trang chủ" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                         <BrandLogo className="!h-8 !w-8 !rounded-lg" />
                         <span className="text-lg font-black leading-none tracking-tight text-brand-ink">PTIT</span>
                     </Link>

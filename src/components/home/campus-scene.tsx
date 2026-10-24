@@ -402,26 +402,26 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
 
             {/* Hội trường A1: dài, trắng, mái đầu hồi đỏ */}
             <Building {...b('Hội trường A1')} anchorY={6.2} position={[-15.5, 0, -11]} foot={[15, 8.5]}>
-                <Box edges s={[12, 3.6, 5]} c={C.white} />
+                <Box edges s={[12, 3.6, 5]} c={C.hallWall} />
                 {Array.from({ length: 8 }, (_, i) => (
                     <Box key={i} s={[0.8, 1.6, 0.1]} c={CAMPUS.hallWindow} at={[-4.9 + i * 1.4, 1, 2.53]} />
                 ))}
                 <Gable len={12.6} h={2.2} depth={5.8} c={C.roofRed} at={[0, 3.6, 0]} />
-                <Box s={[3, 4.4, 1.2]} c={C.white} at={[0, 0, 3]} />
+                <Box s={[3, 4.4, 1.2]} c={C.hallWall} at={[0, 0, 3]} />
                 <Gable len={1.4} h={1.4} depth={3.4} c={C.roofRed} at={[0, 4.4, 3]} alongZ />
             </Building>
 
             {/* Tòa A1: khối trắng thấp có dải ngang */}
             <Building {...b('Tòa A1')} anchorY={6.4} position={[-16, 0, 8]} foot={[11, 9]}>
-                <Box edges s={[7.5, 5.2, 6]} c={C.white} />
+                <Box edges s={[7.5, 5.2, 6]} c={C.a1Wall} />
                 {Array.from({ length: 5 }, (_, r) => (
-                    <Box key={r} s={[7.6, 0.18, 6.1]} c={C.stripe} at={[0, 0.7 + r * 0.95, 0]} />
+                    <Box key={r} s={[7.6, 0.18, 6.1]} c={C.a1Trim} at={[0, 0.7 + r * 0.95, 0]} />
                 ))}
                 <Box s={[7.6, 0.9, 0.1]} c={CAMPUS.bandGreen} at={[0, 0.2, 3.05]} />
             </Building>
 
             <Building {...b('Canteen')} anchorY={4.2} position={[17.5, 0, -17.5]} foot={[9, 7]}>
-                <Box edges s={[5.5, 2.2, 3.4]} c={C.white} />
+                <Box edges s={[5.5, 2.2, 3.4]} c={C.hallWall} />
                 <HipRoof w={6.4} h={1.4} d={4.2} c={C.roofRed} at={[0, 2.2, 0]} />
             </Building>
 
@@ -485,10 +485,12 @@ const HERO_SPH = new THREE.Spherical().setFromVector3(HERO_OFF)
 const AZ_RANGE = (25 * Math.PI) / 180
 const POLAR_RANGE = 0.17
 /** Chừa thêm bên phải cột chữ (px) và bán kính khối cầu bao khuôn viên dùng khi tránh cột chữ */
-const TEXT_GAP = 32
+const TEXT_GAP = 48
+/** Khuôn viên (cả cạnh đế) chiếm tối đa chừng này bề ngang ở hero: mô hình là bối cảnh, không phải tiêu điểm */
+const HERO_MAX_W = 0.48
 /** Chừa bên phải cho rail chương (px) */
 const RIGHT_GAP = 72
-const FIT_RADIUS = BOUND_RADIUS * 0.92
+const FIT_RADIUS = BOUND_RADIUS
 const RETURN_RATE = 2.2
 const _sph = new THREE.Spherical()
 const _off = new THREE.Vector3()
@@ -673,7 +675,7 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
  * (nền tối nhẹ khi có chữ + che quanh điểm cắt cảnh, xem stage-signal). Chế độ làm mờ: lớp phủ đậm hơn (0,45).
  */
 function updateChrome(S: number, calm: boolean, delta: number) {
-    const target = calm ? 0.45 : 0.12 * stageSignal.onStage
+    const target = calm ? 0.45 : 0.03 * stageSignal.onStage
     overlay.dim += (target - overlay.dim) * (1 - Math.exp(-Math.min(delta, 0.2) * DIM_SMOOTH))
     if (Math.abs(target - overlay.dim) < 0.001) overlay.dim = target
     overlay.dip = dipAt(S)
@@ -940,11 +942,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         // Vào trong nhà: nắng, trời và đèn viền giảm hẳn để đèn trong sảnh làm chủ
         const inside = indoor.current
         if (sun.current) {
-            sun.current.intensity = (1.6 - n * 1.3) * Math.PI * (1 - inside)
+            sun.current.intensity = (1.15 - n * 0.85) * Math.PI * (1 - inside)
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
         if (hemi.current) {
-            hemi.current.intensity = (0.55 - n * 0.12) * Math.PI * (1 - 0.68 * inside)
+            hemi.current.intensity = (0.5 - n * 0.07) * Math.PI * (1 - 0.68 * inside)
             hemi.current.color.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_NIGHT, n)
             hemi.current.groundColor.copy(HEMI_GROUND_DAY).lerp(HEMI_GROUND_NIGHT, n)
         }
@@ -1112,10 +1114,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 const dist = camera.position.distanceTo(TARGET)
                 const r0 = (FIT_RADIUS * size.height) / (2 * dist * Math.tan(THREE.MathUtils.degToRad(FOV / 2)))
                 const left = av.textRight + TEXT_GAP
-                const room = w - RIGHT_GAP - left
-                zoomT = THREE.MathUtils.clamp(room / (2 * r0), 0.5, 1)
+                const right = w - Math.max(RIGHT_GAP, w * 0.06)
+                const room = right - left
+                zoomT = THREE.MathUtils.clamp(Math.min(room, w * HERO_MAX_W) / (2 * r0), 0.4, 1)
                 const r = r0 * zoomT
-                const c = THREE.MathUtils.clamp(w / 2 + shiftT, left + r, w - RIGHT_GAP - r)
+                const c = THREE.MathUtils.clamp(w / 2 + shiftT, left + r, right - r)
                 shiftT = c - w / 2
             }
             const kk = reduce ? 1 : 1 - Math.exp(-delta * 6)
@@ -1139,10 +1142,10 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         } else if (scene.background !== (OPAQUE ? skyTex.current : null)) scene.background = OPAQUE ? skyTex.current : null
         if (scene.fog) {
             // Sương theo khoảng cách tới tâm khuôn viên; trong sảnh (gần tâm) giữ nguyên mức ở xa để không phủ mờ nội thất
-            const d = Math.max(camera.position.distanceTo(TARGET), 60)
+            const d = Math.max(camera.position.distanceTo(TARGET), 90)
             scene.fog.color.copy(colors.now)
-            ;(scene.fog as THREE.Fog).near = d * 1.1
-            ;(scene.fog as THREE.Fog).far = d * 3.2
+            ;(scene.fog as THREE.Fog).near = d * 1.6
+            ;(scene.fog as THREE.Fog).far = d * 4.5
         }
 
         // ── Hover (chỉ khi còn ở ngoài trời) ──
@@ -1233,11 +1236,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             {/* fps thấp thì hạ độ phân giải về 1, ổn định thì trả lại */}
             <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => !lowRef.current && setDpr(maxDpr)} />
             {PERF_ON && <PerfHud />}
-            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.55 * Math.PI]} />
+            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.5 * Math.PI]} />
             <directionalLight
                 ref={sun}
                 color={CAMPUS.sunlight}
-                intensity={1.6 * Math.PI}
+                intensity={1.15 * Math.PI}
                 position={[-26, 38, 22]}
                 castShadow
                 shadow-mapSize={isWebKit ? [1024, 1024] : [2048, 2048]}

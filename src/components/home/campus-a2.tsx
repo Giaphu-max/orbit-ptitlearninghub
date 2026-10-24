@@ -463,7 +463,7 @@ export function A2Lobby({ stage }: { stage: React.MutableRefObject<number> }) {
 export function HallA2() {
     return (
         <>
-            <Box edges s={[4.6, 7, 4.6]} c={A.beige} />
+            <Box edges s={[4.6, 7, 4.6]} c={CAMPUS.hallWall} />
             <Box s={[5, 0.5, 5]} c={A.parapet} at={[0, 7, 0]} />
             <HipRoof w={4.8} h={1.6} d={4.8} c={CAMPUS.roofRed} at={[0, 7.5, 0]} />
             {[0, 1, 2].map((i) => (

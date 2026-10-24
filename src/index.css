@@ -359,7 +359,7 @@
     display: none !important;
   }
   .stage-veil {
-    background: linear-gradient(90deg, hsl(var(--stage-bg) / 0.95) 0%, hsl(var(--stage-bg) / 0.84) 30%, hsl(var(--stage-bg) / 0.32) 48%, hsl(var(--stage-bg) / 0) 60%);
+    background: linear-gradient(90deg, hsl(var(--stage-bg) / 0.92) 0%, hsl(var(--stage-bg) / 0.78) 28%, hsl(var(--stage-bg) / 0.22) 42%, hsl(var(--stage-bg) / 0) 52%);
   }
   .stage-veil[data-static='true'] {
     background: linear-gradient(180deg, hsl(var(--stage-bg) / 0.5) 0%, hsl(var(--stage-bg) / 0.95) 55%);
