@@ -29,6 +29,8 @@ export default {
         // Trung tính ấm thay cho xám lạnh mặc định
         /** Nền tối cố định ở cả hai giao diện (khung video, lớp phủ, thông báo) */
         ink: { DEFAULT: token('ink'), foreground: token('ink-foreground') },
+        /** Bộ màu logo Khoa Đa phương tiện */
+        mm: { blue: 'var(--mm-blue)', sky: 'var(--mm-sky)', teal: 'var(--mm-teal)', yellow: 'var(--mm-yellow)', orange: 'var(--mm-orange)', red: 'var(--mm-red)', pink: 'var(--mm-pink)' },
         info: token('info'),
         border: token('border'),
         input: token('input'),

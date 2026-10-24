@@ -4,6 +4,7 @@ import { courses, lessons } from '@/data'
 import { scrollToSection } from '@/lib/scroll'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { BrandLogo } from '@/components/brand-logo'
+import { FACULTY_LOGO_URL } from '@/lib/brand'
 
 const REPO_URL = 'https://github.com/Giaphu-max/orbit-ptitlearninghub'
 const PTIT_URL = 'https://ptit.edu.vn'
@@ -63,10 +64,12 @@ export function SiteFooter() {
             <div className="container-page py-12 lg:py-14">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
                     <div>
-                        <Link to="/" className="inline-flex items-center gap-3" aria-label="PTIT, trang chủ">
+                        <Link to="/" className="inline-flex items-center gap-3 align-middle" aria-label="PTIT, trang chủ">
                             <BrandLogo />
                             <span className="text-xl font-black tracking-tight text-brand-ink">PTIT</span>
                         </Link>
+                        <span aria-hidden className="mx-4 hidden h-8 w-px bg-border sm:inline-block" />
+                        <img src={FACULTY_LOGO_URL} alt="Khoa Đa phương tiện" className="inline-block h-14 w-auto align-middle" loading="lazy" />
                         <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
                             Nền tảng học tập có điểm dừng cho sinh viên PTIT: trợ giảng AI bám bài giảng thật, bài đọc ngắn mỗi ngày và phần thưởng gắn với việc hiểu bài.
                         </p>

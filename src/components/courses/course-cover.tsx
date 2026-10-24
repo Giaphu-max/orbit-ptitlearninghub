@@ -46,7 +46,8 @@ interface Palette {
 
 function paletteOf(accent: CoverAccent): Palette {
     const A = `hsl(var(--subject-${accent}))`
-    const ink = 'hsl(var(--ink))'
+    // Nền theo màu môn (đậm hơn một chút, pha navy) thay cho gần đen: bìa tươi, vẫn đủ tối để chữ/thẻ trắng đè lên đọc được
+    const ink = `color-mix(in srgb, ${A} 70%, #0A1A50)`
     const white = 'hsl(var(--ink-foreground))'
     return { A, mix: (pct, other) => `color-mix(in srgb, ${A} ${pct}%, ${other})`, ink, white, warm: 'hsl(var(--cover-warm))', cool: 'hsl(var(--cover-cool))', rim: 'hsl(var(--cover-rim))' }
 }

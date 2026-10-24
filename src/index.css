@@ -56,7 +56,9 @@
     --sky-glow: 350 100% 97%;
     --sky-glow-alpha: 0.9;
     --stage-bg: 240 25% 98%;
-    --canvas-glow: radial-gradient(circle at 68% 50%, #fff0f2 0%, #fff7ed 35%, #fafafc 75%);
+    /* Hai đốm mờ sau mô hình: xanh trời 18% và hồng 16% (bộ màu Khoa Đa phương tiện) */
+    --canvas-glow: radial-gradient(ellipse 34% 46% at 64% 44%, rgb(65 165 225 / 0.18) 0%, rgb(65 165 225 / 0) 100%),
+      radial-gradient(ellipse 30% 42% at 80% 62%, rgb(244 135 143 / 0.16) 0%, rgb(244 135 143 / 0) 100%), linear-gradient(#fafafc, #fafafc);
     --stage-deep: 353 19% 6%;
     --reward-from: 358 67% 51%;
     --reward-mid: 358 80% 43%;
@@ -84,10 +86,20 @@
     --input: 228 16% 90%;
 
     /* Vàng thưởng: chấm/icon và badge XP */
-    --gold: 40 82% 57%;
-    --xp-bg: 48 96% 89%;
-    --xp-border: 48 96% 76%;
-    --xp-ink: 26 90% 37%;
+    --gold: 51 90% 57%;
+    --xp-bg: 51 90% 57%;
+    --xp-border: 49 80% 46%;
+    --xp-ink: 41 100% 18%;
+
+    /* Bộ màu logo Khoa Đa phương tiện: dùng cho mô hình, minh họa, chip môn, phần thưởng (đỏ PTIT vẫn là màu hành động chính) */
+    --mm-blue: #1f63db;
+    --mm-sky: #41a5e1;
+    --mm-teal: #2ec3a8;
+    --mm-yellow: #f4d431;
+    --mm-orange: #f39531;
+    --mm-red: #ee3b2e;
+    --mm-pink: #f4878f;
+    --mm-ribbon: linear-gradient(90deg, #1f63db, #41a5e1 25%, #2ec3a8 45%, #f4d431 62%, #f39531 75%, #ee3b2e 88%, #f4878f);
 
     /* Kính (thanh nav thu gọn, thẻ nổi trên cảnh 3D) và nhãn 3D (.ptit-pin, không blur để nhẹ cho Safari) */
     --glass-bg: rgb(255 255 255 / 0.78);
@@ -151,9 +163,9 @@
     --subject-film-ink: 358 80% 43%;
     --subject-photo: 28 92% 48%;
     --subject-photo-ink: 24 90% 31%;
-    --subject-audio: 262 65% 58%;
-    --subject-audio-ink: 262 55% 40%;
-    --subject-design: 174 75% 35%;
+    --subject-audio: 221 75% 49%;
+    --subject-audio-ink: 222 72% 38%;
+    --subject-design: 168 62% 47%;
     --subject-design-ink: 174 80% 23%;
     --subject-default: 25 8% 45%;
     --subject-default-ink: 25 8% 34%;
@@ -357,7 +369,7 @@
     display: none !important;
   }
   .stage-veil {
-    background: linear-gradient(90deg, hsl(var(--stage-bg) / 0.92) 0%, hsl(var(--stage-bg) / 0.78) 28%, hsl(var(--stage-bg) / 0.22) 42%, hsl(var(--stage-bg) / 0) 52%);
+    background: linear-gradient(90deg, hsl(var(--stage-bg) / 0.9) 0%, hsl(var(--stage-bg) / 0.62) 24%, hsl(var(--stage-bg) / 0) 36%);
   }
   .stage-veil[data-static='true'] {
     background: linear-gradient(180deg, hsl(var(--stage-bg) / 0.5) 0%, hsl(var(--stage-bg) / 0.95) 55%);
@@ -830,6 +842,9 @@
   }
   .ptit-pin-quiet:hover { border-color: #f3dbdb; color: hsl(var(--muted-foreground)); transform: none; }
   /* Chữ nhấn "25 phút.": gradient #BC2626 → #DE221A ở giao diện sáng, đỏ nhạt theo token ở giao diện tối */
+  .mm-ribbon-bg {
+    background-image: var(--mm-ribbon);
+  }
   .ptit-gradient-text {
     background-image: linear-gradient(90deg, #bc2626, #de221a);
     -webkit-background-clip: text;

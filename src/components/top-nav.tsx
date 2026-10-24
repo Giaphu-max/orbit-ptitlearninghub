@@ -199,6 +199,8 @@ export function TopNav() {
             className={`own-layer pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center text-foreground ${onHome ? 'nav-over-3d' : ''}`}
         >
             <div ref={rootRef} className="nav-shell pointer-events-auto" data-state={state}>
+                {/* Đường ribbon mảnh 2px (bộ màu logo khoa) dưới viên kính thu gọn: điểm nhấn chữ ký */}
+                <div aria-hidden className={`mm-ribbon-bg pointer-events-none absolute inset-x-8 -bottom-[3px] h-[2px] rounded-full transition-opacity duration-300 ${collapsed ? 'opacity-100' : 'opacity-0'}`} />
                 {/* Nền kính của viên thu gọn: mờ vào/ra theo trạng thái */}
                 <div aria-hidden className={`ptit-glass-navbar-pill absolute inset-0 transition-opacity duration-300 ${collapsed ? 'opacity-100' : 'opacity-0'}`} />
 

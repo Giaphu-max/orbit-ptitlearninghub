@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, PerformanceMonitor } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { CAMPUS } from './campus-palette'
 import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, LOBBY_SCALE, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
 import { STUDIO_Z } from './campus-room'
@@ -15,7 +16,7 @@ import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
 import { Antenna } from './campus-tech'
-import { Box, Cylinder, FlatRoof, GroundBlob, GroundPlane, Gable, LedFrame, makeConcreteTexture, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
+import { Box, Cylinder, FlatRoof, RibbonEdge, GroundBlob, GroundPlane, Gable, LedFrame, makeConcreteTexture, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
@@ -37,7 +38,7 @@ const OPAQUE = isWebKit || FLAGS.opaque
 const T_PTIT: TextOpts = { size: 200 }
 const T_HEART: TextOpts = { size: 170 }
 /** Kính mảng lớn của các tòa: bóng, phản chiếu nhẹ */
-const GLASS = { roughness: 0.2, metalness: 0.35 }
+const GLASS = { roughness: 0.15, metalness: 0.35 }
 
 const T_GATE_W: TextOpts = { size: [120, 62], h: 256, fg: CAMPUS.pureWhite }
 
@@ -333,6 +334,31 @@ function SuaTree({ x, z, s, lowQuality }: { x: number; z: number; s: number; low
     )
 }
 
+/**
+ * Env map nhỏ (RoomEnvironment, PMREM 256px) chỉ gắn cho vật liệu kính (roughness ≤ 0,25 và metalness ≥ 0,3) để kính có phản chiếu;
+ * tường và mặt đất không dùng env nên không bị sáng thêm. Vật liệu dùng chung nên gắn một lần sau khi cảnh dựng xong.
+ */
+function applyGlassEnv(gl: THREE.WebGLRenderer, scene: THREE.Scene) {
+    try {
+        const pm = new THREE.PMREMGenerator(gl)
+        const env = pm.fromScene(new RoomEnvironment(), 0.04).texture
+        pm.dispose()
+        const apply = () =>
+            scene.traverse((o) => {
+                const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined
+                if (m && m.isMeshStandardMaterial && m.roughness <= 0.25 && m.metalness >= 0.3 && m.envMap !== env) {
+                    m.envMap = env
+                    m.envMapIntensity = 0.9
+                    m.needsUpdate = true
+                }
+            })
+        window.setTimeout(apply, 1500)
+        window.setTimeout(apply, 5000)
+    } catch {
+        /* không dựng được env thì kính chỉ mất phản chiếu */
+    }
+}
+
 function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
     const b = (name: BuildingName) => ({ registry, name })
     concreteTex ??= makeConcreteTexture([45 / 12, 41 / 12])
@@ -340,7 +366,8 @@ function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: Wor
     return (
         <>
             {/* Nền, đường, bãi cỏ */}
-            <Box s={[46, 1, 42]} c={C.plateEdge} at={[0, -1.2, -1]} />
+            <Box s={[45.9, 1, 41.9]} c={C.plateEdge} at={[0, -1.2, -1]} />
+            <RibbonEdge w={46} d={42} h={1} at={[0, -1.2, -1]} />
             <Box s={[45, 0.4, 41]} c={C.plate} at={[0, -0.4, -1]} />
             {/* Sân bê tông xám (texture lặp) nằm ngay trên mặt đế; lối xe nhựa đường từ cổng vào A2 */}
             <GroundPlane s={[45, 41]} at={[0, 0.005, -1]} tex={concreteTex} />
@@ -370,8 +397,8 @@ function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: Wor
                     <Box edges s={[6.8, 11, 4.6]} c={C.cream} at={[0, 2.8, -0.8]} />
                     <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[-4.05, 2.8, -0.8]} />
                     <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
-                    <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.2, metalness: 0.3 }} />
-                    <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.3 }} />
+                    <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.2, metalness: 0.35 }} />
+                    <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.2, metalness: 0.35 }} />
                     <Box edges s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
                     {/* Mái bằng như ảnh thật: khối mái trắng, tam giác trắng phía trước, viền đỏ mảnh */}
                     <FlatRoof w={6.4} d={4.2} at={[0, 14.3, -0.9]} gear={false} />
@@ -397,7 +424,7 @@ function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: Wor
                 </group>
 
                 <TextPlane w={3.2} h={0.8} text="I ♥ PTIT" at={[7.6, 0.5, 5.6]} opts={T_HEART} doubleSide nightRef={nightRef} glow={!lowQuality} />
-                {([[-8.4, CAMPUS.ptitRed], [-7.6, CAMPUS.flagYellow], [-6.8, CAMPUS.flagBlue]] as const).map(([x, c], i) => (
+                {([[-8.4, '#EE3B2E'], [-7.6, '#F4D431'], [-6.8, '#41A5E1'], [-6.0, '#2EC3A8']] as const).map(([x, c], i) => (
                     <Flag key={x} x={x} color={c} index={i} reduce={reduce} />
                 ))}
             </Building>
@@ -410,20 +437,21 @@ function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: Wor
             {/* Tòa A3: khối trắng + kính, mái bằng, dải đỏ ở cạnh; xoay mặt về phía A2 */}
             <Building {...b('Tòa A3')} anchorY={7.6} position={[17.5, 0, -6]} rotY={-Math.PI / 2} foot={[16, 8]}>
                 <Box edges s={[13, 4.6, 4.4]} c={C.yellow} />
-                <Box s={[13.3, 0.28, 4.7]} c={C.ledRed} at={[0, 4.32, 0]} />
+                <Box s={[13.3, 0.28, 4.7]} c={C.mmPink} at={[0, 4.32, 0]} />
                 {[0.5, 2.5].map((y) => (
                     <Box key={y} s={[11.6, 1.5, 0.1]} c={C.glassBand} at={[0, y, 2.23]} o={GLASS} />
                 ))}
                 <FlatRoof w={13.4} d={4.6} at={[0, 4.6, 0]} />
                 <Box s={[2.6, 5.2, 1]} c={C.yellow} at={[0, 0, 2.6]} />
                 <Box s={[2.0, 3.8, 0.1]} c={C.glassBand} at={[0, 0.5, 3.13]} o={GLASS} />
-                <Box s={[0.18, 5.2, 1.05]} c={C.ledRed} at={[1.4, 0, 2.6]} />
+                <Box s={[0.18, 5.2, 1.05]} c={C.mmPink} at={[1.4, 0, 2.6]} />
             </Building>
 
             {/* Hội trường A1: dài, trắng, mái đầu hồi đỏ */}
             <Building {...b('Hội trường A1')} anchorY={6.2} position={[-15.5, 0, -11]} foot={[15, 8.5]}>
                 <Box edges s={[12, 3.6, 5]} c={C.hallWall} />
                 <Box s={[11, 1.4, 0.1]} c={C.glassBand} at={[0, 1.0, 2.53]} o={GLASS} />
+                <Box s={[12.1, 0.3, 5.1]} c={C.mmOrange} at={[0, 3.15, 0]} />
                 <FlatRoof w={12.4} d={5.4} at={[0, 3.6, 0]} led />
                 <Box s={[3, 4.4, 1.2]} c={C.hallWall} at={[0, 0, 3]} />
                 <Box s={[2.4, 2.6, 0.1]} c={C.glassBand} at={[0, 0.6, 3.63]} o={GLASS} />
@@ -444,6 +472,7 @@ function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: Wor
 
             <Building {...b('Canteen')} anchorY={4.2} position={[17.5, 0, -17.5]} foot={[9, 7]}>
                 <Box edges s={[5.5, 2.2, 3.4]} c={C.hallWall} />
+                <Box s={[5.6, 0.25, 3.5]} c={C.mmYellow} at={[0, 1.8, 0]} />
                 <FlatRoof w={5.9} d={3.8} at={[0, 2.2, 0]} />
             </Building>
 
@@ -1140,8 +1169,8 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             // Sương theo khoảng cách tới tâm khuôn viên; trong sảnh (gần tâm) giữ nguyên mức ở xa để không phủ mờ nội thất
             const d = Math.max(camera.position.distanceTo(TARGET), 90)
             scene.fog.color.copy(colors.now)
-            ;(scene.fog as THREE.Fog).near = d * 1.6
-            ;(scene.fog as THREE.Fog).far = d * 4.5
+            ;(scene.fog as THREE.Fog).near = d * 2.4
+            ;(scene.fog as THREE.Fog).far = d * 6
         }
 
         // ── Hover (chỉ khi còn ở ngoài trời) ──
@@ -1350,9 +1379,13 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
                     dpr={[1, DPR_MAX]}
                     camera={{ fov: FOV, position: START_POS.toArray(), near: 1, far: 400 }}
                     gl={{ antialias: !(isWebKit && NO_AA), alpha: !OPAQUE }}
-                    onCreated={({ gl }) => {
+                    onCreated={({ gl, scene }) => {
                         gl.shadowMap.autoUpdate = false
                         gl.shadowMap.needsUpdate = true
+                        // Màu tươi như ảnh minh họa phẳng: tone mapping (Khronos Neutral giữ nguyên độ bão hòa; ACES/AgX làm xỉn màu), phơi sáng 1,15
+                        gl.toneMapping = THREE.NeutralToneMapping
+                        gl.toneMappingExposure = 1.15
+                        applyGlassEnv(gl, scene)
                     }}
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"

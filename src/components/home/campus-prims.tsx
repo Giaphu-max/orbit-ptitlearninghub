@@ -441,3 +441,54 @@ export function FlatRoof({ w, d, at, led = false, gear = true }: { w: number; d:
         </group>
     )
 }
+
+// ─── Cạnh đế: dải ribbon nhiều màu của Khoa Đa phương tiện chạy quanh 4 cạnh ─────────────────────
+
+let ribbonTex: THREE.CanvasTexture | null = null
+function getRibbonTex() {
+    if (!ribbonTex) {
+        const cv = document.createElement('canvas')
+        cv.width = 1024
+        cv.height = 8
+        const ctx = cv.getContext('2d')!
+        const g = ctx.createLinearGradient(0, 0, 1024, 0)
+        ;[[0, '#1F63DB'], [0.25, '#41A5E1'], [0.45, '#2EC3A8'], [0.62, '#F4D431'], [0.75, '#F39531'], [0.88, '#EE3B2E'], [1, '#F4878F']].forEach(([at, c]) => g.addColorStop(at as number, c as string))
+        ctx.fillStyle = g
+        ctx.fillRect(0, 0, 1024, 8)
+        ribbonTex = new THREE.CanvasTexture(cv)
+        ribbonTex.colorSpace = THREE.SRGBColorSpace
+        ribbonTex.wrapS = THREE.ClampToEdgeWrapping
+    }
+    return ribbonTex
+}
+
+/** Bốn mặt bên của đế (w × d, cao h, tâm đáy `at`) dán một dải gradient liên tục theo chu vi (đi theo chiều kim đồng hồ nhìn từ trên). */
+export function RibbonEdge({ w, d, h, at }: { w: number; d: number; h: number; at: Vec3 }) {
+    const faces = useMemo(() => {
+        const per = 2 * (w + d)
+        const segs: { len: number; pos: Vec3; rot: number }[] = [
+            { len: w, pos: [0, 0, d / 2], rot: 0 },
+            { len: d, pos: [w / 2, 0, 0], rot: Math.PI / 2 },
+            { len: w, pos: [0, 0, -d / 2], rot: Math.PI },
+            { len: d, pos: [-w / 2, 0, 0], rot: -Math.PI / 2 },
+        ]
+        let start = 0
+        return segs.map((s) => {
+            const t = getRibbonTex().clone()
+            t.needsUpdate = true
+            t.repeat.set(s.len / per, 1)
+            t.offset.set(start / per, 0)
+            start += s.len
+            return { ...s, mat: new THREE.MeshBasicMaterial({ map: t, toneMapped: false }) }
+        })
+    }, [w, d])
+    return (
+        <group position={[at[0], at[1] + h / 2, at[2]]}>
+            {faces.map((f, i) => (
+                <mesh key={i} position={[f.pos[0], 0, f.pos[2]]} rotation={[0, f.rot, 0]} material={f.mat}>
+                    <planeGeometry args={[f.len, h]} />
+                </mesh>
+            ))}
+        </group>
+    )
+}

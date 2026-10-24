@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, 
 import { Link } from 'react-router-dom'
 import { ArrowRight, Camera, Play, Sparkles } from 'lucide-react'
 import { getCourse, lessons } from '@/data'
+import { deriveCover, type CoverAccent } from '@/lib/cover-kinds'
 import { CourseArt } from '@/components/courses/course-cover'
 import { courseKicker, primaryCourse, STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { trackPage } from '@/lib/page-metrics'
@@ -56,7 +57,7 @@ export function OrbitHomeView() {
             <div ref={veilRef} aria-hidden data-static={staticMode} className="stage-veil own-layer pointer-events-none fixed inset-0 z-[1]" />
             {!staticMode && !FLAGS.noKiosk && <KioskScreen screenRef={screenRef} />}
             <BenchRunner />
-            <div ref={barRef} aria-hidden data-bar className="own-layer pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 bg-brand-600" />
+            <div ref={barRef} aria-hidden data-bar className="own-layer pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 mm-ribbon-bg" />
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
             {journey ? (
@@ -319,7 +320,7 @@ function HeroChapter() {
                     className="ptit-glass-card group relative mt-1 flex items-center gap-4 overflow-hidden p-3 pr-4 text-foreground transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                 >
                     <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-[40%] animate-sheen bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
-                    <GridThumb />
+                    <GridThumb accent={deriveCover(getCourse(resume.courseId)?.subject ?? '').accent} />
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-eyebrow uppercase tracking-[0.05em] text-brand-ink">
                             {resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu'} · {getCourse(resume.courseId)?.title ?? 'Khóa học'}
@@ -327,7 +328,7 @@ function HeroChapter() {
                         <span className="mt-1.5 line-clamp-2 text-lg font-bold leading-snug">{resume.title}</span>
                         <span className="mt-3 flex items-center gap-3">
                             <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ bài đang học">
-                                <span className="block h-full rounded-full bg-gradient-to-r from-brand-600 to-[hsl(var(--gold))]" style={{ width: `${pct}%` }} />
+                                <span className="block h-full rounded-full mm-ribbon-bg" style={{ width: `${pct}%`, backgroundSize: `${pct > 0 ? 10000 / pct : 100}% 100%` }} />
                             </span>
                             <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
                         </span>
@@ -345,13 +346,13 @@ function HeroChapter() {
 }
 
 /** Ảnh thu nhỏ có lưới 1/3 (2 đường dọc, 2 đường ngang mờ) và chấm chủ thể ở một giao điểm, như mockup. */
-function GridThumb() {
+function GridThumb({ accent }: { accent: CoverAccent }) {
     return (
-        <span className="relative block h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-brand-300" aria-hidden>
+        <span className="relative block h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl" style={{ backgroundImage: `linear-gradient(135deg, hsl(var(--subject-${accent})), color-mix(in srgb, hsl(var(--subject-${accent})) 55%, #ffffff))` }} aria-hidden>
             <span
                 className="absolute inset-0 bg-[length:33.333%_33.333%] opacity-100"
                 style={{
-                    backgroundImage: 'linear-gradient(hsl(var(--gold) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--gold) / 0.3) 1px, transparent 1px)',
+                    backgroundImage: 'linear-gradient(hsl(var(--ink-foreground) / 0.4) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--ink-foreground) / 0.4) 1px, transparent 1px)',
                 }}
             />
             <span className="absolute left-[66.66%] top-[33.33%] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink-foreground shadow-card" />
