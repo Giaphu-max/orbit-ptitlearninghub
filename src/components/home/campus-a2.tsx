@@ -116,12 +116,12 @@ export function A2Podium({ stage }: { stage: React.MutableRefObject<number> }) {
     return (
         <>
             {/* Vỏ đế: 2 cánh trước, tường bên, tường sau, mái */}
-            <CB s={[7.35, 5, 2.6]} mat={stone} at={[-6.675, 2.5, 2.2]} />
-            <CB s={[7.35, 5, 2.6]} mat={stone} at={[6.675, 2.5, 2.2]} />
-            <CB s={[0.3, 5, 23.4]} mat={stone} at={[-HW, 2.5, (PODIUM_BACK + 0.9) / 2]} />
-            <CB s={[0.3, 5, 23.4]} mat={stone} at={[HW, 2.5, (PODIUM_BACK + 0.9) / 2]} />
-            <CB s={[2 * HW, 5, 0.3]} mat={stone} at={[0, 2.5, PODIUM_BACK]} />
-            <CB s={[2 * HW + 0.4, 0.6, 26]} mat={beige} at={[0, 5.3, (PODIUM_BACK + 3.5) / 2]} />
+            <CB edges s={[7.35, 5, 2.6]} mat={stone} at={[-6.675, 2.5, 2.2]} />
+            <CB edges s={[7.35, 5, 2.6]} mat={stone} at={[6.675, 2.5, 2.2]} />
+            <CB edges s={[0.3, 5, 23.4]} mat={stone} at={[-HW, 2.5, (PODIUM_BACK + 0.9) / 2]} />
+            <CB edges s={[0.3, 5, 23.4]} mat={stone} at={[HW, 2.5, (PODIUM_BACK + 0.9) / 2]} />
+            <CB edges s={[2 * HW, 5, 0.3]} mat={stone} at={[0, 2.5, PODIUM_BACK]} />
+            <CB edges s={[2 * HW + 0.4, 0.6, 26]} mat={beige} at={[0, 5.3, (PODIUM_BACK + 3.5) / 2]} />
             <CB s={[2 * HW + 0.6, 0.25, 6.6]} mat={parapet} at={[0, 4.9, 1]} />
             {WING_WINDOWS.map(([x, y]) => (
                 <CB key={`${x}_${y}`} s={[1.1, 1.2, 0.1]} c={A.winG} at={[x, y, 3.52]} />
@@ -463,7 +463,7 @@ export function A2Lobby({ stage }: { stage: React.MutableRefObject<number> }) {
 export function HallA2() {
     return (
         <>
-            <Box s={[4.6, 7, 4.6]} c={A.beige} />
+            <Box edges s={[4.6, 7, 4.6]} c={A.beige} />
             <Box s={[5, 0.5, 5]} c={A.parapet} at={[0, 7, 0]} />
             <HipRoof w={4.8} h={1.6} d={4.8} c={CAMPUS.roofRed} at={[0, 7.5, 0]} />
             {[0, 1, 2].map((i) => (

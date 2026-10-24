@@ -1,9 +1,9 @@
 // Bảng màu mô hình khuôn viên PTIT: một nguồn duy nhất cho cảnh 3D và ảnh tĩnh dự phòng.
 // Đây là màu của "vật thể" trong cảnh (không đổi theo giao diện sáng/tối); chỉ ánh sáng đổi khi sang buổi tối.
 export const CAMPUS = {
-    plate: '#F8FAFC', plateDark: '#3A3030', plateEdge: '#9F2925', pave: '#E2D8D0', road: '#6B5F5C', grass: '#8DBF8F', grassDark: '#6FA474',
-    cream: '#FFFDF9', granite: '#8C8583', glass: '#2E8C70', win: '#3F8F79', roofRed: '#DC2626',
-    yellow: '#F6CC5C', white: '#FFFDF9', stripe: '#BDB5AE', trunk: '#7A5544', tree: '#5E9E6A', tree2: '#7DB27A',
+    plate: '#EEF0F4', plateDark: '#3A3030', plateEdge: '#9F2925', pave: '#E2D8D0', road: '#6B5F5C', grass: '#8DBF8F', grassDark: '#6FA474',
+    cream: '#F2EFEA', granite: '#8C8583', glass: '#2E8C70', win: '#3C4A63', roofRed: '#DC2626', edge: '#9AA0B4', shadowInk: '#0A1A50', grid: '#CDD2DE',
+    yellow: '#F6CC5C', white: '#F2EFEA', stripe: '#D9DCE5', trunk: '#7A5544', tree: '#5E9E6A', tree2: '#7DB27A',
     // Chi tiết nhỏ, biển hiệu và ánh sáng
     ink: '#1A1412',
     signBlue: '#1A3E8C',
@@ -11,7 +11,7 @@ export const CAMPUS = {
     bandGreen: '#3C9E5B',
     flagBlue: '#3E7BD6',
     moonlight: '#7E8FD6',
-    hallWindow: '#9FB7C4',
+    hallWindow: '#4F6A86',
     carSilver: '#B9C4CC',
     ptitRed: '#C4161C',
     // Chữ biển ban đêm: đỏ sáng như đèn LED và màu quầng
@@ -21,10 +21,10 @@ export const CAMPUS = {
     signNight: '#2A2523',
     ptitRedGlow: '#FF2A30',
     fence: '#C9C3BD',
-    pillar: '#D6D2CF',
+    pillar: '#D9DCE5',
     gatePost: '#D8C29C',
     gateBeam: '#E4D7BF',
-    cornice: '#E8E0D4',
+    cornice: '#D9DCE5',
     flagYellow: '#F2C230',
     gateSign: '#F3EFEA',
     rimLight: '#FFE2C8',
@@ -34,7 +34,7 @@ export const CAMPUS = {
     sunlight: '#FFFBEB',
     pureWhite: '#FFFFFF',
     skyLight: '#FFFFFF',
-    groundLight: '#C7CAD6',
+    groundLight: '#C9CCD8',
     // Buổi tối: ánh sáng bán cầu xanh đêm (không đỏ)
     nightSkyLight: '#6F80C8',
     nightGroundLight: '#1B2140',
@@ -50,7 +50,7 @@ export const STUDIO = {
 
 // Tòa A2 (đế rộng, sảnh kính) và Hội trường A2: màu vật thể, lấy từ bản mẫu docs/mockup/orbit-campus-journey.html.
 export const A2COL = {
-    beige: '#FFFDF9', stone: '#E7E5E4', parapet: '#FFFFFF', winG: '#6FAE96', glassM: '#4F9C82',
+    beige: '#F2EFEA', stone: '#D9DCE5', parapet: '#D9DCE5', winG: '#6FAE96', glassM: '#4F9C82',
     step: '#C9493F', mat: '#B8463D', frame: '#3A3A3A', mullion: '#5A5A5A', handle: '#BBBBBB',
     facade: '#6F9C93', door: '#2E5A54', column: '#FFFFFF',
     hallSign: '#C4161C', hallSignText: '#FFFFFF', hallDoor: '#3A3030',

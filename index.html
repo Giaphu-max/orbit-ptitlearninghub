@@ -5,8 +5,10 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      // Áp giao diện đã lưu trước khi vẽ để không bị nháy sáng khi mở ở chế độ tối
-      try { if (localStorage.getItem('orbit-theme') === 'dark') document.documentElement.classList.add('dark') } catch (e) {}
+      // Áp giao diện đã lưu trước khi vẽ để không bị nháy sáng khi mở ở chế độ tối.
+      // DARK_MODE = false: tạm tắt giao diện tối (khớp FLAGS.darkMode trong src/lib/perf.ts), đổi thành true để bật lại.
+      var DARK_MODE = false
+      try { if (DARK_MODE && localStorage.getItem('orbit-theme') === 'dark') document.documentElement.classList.add('dark') } catch (e) {}
     </script>
     <title>PTIT – Học online cùng sinh viên PTIT</title>
     <meta name="description" content="Xem lại bài của thầy cô, hỏi trợ giảng AI ngay lúc chưa hiểu, thực hành trong studio 3D và ôn đúng chỗ mình còn hổng." />

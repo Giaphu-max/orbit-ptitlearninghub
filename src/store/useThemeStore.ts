@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { introPlaying } from '@/lib/role-intro'
+import { FLAGS } from '@/lib/perf'
 import { curtainPlaying, curtainReady, playCurtain } from '@/lib/theme-switch'
 
 // Giao diện sáng/tối. Lưu riêng khỏi trạng thái demo để "Đặt lại dữ liệu demo" không đổi giao diện.
@@ -10,8 +11,11 @@ export type Theme = 'light' | 'dark'
 
 const STORAGE_KEY = 'orbit-theme'
 
+// Cờ FLAGS.darkMode tắt: luôn sáng, bỏ class dark còn sót và bỏ qua giá trị đã lưu
+if (!FLAGS.darkMode && typeof document !== 'undefined') document.documentElement.classList.remove('dark')
+
 const initialTheme = (): Theme =>
-    typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    FLAGS.darkMode && typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'
 
 interface ThemeState {
     theme: Theme
@@ -43,6 +47,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => {
         busy: false,
         frozen: false,
         setTheme: (theme, origin) => {
+            if (!FLAGS.darkMode && theme === 'dark') return
             const { busy, theme: cur } = get()
             if (busy || theme === cur || curtainPlaying() || introPlaying()) return
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches

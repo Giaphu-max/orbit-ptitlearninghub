@@ -5,6 +5,7 @@ import { BrandLogo } from '@/components/brand-logo'
 import { StreakFlame } from '@/components/streak-flame'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { XpChip } from '@/components/xp-chip'
+import { FLAGS } from '@/lib/perf'
 import { visibleStreak } from '@/lib/gamification'
 import { resumeLesson } from '@/lib/next-step'
 import { centerOf, enterRole } from '@/lib/role-switch'
@@ -218,7 +219,7 @@ export function TopNav() {
                     </nav>
                     <div className="ml-auto flex items-center gap-2.5">
                         {chips}
-                        <ThemeToggle tone="hero" />
+                        {FLAGS.darkMode && <ThemeToggle tone="hero" />}
                         <AccountMenu />
                     </div>
                 </div>
@@ -283,7 +284,7 @@ export function TopNav() {
                         </nav>
                         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
                             {chips}
-                            <ThemeToggle tone="plain" className="relative ml-auto" />
+                            {FLAGS.darkMode && <ThemeToggle tone="plain" className="relative ml-auto" />}
                         </div>
                         <div className="mt-3 border-t border-border pt-3">
                             <AccountPanel onClose={() => closeMenu()} />

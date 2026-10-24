@@ -17,6 +17,8 @@
 const q = typeof window === 'undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search)
 
 export const FLAGS = {
+    /** Giao diện tối: tạm tắt (false) — ẩn mọi nút đổi sáng/tối, luôn bỏ class `dark`, bỏ qua theme đã lưu, cảnh 3D luôn ban ngày. Đổi thành true để bật lại; code dark mode vẫn còn nguyên. Giữ khớp với DARK_MODE trong index.html. */
+    darkMode: false,
     perf: q.has('perf'),
     no3d: q.has('no3d'),
     noLabels: q.has('nolabels'),

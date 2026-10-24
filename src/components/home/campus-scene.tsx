@@ -14,7 +14,7 @@ import { addFrame } from '@/lib/frame-loop'
 import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
-import { Box, Cylinder, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
+import { Box, Cylinder, GroundBlob, Gable, HipRoof, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
 
 // Khuôn viên PTIT low-poly, chuyển từ docs/ptit-campus.html (three.js thuần) sang React Three Fiber.
@@ -49,10 +49,12 @@ interface BuildingProps {
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     /** Xoay quanh trục đứng (rad), mặc định mặt trước nhìn về +z */
     rotY?: number
+    /** Tấm bóng tiếp đất [rộng, sâu, lệch x, lệch z] */
+    foot?: [number, number, number?, number?]
     children: ReactNode
 }
 
-function Building({ name, anchorY, position, hovered, labelVisible, registry, rotY = 0, children }: BuildingProps) {
+function Building({ name, anchorY, position, hovered, labelVisible, registry, rotY = 0, foot, children }: BuildingProps) {
     const ref = useRef<THREE.Group>(null)
     useLayoutEffect(() => {
         const g = ref.current
@@ -70,6 +72,7 @@ function Building({ name, anchorY, position, hovered, labelVisible, registry, ro
     const showLabel = labelVisible && !FLAGS.noLabels
     return (
         <group ref={ref} position={position} rotation={[0, rotY, 0]}>
+            {foot && <GroundBlob foot={foot} />}
             {children}
             {showLabel && (
             <Html position={[0, anchorY, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
@@ -330,6 +333,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             {/* Nền, đường, bãi cỏ */}
             <Box s={[46, 1, 42]} c={C.plateEdge} at={[0, -1.2, -1]} />
             <Box s={[45, 0.4, 41]} c={C.plate} at={[0, -0.4, -1]} />
+            <gridHelper args={[45, 22, C.grid, C.grid]} position={[0, 0.01, -1]} scale={[1, 1, 41 / 45]} material-transparent material-opacity={0.5} />
             <Box s={[45, 0.02, 2]} c={C.road} at={[0, 0, 18.4]} />
             <Box s={[5, 0.02, 11]} c={C.pave} at={[2, 0, 11]} />
             {LAWNS.map(([x, z, w, d], i) => (
@@ -346,16 +350,16 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             ))}
 
             {/* Tòa A2: đế rộng + sảnh kính nhìn xuyên vào trong; thân tháp đứng trên mái đế */}
-            <Building {...b('Tòa A2')} anchorY={20.2} position={A2_AT}>
+            <Building {...b('Tòa A2')} anchorY={20.2} position={A2_AT} foot={[24, 29, 0, -9.5]}>
                 <A2Podium stage={stage} />
                 <A2Lobby stage={stage} />
                 <group position={[0, PODIUM_TOP - 2.8, 0]}>
-                    <Box s={[6.8, 11, 4.6]} c={C.cream} at={[0, 2.8, -0.8]} />
-                    <Box s={[1.3, 9.6, 3.8]} c={C.cream} at={[-4.05, 2.8, -0.8]} />
-                    <Box s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
+                    <Box edges s={[6.8, 11, 4.6]} c={C.cream} at={[0, 2.8, -0.8]} />
+                    <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[-4.05, 2.8, -0.8]} />
+                    <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
                     <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.25, metalness: 0.35 }} />
                     <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.35 }} />
-                    <Box s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
+                    <Box edges s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
                     <HipRoof w={5.2} h={1.6} d={3.6} c={C.roofRed} at={[0, 14.3, -1.2]} />
                     <Gable len={0.5} h={1.8} depth={5} c={C.cream} at={[0, 13.8, 1.35]} alongZ />
                     {/* Đồng hồ */}
@@ -381,13 +385,13 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             </Building>
 
             {/* Hội trường A2: bên trái A2, cỡ nửa A2 */}
-            <Building {...b('Hội trường A2')} anchorY={10.4} position={[-15.4, 0, 1]}>
+            <Building {...b('Hội trường A2')} anchorY={10.4} position={[-15.4, 0, 1]} foot={[8.5, 8.5]}>
                 <HallA2 />
             </Building>
 
             {/* Tòa A3: khối vàng, mái chóp đỏ; xoay mặt về phía A2 */}
-            <Building {...b('Tòa A3')} anchorY={7.6} position={[17.5, 0, -6]} rotY={-Math.PI / 2}>
-                <Box s={[13, 4.6, 4.4]} c={C.yellow} />
+            <Building {...b('Tòa A3')} anchorY={7.6} position={[17.5, 0, -6]} rotY={-Math.PI / 2} foot={[16, 8]}>
+                <Box edges s={[13, 4.6, 4.4]} c={C.yellow} />
                 {Array.from({ length: 10 }, (_, i) => (
                     <Box key={i} s={[0.7, 3.4, 0.1]} c={C.win} at={[-5.4 + i * 1.2, 0.6, 2.23]} />
                 ))}
@@ -397,8 +401,8 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             </Building>
 
             {/* Hội trường A1: dài, trắng, mái đầu hồi đỏ */}
-            <Building {...b('Hội trường A1')} anchorY={6.2} position={[-15.5, 0, -11]}>
-                <Box s={[12, 3.6, 5]} c={C.white} />
+            <Building {...b('Hội trường A1')} anchorY={6.2} position={[-15.5, 0, -11]} foot={[15, 8.5]}>
+                <Box edges s={[12, 3.6, 5]} c={C.white} />
                 {Array.from({ length: 8 }, (_, i) => (
                     <Box key={i} s={[0.8, 1.6, 0.1]} c={CAMPUS.hallWindow} at={[-4.9 + i * 1.4, 1, 2.53]} />
                 ))}
@@ -408,24 +412,24 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             </Building>
 
             {/* Tòa A1: khối trắng thấp có dải ngang */}
-            <Building {...b('Tòa A1')} anchorY={6.4} position={[-16, 0, 8]}>
-                <Box s={[7.5, 5.2, 6]} c={C.white} />
+            <Building {...b('Tòa A1')} anchorY={6.4} position={[-16, 0, 8]} foot={[11, 9]}>
+                <Box edges s={[7.5, 5.2, 6]} c={C.white} />
                 {Array.from({ length: 5 }, (_, r) => (
                     <Box key={r} s={[7.6, 0.18, 6.1]} c={C.stripe} at={[0, 0.7 + r * 0.95, 0]} />
                 ))}
                 <Box s={[7.6, 0.9, 0.1]} c={CAMPUS.bandGreen} at={[0, 0.2, 3.05]} />
             </Building>
 
-            <Building {...b('Canteen')} anchorY={4.2} position={[17.5, 0, -17.5]}>
-                <Box s={[5.5, 2.2, 3.4]} c={C.white} />
+            <Building {...b('Canteen')} anchorY={4.2} position={[17.5, 0, -17.5]} foot={[9, 7]}>
+                <Box edges s={[5.5, 2.2, 3.4]} c={C.white} />
                 <HipRoof w={6.4} h={1.4} d={4.2} c={C.roofRed} at={[0, 2.2, 0]} />
             </Building>
 
             <Building {...b('Cổng Học viện')} anchorY={5.6} position={GATE_AT}>
                 {[-3.4, 3.4].map((x) => (
-                    <Box key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
+                    <Box edges key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
                 ))}
-                <Box s={[8, 0.5, 1]} c={CAMPUS.gateBeam} at={[0, 3.6, 0]} />
+                <Box edges s={[8, 0.5, 1]} c={CAMPUS.gateBeam} at={[0, 3.6, 0]} />
                 <SignBoard nightRef={nightRef} size={[7.4, 1.6, 0.2]} at={[0, 4.9, 0]} />
                 <TextPlane w={7.0} h={1.3} text={'HỌC VIỆN\nCÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG'} at={[0, 4.9, 0.115]} opts={T_GATE} nightRef={nightRef} glow={!lowQuality} />
                 {Array.from({ length: 9 }, (_, i) => (
@@ -474,7 +478,20 @@ const BOUND_HALF_HEIGHT = 20
 const FIT_MARGIN = 1.05
 const FOV = 28
 /** Sau khi buông tay, chờ chừng này rồi mới tự xoay tiếp. */
-const RESUME_AUTOROTATE_MS = 3000
+const RETURN_DELAY_MS = 700
+/** Góc mặc định của hero (từ START_POS) và biên kéo xoay: ±25° ngang, hẹp theo chiều dọc; buông tay thì về lại góc này */
+const HERO_OFF = START_POS.clone().sub(TARGET)
+const HERO_SPH = new THREE.Spherical().setFromVector3(HERO_OFF)
+const AZ_RANGE = (25 * Math.PI) / 180
+const POLAR_RANGE = 0.17
+/** Chừa thêm bên phải cột chữ (px) và bán kính khối cầu bao khuôn viên dùng khi tránh cột chữ */
+const TEXT_GAP = 32
+/** Chừa bên phải cho rail chương (px) */
+const RIGHT_GAP = 72
+const FIT_RADIUS = BOUND_RADIUS * 0.92
+const RETURN_RATE = 2.2
+const _sph = new THREE.Spherical()
+const _off = new THREE.Vector3()
 /** S ≤ ngưỡng này là còn ở hero: OrbitControls và tự xoay hoạt động; vượt ngưỡng thì camera chạy theo đường bay. */
 const HERO_EPS = 0.05
 /** Màn rộng: chủ thể nằm ở nửa phải. Vùng trống rộng ~62% khung, tâm dịch sang phải 18% bề rộng. */
@@ -799,6 +816,7 @@ function computeVisibleLabels(
     size: { width: number; height: number },
     raycaster: THREE.Raycaster,
     hovered: string | null,
+    minX: number,
 ) {
     const items = [...registry.entries()].map(([name, grp]) => {
         _anchor.set(0, grp.userData.anchorY as number, 0)
@@ -816,7 +834,7 @@ function computeVisibleLabels(
         // Hộp nhãn ước lượng: chip (tên) + cọc 16px phía trên điểm neo, rộng theo độ dài chữ
         const w = it.name.length * 7.6 + 30
         const rect = { l: it.x - w / 2, r: it.x + w / 2, t: it.y - 16 - 32, b: it.y }
-        if (it.behind || rect.l < 4 || rect.r > size.width - 4 || rect.t < 4 || rect.b > size.height - 4) continue
+        if (it.behind || rect.l < Math.max(4, minX) || rect.r > size.width - 4 || rect.t < 4 || rect.b > size.height - 4) continue
         if (it.name !== hovered) {
             if (taken.some((o) => rect.l < o.r + 6 && rect.r > o.l - 6 && rect.t < o.b + 6 && rect.b > o.t - 6)) continue
             _dir.copy(it.world).sub(camera.position).normalize()
@@ -855,6 +873,9 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const lowRef = useRef(false)
     const heroPos = useRef(START_POS.clone())
     const fitScale = useRef(1)
+    // Tránh cột chữ: zoom (≤1) và độ dịch ngang (px) đã làm mượt, mép phải cột chữ (px)
+    const avoid = useRef({ zoom: 1, shift: 0, textRight: 0 })
+    const returning = useRef(false)
     const [hovered, setHovered] = useState<BuildingName | null>(null)
     const [visibleLabels, setVisibleLabels] = useState<ReadonlySet<string>>(() => new Set())
     const labelKey = useRef('')
@@ -883,6 +904,22 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
     useStageFit(controls, staticMode, heroPos, fitScale, sm)
 
+    // Mép phải cột chữ (px): đo khi mount / đổi cỡ, không đọc layout trong lúc vẽ. Chưa có phần tử thì ước lượng theo lề trang + 600px.
+    useEffect(() => {
+        if (staticMode) {
+            avoid.current.textRight = 0
+            return
+        }
+        const measure = () => {
+            const el = document.querySelector('#journey .grid')
+            const r = el?.getBoundingClientRect().right
+            avoid.current.textRight = r && r > 100 ? r : Math.min(size.width * 0.5, Math.min(Math.max(24, size.width * 0.04), 96) + 600)
+        }
+        measure()
+        const t = window.setTimeout(measure, 600)
+        return () => window.clearTimeout(t)
+    }, [size, staticMode])
+
     // Đưa camera về góc nhìn ban đầu (OrbitControls lấy vị trí camera làm điểm xuất phát)
     useLayoutEffect(() => {
         camera.position.copy(START_POS)
@@ -903,11 +940,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         // Vào trong nhà: nắng, trời và đèn viền giảm hẳn để đèn trong sảnh làm chủ
         const inside = indoor.current
         if (sun.current) {
-            sun.current.intensity = (1.2 - n * 0.9) * Math.PI * (1 - inside)
+            sun.current.intensity = (1.6 - n * 1.3) * Math.PI * (1 - inside)
             sun.current.color.copy(SUN_DAY).lerp(SUN_NIGHT, n)
         }
         if (hemi.current) {
-            hemi.current.intensity = (0.85 - n * 0.42) * Math.PI * (1 - 0.68 * inside)
+            hemi.current.intensity = (0.55 - n * 0.12) * Math.PI * (1 - 0.68 * inside)
             hemi.current.color.copy(HEMI_SKY_DAY).lerp(HEMI_SKY_NIGHT, n)
             hemi.current.groundColor.copy(HEMI_GROUND_DAY).lerp(HEMI_GROUND_NIGHT, n)
         }
@@ -955,16 +992,17 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const onStart = () => {
         dragging.current = true
         window.clearTimeout(resumeTimer.current)
-        if (controls.current) controls.current.autoRotate = false
+        returning.current = false
         updateCursor()
     }
+    // Buông tay: đợi một nhịp rồi damping về góc mặc định (xem useFrame)
     const onEnd = () => {
         dragging.current = false
         updateCursor()
         window.clearTimeout(resumeTimer.current)
         resumeTimer.current = window.setTimeout(() => {
-            if (controls.current && !reduce) controls.current.autoRotate = true
-        }, RESUME_AUTOROTATE_MS)
+            returning.current = true
+        }, RETURN_DELAY_MS)
     }
 
     useFrame((state, delta) => {
@@ -989,8 +1027,8 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         if (ctl) {
             if (live && ctl.enabled) {
                 ctl.enabled = false
-                ctl.autoRotate = false
                 window.clearTimeout(resumeTimer.current)
+                returning.current = false
                 dragging.current = false
                 ctlOn.current = false
                 updateCursor()
@@ -998,7 +1036,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 // Về hero: camera đang ở (gần) đúng góc hero, bật lại kéo xoay + tự xoay
                 ctl.enabled = true
                 ctl.target.copy(TARGET)
-                ctl.autoRotate = !reduce && !dragging.current
+                returning.current = !dragging.current
                 ctl.update()
                 ctlOn.current = true
                 updateCursor()
@@ -1007,8 +1045,21 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
         if (!live) {
             camera.up.set(0, 1, 0)
-            if (touch && !reduce) heroPos.current.applyAxisAngle(Y_AXIS, -delta * 0.12) // cảm ứng: chỉ tự xoay
-            else heroPos.current.copy(camera.position)
+            if (!touch && ctl && returning.current && !dragging.current) {
+                // Về góc mặc định có damping (ngang + dọc), rồi để OrbitControls đọc lại vị trí máy quay
+                _off.copy(camera.position).sub(TARGET)
+                _sph.setFromVector3(_off)
+                const k = reduce ? 1 : 1 - Math.exp(-delta * RETURN_RATE)
+                _sph.theta += (HERO_SPH.theta - _sph.theta) * k
+                _sph.phi += (HERO_SPH.phi - _sph.phi) * k
+                if (Math.abs(HERO_SPH.theta - _sph.theta) < 0.002 && Math.abs(HERO_SPH.phi - _sph.phi) < 0.002) returning.current = false
+                camera.position.copy(TARGET).add(_off.setFromSpherical(_sph))
+                ctl.update()
+            }
+            if (touch) {
+                // Cảm ứng không kéo xoay: giữ đúng góc mặc định
+                heroPos.current.copy(TARGET).add(_off.copy(HERO_OFF).setLength(heroPos.current.distanceTo(TARGET) || HERO_OFF.length()))
+            } else heroPos.current.copy(camera.position)
             if (touch) {
                 camera.position.copy(heroPos.current)
                 camera.lookAt(TARGET)
@@ -1051,8 +1102,30 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
         // ── Kiosk: khung nhìn dịch sang phải như mọi chương; poster DOM bám 4 góc màn 3D ──
         if (!staticMode) {
-            const ox = -size.width * DESKTOP_SHIFT
-            if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01) camera.setViewOffset(size.width, size.height, ox, 0, size.width, size.height)
+            // Hero: khuôn viên không được chạm cột chữ bên trái. Khối cầu bao chiếu lên màn hình có tâm = tâm khung + độ dịch, bán kính r0·zoom;
+            // nếu mép trái chưa cách mép phải cột chữ + TEXT_GAP thì dịch sang phải (tới sát mép phải khung), chưa đủ thì thu nhỏ (zoom < 1).
+            const av = avoid.current
+            const w = size.width
+            let zoomT = 1
+            let shiftT = w * DESKTOP_SHIFT
+            if (!live && av.textRight > 0) {
+                const dist = camera.position.distanceTo(TARGET)
+                const r0 = (FIT_RADIUS * size.height) / (2 * dist * Math.tan(THREE.MathUtils.degToRad(FOV / 2)))
+                const left = av.textRight + TEXT_GAP
+                const room = w - RIGHT_GAP - left
+                zoomT = THREE.MathUtils.clamp(room / (2 * r0), 0.5, 1)
+                const r = r0 * zoomT
+                const c = THREE.MathUtils.clamp(w / 2 + shiftT, left + r, w - RIGHT_GAP - r)
+                shiftT = c - w / 2
+            }
+            const kk = reduce ? 1 : 1 - Math.exp(-delta * 6)
+            av.zoom += (zoomT - av.zoom) * kk
+            av.shift += (shiftT - av.shift) * kk
+            const ox = -av.shift
+            if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01 || Math.abs(camera.zoom - av.zoom) > 1e-4) {
+                camera.zoom = av.zoom
+                camera.setViewOffset(size.width, size.height, ox, 0, size.width, size.height)
+            }
         }
         camera.updateMatrixWorld()
         placeKiosk(kiosk, camera, size, S, !staticMode && !calmOn)
@@ -1112,7 +1185,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
         // Nhãn: chỉ ở hero; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
         if (frame.current++ % 6 === 0) {
-            const key = S < 0.2 && !FLAGS.noLabels ? computeVisibleLabels(registry.current, camera, size, raycaster, hb) : ''
+            const key = S < 0.2 && !FLAGS.noLabels ? computeVisibleLabels(registry.current, camera, size, raycaster, hb, staticMode ? 0 : avoid.current.textRight + TEXT_GAP) : ''
             if (key !== labelKey.current) {
                 labelKey.current = key
                 setVisibleLabels(new Set(key ? key.split('|') : []))
@@ -1145,11 +1218,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                     enableDamping
                     dampingFactor={0.07}
                     rotateSpeed={0.7}
-                    // Xoay ngang 360°; dọc giới hạn để không lật xuống dưới đế hay nhìn thẳng từ trên xuống
-                    minPolarAngle={0.55}
-                    maxPolarAngle={1.35}
-                    autoRotate={!reduce}
-                    autoRotateSpeed={0.6}
+                    // Chỉ xoay trong khoảng hẹp quanh góc mặc định để mô hình không quét vào cột chữ; buông tay thì về lại góc mặc định
+                    minAzimuthAngle={HERO_SPH.theta - AZ_RANGE}
+                    maxAzimuthAngle={HERO_SPH.theta + AZ_RANGE}
+                    minPolarAngle={HERO_SPH.phi - POLAR_RANGE}
+                    maxPolarAngle={HERO_SPH.phi + POLAR_RANGE}
                     // Chỉ chuột trái xoay; chuột phải/giữa không bị chiếm
                     mouseButtons={{ LEFT: THREE.MOUSE.ROTATE }}
                     touches={{}}
@@ -1160,11 +1233,11 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             {/* fps thấp thì hạ độ phân giải về 1, ổn định thì trả lại */}
             <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => !lowRef.current && setDpr(maxDpr)} />
             {PERF_ON && <PerfHud />}
-            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.85 * Math.PI]} />
+            <hemisphereLight ref={hemi} args={[CAMPUS.skyLight, CAMPUS.groundLight, 0.55 * Math.PI]} />
             <directionalLight
                 ref={sun}
                 color={CAMPUS.sunlight}
-                intensity={1.2 * Math.PI}
+                intensity={1.6 * Math.PI}
                 position={[-26, 38, 22]}
                 castShadow
                 shadow-mapSize={isWebKit ? [1024, 1024] : [2048, 2048]}
@@ -1175,6 +1248,8 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 shadow-camera-near={1}
                 shadow-camera-far={120}
                 shadow-bias={-0.0006}
+                shadow-normalBias={0.04}
+                shadow-radius={4}
             />
             <group ref={world}>
                 <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={sm} lowQuality={lowQuality} />

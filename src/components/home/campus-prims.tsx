@@ -43,13 +43,62 @@ export interface BoxProps {
     mat?: THREE.Material
     cast?: boolean
     recv?: boolean
+    /** Viền nét kiểu minh họa (#9AA0B4, ~45%): chỉ cho khối lớn của tòa nhà, không cho cây và chi tiết nhỏ */
+    edges?: boolean
+}
+
+// Viền nét: một EdgesGeometry (ngưỡng 20°) cho mỗi kích thước hộp và một vật liệu dùng chung
+const edgeMat = new THREE.LineBasicMaterial({ color: CAMPUS.edge, transparent: true, opacity: 0.45 })
+const edgeCache = new Map<string, THREE.EdgesGeometry>()
+function edgeGeo(s: Vec3) {
+    const key = s.join('_')
+    let g = edgeCache.get(key)
+    if (!g) {
+        const b = new THREE.BoxGeometry(...s)
+        g = new THREE.EdgesGeometry(b, 20)
+        b.dispose()
+        edgeCache.set(key, g)
+    }
+    return g
 }
 
 /** Hộp: mặc định `at` là tâm đáy (y là mặt dưới), như hàm box() của bản gốc. */
-export function Box({ s, c = '#fff', at = [0, 0, 0], o, mid, mat, cast = true, recv = true }: BoxProps) {
+export function Box({ s, c = '#fff', at = [0, 0, 0], o, mid, mat, cast = true, recv = true, edges }: BoxProps) {
     return (
         <mesh position={[at[0], mid ? at[1] : at[1] + s[1] / 2, at[2]]} material={mat ?? stdMat(c, o)} castShadow={cast} receiveShadow={recv}>
             <boxGeometry args={s} />
+            {edges && <lineSegments geometry={edgeGeo(s)} material={edgeMat} />}
+        </mesh>
+    )
+}
+
+// Tấm bóng mờ bake sẵn dưới chân tòa nhà (gradient tròn #0A1A50, không tốn render động) để tòa bám đất
+let blobTex: THREE.CanvasTexture | null = null
+function getBlobTex() {
+    if (!blobTex) {
+        const cv = document.createElement('canvas')
+        cv.width = cv.height = 128
+        const ctx = cv.getContext('2d')!
+        const g = ctx.createRadialGradient(64, 64, 8, 64, 64, 62)
+        g.addColorStop(0, 'rgba(255,255,255,1)')
+        g.addColorStop(0.55, 'rgba(255,255,255,0.55)')
+        g.addColorStop(1, 'rgba(255,255,255,0)')
+        ctx.fillStyle = g
+        ctx.fillRect(0, 0, 128, 128)
+        blobTex = new THREE.CanvasTexture(cv)
+    }
+    return blobTex
+}
+const blobMat = new THREE.MeshBasicMaterial({ color: CAMPUS.shadowInk, transparent: true, opacity: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 })
+/** Bóng tiếp đất [rộng, sâu, lệch x, lệch z] dưới chân tòa (hệ tọa độ của tòa) */
+export function GroundBlob({ foot }: { foot: [number, number, number?, number?] }) {
+    const mat = useMemo(() => {
+        blobMat.map = getBlobTex()
+        return blobMat
+    }, [])
+    return (
+        <mesh position={[foot[2] ?? 0, 0.1, foot[3] ?? 0]} rotation={[-Math.PI / 2, 0, 0]} material={mat} renderOrder={1}>
+            <planeGeometry args={[foot[0], foot[1]]} />
         </mesh>
     )
 }

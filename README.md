@@ -30,3 +30,11 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Cờ tính năng: giao diện tối
+
+Giao diện tối đang **tạm tắt** nhưng code vẫn còn nguyên (token `.dark`, `theme-curtain`, chế độ đêm của cảnh 3D).
+
+- Cờ: `FLAGS.darkMode` trong `src/lib/perf.ts` (đang `false`) và `DARK_MODE` trong script ở `index.html`. Hai chỗ phải cùng giá trị.
+- Khi `false`: ẩn mọi nút sáng/tối, luôn bỏ class `dark` trên `<html>`, bỏ qua theme đã lưu, cảnh 3D luôn ban ngày.
+- Bật lại: đổi cả hai thành `true`.
