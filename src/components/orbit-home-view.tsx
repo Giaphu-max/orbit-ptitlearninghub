@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, 
 import { Link } from 'react-router-dom'
 import { ArrowRight, Camera, Play, Sparkles } from 'lucide-react'
 import { getCourse, lessons } from '@/data'
-import { deriveCover, type CoverAccent } from '@/lib/cover-kinds'
 import { CourseArt } from '@/components/courses/course-cover'
 import { courseKicker, primaryCourse, STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { trackPage } from '@/lib/page-metrics'
@@ -19,6 +18,7 @@ import { CampusStage } from '@/components/home/campus-stage'
 import { KioskScreen, type KioskBridge } from '@/components/home/kiosk-screen'
 import { setKioskCourse } from '@/lib/kiosk-course'
 import { BenchRunner } from '@/components/home/bench-runner'
+import { ResumeCard } from '@/components/home/resume-card'
 import { SiteFooter } from '@/components/site-footer'
 
 /**
@@ -299,7 +299,6 @@ function HeroChapter() {
     const inProgress = visible.find((l) => progress[l.id] && !progress[l.id].completed && progress[l.id].lastPositionSec > 0)
     const resume = inProgress ?? visible.find((l) => !progress[l.id]?.completed) ?? visible[0]
     const resumeAt = resume ? progress[resume.id]?.lastPositionSec ?? 0 : 0
-    const pct = resume ? Math.min(100, Math.round((resumeAt / resume.durationSec) * 100)) : 0
 
     return (
         <div className="flex min-w-0 flex-col gap-6">
@@ -313,50 +312,14 @@ function HeroChapter() {
             <p data-s className="max-w-xl text-lg leading-relaxed text-muted-foreground">Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.</p>
 
             {resume ? (
-                <Link
-                    to={`/lesson/${resume.id}`}
-                    data-s
-                    data-vt={`lesson-${resume.id}`}
-                    className="ptit-glass-card group relative mt-1 flex items-center gap-4 overflow-hidden p-3 pr-4 text-foreground transition duration-base ease-out hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
-                >
-                    <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-[40%] animate-sheen bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
-                    <GridThumb accent={deriveCover(getCourse(resume.courseId)?.subject ?? '').accent} />
-                    <span className="min-w-0 flex-1">
-                        <span className="block truncate text-eyebrow uppercase tracking-[0.05em] text-brand-ink">
-                            {resumeAt > 0 ? 'Học tiếp' : 'Bắt đầu'} · {getCourse(resume.courseId)?.title ?? 'Khóa học'}
-                        </span>
-                        <span className="mt-1.5 line-clamp-2 text-lg font-bold leading-snug">{resume.title}</span>
-                        <span className="mt-3 flex items-center gap-3">
-                            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ bài đang học">
-                                <span className="block h-full rounded-full mm-ribbon-bg" style={{ width: `${pct}%`, backgroundSize: `${pct > 0 ? 10000 / pct : 100}% 100%` }} />
-                            </span>
-                            <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
-                        </span>
-                    </span>
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full surface-red text-ink-foreground transition duration-base group-hover:scale-[1.06]">
-                        <Play size={20} className="ml-0.5 fill-current" />
-                    </span>
-                </Link>
+                <div data-s data-vt={`lesson-${resume.id}`}>
+                    <ResumeCard lesson={resume} courseTitle={getCourse(resume.courseId)?.title ?? 'Khóa học'} resumeSec={resumeAt} />
+                </div>
             ) : (
                 <p data-s className="max-w-md rounded-card bg-muted p-4 text-sm text-muted-foreground">Chưa có bài nào được giảng viên xuất bản.</p>
             )}
             <span data-s data-compact className="hidden text-sm text-muted-foreground lg:block">Kéo vào khoảng trống bên phải để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
         </div>
-    )
-}
-
-/** Ảnh thu nhỏ có lưới 1/3 (2 đường dọc, 2 đường ngang mờ) và chấm chủ thể ở một giao điểm, như mockup. */
-function GridThumb({ accent }: { accent: CoverAccent }) {
-    return (
-        <span className="relative block h-[92px] w-[92px] shrink-0 overflow-hidden rounded-2xl" style={{ backgroundImage: `linear-gradient(135deg, hsl(var(--subject-${accent})), color-mix(in srgb, hsl(var(--subject-${accent})) 55%, #ffffff))` }} aria-hidden>
-            <span
-                className="absolute inset-0 bg-[length:33.333%_33.333%] opacity-100"
-                style={{
-                    backgroundImage: 'linear-gradient(hsl(var(--ink-foreground) / 0.4) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--ink-foreground) / 0.4) 1px, transparent 1px)',
-                }}
-            />
-            <span className="absolute left-[66.66%] top-[33.33%] h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ink-foreground shadow-card" />
-        </span>
     )
 }
 

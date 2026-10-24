@@ -2,11 +2,9 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type Mo
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Menu, Play, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
-import { StreakFlame } from '@/components/streak-flame'
+import { StatsPill } from '@/components/stats-pill'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { XpChip } from '@/components/xp-chip'
 import { FLAGS } from '@/lib/perf'
-import { visibleStreak } from '@/lib/gamification'
 import { resumeLesson } from '@/lib/next-step'
 import { centerOf, enterRole } from '@/lib/role-switch'
 import { getJourneyChapter, scrollToSection, subscribeChapter } from '@/lib/scroll'
@@ -122,13 +120,11 @@ export function TopNav() {
         scrollToSection('top')
     }
     const role = useOrbitStore((s) => s.role)
-    const streakState = useOrbitStore((s) => s.streak)
     useOrbitStore((s) => s.lessonProgress)
     const resume = role === 'teacher' ? undefined : resumeLesson()
 
     const items = role === 'teacher' ? TEACHER_ITEMS : BASE_ITEMS
-    const streak = visibleStreak(streakState).count
-
+    
     const rootRef = useRef<HTMLDivElement>(null)
     const menuBtn = useRef<HTMLButtonElement>(null)
     const panelRef = useRef<HTMLDivElement>(null)
@@ -174,17 +170,7 @@ export function TopNav() {
     // Giảng viên không có chuỗi ngày/XP
     const chips = role === 'teacher' ? null : (
         <>
-            <Link
-                to="/journey"
-                title={`Chuỗi ${streak} ngày học`}
-                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold transition duration-fast hover:border-brand-300 ${
-                    streak > 0 ? 'ptit-streak-chip' : 'border border-border bg-card text-foreground'
-                }`}
-            >
-                <StreakFlame lit={streak > 0} />
-                Chuỗi {streak} ngày
-            </Link>
-            <XpChip className="ptit-xp-badge inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold transition-colors duration-fast" />
+            <StatsPill tooltip={!collapsed} />
         </>
     )
 
@@ -221,7 +207,7 @@ export function TopNav() {
                                 tabIndex={collapsed ? -1 : 0}
                                 onClick={(e) => goTo(e, it)}
                                 aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
-                                className={`${linkCls} ${isActive(it) ? 'bg-brand-50 font-semibold text-brand-ink' : 'font-medium text-muted-foreground hover:text-foreground'}`}
+                                className={`${linkCls} ${isActive(it) ? 'relative font-extrabold text-brand-ink after:absolute after:bottom-0 after:left-1/2 after:h-[5px] after:w-[5px] after:-translate-x-1/2 after:rounded-full after:bg-brand-600' : 'font-medium text-foreground hover:text-strong'}`}
                             >
                                 {it.label}
                             </Link>

@@ -36,6 +36,9 @@
     --brand-light: 8 100% 83%;
 
 
+    /* Navy cố định (#0A1A50): lớp phủ chuyển trang, bong bóng thời gian; không đổi theo giao diện */
+    --navy: 226 78% 18%;
+
     /* Nền tối cố định, không đổi theo giao diện */
     --ink: 24 10% 6%;
     --ink-foreground: 0 0% 100%;
