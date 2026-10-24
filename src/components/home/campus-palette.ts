@@ -4,6 +4,7 @@ export const CAMPUS = {
     plate: '#C4C8CF', plateDark: '#3A3030', plateEdge: '#9F2925', pave: '#9A9FA9', road: '#9A9FA9', grass: '#8FC27A', grassDark: '#8FC27A', lawnEdge: '#D5D8DE',
     cream: '#EEF0F2', granite: '#8C8583', glass: '#4FA36A', win: '#5E8FA8', roofRed: '#D9473A', edge: '#9AA0B4', shadowInk: '#0A1A50', grid: '#D5D9E3',
     yellow: '#EEF0F2', white: '#E6E9ED', stripe: '#D9DDE3', trunk: '#7A5544', tree: '#6FB04F', tree2: '#4F8A3C',
+    glassBand: '#5E8FA8', ledRed: '#DE221A', solar: '#2C3E63', roofSlab: '#D9DDE3', fiber: '#BC2626',
     suaWhite: '#F4F6F0', suaGreen: '#8CC163', roofFlat: '#F3F4F6', gateBlue: '#2F5AA8', signWhite: '#FFFFFF',
     // Màu sơn thật: Tòa A1 (xám xanh), hội trường/canteen (kem), cổng
     a1Wall: '#ECEEF1', a1Trim: '#D9DDE3', hallWall: '#E6E9ED', a2Trim: '#D9DDE3', gateWall: '#E6E2DA',

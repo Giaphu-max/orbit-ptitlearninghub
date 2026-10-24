@@ -351,6 +351,13 @@ export function makeConcreteTexture(repeat: [number, number]) {
             img.data[i * 4 + 2] += d
         }
         ctx.putImageData(img, 0, 0)
+        // Lưới mảnh kiểu bản vẽ kỹ thuật: mỗi đơn vị cảnh (n/12) một đường 1px rất nhạt
+        ctx.fillStyle = 'rgba(178,183,192,0.28)'
+        for (let k = 0; k < 12; k++) {
+            const o = Math.round((k * n) / 12)
+            ctx.fillRect(o, 0, 1, n)
+            ctx.fillRect(0, o, n, 1)
+        }
         // Ron: đường mờ 2px ở 0, n/3, 2n/3 (đường ở 0 vẽ cả hai mép tile)
         ctx.fillStyle = 'rgba(178,183,192,0.75)'
         for (let k = 0; k < 3; k++) {
@@ -372,5 +379,65 @@ export function GroundPlane({ s, at, tex }: { s: [number, number]; at: Vec3; tex
         <mesh position={at} rotation={[-Math.PI / 2, 0, 0]} material={mat} receiveShadow>
             <planeGeometry args={s} />
         </mesh>
+    )
+}
+
+// ─── Kiến trúc hiện đại: mái bằng + tường chắn mái + khối kỹ thuật, viền LED đỏ ──────────────────
+
+/** Dải LED đỏ #DE221A phát sáng nhẹ (emissive thấp): ban ngày chỉ là đường nhấn mảnh, không chói */
+const ledMat = new THREE.MeshStandardMaterial({ color: CAMPUS.ledRed, emissive: CAMPUS.ledRed, emissiveIntensity: 0.4, roughness: 0.6 })
+const solarMat = stdMat(CAMPUS.solar, { roughness: 0.3, metalness: 0.4 })
+const acMat = stdMat('#C9CDD3')
+
+/** Khung LED chữ nhật chạy quanh mép mái; `at` là tâm, y là cao độ mép. */
+export function LedFrame({ w, d, at, t = 0.1, h = 0.1 }: { w: number; d: number; at: Vec3; t?: number; h?: number }) {
+    return (
+        <group position={at}>
+            {[-1, 1].map((k) => (
+                <mesh key={`z${k}`} position={[0, h / 2, (k * d) / 2]} material={ledMat}>
+                    <boxGeometry args={[w + t, h, t]} />
+                </mesh>
+            ))}
+            {[-1, 1].map((k) => (
+                <mesh key={`x${k}`} position={[(k * w) / 2, h / 2, 0]} material={ledMat}>
+                    <boxGeometry args={[t, h, d]} />
+                </mesh>
+            ))}
+        </group>
+    )
+}
+
+/**
+ * Mái bằng: tấm mái + tường chắn mái mỏng, trên nóc vài khối kỹ thuật (hộp điều hòa, tấm pin mặt trời xanh đậm).
+ * `at` là tâm đáy mái; w, d là kích thước ngoài của tường chắn. `led` thêm viền LED trên tường chắn.
+ */
+export function FlatRoof({ w, d, at, led = false, gear = true }: { w: number; d: number; at: Vec3; led?: boolean; gear?: boolean }) {
+    const pt = 0.12
+    const ph = 0.34
+    const nAc = Math.max(1, Math.round(w / 4.5))
+    const nSolar = Math.max(1, Math.round(w / 3.2))
+    return (
+        <group position={at}>
+            <Box s={[w, 0.14, d]} c={CAMPUS.roofSlab} />
+            {[-1, 1].map((k) => (
+                <Box key={`pz${k}`} s={[w, ph, pt]} c={CAMPUS.roofFlat} at={[0, 0.14, (k * (d - pt)) / 2]} />
+            ))}
+            {[-1, 1].map((k) => (
+                <Box key={`px${k}`} s={[pt, ph, d - 2 * pt]} c={CAMPUS.roofFlat} at={[(k * (w - pt)) / 2, 0.14, 0]} />
+            ))}
+            {led && <LedFrame w={w - pt} d={d - pt} at={[0, 0.14 + ph - 0.02, 0]} t={0.07} h={0.07} />}
+            {gear && (
+                <>
+                    {Array.from({ length: nAc }, (_, i) => (
+                        <Box key={`ac${i}`} s={[0.7, 0.4, 0.55]} mat={acMat} at={[-w / 2 + (w * (i + 0.5)) / nAc, 0.14, -d * 0.22]} />
+                    ))}
+                    {Array.from({ length: nSolar }, (_, i) => (
+                        <mesh key={`pv${i}`} position={[-w / 2 + (w * (i + 0.5)) / nSolar, 0.42, d * 0.17]} rotation={[-0.38, 0, 0]} material={solarMat} castShadow receiveShadow>
+                            <boxGeometry args={[Math.min(1.5, (w / nSolar) * 0.8), 0.06, 0.85]} />
+                        </mesh>
+                    ))}
+                </>
+            )}
+        </group>
     )
 }

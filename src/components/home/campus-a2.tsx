@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { A2COL as A, CAMPUS, LOBBY as L } from './campus-palette'
 import { PracticeRoom } from './campus-room'
-import { Box, Cylinder, DrawPlane, HipRoof, stdMat, TextPlane, type BoxProps, type TextOpts, type Vec3 } from './campus-prims'
+import { Box, Cylinder, DrawPlane, FlatRoof, stdMat, TextPlane, type BoxProps, type TextOpts, type Vec3 } from './campus-prims'
 
 // Phần mới của khuôn viên theo bản mẫu docs/mockup/orbit-campus-journey.html: đế tòa A2 (sảnh lõm, mặt kính nhìn xuyên vào trong,
 // cửa kính tự mở), sảnh bên trong và Hội trường A2. Toạ độ trong file này là toạ độ cục bộ của tòa A2, trừ khi ghi khác.
@@ -464,11 +464,8 @@ export function HallA2() {
     return (
         <>
             <Box edges s={[4.6, 7, 4.6]} c={CAMPUS.hallWall} />
-            <Box s={[5, 0.5, 5]} c={A.parapet} at={[0, 7, 0]} />
-            <HipRoof w={4.8} h={1.6} d={4.8} c={CAMPUS.roofRed} at={[0, 7.5, 0]} />
-            {[0, 1, 2].map((i) => (
-                <CB key={i} s={[0.9, 3.6, 0.1]} c={A.glassM} at={[-1.4 + i * 1.4, 3, 2.32]} />
-            ))}
+            <FlatRoof w={5} d={5} at={[0, 7, 0]} led />
+            <CB s={[4, 3.6, 0.1]} c={A.glassM} at={[0, 3, 2.32]} o={{ roughness: 0.2, metalness: 0.35 }} />
             <CB s={[2, 2.4, 0.12]} c={A.hallDoor} at={[0, 1.2, 2.33]} />
             <TextPlane w={3.4} h={0.64} text="HỘI TRƯỜNG A2" at={[0, 5.8, 2.4]} opts={T_HALL} />
         </>
