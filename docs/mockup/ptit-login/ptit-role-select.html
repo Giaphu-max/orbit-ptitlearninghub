@@ -5,7 +5,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 /* Layout: paper-white page framed by two red orbit crescents (the logo's ring, cropped by the screen edge).
-   Left: thesis + two role cards. Right: the real PTIT logo on a slow orbit stage. Light mode only. */
+   Left: thesis + two role cards. Right: full-height art panel, anh Châu as a data collage in front of the real PTIT logo. Light mode only. */
 :root{color-scheme:light;
   --red-500:#DE221A;--red-600:#BC2626;--red-700:#9F2925;--red-900:#4A1311;--red-50:#FBF1F1;--red-100:#F3DBDB;
   --star:#EFF003;--star-700:#B89C0E;--gold:#EAAE3C;--gold-100:#FCF1D9;--on-gold:#3A2408;
@@ -22,65 +22,66 @@ button{font:inherit}
 .screen[hidden]{display:none!important}
 
 /* ---------- role select ---------- */
-.paper{position:absolute;inset:0;background:
-  radial-gradient(1200px 700px at 78% 40%,#FFFFFF 0%,rgba(255,255,255,0) 60%),var(--paper)}
-.grain{position:absolute;inset:0;opacity:.35;mix-blend-mode:multiply;pointer-events:none}
-.crescent{position:absolute;pointer-events:none;will-change:transform}
-.crescent path{fill:var(--red-500)}
-.c1{left:-380px;bottom:-500px;width:720px;height:720px;animation:sweepIn 1.4s var(--ease) both}
-.c2{right:-350px;top:-500px;width:760px;height:760px;animation:sweepIn2 1.6s .1s var(--ease) both}
-@keyframes sweepIn{from{transform:rotate(-38deg) scale(.86);opacity:0}}
-@keyframes sweepIn2{from{transform:rotate(30deg) scale(.86);opacity:0}}
-.top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding-block:22px;padding-left:max(28px,4vw,env(safe-area-inset-left,0px));padding-right:max(28px,4vw,env(safe-area-inset-right,0px));z-index:3}
-.top img{height:40px;width:auto;display:block}
-.demo{font:700 11px/16px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);background:rgba(255,255,255,.75);border-radius:999px;padding:7px 12px;white-space:nowrap}
-.layout{position:relative;z-index:2;height:100%;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:center;gap:4vw;
-  padding-block:96px 48px;padding-left:max(28px,7vw,env(safe-area-inset-left,0px));padding-right:max(28px,5vw,env(safe-area-inset-right,0px))}
-.copy{display:flex;flex-direction:column;gap:22px;max-width:620px}
-.eb{font:700 12px/16px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--red-600);display:flex;align-items:center;gap:10px}
-.eb::before{content:"";width:28px;height:2px;background:var(--red-600)}
-h1{margin:0;font-size:clamp(44px,5.4vw,80px);line-height:.98;letter-spacing:-.045em;font-weight:900;color:var(--ink-strong);text-wrap:balance}
+/* split screen like an editorial landing: quiet text on the left, a full-height art panel on the right */
+.rs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);background:var(--paper)}
+.left{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;gap:clamp(18px,2vh,26px);min-width:0;
+  padding-block:clamp(120px,16vh,180px) clamp(48px,8vh,96px);padding-left:max(28px,6.5vw,env(safe-area-inset-left,0px));padding-right:clamp(24px,4vw,72px)}
+.top{position:absolute;top:0;left:0;right:0;padding-block:clamp(22px,3vh,40px);padding-left:max(28px,6.5vw,env(safe-area-inset-left,0px))}
+.top img{height:clamp(44px,4vw,58px);width:auto;display:block}
+h1{margin:0;font-size:clamp(38px,3.9vw,70px);line-height:1.04;letter-spacing:-.04em;font-weight:900;color:var(--ink-strong);text-wrap:balance;max-width:14ch}
 h1 em{font-style:normal;color:var(--red-600)}
-.lead{margin:0;font-size:17px;line-height:1.6;color:var(--muted);max-width:52ch}
-.roles{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
-.role{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:14px;text-align:left;cursor:pointer;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);padding:22px 22px 20px;color:var(--ink);
-  box-shadow:0 1px 2px rgba(10,26,80,.04),0 6px 20px rgba(10,26,80,.06);transition:transform .35s var(--ease),border-color .25s,box-shadow .35s var(--ease)}
-.role::after{content:"";position:absolute;right:-70px;bottom:-90px;width:200px;height:200px;border-radius:50%;
-  border:14px solid var(--red-500);border-left-color:transparent;border-top-color:transparent;transform:rotate(-30deg) scale(.7);opacity:0;transition:transform .5s var(--ease),opacity .3s}
-.role:hover{transform:translateY(-4px);border-color:var(--red-100);box-shadow:0 2px 4px rgba(10,26,80,.06),0 18px 40px rgba(188,38,38,.14)}
-.role:hover::after{opacity:1;transform:rotate(-10deg) scale(1)}
-.role .ic{width:48px;height:48px;border-radius:var(--r-md);display:grid;place-items:center;background:var(--red-50);color:var(--red-600);transition:background .25s,color .25s}
-.role:hover .ic{background:var(--red-600);color:#fff}
-.role b{font-size:22px;letter-spacing:-.02em;color:var(--ink-strong)}
-.role p{margin:0;font-size:14px;line-height:1.55;color:var(--muted)}
-.role .go{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--red-600);margin-top:4px}
-.role .go i{display:inline-block;transition:transform .3s var(--ease);font-style:normal}
+.lead{margin:0;font-size:clamp(15px,1.1vw,18px);line-height:1.6;color:var(--ink);max-width:44ch}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:clamp(16px,3vh,36px);max-width:640px}
+.role{display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;cursor:pointer;
+  background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:20px;color:var(--ink);
+  box-shadow:0 1px 2px rgba(10,26,80,.04),0 8px 22px rgba(10,26,80,.06);transition:transform .35s var(--ease),border-color .25s,box-shadow .35s var(--ease)}
+.role:hover{transform:translateY(-4px);border-color:var(--red-100);box-shadow:0 2px 4px rgba(10,26,80,.06),0 18px 40px rgba(188,38,38,.12)}
+.role[data-role=teacher]:hover{border-color:#C9CDE0;box-shadow:0 2px 4px rgba(10,26,80,.06),0 18px 40px rgba(10,26,80,.12)}
+.role .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:var(--red-50);color:var(--red-600)}
+.role[data-role=teacher] .ic{background:#EEF0F7;color:var(--ink-strong)}
+.role b{font-size:clamp(22px,1.6vw,26px);line-height:1.1;letter-spacing:-.025em;font-weight:900;color:var(--ink-strong);margin-top:4px}
+.role p{margin:0;font-size:14px;line-height:1.5;color:var(--muted);flex:1}
+.role .go{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:8px;font-weight:800;font-size:15px;color:#fff;background:var(--red-600);border-radius:12px;padding:12px 16px;box-shadow:0 10px 22px -12px rgba(188,38,38,.8);transition:background .25s}
+.role:hover .go{background:var(--red-700)}
+.role[data-role=teacher] .go{background:var(--ink-strong);box-shadow:0 10px 22px -12px rgba(10,26,80,.7)}
+.role[data-role=teacher]:hover .go{background:#06103A}
+.role .go i{font-style:normal;transition:transform .3s var(--ease)}
 .role:hover .go i{transform:translateX(4px)}
 .role[disabled]{cursor:default}
-.dim .role:not(.picked){opacity:.35;transform:scale(.98)}
-.picked{transform:scale(1.02)!important;border-color:var(--red-600)!important}
-.foot{font:500 12px/18px var(--mono);color:var(--muted)}
-/* logo stage */
-.stage{position:relative;justify-self:center;width:min(40vw,520px);aspect-ratio:1;display:grid;place-items:center}
-.stage svg.orbits{position:absolute;inset:-12%;width:124%;height:124%;overflow:visible}
-.orb{fill:none;stroke:var(--red-500);vector-effect:non-scaling-stroke}
-.orb.a{stroke-width:1.5;opacity:.55;stroke-dasharray:2 7}
-.orb.b{stroke-width:1;opacity:.25}
-.spin{transform-origin:50% 50%;animation:spin 60s linear infinite}
-.spin.rev{animation-duration:90s;animation-direction:reverse}
-@keyframes spin{to{transform:rotate(360deg)}}
-.halo{position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle,#FFFFFF 0%,rgba(255,255,255,.9) 45%,rgba(255,255,255,0) 72%)}
-.logo{position:relative;width:52%;height:auto;filter:drop-shadow(0 18px 30px rgba(188,38,38,.18));animation:logoIn 1.2s .2s var(--ease) both}
-@keyframes logoIn{from{opacity:0;transform:translateY(18px) scale(.94)}}
-.glint{position:absolute;width:34px;height:34px;pointer-events:none;mix-blend-mode:screen;opacity:0}
-.glint::before,.glint::after{content:"";position:absolute;left:50%;top:50%;width:100%;height:3px;border-radius:3px;background:radial-gradient(closest-side,#fff,rgba(255,255,255,0));transform:translate(-50%,-50%)}
-.glint::after{transform:translate(-50%,-50%) rotate(90deg)}
-.stage .glint{left:calc(50% + 4.6%);top:calc(50% - 2.5%);animation:glint 5s 1.6s ease-in-out infinite}
-@keyframes glint{0%,86%,100%{opacity:0;transform:scale(.3) rotate(0)}92%{opacity:1;transform:scale(1.1) rotate(45deg)}}
-.sat{fill:var(--star);stroke:var(--star-700);stroke-width:1.5}
-
+.dim .role:not(.picked){opacity:.35}
+.picked{border-color:var(--red-600)!important}
+/* art panel */
+.art{position:relative;overflow:hidden;min-height:100%}
+.art canvas{position:absolute;inset:0;width:100%;height:100%}
+.art .logo{position:absolute;width:36%;left:3%;top:10%;height:auto;opacity:0;transform:translateY(16px);transition:opacity 1s var(--ease),transform 1.2s var(--ease)}
+.portrait{position:absolute;bottom:0;right:0;height:92%;max-width:100%;aspect-ratio:700/880;overflow:visible}
+.portrait{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%);mask-image:linear-gradient(90deg,transparent 0,#000 16%)}
+.portrait .pc{opacity:0;transition:opacity .8s var(--ease)}
+.portrait .pm{opacity:0;transition:opacity 1.1s var(--ease)}
+.portrait .s{opacity:0;transform-box:fill-box;transform-origin:center;transition:transform 1s var(--ease),opacity .3s}
+.portrait .paper{fill:#F4F1EB}
+.portrait .data text{font:600 10px "JetBrains Mono",monospace;fill:#373D4E;opacity:.7}
+.portrait .data{opacity:0;transition:opacity .8s .2s}
+.portrait .tri{opacity:0;transform-box:fill-box;transform-origin:center;transition:transform .9s var(--ease),opacity .5s}
+.portrait .tri.k{fill:#15171F;transform:translate(-10px,-30px) rotate(-14deg)}
+.portrait .thread{fill:none;stroke:#15171F;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}
+.portrait .thread.top{clip-path:url(#cpTopOnly)}
+#tCut2{opacity:0;transition:opacity .6s .1s}
+.art.split #tCut2{opacity:1}
+.portrait .knot{fill:#15171F;opacity:0;transition:opacity .4s 1.6s}
+.art.live .logo{opacity:1;transform:none}
+.art.live .pc{opacity:1}
+.art.collage .pm{opacity:1}
+.art.collage .s{opacity:1}
+.art.split .sR{transform:translate(10px,-6px)}
+.art.split .sE{transform:translate(-14px,-10px) rotate(-2.5deg) scale(1.07)}
+.art.split .sW{transform:translate(16px,10px) rotate(4deg)}
+.art.split .sH{transform:translate(-12px,10px) rotate(-6deg)}
+.art.split .tri{opacity:1;transform:none}
+.art.split .data{opacity:1}
+.art.split .thread{stroke-dashoffset:0;transition:stroke-dashoffset 1.6s .5s cubic-bezier(.65,0,.35,1)}
+.art.split .knot{opacity:1}
+.art.collage .pc{opacity:1}
 /* ---------- intro (role curtain) ---------- */
 .intro{position:fixed;inset:0;z-index:20;pointer-events:none;visibility:hidden}
 .intro.on{visibility:visible;pointer-events:auto;cursor:pointer}
@@ -154,51 +155,58 @@ h1 em{font-style:normal;color:var(--red-600)}
 .dock button,.replay{font-weight:700;font-size:12px;border-radius:999px;padding:8px 13px;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink-strong)}
 .replay{position:absolute;left:max(24px,4vw,env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:2;font-family:var(--mono);color:var(--muted)}
 
+@media (max-width:1180px){.roles{grid-template-columns:1fr}}
 @media (max-width:900px){
   body{overflow:auto}
-  .screen.rs{position:relative;min-height:100%;overflow:visible}
-  .layout{grid-template-columns:1fr;padding-top:88px;gap:24px}
-  .stage{order:-1;width:min(70vw,300px)}
-  .roles{grid-template-columns:1fr}
-  .c1{width:420px;height:420px;left:-250px;bottom:-300px}.c2{display:none}
+  .roles{grid-template-columns:1fr 1fr}
+  .screen.rs{position:relative;display:flex;flex-direction:column;min-height:100%;overflow:visible}
+  .art{order:-1;height:62vh;min-height:420px}
+  .top{position:relative;order:-2;padding-block:16px}
+  .left{padding-top:28px}
   .links,.tag{display:none}.brand small{display:none}
 }
-@media (max-width:520px){.top img{height:30px}.demo{display:none}.chip.xp span.lv{display:none}}
+@media (max-width:520px){.roles{grid-template-columns:1fr}.top img{height:34px}.demo{display:none}.chip.xp span.lv{display:none}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 
 <!-- ============ ROLE SELECT ============ -->
 <section class="screen rs" id="rs" aria-labelledby="h1">
-  <div class="paper"></div>
-  <canvas class="grain" id="grain" aria-hidden="true"></canvas>
-  <svg class="crescent c1" viewBox="-100 -100 200 200" aria-hidden="true"><path id="cr1"/></svg>
-  <svg class="crescent c2" viewBox="-100 -100 200 200" aria-hidden="true"><path id="cr2"/></svg>
-  <header class="top"><img src="ptit-lockup.svg" alt="Học viện Công nghệ Bưu chính Viễn thông"><span class="demo">Bản trình diễn · không cần đăng nhập</span></header>
-  <div class="layout">
-    <div class="copy">
-      <div class="eb">Khoa Đa phương tiện · Học tập có trợ giảng AI</div>
-      <h1 id="h1">Học tập trung.<br><em>Hiểu bài thật.</em></h1>
-      <p class="lead">Bài giảng, trợ giảng AI và lộ trình ôn tập của Học viện trong một nơi. Chọn vai trò để bắt đầu.</p>
-      <div class="roles" id="roles">
-        <button class="role" data-role="student"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span><b>Sinh viên</b><p>Học bài có trợ giảng AI, làm quiz củng cố, đọc bài ngắn mỗi ngày và tích XP theo mức hiểu bài.</p><span class="go">Vào với vai trò sinh viên <i>→</i></span></button>
-        <button class="role" data-role="teacher"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20v13H2z"/><path d="M7 21h10M12 16v5"/></svg></span><b>Giảng viên</b><p>Duyệt và chỉnh nội dung AI tạo ra trước khi xuất bản, xem khái niệm nào lớp hay sai.</p><span class="go">Vào với vai trò giảng viên <i>→</i></span></button>
-      </div>
-      <div class="foot">Cuộc thi Ứng dụng AI trong giảng dạy 2026 · Công đoàn PTIT</div>
+  <header class="top"><img src="ptit-lockup.svg" alt="Học viện Công nghệ Bưu chính Viễn thông"></header>
+  <div class="left">
+    <h1 id="h1">Hệ thống học tập có <em>trợ giảng AI</em></h1>
+    <p class="lead">Bài giảng của Học viện, trợ giảng AI bám đúng nội dung bài và lộ trình ôn tập theo chỗ bạn còn hổng.</p>
+    <div class="roles" id="roles">
+      <button class="role" data-role="student"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span><b>Sinh viên</b><p>Học có trợ giảng AI, quiz củng cố, tích XP theo mức hiểu bài.</p><span class="go">Vào với vai trò sinh viên <i>→</i></span></button>
+      <button class="role" data-role="teacher"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20v13H2z"/><path d="M7 21h10M12 16v5"/></svg></span><b>Giảng viên</b><p>Duyệt nội dung AI tạo, xem lớp hay sai khái niệm nào.</p><span class="go">Vào với vai trò giảng viên <i>→</i></span></button>
     </div>
-    <div class="stage" aria-hidden="true">
-      <svg class="orbits" viewBox="-100 -100 200 200">
-        <g transform="rotate(-24)">
-          <g class="spin"><ellipse class="orb a" rx="92" ry="58"/></g>
-          <g class="spin rev"><ellipse class="orb b" rx="80" ry="48"/></g>
-          <ellipse class="orb b" rx="98" ry="64" style="opacity:.14"/>
-          <path id="orbitPath" d="M92 0A92 58 0 1 1-92 0A92 58 0 1 1 92 0" fill="none"/>
-          <g><polygon class="sat" points="0,-6 1.8,-1.8 6,0 1.8,1.8 0,6 -1.8,1.8 -6,0 -1.8,-1.8"><animateMotion dur="14s" repeatCount="indefinite" rotate="auto"><mpath href="#orbitPath"/></animateMotion></polygon></g>
-        </g>
-      </svg>
-      <div class="halo"></div>
-      <img class="logo" src="ptit-logo.webp" alt="" width="600" height="763">
-      <span class="glint"></span>
-    </div>
+  </div>
+  <div class="art" id="art" aria-hidden="true">
+    <canvas id="ascii"></canvas>
+    <img class="logo" src="ptit-logo.webp" alt="" width="600" height="763">
+    <svg class="portrait" id="portrait" viewBox="0 0 700 880" preserveAspectRatio="xMidYMax meet">
+      <defs>
+        <clipPath id="cpR"><polygon id="tR"/></clipPath>
+        <clipPath id="cpE"><polygon id="tE"/></clipPath>
+        <clipPath id="cpW"><polygon id="tW"/></clipPath>
+        <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="3.5" cy="3.5" r="1.7" fill="#DE221A"/></pattern>
+        <clipPath id="cpCut"><polygon id="tCut"/></clipPath>
+        <mask id="mCut" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="880"><rect width="700" height="880" fill="#fff"/><polygon id="tCut2" fill="#000"/></mask>
+        <filter id="pshadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0A1A50" flood-opacity=".28"/></filter>
+      </defs>
+      <g mask="url(#mCut)">
+        <image class="pc" href="big-color2.webp" width="700" height="880"/>
+        <image class="pm" href="big-mono.webp" width="700" height="880"/>
+      </g>
+      <g class="data" id="data" clip-path="url(#cpCut)"></g>
+      <g class="s sR"><polygon class="paper" id="pR"/><image href="big-color2.webp" width="700" height="880" clip-path="url(#cpR)"/></g>
+      <g class="s sH"><polygon class="paper" id="pH"/><polygon id="tH" fill="url(#dots)"/></g>
+      <g class="s sW" filter="url(#pshadow)"><polygon class="paper" id="pW"/><image href="big-color2.webp" width="700" height="880" clip-path="url(#cpW)"/></g>
+      <path class="thread" id="thread" pathLength="1" d="M214 352 C 252 318 290 270 330 250 C 372 230 420 236 452 250 C 500 270 540 232 568 190 C 600 140 652 104 744 62"/>
+      <g class="s sE" filter="url(#pshadow)"><polygon class="paper" id="pE"/><image href="big-color2.webp" width="700" height="880" clip-path="url(#cpE)"/></g>
+      <path class="thread top" id="threadTop" pathLength="1" d="M214 352 C 252 318 290 270 330 250 C 372 230 420 236 452 250 C 500 270 540 232 568 190 C 600 140 652 104 744 62"/>
+      <circle class="knot" cx="214" cy="352" r="4"/><circle class="knot" cx="744" cy="62" r="4"/>
+      <polygon class="tri k" points="512,96 570,108 538,150"/>
+    </svg>
   </div>
 </section>
 
@@ -243,18 +251,69 @@ h1 em{font-style:normal;color:var(--red-600)}
 <script>
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $=id=>document.getElementById(id);
-/* Crescent = outer ellipse minus an inner ellipse pushed to one side: thick on one flank, a hairline on the other, like the logo's ring. */
-function crescent(rx,ry,t,dx,dy){const ir=rx-t, iry=ry-t*.55;
-  const E=(a,b,cx,cy)=>`M${cx+a} ${cy}A${a} ${b} 0 1 1 ${cx-a} ${cy}A${a} ${b} 0 1 1 ${cx+a} ${cy}Z`;
-  return E(rx,ry,0,0)+E(ir,iry,dx,dy);}
-for(const [id,rot] of [['cr1',62],['cr2',-118]]){const p=$(id);p.setAttribute('d',crescent(88,58,20,7,-5));p.setAttribute('fill-rule','evenodd');p.setAttribute('transform',`rotate(${rot})`);}
-/* paper grain, drawn once at low res */
-(()=>{const c=$('grain'),w=256,h=256;c.width=w;c.height=h;c.style.width='100%';c.style.height='100%';const g=c.getContext('2d'),d=g.createImageData(w,h);
- for(let i=0;i<d.data.length;i+=4){const v=225+Math.random()*30;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}g.putImageData(d,0,0);c.style.imageRendering='auto';})();
-/* gentle parallax on the crescents */
-const c1=document.querySelector('.c1'),c2=document.querySelector('.c2');
-if(!reduce) addEventListener('pointermove',e=>{const x=e.clientX/innerWidth-.5,y=e.clientY/innerHeight-.5;
-  c1.style.translate=`${x*-14}px ${y*-10}px`;c2.style.translate=`${x*12}px ${y*10}px`;},{passive:true});
+
+/* torn */
+/* torn-paper shapes: every edge is subdivided and jittered, like paper torn by hand; a slightly larger copy is the white paper back */
+(function(){
+  let seed=29;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  function torn(pts,amp,seg){const out=[];for(let i=0;i<pts.length;i++){const [x1,y1]=pts[i],[x2,y2]=pts[(i+1)%pts.length];
+      const L=Math.hypot(x2-x1,y2-y1),n=Math.max(2,Math.round(L/seg)),nx=-(y2-y1)/L,ny=(x2-x1)/L;let w=0;
+      for(let k=0;k<n;k++){const t=k/n;w=w*.55+(rnd()-.5)*amp;out.push([x1+(x2-x1)*t+nx*w,y1+(y2-y1)*t+ny*w]);}}
+    return out;}
+  const grow=(pts,d)=>{const cx=pts.reduce((a,p)=>a+p[0],0)/pts.length,cy=pts.reduce((a,p)=>a+p[1],0)/pts.length;return pts.map(([x,y])=>{const l=Math.hypot(x-cx,y-cy)||1;return [x+(x-cx)/l*d,y+(y-cy)/l*d];});};
+  const str=p=>p.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ');
+  /* right half of the face (nose line to cheek), eyes band, and the chunk of head that is gone */
+  const R=[[392,96],[520,104],[536,300],[476,394],[398,404],[404,250]];
+  const E=[[268,206],[522,200],[528,276],[272,286]];
+  const C=[[150,0],[420,0],[408,40],[330,96],[262,150],[196,176],[150,170]];
+  const r=torn(R,7,9), e=torn(E,6,7), c=torn(C,9,8);
+  const Wp=[[462,500],[650,516],[642,652],[468,642]], Hp=[[96,606],[300,590],[312,752],[104,770]];
+  const w=torn(Wp,7,8), hh=torn(Hp,8,8);
+  $('tW').setAttribute('points',str(w));$('pW').setAttribute('points',str(grow(torn(Wp,7,8),6)));
+  $('tH').setAttribute('points',str(hh));$('pH').setAttribute('points',str(grow(hh,0)));
+  $('tR').setAttribute('points',str(r));$('pR').setAttribute('points',str(grow(torn(R,7,9),5)));
+  $('tE').setAttribute('points',str(e));$('pE').setAttribute('points',str(grow(torn(E,6,7),6)));
+  $('tCut').setAttribute('points',str(c));$('tCut2').setAttribute('points',str(c));
+  /* top copy of the thread is only drawn outside the eyes band, so the thread passes behind the band and over the rest */
+  const defs=document.querySelector('#portrait defs');const cp=document.createElementNS('http://www.w3.org/2000/svg','clipPath');cp.id='cpTopOnly';
+  cp.innerHTML=`<path clip-rule="evenodd" d="M-100 -100H900V1000H-100Z M${e.map(q=>q.join(' ')).join(' L')}Z"/>`;defs.appendChild(cp);
+  /* data columns fill the missing head */
+  const CH='01<>/\\{}[]#=+*?:;ACGTXZ%&'.split('');const g=$('data');let html='';
+  for(let x=158;x<430;x+=11){if(rnd()<.25)continue;const y0=4+rnd()*30,len=6+rnd()*18|0;for(let i=0;i<len;i++)html+=`<text x="${x}" y="${(y0+i*11).toFixed(0)}">${CH[(rnd()*CH.length)|0].replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')}</text>`;}
+  g.innerHTML=html;
+})();
+
+/* ---------- art panel: photo -> collage (pre-made images; only opacity/transform animate) + an ascii field on canvas ---------- */
+(function(){
+  const art=$('art'), cv=$('ascii'), g=cv.getContext('2d');
+  const CH='01<>/\\{}[]#=+*?:;ACGTXZ%&$'.split('');
+  let cols=[], dots=null, W=0, H=0, t0=0, typing=false;
+  function build(){const r=art.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;g.setTransform(dpr,0,0,dpr,0,0);
+    /* dot grid, rendered once into an offscreen canvas */
+    dots=document.createElement('canvas');dots.width=cv.width;dots.height=cv.height;const d=dots.getContext('2d');d.setTransform(dpr,0,0,dpr,0,0);d.fillStyle='rgba(55,61,78,.22)';
+    for(let y=8;y<H;y+=15)for(let x=8;x<W;x+=15)d.fillRect(x,y,1.2,1.2);
+    /* columns of characters, densest to the right of the head */
+    cols=[];const step=12;let seed=11;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+    for(let x=W*.46;x<W*.99;x+=step){if(rnd()<.45)continue;const y0=H*(.02+rnd()*.14),len=Math.floor(8+rnd()*34);
+      cols.push({x,y0,len,ch:Array.from({length:len},()=>CH[(rnd()*CH.length)|0]),a:.35+rnd()*.3,d:rnd()*.5});}
+    for(let x=W*.06;x<W*.3;x+=step){if(rnd()<.8)continue;const y0=H*(.3+rnd()*.3),len=Math.floor(4+rnd()*14);cols.push({x,y0,len,ch:Array.from({length:len},()=>CH[(rnd()*CH.length)|0]),a:.25,d:rnd()*.5});}}
+  function draw(k){g.clearRect(0,0,W,H);g.drawImage(dots,0,0,W,H);g.font='600 11px "JetBrains Mono", monospace';g.textAlign='center';
+    for(const c of cols){const n=Math.floor(c.len*Math.max(0,Math.min(1,(k-c.d)/.5)));g.fillStyle=`rgba(55,61,78,${c.a})`;for(let i=0;i<n;i++)g.fillText(c.ch[i],c.x,c.y0+i*13);}}
+  let last=0;
+  function tick(now){const k=typing?Math.min(1.01,(now-t0)/1500):1.01;
+    if(k<1.01){draw(k);}else if(now-last>140&&!document.hidden){last=now;for(let i=0;i<7;i++){const c=cols[(Math.random()*cols.length)|0];if(c)c.ch[(Math.random()*c.len)|0]=CH[(Math.random()*CH.length)|0];}draw(1.01);}
+    requestAnimationFrame(tick);}
+  function run(){build();draw(0);art.classList.add('live');
+    if(reduce){art.classList.add('collage','split');draw(1.01);return;}
+    setTimeout(()=>art.classList.add('collage'),1100);
+    setTimeout(()=>{art.classList.add('split');typing=true;t0=performance.now();},1900);
+    requestAnimationFrame(tick);}
+  addEventListener('resize',()=>{build();draw(1.01);});
+  /* hover: pieces slide home and the colour photo comes back; leave: collage again */
+  art.addEventListener('pointerenter',()=>art.classList.remove('split','collage'));
+  art.addEventListener('pointerleave',()=>art.classList.add('collage','split'));
+  const srcs=['big-color2.webp','big-mono.webp'];Promise.all(srcs.map(u=>new Promise(r=>{const i=new Image();i.onload=i.onerror=r;i.src=u;}))).then(()=>document.fonts.ready).then(run);
+})();
 
 /* ---------- intro: one timeline, ~3.6s, every step transform/opacity/clip-path; click, Enter or Esc skips ---------- */
 let anims=[], skipping=false, done=null;
