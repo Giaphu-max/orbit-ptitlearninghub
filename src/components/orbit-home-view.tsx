@@ -231,7 +231,7 @@ function useDailyLit(stage: RefObject<number>, reduce: boolean) {
  */
 function Panel({ id, index, wide, scroll, children }: { id: string; index: number; wide?: boolean; scroll?: boolean; children: ReactNode }) {
     return (
-        <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${wide ? 'max-w-[600px]' : 'max-w-[520px]'} ${index === 0 ? 'min-[860px]:ml-[max(0px,calc(max(64px,8vw)-var(--gutter)))] min-[860px]:-translate-y-[3svh]' : ''}`}>
+        <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${wide ? 'max-w-[600px]' : 'max-w-[520px]'}`}>
             {/* scroll: phần tử con không co lại khi cột thấp; thiếu chỗ thì cột tự cuộn bên trong */}
             <div className={`pointer-events-auto ${scroll ? '-m-1 flex max-h-[calc(100svh-10rem)] flex-col overflow-y-auto p-1 [&>*]:shrink-0' : ''}`}>{children}</div>
         </div>

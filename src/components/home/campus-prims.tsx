@@ -321,22 +321,22 @@ function makeTileTexture(draw: (ctx: CanvasRenderingContext2D, n: number) => voi
 const rng = (seed: number) => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)
 
 /**
- * Sân bê tông xám sáng #C4C8CF: nhiễu hạt ±4% độ sáng, vài vết loang mờ lớn (#BBC0C8 / #CDD1D7), ron chia ô lớn #B2B7C0.
+ * Sân bê tông xám sáng #D3D7DD: nhiễu hạt ±4% độ sáng, vài vết loang mờ lớn (#BBC0C8 / #CDD1D7), ron chia ô lớn #B2B7C0.
  * Một tile 512px = 12 đơn vị cảnh, 3 ô mỗi chiều (≈4 đơn vị/ô); các vết loang vẽ cả bản sao qua mép để lặp liền mạch.
  */
 export function makeConcreteTexture(repeat: [number, number]) {
     return makeTileTexture((ctx, n) => {
         const rnd = rng(23)
-        ctx.fillStyle = '#C4C8CF'
+        ctx.fillStyle = '#D3D7DD'
         ctx.fillRect(0, 0, n, n)
-        for (let i = 0; i < 26; i++) {
+        for (let i = 0; i < 14; i++) {
             const x = rnd() * n
             const y = rnd() * n
             const r = 50 + rnd() * 90
             const col = rnd() < 0.5 ? '187,192,200' : '205,209,215'
             for (const [dx, dy] of [[0, 0], [n, 0], [-n, 0], [0, n], [0, -n]]) {
                 const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r)
-                g.addColorStop(0, `rgba(${col},0.55)`)
+                g.addColorStop(0, `rgba(${col},0.3)`)
                 g.addColorStop(1, `rgba(${col},0)`)
                 ctx.fillStyle = g
                 ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2)

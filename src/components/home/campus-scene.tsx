@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Html, OrbitControls, PerformanceMonitor } from '@react-three/drei'
+import { OrbitControls, PerformanceMonitor } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { CAMPUS } from './campus-palette'
@@ -14,7 +14,7 @@ import { addFrame } from '@/lib/frame-loop'
 import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
 import { KIOSK_H, KIOSK_W, type KioskBridge } from './kiosk-screen'
-import { Antenna, FiberNetwork } from './campus-tech'
+import { Antenna } from './campus-tech'
 import { Box, Cylinder, FlatRoof, GroundBlob, GroundPlane, Gable, LedFrame, makeConcreteTexture, stdMat, TextPlane, type TextOpts, type Vec3 } from './campus-prims'
 import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
 
@@ -38,6 +38,7 @@ const T_PTIT: TextOpts = { size: 200 }
 const T_HEART: TextOpts = { size: 170 }
 /** Kính mảng lớn của các tòa: bóng, phản chiếu nhẹ */
 const GLASS = { roughness: 0.2, metalness: 0.35 }
+
 const T_GATE_W: TextOpts = { size: [120, 62], h: 256, fg: CAMPUS.pureWhite }
 
 // ─── Tòa nhà (có nâng khi hover và nhãn) ───────────────────────────────────
@@ -46,9 +47,6 @@ interface BuildingProps {
     name: string
     anchorY: number
     position: Vec3
-    hovered: boolean
-    /** Nhãn đang hiển thị (không bị che, không chồng nhãn khác) */
-    labelVisible: boolean
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     /** Xoay quanh trục đứng (rad), mặc định mặt trước nhìn về +z */
     rotY?: number
@@ -57,7 +55,7 @@ interface BuildingProps {
     children: ReactNode
 }
 
-function Building({ name, anchorY, position, hovered, labelVisible, registry, rotY = 0, foot, children }: BuildingProps) {
+function Building({ name, anchorY, position, registry, rotY = 0, foot, children }: BuildingProps) {
     const ref = useRef<THREE.Group>(null)
     useLayoutEffect(() => {
         const g = ref.current
@@ -71,22 +69,10 @@ function Building({ name, anchorY, position, hovered, labelVisible, registry, ro
         }
     }, [name, anchorY, registry])
 
-    // Nhãn chỉ dựng khi đang hiện (chương hero); các chương khác gỡ hẳn để drei không cập nhật transform DOM mỗi khung
-    const showLabel = labelVisible && !FLAGS.noLabels
     return (
         <group ref={ref} position={position} rotation={[0, rotY, 0]}>
             {foot && <GroundBlob foot={foot} />}
             {children}
-            {showLabel && (
-            <Html position={[0, anchorY, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-                <div className="flex w-max -translate-x-1/2 -translate-y-full flex-col items-center gap-1">
-                    <div data-dot data-active={hovered} className="ptit-pin w-max max-w-[220px] whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold">
-                        {name}
-                    </div>
-                    <div className="h-4 w-0.5 bg-brand-600/60" />
-                </div>
-            </Html>
-            )}
         </group>
     )
 }
@@ -299,8 +285,6 @@ const LAWNS: [number, number, number, number][] = [[-15, 14, 9, 4], [16, 10, 9, 
 const CARS: [string, number, number][] = [[CAMPUS.ptitRed, -5.5, 11], [CAMPUS.pureWhite, -7.8, 11.2], [CAMPUS.carDark, 8.8, 10.5], [CAMPUS.carSilver, 10.6, 10.8]]
 
 interface WorldProps {
-    hovered: BuildingName | null
-    visibleLabels: ReadonlySet<string>
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     nightRef: React.MutableRefObject<number>
     reduce: boolean
@@ -349,8 +333,8 @@ function SuaTree({ x, z, s, lowQuality }: { x: number; z: number; s: number; low
     )
 }
 
-function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
-    const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name) })
+function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
+    const b = (name: BuildingName) => ({ registry, name })
     concreteTex ??= makeConcreteTexture([45 / 12, 41 / 12])
 
     return (
@@ -379,14 +363,14 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             ))}
 
             {/* Tòa A2: đế rộng + sảnh kính nhìn xuyên vào trong; thân tháp đứng trên mái đế */}
-            <Building {...b('Tòa A2')} anchorY={24.4} position={A2_AT} foot={[24, 29, 0, -9.5]}>
+            <Building {...b('Tòa A2')} anchorY={20.2} position={A2_AT} foot={[24, 29, 0, -9.5]}>
                 <A2Podium stage={stage} />
                 <A2Lobby stage={stage} />
                 <group position={[0, PODIUM_TOP - 2.8, 0]}>
                     <Box edges s={[6.8, 11, 4.6]} c={C.cream} at={[0, 2.8, -0.8]} />
                     <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[-4.05, 2.8, -0.8]} />
                     <Box edges s={[1.3, 9.6, 3.8]} c={C.cream} at={[4.05, 2.8, -0.8]} />
-                    <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.25, metalness: 0.3 }} />
+                    <Box s={[1.8, 10.4, 0.25]} c={C.glass} at={[0, 3.1, 1.6]} o={{ roughness: 0.2, metalness: 0.3 }} />
                     <Box s={[0.25, 9, 1.8]} c={C.glass} at={[-4.75, 3.2, -0.8]} o={{ roughness: 0.25, metalness: 0.3 }} />
                     <Box edges s={[6.8, 0.5, 4.8]} c={CAMPUS.cornice} at={[0, 13.8, -0.8]} />
                     {/* Mái bằng như ảnh thật: khối mái trắng, tam giác trắng phía trước, viền đỏ mảnh */}
@@ -426,14 +410,14 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
             {/* Tòa A3: khối trắng + kính, mái bằng, dải đỏ ở cạnh; xoay mặt về phía A2 */}
             <Building {...b('Tòa A3')} anchorY={7.6} position={[17.5, 0, -6]} rotY={-Math.PI / 2} foot={[16, 8]}>
                 <Box edges s={[13, 4.6, 4.4]} c={C.yellow} />
-                <Box s={[13.3, 0.28, 4.7]} c={C.ptitRed} at={[0, 4.32, 0]} />
+                <Box s={[13.3, 0.28, 4.7]} c={C.ledRed} at={[0, 4.32, 0]} />
                 {[0.5, 2.5].map((y) => (
                     <Box key={y} s={[11.6, 1.5, 0.1]} c={C.glassBand} at={[0, y, 2.23]} o={GLASS} />
                 ))}
                 <FlatRoof w={13.4} d={4.6} at={[0, 4.6, 0]} />
                 <Box s={[2.6, 5.2, 1]} c={C.yellow} at={[0, 0, 2.6]} />
                 <Box s={[2.0, 3.8, 0.1]} c={C.glassBand} at={[0, 0.5, 3.13]} o={GLASS} />
-                <Box s={[0.18, 5.2, 1.05]} c={C.ptitRed} at={[1.4, 0, 2.6]} />
+                <Box s={[0.18, 5.2, 1.05]} c={C.ledRed} at={[1.4, 0, 2.6]} />
             </Building>
 
             {/* Hội trường A1: dài, trắng, mái đầu hồi đỏ */}
@@ -492,8 +476,6 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                 )
             })}
 
-            <FiberNetwork reduce={reduce} />
-
             {SUA_SPOTS.map(([x, z, s]) => (
                 <SuaTree key={`${x}_${z}`} x={x} z={z} s={s} lowQuality={lowQuality} />
             ))}
@@ -530,8 +512,6 @@ const AZ_RANGE = (25 * Math.PI) / 180
 const POLAR_RANGE = 0.17
 /** Chừa thêm bên phải cột chữ (px) và bán kính khối cầu bao khuôn viên dùng khi tránh cột chữ */
 const TEXT_GAP = 48
-/** Hero: nâng tâm mô hình lên chừng này chiều cao khung để ngang tầm tiêu đề */
-const HERO_RISE = 0.1
 /** Khuôn viên (cả cạnh đế) chiếm tối đa chừng này bề ngang ở hero: mô hình là bối cảnh, không phải tiêu điểm */
 const HERO_MAX_W = 0.48
 /** Chừa tối thiểu bên phải khung (px) */
@@ -854,51 +834,6 @@ const _anchor = new THREE.Vector3()
 const _dir = new THREE.Vector3()
 const _look = new THREE.Vector3()
 
-/**
- * Chọn nhãn được hiện: ưu tiên tòa đang hover rồi tới tòa gần camera; bỏ nhãn nằm ngoài khung,
- * bị tòa khác che (tia từ camera tới điểm neo trúng tòa khác) hoặc chồng lên nhãn đã chọn.
- */
-function computeVisibleLabels(
-    registry: Map<string, THREE.Group>,
-    camera: THREE.PerspectiveCamera,
-    size: { width: number; height: number },
-    raycaster: THREE.Raycaster,
-    hovered: string | null,
-    minX: number,
-) {
-    const items = [...registry.entries()].map(([name, grp]) => {
-        _anchor.set(0, grp.userData.anchorY as number, 0)
-        grp.localToWorld(_anchor)
-        const world = _anchor.clone()
-        const dist = world.distanceTo(camera.position)
-        const p = world.clone().project(camera)
-        return { name, grp, world, dist, x: ((p.x + 1) / 2) * size.width, y: ((1 - p.y) / 2) * size.height, behind: p.z > 1 }
-    })
-    items.sort((a, b) => (a.name === hovered ? -1 : b.name === hovered ? 1 : a.dist - b.dist))
-
-    const taken: { l: number; t: number; r: number; b: number }[] = []
-    const shown: string[] = []
-    for (const it of items) {
-        // Hộp nhãn ước lượng: chip (tên) + cọc 16px phía trên điểm neo, rộng theo độ dài chữ
-        const w = it.name.length * 7.6 + 30
-        const rect = { l: it.x - w / 2, r: it.x + w / 2, t: it.y - 16 - 32, b: it.y }
-        if (it.behind || rect.l < Math.max(4, minX) || rect.r > size.width - 4 || rect.t < 4 || rect.b > size.height - 4) continue
-        if (it.name !== hovered) {
-            if (taken.some((o) => rect.l < o.r + 6 && rect.r > o.l - 6 && rect.t < o.b + 6 && rect.b > o.t - 6)) continue
-            _dir.copy(it.world).sub(camera.position).normalize()
-            raycaster.set(camera.position, _dir)
-            raycaster.far = it.dist - 1.5
-            const others = items.filter((o) => o.name !== it.name).map((o) => o.grp)
-            const blocked = raycaster.intersectObjects(others, true).length > 0
-            raycaster.far = Infinity
-            if (blocked) continue
-        }
-        taken.push(rect)
-        shown.push(it.name)
-    }
-    return shown.sort().join('|')
-}
-
 function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk, pointer }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
@@ -922,11 +857,8 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const heroPos = useRef(START_POS.clone())
     const fitScale = useRef(1)
     // Tránh cột chữ: zoom (≤1) và độ dịch ngang (px) đã làm mượt, mép phải cột chữ (px)
-    const avoid = useRef({ zoom: 1, shift: 0, shiftY: 0, textRight: 0 })
+    const avoid = useRef({ zoom: 1, shift: 0, textRight: 0 })
     const returning = useRef(false)
-    const [hovered, setHovered] = useState<BuildingName | null>(null)
-    const [visibleLabels, setVisibleLabels] = useState<ReadonlySet<string>>(() => new Set())
-    const labelKey = useRef('')
     const frame = useRef(0)
     const shadowSig = useRef('')
     const raycaster = useMemo(() => new THREE.Raycaster(), [])
@@ -959,10 +891,9 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             return
         }
         const measure = () => {
-            // Cột chữ chương 0 (đã dịch sang phải: lề trái max(64px, 8vw))
-            const el = document.getElementById('top')
+            const el = document.querySelector('#journey .grid')
             const r = el?.getBoundingClientRect().right
-            avoid.current.textRight = r && r > 100 ? r : Math.min(size.width * 0.55, Math.max(64, size.width * 0.08) + 600)
+            avoid.current.textRight = r && r > 100 ? r : Math.min(size.width * 0.5, Math.min(Math.max(24, size.width * 0.04), 96) + 600)
         }
         measure()
         const t = window.setTimeout(measure, 600)
@@ -1175,8 +1106,6 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             const w = size.width
             let zoomT = 1
             let shiftT = w * DESKTOP_SHIFT
-            // Hero: tâm mô hình nâng lên ngang tầm tiêu đề (không thấp hơn); offsetY dương = cảnh dịch lên
-            const shiftYT = !live ? size.height * HERO_RISE : 0
             if (!live && av.textRight > 0) {
                 const dist = camera.position.distanceTo(TARGET)
                 const r0 = (FIT_RADIUS * size.height) / (2 * dist * Math.tan(THREE.MathUtils.degToRad(FOV / 2)))
@@ -1191,11 +1120,10 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             const kk = reduce ? 1 : 1 - Math.exp(-delta * 6)
             av.zoom += (zoomT - av.zoom) * kk
             av.shift += (shiftT - av.shift) * kk
-            av.shiftY += (shiftYT - av.shiftY) * kk
             const ox = -av.shift
-            if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01 || Math.abs(av.shiftY - (camera.view?.offsetY ?? 0)) > 0.01 || Math.abs(camera.zoom - av.zoom) > 1e-4) {
+            if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01 || Math.abs(camera.zoom - av.zoom) > 1e-4) {
                 camera.zoom = av.zoom
-                camera.setViewOffset(size.width, size.height, ox, av.shiftY, size.width, size.height)
+                camera.setViewOffset(size.width, size.height, ox, 0, size.width, size.height)
             }
         }
         camera.updateMatrixWorld()
@@ -1231,7 +1159,6 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         if (hb !== hoverRef.current) {
             hoverRef.current = hb
             updateCursor()
-            setHovered(hb)
         }
         registry.current.forEach((grp, name) => {
             const lift = lifts.current.get(name) ?? 0
@@ -1254,14 +1181,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             pf.n = 0
         }
 
-        // Nhãn: chỉ ở hero; mỗi 6 khung hình tính lại tòa nào được hiện (không bị che, không chồng nhãn khác)
-        if (frame.current++ % 6 === 0) {
-            const key = S < 0.2 && !FLAGS.noLabels ? computeVisibleLabels(registry.current, camera, size, raycaster, hb, staticMode ? 0 : avoid.current.textRight + TEXT_GAP) : ''
-            if (key !== labelKey.current) {
-                labelKey.current = key
-                setVisibleLabels(new Set(key ? key.split('|') : []))
-            }
-        }
+        frame.current++
 
         // Chuyển hoàng hôn ↔ buổi tối
         nightRef.current += (nightTarget.current - nightRef.current) * (reduce ? 1 : 0.04)
@@ -1323,7 +1243,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 shadow-radius={4}
             />
             <group ref={world}>
-                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={sm} lowQuality={lowQuality} />
+                <Campus registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={sm} lowQuality={lowQuality} />
             </group>
         </>
     )
