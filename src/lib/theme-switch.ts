@@ -89,7 +89,7 @@ function drawEmblem({ emblem, ring, sat, marks, stars }: CurtainRefs, anim: Anim
 }
 
 let playing = false
-/** Màn phủ đang chạy (chuyển giao diện hoặc chuyển vai trò): không chạy chồng hai hiệu ứng. */
+/** Màn phủ chuyển giao diện đang chạy: không chạy chồng hai hiệu ứng. */
 export const curtainPlaying = () => playing
 
 export async function playCurtain(origin: { x: number; y: number }, toDark: boolean, hooks: SwitchHooks) {
@@ -154,80 +154,6 @@ export async function playCurtain(origin: { x: number; y: number }, toDark: bool
         await settled(open)
     } finally {
         hooks.freeze(false)
-        curtain.classList.remove('on', 'hole')
-        running.forEach((a) => a.cancel())
-        curtain.style.removeProperty('--hole')
-        emblem.style.opacity = ''
-        playing = false
-    }
-}
-
-/**
- * Chuyển vai trò: màn đỏ lan ra từ chính thẻ/nút vừa bấm, logo + vòng quỹ đạo và lời chào hiện giữa màn hình,
- * đổi vai và chuyển trang phía sau màn (hooks.swap), rồi mở màn từ tâm logo. Khoảng 1,3 giây; chỉ animate
- * clip-path / mask / transform / opacity.
- */
-export async function playRoleCurtain(origin: { x: number; y: number }, greeting: string, hooks: { swap: () => void }) {
-    const r = refs
-    if (!r || playing) {
-        hooks.swap()
-        return
-    }
-    const { curtain, emblem, greeting: greet } = r
-    const running: Animation[] = []
-    const anim: Anim = (el, kf, o) => {
-        const a = el.animate(kf, { fill: 'both', ...o })
-        running.push(a)
-        return a
-    }
-    const W = window.innerWidth
-    const H = window.innerHeight
-    const R = Math.hypot(Math.max(origin.x, W - origin.x), Math.max(origin.y, H - origin.y)) + 20
-    const Rc = Math.hypot(W / 2, H / 2) + 20
-    const maskOk = typeof CSS !== 'undefined' && 'registerProperty' in CSS
-
-    playing = true
-    try {
-        greet.textContent = greeting
-        curtain.classList.remove('to-dark', 'hole')
-        curtain.style.setProperty('--hole', '0px')
-        curtain.classList.add('on')
-        emblem.style.opacity = '0'
-
-        const cover = anim(curtain, [{ clipPath: `circle(0px at ${origin.x}px ${origin.y}px)` }, { clipPath: `circle(${R}px at ${origin.x}px ${origin.y}px)` }], {
-            duration: 460,
-            easing: E.inOut,
-        })
-        anim(
-            emblem,
-            [
-                { opacity: 0, transform: 'translate(-50%,-50%) scale(.82)' },
-                { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' },
-            ],
-            { duration: 460, delay: 180, easing: E.out },
-        )
-        drawEmblem(r, anim)
-        anim(greet, [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 420, delay: 380, easing: E.out })
-
-        await settled(cover)
-        hooks.swap() // đổi vai + chuyển trang phía sau màn
-        await frames(3)
-
-        await wait(220)
-        curtain.classList.add('hole')
-        const open = anim(curtain, [{ '--hole': '0px' }, { '--hole': `${Rc}px` }], { duration: 520, easing: E.in })
-        anim(
-            emblem,
-            [
-                { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' },
-                { opacity: 0, transform: 'translate(-50%,-50%) scale(1.7)' },
-            ],
-            { duration: 440, easing: E.in },
-        )
-        anim(greet, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: E.in })
-        if (!maskOk) anim(curtain, [{ opacity: 1 }, { opacity: 0 }], { duration: 420, easing: 'ease-out' })
-        await settled(open)
-    } finally {
         curtain.classList.remove('on', 'hole')
         running.forEach((a) => a.cancel())
         curtain.style.removeProperty('--hole')

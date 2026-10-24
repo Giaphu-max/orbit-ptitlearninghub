@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { LOGO_URL as logoUrl } from '@/lib/brand'
 import { bindCurtain } from '@/lib/theme-switch'
-
-// Logo PTIT (nếu có SVG/PNG/WebP trong src/assets/brand) thay cho chữ PTIT trong vòng quỹ đạo
-const logoUrls = import.meta.glob('/src/assets/brand/logo.{svg,png,webp}', {
-    eager: true,
-    query: '?url',
-    import: 'default',
-}) as Record<string, string>
-const logoUrl = Object.values(logoUrls)[0]
 
 const LETTERS: { ch: string; x: number }[] = [
     { ch: 'P', x: -62 },
@@ -124,7 +117,7 @@ export function ThemeCurtain() {
                         className="fill-ink-foreground/75"
                         style={{ fontWeight: 600, fontSize: 11, letterSpacing: '0.3em' }}
                     >
-                        ORBIT
+                        HỌC TẬP TRUNG
                     </text>
                 </svg>
             </div>

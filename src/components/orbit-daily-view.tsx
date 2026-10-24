@@ -107,7 +107,7 @@ export function OrbitDailyView() {
         if (complete(article.id, DAILY_ARTICLE_XP) === 0) return
         const after = useOrbitStore.getState()
         const upcoming = nextDaily()
-        const nextStep = upcoming ? { label: 'Bài Daily kế', to: `/daily/${upcoming.id}` } : { label: 'Xem tóm tắt hôm nay', to: '/today' }
+        const nextStep = upcoming ? { label: 'Bài đọc kế tiếp', to: `/daily/${upcoming.id}` } : { label: 'Xem tóm tắt hôm nay', to: '/today' }
         announceRewards(
             before,
             after,
@@ -132,7 +132,7 @@ export function OrbitDailyView() {
             </div>
             <article ref={articleRef} className="mx-auto max-w-[720px] px-5 pb-[40vh] pt-8 lg:pt-12">
                 <Link to="/today" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
-                    <ChevronLeft size={16} /> Orbit Daily
+                    <ChevronLeft size={16} /> Bài đọc hôm nay
                 </Link>
                 {/* Header bài đọc: nơi thẻ Orbit Daily ở trang chủ morph tới (cùng view-transition-name) */}
                 <div style={{ viewTransitionName: `vt-daily-${article.id}` }} className="mt-6">

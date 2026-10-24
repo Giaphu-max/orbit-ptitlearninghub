@@ -51,7 +51,7 @@
   {
     "id": "nguoi-thap-den",
     "name": "Người thắp đèn",
-    "description": "Đọc tổng hợp đều đặn: đọc hết mọi bài Orbit Daily trong một ngày, thắp sáng cả tòa A2.",
+    "description": "Đọc tổng hợp đều đặn: đọc hết mọi bài đọc trong một ngày, thắp sáng cả tòa A2.",
     "criterion": {
       "type": "hidden-mission"
     },

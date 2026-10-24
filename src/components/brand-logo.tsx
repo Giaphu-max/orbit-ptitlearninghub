@@ -1,13 +1,11 @@
-// Logo thật: đặt file src/assets/brand/logo.(svg|png|webp) là tự dùng; không có thì dùng khối chữ PTIT
-const logoFiles = import.meta.glob('/src/assets/brand/logo.{svg,png,webp}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
-const LOGO_URL = Object.values(logoFiles)[0]
+import { LOGO_URL } from '@/lib/brand'
 
-/** Khối logo PTIT vuông bo góc, dùng ở thanh điều hướng và footer. */
+/** Ô logo PTIT trắng bo góc 44px, dùng ở thanh điều hướng và footer (data-brand-logo là đích bay của logo ở màn intro). */
 export function BrandLogo({ className = '' }: { className?: string }) {
     return LOGO_URL ? (
-        <img src={LOGO_URL} alt="PTIT" className={`logo-mark h-10 w-10 shrink-0 rounded-xl object-contain p-1 ${className}`} />
+        <img src={LOGO_URL} alt="PTIT" data-brand-logo className={`logo-mark h-11 w-11 shrink-0 rounded-xl object-contain p-1 ${className}`} />
     ) : (
         // Khối vuông trắng bo góc, chữ PTIT đỏ: nổi trên nền tối
-        <span className={`logo-mark flex aspect-square h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${className}`}>PTIT</span>
+        <span data-brand-logo className={`logo-mark flex aspect-square h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[11px] font-black tracking-tight ${className}`}>PTIT</span>
     )
 }

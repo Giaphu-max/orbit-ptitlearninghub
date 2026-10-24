@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Zap } from 'lucide-react'
 import { xpLandAt } from '@/lib/feedback'
 import { levelFromXp } from '@/lib/gamification'
 import { useOrbitStore, xpBalance } from '@/store/useOrbitStore'
@@ -28,6 +27,12 @@ export function XpChip({ className }: { className: string }) {
     const shownRef = useRef(xp)
     const spendRef = useRef(false)
     const chipRef = useRef<HTMLAnchorElement>(null)
+    const ringRef = useRef<HTMLSpanElement>(null)
+    // Chấm vàng nháy 2 nhịp mỗi khi XP tăng
+    const pulse = () => {
+        if (calm()) return
+        ringRef.current?.animate([{ transform: 'scale(1)', opacity: 0.6 }, { transform: 'scale(2.6)', opacity: 0 }], { duration: 1200, iterations: 2, easing: 'ease-out' })
+    }
 
     useEffect(() => {
         const onSpend = () => {
@@ -76,6 +81,7 @@ export function XpChip({ className }: { className: string }) {
                 chipRef.current?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)', offset: 0.3 }, { transform: 'scale(1)' }], { duration: 500, easing: 'cubic-bezier(.34,1.8,.5,1)' })
                 chipRef.current?.animate([{ borderColor: 'hsl(var(--success))', boxShadow: '0 0 0 2px hsl(var(--success) / 0.35)', offset: 0.3 }], { duration: 700 })
                 fly('earn', xp - from)
+                pulse()
                 count()
             }, delay)
         }
@@ -116,10 +122,41 @@ export function XpChip({ className }: { className: string }) {
         }
     }, [])
 
+    // Vừa vào trang chủ sau màn intro: số đếm dần từ 0 lên XP hiện có, chấm vàng nháy
+    useEffect(() => {
+        let raf = 0
+        const onLand = () => {
+            const to = xpBalance(useOrbitStore.getState())
+            cancelAnimationFrame(raf)
+            if (calm() || to <= 0) return
+            pulse()
+            const t0 = performance.now()
+            const tick = (now: number) => {
+                const k = Math.min(1, (now - t0) / 900)
+                const n = Math.round(to * (1 - (1 - k) ** 3))
+                shownRef.current = n
+                setShown(n)
+                if (k < 1) raf = requestAnimationFrame(tick)
+            }
+            raf = requestAnimationFrame(tick)
+        }
+        window.addEventListener('orbit:intro-landed', onLand)
+        return () => {
+            window.removeEventListener('orbit:intro-landed', onLand)
+            cancelAnimationFrame(raf)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     return (
         <Link ref={chipRef} to="/journey" data-xp-chip className={`${className} relative`}>
-            <Zap size={14} className="fill-current" />
-            Cấp {levelFromXp(total)} · <span className="font-mono">{shown.toLocaleString('vi-VN')}</span> XP
+            <span className="xp-shimmer-wrap" aria-hidden>
+                <span className="xp-shimmer" />
+            </span>
+            <span className="xp-dot" aria-hidden>
+                <span ref={ringRef} className="xp-dot-ring" />
+            </span>
+            Cấp {levelFromXp(total)} · <span className="font-mono tabular-nums">{shown.toLocaleString('vi-VN')}</span> XP
             {flies.map((c) => (
                 <span key={c.id} aria-hidden data-kind={c.kind} className={`xp-chip-fly ${c.kind === 'earn' ? 'text-success' : 'text-brand-ink'}`}>
                     {c.text}

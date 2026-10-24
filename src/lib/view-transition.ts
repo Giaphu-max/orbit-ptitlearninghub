@@ -1,3 +1,4 @@
+import { introPlaying } from '@/lib/role-intro'
 import { curtainPlaying } from '@/lib/theme-switch'
 
 // Chuyển trang bằng View Transitions API (react-router 7 gọi document.startViewTransition khi navigate có viewTransition).
@@ -71,7 +72,7 @@ export function installViewTransitions(router: Navigable) {
     router.navigate = (to, opts) => {
         const path = typeof to === 'number' ? null : targetPath(to)
         const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        if (path === null || path === window.location.pathname || calm || curtainPlaying() || opts?.viewTransition === false) return base(to, opts)
+        if (path === null || path === window.location.pathname || calm || curtainPlaying() || introPlaying() || opts?.viewTransition === false) return base(to, opts)
         const { kind, mark } = kindFor(path)
         mark?.()
         const root = document.documentElement

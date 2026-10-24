@@ -1,0 +1,444 @@
+/*
+ * Màn chọn vai trò theo docs/mockup/ptit-login/ptit-role-select.html.
+ * Màu lấy từ token; giá trị riêng của màn (giấy, vầng quỹ đạo, ngôi sao) khai báo ở .rs và đổi theo giao diện tối.
+ * Chỉ animate transform / opacity.
+ */
+.rs {
+  --rs-paper: #faf8f5;
+  --rs-paper-glow: #ffffff;
+  --rs-halo: 255 255 255;
+  --rs-line-strong: #8e91a4;
+  --rs-star: #eff003;
+  --rs-star-edge: #b89c0e;
+  --rs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  min-height: 100svh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--rs-paper);
+  color: hsl(var(--foreground));
+}
+.dark .rs {
+  --rs-paper: hsl(var(--surface));
+  --rs-paper-glow: hsl(var(--card));
+  --rs-halo: 22 25 39;
+  --rs-line-strong: hsl(var(--muted-foreground));
+}
+.rs-paper {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(1200px 700px at 78% 40%, var(--rs-paper-glow) 0%, transparent 60%);
+}
+.rs-grain {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+.dark .rs-grain {
+  display: none;
+}
+/* Vầng quỹ đạo: lớp ngoài nhận parallax (transform), svg bên trong chạy hiệu ứng trượt vào */
+.rs-cres {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+.rs-cres svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.rs-cres path {
+  fill: rgb(var(--brand-500));
+}
+.rs-c1 {
+  left: -380px;
+  bottom: -500px;
+  width: 720px;
+  height: 720px;
+}
+.rs-c2 {
+  right: -350px;
+  top: -500px;
+  width: 760px;
+  height: 760px;
+}
+.rs-c1 svg {
+  animation: rs-sweep-in 1.4s var(--rs-ease) both;
+}
+.rs-c2 svg {
+  animation: rs-sweep-in2 1.6s 0.1s var(--rs-ease) both;
+}
+@keyframes rs-sweep-in {
+  from {
+    transform: rotate(-38deg) scale(0.86);
+    opacity: 0;
+  }
+}
+@keyframes rs-sweep-in2 {
+  from {
+    transform: rotate(30deg) scale(0.86);
+    opacity: 0;
+  }
+}
+
+.rs-top {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 22px;
+  padding-inline: max(28px, 4vw);
+}
+.rs-top img {
+  display: block;
+  height: 40px;
+  width: auto;
+}
+.rs-top-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rs-demo {
+  font: 700 11px/16px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 0.75);
+  border-radius: 999px;
+  padding: 7px 12px;
+  white-space: nowrap;
+}
+.rs-layout {
+  position: relative;
+  z-index: 2;
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: 4vw;
+  padding-block: 96px 48px;
+  padding-left: max(28px, 7vw);
+  padding-right: max(28px, 5vw);
+}
+.rs-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 620px;
+}
+.rs-eb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 700 12px/16px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgb(var(--brand-600));
+}
+.rs-eb::before {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: rgb(var(--brand-600));
+}
+.rs-h1 {
+  margin: 0;
+  font-size: clamp(44px, 5.4vw, 80px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 900;
+  color: hsl(var(--foreground-strong));
+  text-wrap: balance;
+}
+.rs-h1 em {
+  font-style: normal;
+  color: rgb(var(--brand-600));
+}
+.dark .rs-h1 em {
+  color: hsl(var(--brand-ink));
+}
+.rs-lead {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 17px;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+}
+.rs-roles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 6px;
+}
+.rs-role {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  text-align: left;
+  cursor: pointer;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 22px;
+  padding: 22px 22px 20px;
+  color: hsl(var(--foreground));
+  box-shadow: var(--shadow-card);
+  transition: transform 0.35s var(--rs-ease), border-color 0.25s, box-shadow 0.35s var(--rs-ease), opacity 0.3s;
+}
+/* Vầng quỹ đạo nhỏ ở góc thẻ, hiện khi hover */
+.rs-role::after {
+  content: '';
+  position: absolute;
+  right: -70px;
+  bottom: -90px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: 14px solid rgb(var(--brand-500));
+  border-left-color: transparent;
+  border-top-color: transparent;
+  transform: rotate(-30deg) scale(0.7);
+  opacity: 0;
+  transition: transform 0.5s var(--rs-ease), opacity 0.3s;
+  pointer-events: none;
+}
+.rs-role:hover:not(:disabled),
+.rs-role:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgb(var(--brand-100));
+  box-shadow: 0 2px 4px hsl(226 78% 18% / 0.06), 0 18px 40px hsl(0 67% 44% / 0.14);
+}
+.rs-role:hover:not(:disabled)::after,
+.rs-role:focus-visible::after {
+  opacity: 1;
+  transform: rotate(-10deg) scale(1);
+}
+.rs-role:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.5), 0 18px 40px hsl(0 67% 44% / 0.14);
+}
+.rs-ic {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgb(var(--brand-50));
+  color: rgb(var(--brand-600));
+  transition: background 0.25s, color 0.25s;
+}
+.dark .rs-ic {
+  color: hsl(var(--brand-ink));
+}
+.rs-role:hover:not(:disabled) .rs-ic,
+.rs-role:focus-visible .rs-ic {
+  background: rgb(var(--brand-600));
+  color: hsl(var(--ink-foreground));
+}
+.rs-role b {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: hsl(var(--foreground-strong));
+}
+.rs-role p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+.rs-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgb(var(--brand-600));
+}
+.dark .rs-go {
+  color: hsl(var(--brand-ink));
+}
+.rs-go svg {
+  transition: transform 0.3s var(--rs-ease);
+}
+.rs-role:hover:not(:disabled) .rs-go svg {
+  transform: translateX(4px);
+}
+.rs-role:disabled {
+  cursor: default;
+}
+.rs-roles.dim .rs-role:not(.picked) {
+  opacity: 0.35;
+  transform: scale(0.98);
+}
+.rs-role.picked {
+  transform: scale(1.02);
+  border-color: rgb(var(--brand-600));
+}
+.rs-foot {
+  font: 500 12px/18px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Sân khấu logo */
+.rs-stage {
+  position: relative;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: min(40vw, 520px);
+  aspect-ratio: 1;
+}
+.rs-orbits {
+  position: absolute;
+  inset: -12%;
+  width: 124%;
+  height: 124%;
+  overflow: visible;
+}
+.rs-orb {
+  fill: none;
+  stroke: rgb(var(--brand-500));
+  vector-effect: non-scaling-stroke;
+}
+.rs-orb.a {
+  stroke-width: 1.5;
+  opacity: 0.55;
+  stroke-dasharray: 2 7;
+}
+.rs-orb.b {
+  stroke-width: 1;
+  opacity: 0.25;
+}
+.rs-spin {
+  transform-origin: 50% 50%;
+  animation: rs-spin 60s linear infinite;
+}
+.rs-spin.rev {
+  animation-duration: 90s;
+  animation-direction: reverse;
+}
+@keyframes rs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.rs-halo {
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--rs-halo)) 0%, rgb(var(--rs-halo) / 0.9) 45%, rgb(var(--rs-halo) / 0) 72%);
+}
+.rs-logo {
+  position: relative;
+  width: 52%;
+  height: auto;
+  filter: drop-shadow(0 18px 30px hsl(0 67% 44% / 0.18));
+  animation: rs-logo-in 1.2s 0.2s var(--rs-ease) both;
+}
+@keyframes rs-logo-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+}
+/* Vệt lóe trên ngôi sao của logo */
+.rs-glint {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+  opacity: 0;
+  left: calc(50% + 4.6%);
+  top: calc(50% - 2.5%);
+  margin: -17px 0 0 -17px;
+  animation: rs-glint 5s 1.6s ease-in-out infinite;
+}
+.rs-glint::before,
+.rs-glint::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 3px;
+  border-radius: 3px;
+  background: radial-gradient(closest-side, #fff, rgb(255 255 255 / 0));
+  transform: translate(-50%, -50%);
+}
+.rs-glint::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+@keyframes rs-glint {
+  0%,
+  86%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0);
+  }
+  92% {
+    opacity: 1;
+    transform: scale(1.1) rotate(45deg);
+  }
+}
+.rs-sat {
+  fill: var(--rs-star);
+  stroke: var(--rs-star-edge);
+  stroke-width: 1.5;
+}
+
+@media (max-width: 900px) {
+  .rs {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .rs-layout {
+    grid-template-columns: 1fr;
+    padding-top: 88px;
+    gap: 24px;
+  }
+  .rs-stage {
+    order: -1;
+    width: min(70vw, 300px);
+  }
+  .rs-roles {
+    grid-template-columns: 1fr;
+  }
+  .rs-c1 {
+    width: 420px;
+    height: 420px;
+    left: -250px;
+    bottom: -300px;
+  }
+  .rs-c2 {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .rs-top img {
+    height: 30px;
+  }
+  .rs-demo {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs *,
+  .rs *::before,
+  .rs *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}

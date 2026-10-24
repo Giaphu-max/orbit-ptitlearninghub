@@ -261,7 +261,7 @@ function Lead({ data }: { data: RecapData }) {
     return (
         <>
             {test}Khái niệm còn yếu là <b className="text-foreground">{weakest.name}</b>
-            {review?.daily ? ', Orbit đã xếp nó vào bài đọc Daily ngày mai.' : '. Xem lại đoạn video của nó trước khi sang chặng sau.'}
+            {review?.daily ? ', hệ thống đã xếp nó vào bài đọc ngày mai.' : '. Xem lại đoạn video của nó trước khi sang chặng sau.'}
         </>
     )
 }
@@ -467,12 +467,12 @@ function ReviewCard({ data }: { data: RecapData }) {
             <p className="mb-3 mt-1.5 text-[13.5px] text-muted-foreground">
                 {daily ? (
                     <>
-                        Bài đọc Daily ngày mai sẽ ưu tiên <Link to={`/daily/${daily.id}`} className="font-semibold text-foreground underline-offset-2 hover:underline">“{daily.title}”</Link>, vì có khái niệm này. Muốn ôn luôn thì xem lại đoạn video gốc.
+                        Bài đọc ngày mai sẽ ưu tiên <Link to={`/daily/${daily.id}`} className="font-semibold text-foreground underline-offset-2 hover:underline">“{daily.title}”</Link>, vì có khái niệm này. Muốn ôn luôn thì xem lại đoạn video gốc.
                     </>
                 ) : dailyQueued ? (
-                    <>Bài Daily “{dailyQueued.title}” có khái niệm này nhưng chưa nằm trong 3 bài ưu tiên ngày mai. Xem lại đoạn video gốc để ôn ngay.</>
+                    <>Bài đọc “{dailyQueued.title}” có khái niệm này nhưng chưa nằm trong 3 bài ưu tiên ngày mai. Xem lại đoạn video gốc để ôn ngay.</>
                 ) : (
-                    <>Chưa có bài Daily nào về khái niệm này, nên cách ôn tốt nhất là xem lại đoạn video gốc.</>
+                    <>Chưa có bài đọc nào về khái niệm này, nên cách ôn tốt nhất là xem lại đoạn video gốc.</>
                 )}
             </p>
             <TimeChip lessonId={lesson.id} start={concept.segment.start} end={concept.segment.end} play />

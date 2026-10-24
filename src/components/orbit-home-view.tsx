@@ -1,9 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Camera, ChevronDown, Play, Sparkles } from 'lucide-react'
+import { ArrowRight, Camera, Play, Sparkles } from 'lucide-react'
 import { getCourse, lessons } from '@/data'
 import { CourseArt } from '@/components/courses/course-cover'
-import { BUILDING_COURSE_IDS } from '@/lib/campus-courses'
 import { courseKicker, primaryCourse, STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { scrollToSection } from '@/lib/scroll'
 import { trackPage } from '@/lib/page-metrics'
@@ -38,16 +37,14 @@ export function OrbitHomeView() {
     // Paged: trang chủ cao đúng 100svh, không cuộn tài liệu (Safari vẽ lại cả màn hình mỗi khi tài liệu cuộn đè lên stage fixed); footer là chương 4
     const paged = journey && !calm && !FLAGS.docScroll
     const { stage } = useScrollStage({ journey, paged, barRef, rootRef, calmRef })
-    const { coursePct } = useBuildingCourses()
     const dailyLit = useDailyLit(stage, reduce)
     const screenRef = useRef<HTMLDivElement>(null)
     const stageRef = useRef<HTMLDivElement>(null)
     const footerRef = useRef<HTMLDivElement>(null)
     const dockRef = useRef<HTMLDivElement>(null)
-    const capRef = useRef<HTMLSpanElement>(null)
     const veilRef = useRef<HTMLDivElement>(null)
     const railRef = useRef<HTMLElement>(null)
-    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, cap: capRef, veil: veilRef, rail: railRef, calm: calmRef }), [])
+    const kiosk = useMemo<KioskBridge>(() => ({ screen: screenRef, root: rootRef, stage: stageRef, footer: footerRef, dock: dockRef, veil: veilRef, rail: railRef, calm: calmRef }), [])
 
     // Số đo layout (footer, hành trình, scrollHeight) đo một lần + khi resize; layout effect chạy trước effect của useScrollStage
     useLayoutEffect(() => trackPage(() => footerRef.current).stop, [])
@@ -55,7 +52,7 @@ export function OrbitHomeView() {
 
     return (
         <div ref={rootRef} data-calm={calm} className="group/home relative w-full bg-stage text-foreground">
-            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} flat={!journey} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} />
+            <CampusStage stage={stage} staticMode={staticMode} reduce={reduce} flat={!journey} dailyLit={dailyLit} kiosk={kiosk} />
             {/* MỘT lớp màu nền (chỉ đổi opacity, xem stage-signal): nền tối nhẹ khi có chữ, che quanh điểm cắt cảnh, che khi nhảy chương */}
             <div ref={(el) => void (overlay.el = el)} data-overlay aria-hidden className="own-layer pointer-events-none fixed inset-0 z-[4] bg-stage opacity-0" />
             <div ref={veilRef} aria-hidden data-static={staticMode} className="stage-veil own-layer pointer-events-none fixed inset-0 z-[1]" />
@@ -110,22 +107,21 @@ export function OrbitHomeView() {
 
             {/* Dòng hướng dẫn cho người mới: hook ghi chữ và độ hiện; ẩn ở footer */}
             {journey && (
-                <p data-guide aria-live="polite" style={{ opacity: 0 }} className="own-layer pointer-events-none fixed bottom-5 left-[max(1.5rem,4vw)] z-[6] flex max-w-[calc(100vw-3rem)] items-center gap-2 text-xs text-muted-foreground transition-opacity duration-slow">
-                    <ChevronDown size={16} style={{ animationIterationCount: 3 }} className="shrink-0 text-brand-ink motion-safe:animate-bounce" aria-hidden />
-                    <span data-guide-text>Cuộn để đi vào trường</span>
+                <p data-guide aria-live="polite" style={{ opacity: 0 }} className="own-layer pointer-events-none fixed bottom-5 left-1/2 z-[6] flex max-w-[calc(100vw-3rem)] -translate-x-1/2 flex-col items-center gap-1.5 text-center text-xs text-muted-foreground transition-opacity duration-slow">
+                    <span className="guide-mouse" aria-hidden />
+                    <span data-guide-text>Cuộn để khám phá các chức năng</span>
                 </p>
             )}
 
             {!staticMode && (
                 <div ref={dockRef} data-dock className="own-layer fixed bottom-5 right-[max(1.5rem,4vw)] z-[6] flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
-                    <span ref={capRef} aria-hidden />
                     <button
                         type="button"
                         aria-pressed={calm}
                         onClick={() => setCalm(!calm)}
                         className="rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-bold text-foreground transition hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                     >
-                        {calm ? 'Hiện cảnh 3D' : 'Làm mờ cảnh 3D'}
+                        {calm ? 'Hiện mô hình 3D' : 'Ẩn mô hình 3D'}
                     </button>
                 </div>
             )}
@@ -142,18 +138,6 @@ export function OrbitHomeView() {
             </div>
         </div>
     )
-}
-
-/** % tiến độ khóa của từng tòa (hiện trên nhãn). */
-function useBuildingCourses() {
-    const summaries = useCourseSummaries()
-    return useMemo(() => {
-        const withCourse = Object.entries(BUILDING_COURSE_IDS).flatMap(([name, id]) => {
-            const sum = id ? summaries.find((x) => x.course.id === id) : undefined
-            return sum ? [{ name, sum }] : []
-        })
-        return { coursePct: Object.fromEntries(withCourse.map((x) => [x.name, x.sum.pct])) as Readonly<Record<string, number>> }
-    }, [summaries])
 }
 
 /** Mục chương ở mép phải: hiện chương hiện tại (hook đánh dấu data-on), bấm thì cuộn tới giữa phần dừng đọc. Ẩn khi đang zoom kiosk. */

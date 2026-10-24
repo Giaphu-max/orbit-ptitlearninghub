@@ -185,7 +185,7 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, reward, onAnswer, o
                     )}
                     {!hasNextVariant && (
                         <p className="text-sm text-muted-foreground">
-                            Đáp án đúng: <strong>{question.options[question.correctIndex]}</strong>. Khái niệm này sẽ được ưu tiên trong Orbit Daily để bạn ôn lại.
+                            Đáp án đúng: <strong>{question.options[question.correctIndex]}</strong>. Khái niệm này sẽ được ưu tiên trong bài đọc hôm nay để bạn ôn lại.
                         </p>
                     )}
                 </motion.div>

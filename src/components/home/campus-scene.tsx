@@ -1,4 +1,3 @@
-import { courseOfBuilding } from '@/lib/campus-courses'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useThemeStore } from '@/store/useThemeStore'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
@@ -47,15 +46,13 @@ interface BuildingProps {
     hovered: boolean
     /** Nhãn đang hiển thị (không bị che, không chồng nhãn khác) */
     labelVisible: boolean
-    /** % tiến độ khóa của tòa (hiện cạnh tên khóa); undefined nếu tòa không có khóa */
-    pct?: number
     registry: React.MutableRefObject<Map<string, THREE.Group>>
     /** Xoay quanh trục đứng (rad), mặc định mặt trước nhìn về +z */
     rotY?: number
     children: ReactNode
 }
 
-function Building({ name, anchorY, position, hovered, labelVisible, pct, registry, rotY = 0, children }: BuildingProps) {
+function Building({ name, anchorY, position, hovered, labelVisible, registry, rotY = 0, children }: BuildingProps) {
     const ref = useRef<THREE.Group>(null)
     useLayoutEffect(() => {
         const g = ref.current
@@ -63,7 +60,6 @@ function Building({ name, anchorY, position, hovered, labelVisible, pct, registr
         const map = registry.current
         g.userData.buildingName = name
         g.userData.anchorY = anchorY
-        g.userData.labelSub = courseOfBuilding(name)?.title ?? 'Sắp mở'
         map.set(name, g)
         return () => {
             map.delete(name)
@@ -72,7 +68,6 @@ function Building({ name, anchorY, position, hovered, labelVisible, pct, registr
 
     // Nhãn chỉ dựng khi đang hiện (chương hero); các chương khác gỡ hẳn để drei không cập nhật transform DOM mỗi khung
     const showLabel = labelVisible && !FLAGS.noLabels
-    const course = courseOfBuilding(name)
     return (
         <group ref={ref} position={position} rotation={[0, rotY, 0]}>
             {children}
@@ -85,10 +80,6 @@ function Building({ name, anchorY, position, hovered, labelVisible, pct, registr
                         }`}
                     >
                         {name}
-                        {/* Dòng phụ: khóa học thật của tòa, hoặc "Sắp mở" nếu chưa có khóa */}
-                        <small className={`mt-0.5 block text-[11px] font-medium ${hovered ? 'text-ink-foreground/85' : 'text-muted-foreground'}`}>
-                            {course ? (hovered ? `${course.title} · bấm để vào khóa` : `${course.title}${pct === undefined ? '' : ` · ${pct}%`}`) : 'Sắp mở'}
-                        </small>
                     </div>
                     <div className="h-4 w-0.5 bg-ink-foreground/80" />
                 </div>
@@ -298,7 +289,7 @@ function Cloud({ index, reduce }: { index: number; reduce: boolean }) {
 
 // ─── Mô hình khuôn viên ────────────────────────────────────────────────────
 
-type BuildingName = 'Tòa A2' | 'Hội trường A2' | 'Tòa A3' | 'Hội trường A1' | 'Tòa A1' | 'Canteen' | 'Cổng trường'
+type BuildingName = 'Tòa A2' | 'Hội trường A2' | 'Tòa A3' | 'Hội trường A1' | 'Tòa A1' | 'Canteen' | 'Cổng Học viện'
 
 // Bố cục theo bản mẫu: đế A2 chiếm x ∈ [-8.6, 12.6], z ∈ [-21.7, 7]; các tòa/cây/bãi cỏ nằm ngoài vùng đó
 const TREE_SPOTS: [number, number][] = [[-21, 15], [-18, 16.5], [-12.5, 16.5], [-5, 14], [-20.5, 3], [-21, -5], [-21, -17.5], [-17, -18.5], [-12, -18.5], [-10.8, 6.5], [-10.8, -2], [-11, -6], [-7, 9], [7.5, 8.5], [13.5, 16], [17, 16.5], [20.5, 15], [20.8, 9], [20.8, 4], [21.2, -9], [10, 13], [-8, 12.5]]
@@ -314,7 +305,6 @@ interface WorldProps {
     dailyLit: React.MutableRefObject<DailyLit>
     /** S đã làm mượt (Scene ghi mỗi khung hình) */
     stage: React.MutableRefObject<number>
-    coursePct: Readonly<Record<string, number>>
     /** Máy yếu: cây không đổ bóng */
     lowQuality: boolean
 }
@@ -336,8 +326,8 @@ function SignBoard({ nightRef, size, at }: { nightRef: React.MutableRefObject<nu
     )
 }
 
-function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, coursePct, lowQuality }: WorldProps) {
-    const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name), pct: coursePct[name] })
+function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
+    const b = (name: BuildingName) => ({ registry, name, hovered: hovered === name, labelVisible: visibleLabels.has(name) })
 
     return (
         <>
@@ -435,7 +425,7 @@ function Campus({ hovered, visibleLabels, registry, nightRef, reduce, dailyLit, 
                 <HipRoof w={6.4} h={1.4} d={4.2} c={C.roofRed} at={[0, 2.2, 0]} />
             </Building>
 
-            <Building {...b('Cổng trường')} anchorY={5.6} position={GATE_AT}>
+            <Building {...b('Cổng Học viện')} anchorY={5.6} position={GATE_AT}>
                 {[-3.4, 3.4].map((x) => (
                     <Box key={x} s={[0.8, 3.6, 0.8]} c={CAMPUS.gatePost} at={[x, 0, 0]} />
                 ))}
@@ -665,24 +655,16 @@ function placeKiosk(kiosk: KioskBridge, camera: THREE.PerspectiveCamera, size: {
     }
 }
 
-const CAPTIONS: [number, string][] = [[0.15, 'Khuôn viên PTIT'], [1, 'Vòng quanh trường'], [1.5, 'Tòa A2 · cửa kính tự mở'], [2.23, 'Sảnh A2']]
-const captionAt = (s: number) => CAPTIONS.find(([to]) => s < to)?.[1] ?? 'Phòng thực hành'
-
 /**
- * Phần "vỏ" quanh cảnh, ghi thẳng vào DOM (chỉ khi giá trị đổi): chú thích máy quay và lớp phủ màu nền chung
+ * Phần "vỏ" quanh cảnh, ghi thẳng vào DOM (chỉ khi giá trị đổi): lớp phủ màu nền chung
  * (nền tối nhẹ khi có chữ + che quanh điểm cắt cảnh, xem stage-signal). Chế độ làm mờ: lớp phủ đậm hơn (0,45).
  */
-function updateChrome(kiosk: KioskBridge, S: number, calm: boolean, delta: number, last: { cap: string }) {
+function updateChrome(S: number, calm: boolean, delta: number) {
     const target = calm ? 0.45 : 0.12 * stageSignal.onStage
     overlay.dim += (target - overlay.dim) * (1 - Math.exp(-Math.min(delta, 0.2) * DIM_SMOOTH))
     if (Math.abs(target - overlay.dim) < 0.001) overlay.dim = target
     overlay.dip = dipAt(S)
     flushOverlay()
-    const cap = captionAt(S)
-    if (cap !== last.cap && kiosk.cap.current) {
-        last.cap = cap
-        kiosk.cap.current.textContent = cap
-    }
 }
 
 /** Footer đi vào: stage (canvas) mờ dần, dock mờ hẳn. Chạy mỗi khung trong FrameDriver kể cả lúc đã dừng vẽ cảnh; chỉ ghi opacity khi đổi. */
@@ -765,10 +747,8 @@ interface SceneProps {
     /** Màn kiosk (DOM) được định vị lên màn 3D */
     kiosk: KioskBridge
     /** % tiến độ khóa theo tên tòa, hiện trên nhãn */
-    coursePct: Readonly<Record<string, number>>
     pointer: React.MutableRefObject<{ x: number; y: number; inside: boolean }>
     /** Bấm vào tòa có khóa học thì mở khóa đó */
-    onOpenCourse?: (courseId: string) => void
 }
 
 /**
@@ -838,8 +818,8 @@ function computeVisibleLabels(
     const shown: string[] = []
     for (const it of items) {
         // Hộp nhãn ước lượng: chip (tên) + cọc 16px phía trên điểm neo, rộng theo độ dài chữ
-        const w = Math.max(it.name.length, String(it.grp.userData.labelSub ?? '').length * 0.85) * 7.6 + 30
-        const rect = { l: it.x - w / 2, r: it.x + w / 2, t: it.y - 16 - 48, b: it.y }
+        const w = it.name.length * 7.6 + 30
+        const rect = { l: it.x - w / 2, r: it.x + w / 2, t: it.y - 16 - 32, b: it.y }
         if (it.behind || rect.l < 4 || rect.r > size.width - 4 || rect.t < 4 || rect.b > size.height - 4) continue
         if (it.name !== hovered) {
             if (taken.some((o) => rect.l < o.r + 6 && rect.r > o.l - 6 && rect.t < o.b + 6 && rect.b > o.t - 6)) continue
@@ -857,7 +837,7 @@ function computeVisibleLabels(
     return shown.sort().join('|')
 }
 
-function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk, coursePct, pointer, onOpenCourse }: SceneProps) {
+function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk, pointer }: SceneProps) {
     const world = useRef<THREE.Group>(null)
     const hemi = useRef<THREE.HemisphereLight>(null)
     const sun = useRef<THREE.DirectionalLight>(null)
@@ -873,7 +853,6 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     // S đã làm mượt (lerp theo dt) và mức "đã vào trong nhà" (0 ngoài sân → 1 trong sảnh): nắng giảm, đèn trong sảnh nổi lên
     const sm = useRef(stage.current)
     const indoor = useRef(0)
-    const chrome = useRef({ cap: '' })
     // Đo FPS: dưới 40 thì giảm chất lượng (shadow map nhỏ, cây không đổ bóng)
     const perf = useRef({ t: 0, n: 0, bad: 0 })
     const [lowQuality, setLowQuality] = useState(false)
@@ -953,7 +932,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     }, [night, reduce, frozen])
 
     const updateCursor = () => {
-        domElement.style.cursor = hoverRef.current && courseOfBuilding(hoverRef.current) ? 'pointer' : touch || !ctlOn.current ? 'default' : dragging.current ? 'grabbing' : 'grab'
+        domElement.style.cursor = touch || !ctlOn.current ? 'default' : dragging.current ? 'grabbing' : 'grab'
     }
     useEffect(() => {
         domElement.style.touchAction = touch ? 'pan-y' : 'none'
@@ -975,31 +954,6 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         // autoUpdate đang tắt: phải yêu cầu vẽ lại để shadow map được tạo ngay, không để shader lấy mẫu texture rỗng
         gl.shadowMap.needsUpdate = true
     }, [lowQuality, setDpr, gl])
-
-    // Bấm (không phải kéo) vào tòa có khóa học: mở khóa đó. Tia lấy theo điểm bấm nên cảm ứng cũng dùng được.
-    useEffect(() => {
-        let down: { x: number; y: number } | null = null
-        const onDown = (e: PointerEvent) => {
-            down = { x: e.clientX, y: e.clientY }
-        }
-        const onClick = (e: MouseEvent) => {
-            if (sm.current > 1.3) return // đã vào trong sảnh: không còn bấm vào mô hình tòa
-            if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return
-            const r = domElement.getBoundingClientRect()
-            const ray = new THREE.Raycaster()
-            ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1)), camera)
-            let o: THREE.Object3D | null = ray.intersectObjects([...registry.current.values()], true)[0]?.object ?? null
-            while (o && !o.userData.buildingName) o = o.parent
-            const course = o ? courseOfBuilding(o.userData.buildingName as string) : undefined
-            if (course) onOpenCourse?.(course.id)
-        }
-        domElement.addEventListener('pointerdown', onDown)
-        domElement.addEventListener('click', onClick)
-        return () => {
-            domElement.removeEventListener('pointerdown', onDown)
-            domElement.removeEventListener('click', onClick)
-        }
-    }, [domElement, camera, onOpenCourse])
 
     // Kéo thì dừng tự xoay; buông tay chờ 3 giây rồi xoay tiếp
     const onStart = () => {
@@ -1106,7 +1060,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         }
         camera.updateMatrixWorld()
         placeKiosk(kiosk, camera, size, S, !staticMode && !calmOn)
-        updateChrome(kiosk, S, calmOn, delta, chrome.current)
+        updateChrome(S, calmOn, delta)
 
         // ── Sương theo màu trời; ngoài trời nền trong suốt (thấy gradient trời CSS), vào nhà thì nền nội thất tối (đổi lúc tối màn) ──
         colors.now.copy(colors.fogA).lerp(colors.fogB, band(S, 0, 1)).lerp(colors.deep, indoor.current)
@@ -1227,7 +1181,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 shadow-bias={-0.0006}
             />
             <group ref={world}>
-                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={sm} coursePct={coursePct} lowQuality={lowQuality} />
+                <Campus hovered={hovered} visibleLabels={visibleLabels} registry={registry} nightRef={nightRef} reduce={reduce} dailyLit={dailyLit} stage={sm} lowQuality={lowQuality} />
             </group>
         </>
     )
@@ -1243,8 +1197,6 @@ export interface CampusSceneProps {
     stage: React.MutableRefObject<number>
     dailyLit: React.MutableRefObject<DailyLit>
     kiosk: KioskBridge
-    coursePct: Readonly<Record<string, number>>
-    onOpenCourse?: (courseId: string) => void
 }
 
 /**
@@ -1275,7 +1227,7 @@ function FrameDriver({ kiosk }: { kiosk: KioskBridge }) {
     return null
 }
 
-export default function CampusScene({ night, reduce, staticMode, flat, stage, dailyLit, kiosk, coursePct, onOpenCourse }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, flat, stage, dailyLit, kiosk }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -1344,7 +1296,7 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
                     role="img"
                 >
                     <FrameDriver kiosk={kiosk} />
-                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} coursePct={coursePct} pointer={pointer} onOpenCourse={onOpenCourse} />
+                    <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} pointer={pointer} />
                 </Canvas>
             )}
         </div>

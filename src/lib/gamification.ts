@@ -153,7 +153,7 @@ export interface Mission {
 }
 
 export const MISSIONS: Mission[] = [
-    { id: 'daily', title: 'Đọc một bài Orbit Daily', hint: 'Đọc xong và trả lời đúng câu kiểm tra nhanh', target: 1, rewardXp: 15, progress: (d) => d.readArticles },
+    { id: 'daily', title: 'Đọc một bài đọc hôm nay', hint: 'Đọc xong và trả lời đúng câu kiểm tra nhanh', target: 1, rewardXp: 15, progress: (d) => d.readArticles },
     { id: 'fix', title: 'Sửa đúng một câu sau khi sai', hint: 'Xem lại đoạn video rồi làm câu biến thể', target: 1, rewardXp: 30, progress: (d) => d.corrected },
     { id: 'finish', title: 'Hoàn thành một bài giảng', hint: 'Làm hết các câu hỏi trong bài', target: 1, rewardXp: 20, progress: (d) => d.completedLessons },
     { id: 'test', title: 'Làm một bài test cuối chương', hint: 'Nộp bài test để biết khái niệm nào còn hổng', target: 1, rewardXp: 25, progress: (d) => d.testsTaken },

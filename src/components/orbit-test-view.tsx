@@ -392,7 +392,7 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                     <p className="mt-3 rounded-card border border-border bg-card p-5 text-[15px] text-muted-foreground shadow-card">Không còn khái niệm nào hổng trong lượt này. Bạn có thể sang bài Orbit Daily hoặc làm lại để kiểm tra bộ câu khác.</p>
                 ) : (
                     <>
-                        <p className="mt-1 text-sm text-muted-foreground">Với mỗi khái niệm còn hổng: xem lại đúng đoạn giảng, rồi đọc bài Daily liên quan.</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Với mỗi khái niệm còn hổng: xem lại đúng đoạn giảng, rồi đọc bài đọc liên quan.</p>
                         <ol className="mt-5 flex flex-col gap-4">
                             {gaps.map((g, i) => {
                                 const step = reviewStepFor(g.conceptId)
@@ -412,10 +412,10 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                                             {step.daily.map((a) => (
                                                 <Link key={a.id} to={`/daily/${a.id}`} className="inline-flex items-center gap-2 rounded-xl bg-muted px-4 py-3 font-semibold text-foreground transition hover:bg-border">
                                                     <BookOpen size={16} className="text-brand-ink" />
-                                                    Orbit Daily: <span className="font-normal text-muted-foreground">{a.title}</span>
+                                                    Bài đọc hôm nay: <span className="font-normal text-muted-foreground">{a.title}</span>
                                                 </Link>
                                             ))}
-                                            {step.daily.length === 0 && <p className="px-1 text-muted-foreground">Chưa có bài Daily về khái niệm này.</p>}
+                                            {step.daily.length === 0 && <p className="px-1 text-muted-foreground">Chưa có bài đọc về khái niệm này.</p>}
                                         </div>
                                     </li>
                                 )

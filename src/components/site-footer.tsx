@@ -25,7 +25,7 @@ export function SiteFooter() {
         {
             title: 'Học tập',
             links: [
-                { label: 'Orbit Daily', to: '/today' },
+                { label: 'Bài đọc hôm nay', to: '/today' },
                 { label: 'Khóa học', to: '/learning' },
                 ...(firstCourse ? [{ label: 'Test cuối chương', to: `/test/${firstCourse.id}` }] : []),
                 { label: 'Hành trình', to: '/journey' },
@@ -63,9 +63,9 @@ export function SiteFooter() {
             <div className="container-page py-12 lg:py-14">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
                     <div>
-                        <Link to="/" className="inline-flex items-center gap-3" aria-label="Orbit, trang chủ">
+                        <Link to="/" className="inline-flex items-center gap-3" aria-label="PTIT, trang chủ">
                             <BrandLogo />
-                            <span className="text-[17px] font-extrabold tracking-tight text-foreground">Orbit</span>
+                            <span className="text-xl font-black tracking-tight text-brand-ink">PTIT</span>
                         </Link>
                         <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
                             Nền tảng học tập có điểm dừng cho sinh viên PTIT: trợ giảng AI bám bài giảng thật, bài đọc ngắn mỗi ngày và phần thưởng gắn với việc hiểu bài.

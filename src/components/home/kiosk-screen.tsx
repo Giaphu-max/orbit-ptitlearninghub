@@ -15,7 +15,6 @@ export interface KioskBridge {
     footer: RefObject<HTMLElement | null>
     dock: RefObject<HTMLElement | null>
     /** Chú thích vị trí máy quay trên dock */
-    cap: RefObject<HTMLElement | null>
     /** Lớp mờ nền phía trái (stage-veil) và rail chương */
     veil: RefObject<HTMLElement | null>
     rail: RefObject<HTMLElement | null>

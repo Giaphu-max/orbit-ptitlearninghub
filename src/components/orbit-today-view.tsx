@@ -5,7 +5,7 @@ import { TodayCount, TodayHeroCard, TodayMiniCards } from '@/components/daily/to
 import { useTodayDaily } from '@/hooks/useTodayDaily'
 import { DAILY_ARTICLE_XP } from '@/lib/gamification'
 
-/** /today – bài Orbit Daily hôm nay (3 miễn phí + bài mở thêm bằng XP), nhiệm vụ hằng ngày, và tóm tắt "Hôm nay đủ rồi" khi đọc hết. Dùng chung khối với chương Hôm nay ở trang chủ. */
+/** /today – bài đọc hôm nay (3 miễn phí + bài mở thêm bằng XP), nhiệm vụ hằng ngày, và tóm tắt "Hôm nay đủ rồi" khi đọc hết. Dùng chung khối với chương Hôm nay ở trang chủ. */
 export function OrbitTodayView() {
     const today = useTodayDaily()
     const { articles, allDone } = today
@@ -24,7 +24,7 @@ export function OrbitTodayView() {
                     <TodayHeroCard today={today} />
                     <TodayMiniCards today={today} />
                 </section>
-                {articles.length === 0 && <p className="rounded-card bg-muted p-5 text-muted-foreground">Chưa có bài Orbit Daily nào.</p>}
+                {articles.length === 0 && <p className="rounded-card bg-muted p-5 text-muted-foreground">Chưa có bài đọc nào.</p>}
 
                 {allDone && <DoneBlock />}
 

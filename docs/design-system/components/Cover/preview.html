@@ -1,0 +1,29 @@
+<!-- @dsCard height=320 -->
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<style>
+html,body{margin:0;height:320px;background:var(--surface);overflow:hidden}
+.c{position:relative;width:960px;height:320px}
+svg{position:absolute;inset:0}
+.red{fill:var(--ptit-red-600)}.deep{fill:var(--ptit-red-700)}.ink{fill:var(--ink-strong)}.star{fill:var(--star-500)}
+.tile{rx:var(--radius-lg)}
+.orbit{fill:none;stroke:var(--surface);stroke-width:3}
+.t{position:absolute;left:48px;bottom:40px;max-width:440px}
+.n{margin:0;font:800 120px/.95 var(--font-sans);letter-spacing:-.04em;color:var(--ink-strong)}
+.g{margin:16px 0 0;font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+</style></head><body><div class="c">
+<svg viewBox="0 0 960 320" width="960" height="320" aria-hidden="true">
+<!-- blocks: ptit-red-600 320x320 slab bleeding top/right; ptit-red-700 144x144 and ink-strong 144x176 at radius-lg; star-500 disc r24 (the logo star)
+     arrangement: one tall slab with two satellites on its left, the star on the slab like the dot of the I in the logo
+     pattern: literal motif. The PTIT logo's orbit ellipse, two hairline orbits cut out of the blocks in surface; Orbit is named after that ring
+     scales: space-4 (16) gaps, 144 = 9 x space-4, radius-lg on satellites -->
+<defs><clipPath id="z"><rect x="480" y="0" width="480" height="320"/></clipPath></defs>
+<g clip-path="url(#z)">
+<rect class="red" x="640" y="0" width="320" height="320"/>
+<rect class="deep tile" x="480" y="0" width="144" height="144"/>
+<rect class="ink tile" x="480" y="160" width="144" height="176"/>
+<ellipse class="orbit" cx="760" cy="176" rx="212" ry="72" transform="rotate(-16 760 176)"/>
+<ellipse class="orbit" cx="760" cy="176" rx="262" ry="100" transform="rotate(-16 760 176)"/>
+<circle class="star" cx="872" cy="72" r="24"/>
+</g></svg>
+<div class="t"><p class="n">PTIT<br>Orbit</p><p class="g">Nhận diện Học viện cho nền tảng học tập Orbit.</p></div>
+</div></body></html>

@@ -1,8 +1,9 @@
-import { curtainPlaying, curtainReady, playRoleCurtain } from '@/lib/theme-switch'
+import { introPlaying, introReady, playRoleIntro } from '@/lib/role-intro'
+import { preloadHome } from '@/lib/preload'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
-// Chọn / đổi vai trò có màn phủ PTIT (cùng ngôn ngữ với chuyển sáng/tối, tái dùng theme-curtain).
-// Đổi vai và chuyển về trang chủ diễn ra phía sau màn; trang chủ rồi trồi lên lần lượt (class role-entering, index.css).
+// Chọn / đổi vai trò có màn intro PTIT (lib/role-intro.ts). Đổi vai và chuyển về trang chủ diễn ra phía sau màn đỏ;
+// khi màn mở, trang chủ trồi lên lần lượt (class role-entering, index.css).
 
 export const roleGreeting = (role: Role, name: string) => (role === 'teacher' ? 'Chào thầy/cô' : `Chào ${name}`)
 
@@ -16,7 +17,9 @@ export interface EnterRoleOptions {
 
 export async function enterRole(role: Role, { origin, navigate }: EnterRoleOptions) {
     const state = useOrbitStore.getState()
-    if (curtainPlaying()) return
+    if (introPlaying()) return
+    // Cảnh 3D tải song song với intro để lúc màn đỏ mở là đã có hình
+    preloadHome()
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const swap = () => {
         useOrbitStore.getState().setRole(role)
@@ -27,11 +30,11 @@ export async function enterRole(role: Role, { origin, navigate }: EnterRoleOptio
             window.setTimeout(() => root.classList.remove('role-entering'), RISE_MS)
         }
     }
-    if (reduce || !curtainReady()) {
+    if (!introReady()) {
         swap()
         return
     }
-    await playRoleCurtain(origin, roleGreeting(role, state.learnerName), { swap })
+    await playRoleIntro(origin, roleGreeting(role, state.learnerName), { swap })
 }
 
 /** Tâm của một phần tử trên màn hình, dùng làm gốc của màn đỏ. */

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Flame, Menu, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
+import { Menu, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
+import { StreakFlame } from '@/components/streak-flame'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { XpChip } from '@/components/xp-chip'
 import { visibleStreak } from '@/lib/gamification'
@@ -145,8 +146,14 @@ export function TopNav() {
     // Giảng viên không có chuỗi ngày/XP
     const chips = role === 'teacher' ? null : (
         <>
-            <Link to="/journey" className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition duration-fast ${t.chip}`}>
-                <Flame size={14} className={streak > 0 ? 'fill-current' : ''} />
+            <Link
+                to="/journey"
+                title={`Chuỗi ${streak} ngày học`}
+                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition duration-fast ${
+                    streak > 0 ? 'border-brand-100 bg-brand-50 text-brand-ink hover:border-brand-300' : t.chip
+                }`}
+            >
+                <StreakFlame lit={streak > 0} />
                 Chuỗi {streak} ngày
             </Link>
             <XpChip className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-[13px] font-semibold transition-colors duration-fast ${t.chip}`} />
@@ -160,11 +167,11 @@ export function TopNav() {
             className={`nav-bar own-layer fixed inset-x-0 top-0 z-50 h-[var(--nav-h)] ${t.text}`}
         >
             <div className="container-page flex h-full items-center gap-4 lg:gap-6">
-                <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="Orbit, trang chủ">
+                <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ">
                     <BrandLogo />
                     <span className="leading-tight">
-                        <span className="block text-[17px] font-extrabold tracking-tight">Orbit</span>
-                        <span className={`hidden whitespace-nowrap text-[11px] xl:block ${t.sub}`}>Học viện Công nghệ BCVT</span>
+                        <span className="block text-xl font-black leading-none tracking-tight text-brand-ink">PTIT</span>
+                        <span className={`mt-1 hidden whitespace-nowrap text-[11px] xl:block ${t.sub}`}>Học viện Công nghệ BCVT</span>
                     </span>
                 </Link>
 

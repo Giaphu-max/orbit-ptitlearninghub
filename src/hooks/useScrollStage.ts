@@ -56,7 +56,7 @@ const BACK = 0.7
 const REVEAL_BACK = 0.5
 const FLIGHT_FLOOR = 0.35
 /** Dòng hướng dẫn góc dưới trái theo chương hiện tại */
-const GUIDE = ['Cuộn để đi vào trường', 'Hôm nay · 1/3 — cuộn tiếp: Khóa học', 'Khóa học · 2/3 — cuộn tiếp: Studio', 'Studio · 3/3 — cuộn tiếp: cuối trang', ''] as const
+const GUIDE = ['Cuộn để khám phá các chức năng', 'Hôm nay · 1/3 — cuộn tiếp: Khóa học', 'Khóa học · 2/3 — cuộn tiếp: Studio', 'Studio · 3/3 — cuộn tiếp: cuối trang', ''] as const
 const GUIDE_FLYING = 'Cuộn thêm để chạy nhanh hơn'
 /** Footer (chương 4, chế độ paged) trượt lên/xuống trong chừng này (ms) */
 const FOOTER_MS = 600

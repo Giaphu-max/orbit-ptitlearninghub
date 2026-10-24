@@ -15,7 +15,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Thang đỏ PTIT, 600 là màu gốc #C4161C
+        // Thang đỏ PTIT, 600 là màu gốc #BC2626
         brand: {
           ...scale('brand', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]),
           /** Màu chữ/nhấn đỏ trên nền theo giao diện (sáng hơn ở chế độ tối để đủ tương phản) */
@@ -35,6 +35,8 @@ export default {
         ring: token('ring'),
         background: token('background'),
         foreground: token('foreground'),
+        /** Tiêu đề navy (giao diện tối trùng foreground) */
+        strong: token('foreground-strong'),
         surface: token('surface'),
         primary: { DEFAULT: token('primary'), foreground: token('primary-foreground') },
         secondary: { DEFAULT: token('secondary'), foreground: token('secondary-foreground') },

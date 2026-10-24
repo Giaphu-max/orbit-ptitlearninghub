@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { introPlaying } from '@/lib/role-intro'
 import { curtainPlaying, curtainReady, playCurtain } from '@/lib/theme-switch'
 
 // Giao diện sáng/tối. Lưu riêng khỏi trạng thái demo để "Đặt lại dữ liệu demo" không đổi giao diện.
@@ -43,7 +44,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => {
         frozen: false,
         setTheme: (theme, origin) => {
             const { busy, theme: cur } = get()
-            if (busy || theme === cur || curtainPlaying()) return
+            if (busy || theme === cur || curtainPlaying() || introPlaying()) return
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
             if (reduce || !curtainReady()) {
                 apply(theme)
