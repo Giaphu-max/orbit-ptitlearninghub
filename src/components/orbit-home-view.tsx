@@ -333,7 +333,7 @@ function HeroChapter() {
                             <span className="font-mono text-xs text-muted-foreground">{pct}%</span>
                         </span>
                     </span>
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground shadow-[0_6px_16px_rgb(188_38_38/0.3)] transition duration-base group-hover:scale-[1.06] group-hover:bg-brand-700">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full surface-red text-ink-foreground transition duration-base group-hover:scale-[1.06]">
                         <Play size={20} className="ml-0.5 fill-current" />
                     </span>
                 </Link>

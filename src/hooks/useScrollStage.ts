@@ -569,6 +569,9 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             if (step(dir)) e.preventDefault()
         }
 
+        // Blur của scrim sau cột chữ chỉ bật khi đã chốt chương (không bay): tránh Safari vẽ lại blur trên canvas mỗi khung lúc máy quay bay
+        const veilEl = rootRef.current?.querySelector<HTMLElement>('.stage-veil')
+        let veilFly = ''
         let lastT = performance.now()
         let guideAt = 0
         // Chạy trong vòng rAF chung (lib/frame-loop), trước khung vẽ của canvas
@@ -585,6 +588,13 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
             }
             tickCut(now)
             flushOverlay()
+            if (veilEl) {
+                const f = flying() ? '1' : '0'
+                if (f !== veilFly) {
+                    veilFly = f
+                    veilEl.dataset.fly = f
+                }
+            }
             boost *= Math.exp(-dt * BOOST_DECAY) // sức đẩy mờ dần khi ngừng cuộn
             S = twAt()[0]
             if (!Number.isFinite(S)) {

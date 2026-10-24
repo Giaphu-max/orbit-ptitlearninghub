@@ -21,18 +21,18 @@
   :root {
     /* Màu thương hiệu: đỏ PTIT #BC2626 (chữ lockup Học viện), đỏ logo #DE221A; xem docs/design-system/orbit-code.md */
     /* Thang màu theo giao diện, dạng kênh RGB (xem tailwind.config.js) */
-    --brand-50: 251 241 241;
-    --brand-100: 243 219 219;
-    --brand-200: 236 214 215;
-    --brand-300: 238 154 152;
-    --brand-400: 226 96 95;
-    --brand-500: 222 34 26;
-    --brand-600: 188 38 38;
-    --brand-700: 159 41 37;
-    --brand-800: 122 31 28;
-    --brand-900: 74 19 17;
+    --brand-50: 255 241 239;
+    --brand-100: 255 220 215;
+    --brand-200: 255 196 189;
+    --brand-300: 250 150 140;
+    --brand-400: 244 105 93;
+    --brand-500: 240 74 62;
+    --brand-600: 226 38 28;
+    --brand-700: 200 27 18;
+    --brand-800: 154 21 14;
+    --brand-900: 92 15 11;
     --brand-950: 58 7 9;
-    --brand-ink: 358 80% 43%;
+    --brand-ink: 3 81% 47%;
     --brand-light: 8 100% 83%;
 
 
@@ -60,15 +60,15 @@
     --canvas-glow: radial-gradient(ellipse 34% 46% at 64% 44%, rgb(65 165 225 / 0.18) 0%, rgb(65 165 225 / 0) 100%),
       radial-gradient(ellipse 30% 42% at 80% 62%, rgb(244 135 143 / 0.16) 0%, rgb(244 135 143 / 0) 100%), linear-gradient(#fafafc, #fafafc);
     --stage-deep: 353 19% 6%;
-    --reward-from: 358 67% 51%;
-    --reward-mid: 358 80% 43%;
-    --reward-to: 358 78% 21%;
+    --reward-from: 7 100% 64%;
+    --reward-mid: 3 79% 51%;
+    --reward-to: 3 80% 36%;
     /* Vàng lóe của phần XP vừa cộng trên thanh cấp độ (#FFD27A), cố định ở cả hai giao diện */
     --reward-gain: 37 100% 74%;
 
-    --brand: 0 67% 44%;
+    --brand: 3 79% 51%;
     --brand-foreground: 0 0% 100%;
-    --brand-soft: 0 47% 96%;
+    --brand-soft: 8 100% 97%;
 
     /* Nền và chữ: trắng + trung tính ấm */
     --background: 240 25% 98%;
@@ -105,9 +105,9 @@
     --glass-bg: rgb(255 255 255 / 0.78);
     --glass-bg-scrolled: rgb(255 255 255 / 0.85);
     --glass-border: rgb(255 255 255 / 0.88);
-    --glass-shadow: 0 10px 30px -5px rgb(188 38 38 / 0.07), 0 4px 12px -2px rgb(10 26 80 / 0.05);
+    --glass-shadow: 0 10px 30px -5px rgb(226 38 28 / 0.07), 0 4px 12px -2px rgb(10 26 80 / 0.05);
     --glass-blur: blur(14px) saturate(180%);
-    --glass-inset: rgb(188 38 38 / 0.05);
+    --glass-inset: rgb(226 38 28 / 0.05);
     --pill-border: rgb(255 255 255 / 0.9);
     --pill-shadow: 0 12px 32px -4px rgb(10 26 80 / 0.08);
     --pin-bg: rgb(255 255 255 / 0.92);
@@ -120,7 +120,7 @@
     --secondary: 228 22% 95%;
     --secondary-foreground: 225 17% 26%;
     --accent: var(--brand-soft);
-    --accent-foreground: 358 80% 33%;
+    --accent-foreground: 3 81% 40%;
     --ring: var(--brand);
 
     /* Trạng thái */
@@ -139,7 +139,7 @@
     /* Đổ bóng: ngả navy, nhẹ */
     --shadow-card: 0 1px 2px hsl(226 78% 18% / 0.04), 0 4px 16px hsl(226 78% 18% / 0.06);
     --shadow-raised: 0 2px 4px hsl(226 78% 18% / 0.06), 0 16px 40px hsl(226 78% 18% / 0.12);
-    --shadow-brand: 0 8px 24px hsl(0 67% 44% / 0.28);
+    --shadow-brand: 0 18px 40px -16px rgb(226 38 28 / 0.55);
 
     /* Motion */
     --gutter: clamp(24px, 4vw, 96px);
@@ -368,8 +368,24 @@
   .no-overlays :is([data-overlay], .stage-veil, [data-guide], [data-dock], [data-bar]) {
     display: none !important;
   }
+  /* Scrim sau cột chữ: nền gần đục ở 0–34%, mờ dần tới 60%, kèm blur 6px chỉ ở vùng 0–46% (mask làm mép blur mờ dần).
+     Blur tắt trong lúc máy quay bay giữa các chương (useScrollStage ghi data-fly), bật lại khi đã chốt chương. */
   .stage-veil {
-    background: linear-gradient(90deg, hsl(var(--stage-bg) / 0.9) 0%, hsl(var(--stage-bg) / 0.62) 24%, hsl(var(--stage-bg) / 0) 36%);
+    background: linear-gradient(90deg, rgb(250 250 252 / 0.97) 0%, rgb(250 250 252 / 0.94) 34%, rgb(250 250 252 / 0.7) 46%, rgb(250 250 252 / 0) 60%);
+  }
+  .stage-veil::before {
+    content: '';
+    position: absolute;
+    inset: 0 54% 0 0;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 78%, transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0%, #000 78%, transparent 100%);
+  }
+  .stage-veil[data-fly='1']::before,
+  .stage-veil[data-static='true']::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   .stage-veil[data-static='true'] {
     background: linear-gradient(180deg, hsl(var(--stage-bg) / 0.5) 0%, hsl(var(--stage-bg) / 0.95) 55%);
@@ -399,19 +415,22 @@
      để không phụ thuộc cấu hình Tailwind nên không thể mất màu chữ. */
   .surface-red {
     color: hsl(var(--ink-foreground));
-    background-image: linear-gradient(135deg, hsl(var(--brand)) 0%, hsl(358 80% 28%) 100%);
+    background-image: linear-gradient(135deg, #ff5a47 0%, #e2261c 55%, #c81b12 100%);
+    box-shadow: 0 18px 40px -16px rgb(226 38 28 / 0.55);
+    transition: transform var(--duration-base) var(--ease-out), filter var(--duration-base);
   }
+  .surface-red:hover { filter: brightness(1.05); transform: translateY(-3px); }
   .surface-red-deep {
     color: hsl(var(--ink-foreground));
-    background-image: linear-gradient(135deg, hsl(358 80% 33%) 0%, hsl(358 78% 21%) 100%);
+    background-image: linear-gradient(135deg, #e2261c 0%, #c81b12 100%);
   }
   .on-red-chip {
     background-color: hsl(var(--ink-foreground));
-    color: hsl(358 80% 33%);
+    color: hsl(3 81% 47%);
   }
   .on-red-btn {
     background-color: hsl(var(--ink-foreground));
-    color: hsl(358 80% 33%);
+    color: hsl(3 81% 47%);
   }
   .on-red-muted {
     color: hsl(var(--ink-foreground) / 0.8);
@@ -832,21 +851,21 @@
     height: 6px;
     flex: none;
     border-radius: 9999px;
-    background: #bc2626;
+    background: #e2261c;
   }
   .ptit-pin:hover,
   .ptit-pin[data-active='true'] {
-    border-color: #bc2626;
-    color: #bc2626;
+    border-color: #e2261c;
+    color: #d41f16;
     transform: scale(1.05);
   }
   .ptit-pin-quiet:hover { border-color: #f3dbdb; color: hsl(var(--muted-foreground)); transform: none; }
-  /* Chữ nhấn "25 phút.": gradient #BC2626 → #DE221A ở giao diện sáng, đỏ nhạt theo token ở giao diện tối */
+  /* Chữ nhấn "25 phút.": gradient #D41F16 → #E2261C ở giao diện sáng, đỏ nhạt theo token ở giao diện tối */
   .mm-ribbon-bg {
     background-image: var(--mm-ribbon);
   }
   .ptit-gradient-text {
-    background-image: linear-gradient(90deg, #bc2626, #de221a);
+    background-image: linear-gradient(90deg, #d41f16, #e2261c);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -865,7 +884,7 @@
   .ptit-streak-chip {
     background: rgb(var(--brand-50));
     border: 1px solid rgb(var(--brand-100));
-    color: rgb(var(--brand-700));
+    color: hsl(var(--brand-ink));
   }
   .dark .ptit-streak-chip { color: hsl(var(--brand-ink)); }
 }

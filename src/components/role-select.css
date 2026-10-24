@@ -5,8 +5,8 @@
 .rs {
   --rs-red-50: #fbf1f1;
   --rs-red-100: #f3dbdb;
-  --rs-red-600: #bc2626;
-  --rs-red-700: #9f2925;
+  --rs-red-600: #e2261c;
+  --rs-red-700: #c81b12;
   --rs-navy: #0a1a50;
   --rs-ink: #373d4e;
   --rs-muted: #646880;
@@ -90,7 +90,7 @@
 }
 /* Khối vai trò: màu đặc, cả khối là một button */
 .rs-role {
-  --rs-block: #bc2626;
+  --rs-block: #e2261c;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -102,10 +102,10 @@
   text-align: left;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(150deg, #d63a2f 0%, #bc2626 55%, #8e1b17 100%);
+  background: linear-gradient(135deg, #ff5a47 0%, #e2261c 55%, #c81b12 100%);
   border: 0;
   border-radius: 22px;
-  box-shadow: 0 2px 4px rgb(10 26 80 / 0.08), 0 16px 34px rgb(188 38 38 / 0.28);
+  box-shadow: 0 2px 4px rgb(10 26 80 / 0.08), 0 18px 40px -16px rgb(226 38 28 / 0.55);
   transition: transform 0.35s var(--rs-ease), box-shadow 0.35s var(--rs-ease), opacity 0.3s;
   animation: rs-float 5s ease-in-out infinite alternate;
 }
@@ -238,7 +238,7 @@
 .rs-role:hover:not(:disabled),
 .rs-role:focus-visible {
   transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 4px 8px rgb(10 26 80 / 0.14), 0 28px 56px rgb(188 38 38 / 0.42);
+  box-shadow: 0 4px 8px rgb(10 26 80 / 0.14), 0 28px 56px -18px rgb(226 38 28 / 0.6);
 }
 .rs-role[data-role='teacher']:hover:not(:disabled),
 .rs-role[data-role='teacher']:focus-visible {

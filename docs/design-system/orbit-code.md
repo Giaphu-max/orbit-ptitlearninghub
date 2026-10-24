@@ -6,16 +6,16 @@
 
 | Biến | Cũ | Mới | Nguồn |
 |---|---|---|---|
-| `--brand-50` | 253 243 242 | 251 241 241 (#FBF1F1) | nền banner LMS |
-| `--brand-100` | 251 227 226 | 243 219 219 (#F3DBDB) | đầu thẻ LMS |
+| `--brand-50` | 253 243 242 | 255 241 239 (#FFF1EF) | nền banner LMS |
+| `--brand-100` | 251 227 226 | 255 220 215 (#FFDCD7) | đầu thẻ LMS |
 | `--brand-200` | 246 196 195 | 236 214 215 (#ECD6D7) | mục chọn QLĐT |
-| `--brand-500` | 212 47 49 | 222 34 26 (#DE221A) | đỏ logo chính thức |
-| `--brand-600` | 196 22 28 | 188 38 38 (#BC2626) | đỏ chữ lockup Học viện |
-| `--brand-700` | 161 17 23 | 159 41 37 (#9F2925) | thanh QLĐT |
+| `--brand-500` | 212 47 49 | 240 74 62 (#F04A3E) | đỏ sáng (gradient, minh họa, mô hình 3D) |
+| `--brand-600` | 196 22 28 | 226 38 28 (#E2261C) | đỏ chính, gần đỏ logo #DE221A |
+| `--brand-700` | 161 17 23 | 200 27 18 (#C81B12) | hover / đè lên |
 | `--brand-800` | 129 15 20 | 122 31 28 (#7A1F1C) | nội suy |
 | `--brand-900` | 94 12 16 | 74 19 17 (#4A1311) | nền thưởng |
 
-`--brand`, `--primary`, `--ring` (HSL): đổi sang `0 67% 44%` (#BC2626). `--brand-ink` sáng giữ cùng giá trị, tối `5 100% 75%` (#FF8A80).
+`--brand`, `--primary`, `--ring` (HSL): đổi sang `3 79% 51%` (#E2261C). `--brand-ink` sáng `3 81% 47%` (#D41F16, ≥5:1 trên trắng), tối `5 100% 75%` (#FF8A80).
 
 ## Chữ và nền
 
@@ -41,6 +41,6 @@
 
 ## Kiểm tra sau khi đổi
 
-- Chữ trắng trên `--brand-600` 6.1:1, trên `--brand-700` 7.4:1.
-- `red-ink` trên nền trắng 6:1, trên nền tối 7.6:1.
+- Chữ trắng trên `--brand-600` 4.6:1, trên `--brand-700` 6.3:1; trên điểm sáng #FF5A47 của gradient chỉ 3.1:1 nên chỉ dùng cho chữ lớn ≥18px bold.
+- `red-ink` #D41F16 trên nền trắng 5.2:1, trên nền tối 7.6:1.
 - Chạy lại `npm run build`, chụp trang chủ, trang học bài, /today, /studio ở cả sáng và tối.

@@ -23,7 +23,7 @@
 .ri-red {
   position: absolute;
   inset: 0;
-  background: radial-gradient(110% 90% at 30% 40%, #c9302a 0%, rgb(var(--brand-600)) 35%, rgb(var(--brand-700)) 70%, #5e1512 100%);
+  background: radial-gradient(110% 90% at 30% 40%, #ff5a47 0%, rgb(var(--brand-600)) 45%, rgb(var(--brand-700)) 85%, #a8160e 100%);
   clip-path: circle(0px at 50% 50%);
 }
 /* Màn đỏ mở bằng lỗ tròn từ tâm ô logo ở header (--hole là thuộc tính đã đăng ký trong index.css) */

@@ -2,9 +2,9 @@
 // Đây là màu của "vật thể" trong cảnh (không đổi theo giao diện sáng/tối); chỉ ánh sáng đổi khi sang buổi tối.
 export const CAMPUS = {
     plate: '#E8ECF2', plateDark: '#3A3030', plateEdge: '#2A3A6B', pave: '#9A9FA9', road: '#9A9FA9', grass: '#5CCB6E', grassDark: '#5CCB6E', lawnEdge: '#E8ECF2',
-    cream: '#FFFFFF', granite: '#8C8583', glass: '#2EC3A8', win: '#41A5E1', roofRed: '#EE3B2E', edge: '#9AA0B4', shadowInk: '#0A1A50', grid: '#D5D9E3',
+    cream: '#FFFFFF', granite: '#8C8583', glass: '#2EC3A8', win: '#41A5E1', roofRed: '#F04A3E', edge: '#9AA0B4', shadowInk: '#0A1A50', grid: '#D5D9E3',
     yellow: '#FFFFFF', white: '#FFFFFF', stripe: '#D5E4F7', trunk: '#7A5544', tree: '#3FBF6A', tree2: '#2E9A55',
-    glassBand: '#41A5E1', mmPink: '#F4878F', mmOrange: '#F39531', mmYellow: '#F4D431', ledRed: '#EE3B2E', solar: '#2C3E63', roofSlab: '#D5E4F7',
+    glassBand: '#41A5E1', mmPink: '#F4878F', mmOrange: '#F39531', mmYellow: '#F4D431', ledRed: '#F04A3E', solar: '#2C3E63', roofSlab: '#D5E4F7',
     suaWhite: '#F4F6F0', suaGreen: '#8CC163', roofFlat: '#FFFFFF', gateBlue: '#2F5AA8', signWhite: '#FFFFFF',
     // Màu sơn thật: Tòa A1 (xám xanh), hội trường/canteen (kem), cổng
     a1Wall: '#FFFFFF', a1Trim: '#1F63DB', hallWall: '#FFFFFF', a2Trim: '#D9DDE3', gateWall: '#E6E2DA',
@@ -17,7 +17,7 @@ export const CAMPUS = {
     moonlight: '#7E8FD6',
     hallWindow: '#41A5E1',
     carSilver: '#B9C4CC',
-    ptitRed: '#C4161C',
+    ptitRed: '#E2261C',
     // Chữ biển ban đêm: đỏ sáng như đèn LED và màu quầng
     // Chữ LED: lõi sáng gần trắng hồng, viền đỏ sáng; biển nền ban đêm xám than ấm
     ptitLedCore: '#FFE1DC',
@@ -30,7 +30,7 @@ export const CAMPUS = {
     gateBeam: '#F4F6F8',
     cornice: '#D5E4F7',
     flagYellow: '#F2C230',
-    gateSign: '#BC2626',
+    gateSign: '#E2261C',
     rimLight: '#FFE2C8',
     windowLit: '#FFD27A',
     // Tầng cửa sổ A2 đã đọc bài Daily: vàng ấm đậm để nổi cả ban ngày
@@ -57,7 +57,7 @@ export const A2COL = {
     beige: '#D5E4F7', stone: '#6E86B8', parapet: '#D5E4F7', winG: '#41A5E1', glassM: '#41A5E1',
     step: '#C9493F', mat: '#B8463D', frame: '#3C4A63', mullion: '#5A5A5A', handle: '#BBBBBB',
     facade: '#2E8FD0', door: '#2E5A54', column: '#C9CDD3',
-    hallSign: '#C4161C', hallSignText: '#FFFFFF', hallDoor: '#3A3030',
+    hallSign: '#E2261C', hallSignText: '#FFFFFF', hallDoor: '#3A3030',
 } as const
 
 // Sảnh A2 bên trong (nhìn xuyên qua mặt kính)
