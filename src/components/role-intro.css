@@ -4,15 +4,16 @@
  * chỉ animate transform / opacity / clip-path / mask.
  */
 .ri {
-  --ri-star: #eff003;
-  --ri-gold: #f4d431;
+  --ri-navy: #0a1a50;
+  --ri-ink: #373d4e;
+  --ri-line: #e1e4ee;
   position: fixed;
   inset: 0;
   z-index: 120;
   overflow: hidden;
   pointer-events: none;
   visibility: hidden;
-  color: #fff;
+  color: var(--ri-navy);
   contain: strict;
 }
 .ri.on {
@@ -23,7 +24,11 @@
 .ri-red {
   position: absolute;
   inset: 0;
-  background: radial-gradient(110% 90% at 30% 40%, #ff5a47 0%, rgb(var(--brand-600)) 45%, rgb(var(--brand-700)) 78%, #8e140d 100%);
+  background:
+    radial-gradient(38% 46% at 88% 18%, rgb(65 165 225 / 0.2), transparent 70%),
+    radial-gradient(34% 40% at 78% 86%, rgb(244 135 143 / 0.2), transparent 70%),
+    radial-gradient(30% 36% at 12% 90%, rgb(46 195 168 / 0.14), transparent 70%),
+    radial-gradient(30% 30% at 50% 0%, rgb(244 212 49 / 0.14), transparent 70%), #fbfbfd;
   clip-path: circle(0px at 50% 50%);
 }
 /* Màn đỏ mở bằng lỗ tròn từ tâm ô logo ở header (--hole là thuộc tính đã đăng ký trong index.css) */
@@ -49,7 +54,7 @@
 }
 .ri-rings ellipse {
   fill: none;
-  stroke: #fff;
+  stroke: url(#ri-ribbon);
   stroke-linecap: round;
 }
 .ri-ghost {
@@ -59,8 +64,7 @@
   width: min(42vw, 620px);
   height: auto;
   opacity: 0;
-  filter: blur(1.2px) brightness(0) invert(1);
-  mix-blend-mode: soft-light;
+  filter: blur(1.2px);
 }
 .ri-top {
   position: absolute;
@@ -83,7 +87,7 @@
   overflow: hidden;
   border-radius: 14px;
   background: #fff;
-  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.5);
+  box-shadow: 0 8px 24px -10px rgb(10 26 80 / 0.35), 0 0 0 1px rgb(10 26 80 / 0.06);
 }
 .ri-badge img {
   width: 74%;
@@ -100,11 +104,13 @@
   font-size: clamp(13px, 1.15vw, 17px);
   letter-spacing: 0.06em;
   line-height: 1.25;
+  color: #d41f16;
 }
 .ri-w2 {
   font-size: clamp(11px, 0.9vw, 13px);
   letter-spacing: 0.04em;
-  opacity: 0.78;
+  color: var(--ri-ink);
+  opacity: 0.85;
 }
 .ri-hero {
   position: absolute;
@@ -125,8 +131,12 @@
   opacity: 0;
   transform: translateY(0.5em);
 }
-.ri-w3 .nm {
-  color: var(--ri-gold);
+.ri-w3 .nm .ch:not(.cm) {
+  color: transparent;
+  background-image: var(--mm-text-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  padding-bottom: 0.08em;
 }
 .ri-w3 .wd {
   white-space: nowrap;
@@ -139,6 +149,7 @@
   margin-top: clamp(18px, 3vh, 32px);
   font-size: clamp(16px, 1.5vw, 24px);
   font-weight: 600;
+  color: var(--ri-ink);
   opacity: 0;
 }
 .ri-w4 .chip {
@@ -146,14 +157,17 @@
   font: 700 12px/16px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #fff;
-  background: rgb(255 255 255 / 0.14);
-  border: 1px solid rgb(255 255 255 / 0.28);
+  color: var(--ri-navy);
+  background: #fff;
+  border: 1px solid var(--ri-line);
   border-radius: 999px;
 }
 .ri-w4 b {
   font-weight: 800;
-  color: var(--ri-gold);
+  color: transparent;
+  background-image: var(--mm-text-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 .ri-skip {
   position: absolute;
@@ -161,9 +175,9 @@
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   padding: 7px 12px;
   font: 600 12px/16px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
-  color: rgb(255 255 255 / 0.8);
-  background: rgb(0 0 0 / 0.18);
-  border: 1px solid rgb(255 255 255 / 0.25);
+  color: var(--ri-ink);
+  background: #fff;
+  border: 1px solid var(--ri-line);
   border-radius: 999px;
   opacity: 0;
   cursor: pointer;
@@ -177,7 +191,7 @@
   gap: 12px;
   font: 600 12px/16px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
   letter-spacing: 0.08em;
-  color: rgb(255 255 255 / 0.75);
+  color: #646880;
   opacity: 0;
 }
 .ri-load i {
@@ -186,13 +200,13 @@
   height: 3px;
   overflow: hidden;
   border-radius: 2px;
-  background: rgb(255 255 255 / 0.2);
+  background: #e6e8f0;
 }
 .ri-bar {
   display: block;
   width: 100%;
   height: 100%;
-  background: var(--ri-star);
+  background: var(--mm-ribbon);
   transform-origin: left;
   transform: scaleX(0);
 }

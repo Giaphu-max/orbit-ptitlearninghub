@@ -52,7 +52,7 @@ export interface IntroHooks {
 const CH = '01<>/\\{}[]#=+*?:;ACGTXZ%&'.split('')
 const MONO = '600 12px "JetBrains Mono Variable", "JetBrains Mono", monospace'
 
-/** Lưới chấm trắng 16% (vẽ một lần ra canvas phụ) + cột ký tự mono rơi chậm ở nửa phải; trả hàm dừng. */
+/** Lưới chấm navy 10% (vẽ một lần ra canvas phụ) + cột ký tự mono rơi chậm ở nửa phải; trả hàm dừng. */
 function startField(c: HTMLCanvasElement) {
     const g = c.getContext('2d')
     if (!g) return () => undefined
@@ -68,7 +68,7 @@ function startField(c: HTMLCanvasElement) {
     const d = dots.getContext('2d')
     if (d) {
         d.setTransform(dpr, 0, 0, dpr, 0, 0)
-        d.fillStyle = 'rgba(255,255,255,.16)'
+        d.fillStyle = 'rgba(10,26,80,.10)'
         for (let y = 10; y < H; y += 18) for (let x = 10; x < W; x += 18) d.fillRect(x, y, 1.3, 1.3)
     }
     const cols: { x: number; y: number; v: number; len: number; a: number; ch: string[] }[] = []
@@ -90,7 +90,7 @@ function startField(c: HTMLCanvasElement) {
             if (col.y - col.len * 14 > H) col.y = -20
             if (Math.random() < 0.04) col.ch[(Math.random() * col.len) | 0] = CH[(Math.random() * CH.length) | 0]
             for (let i = 0; i < col.len; i++) {
-                g.fillStyle = `rgba(255,255,255,${col.a * (i === 0 ? 2.2 : 1 - i / col.len)})`
+                g.fillStyle = `rgba(10,26,80,${col.a * 0.6 * (i === 0 ? 2.2 : 1 - i / col.len)})`
                 g.fillText(col.ch[i], col.x, col.y - i * 14)
             }
         }
@@ -116,8 +116,8 @@ function setGreeting(q: (k: string) => HTMLElement, info: IntroInfo) {
         }
         if (i === info.words.length - 1) {
             const comma = document.createElement('span')
-            comma.className = 'ch'
-            comma.style.color = '#fff'
+            comma.className = 'ch cm'
+            comma.style.color = '#0a1a50'
             comma.textContent = ','
             wd.append(comma)
         }
@@ -134,6 +134,20 @@ function setGreeting(q: (k: string) => HTMLElement, info: IntroInfo) {
     line.append(info.pre, b, info.post)
     w4.append(chip, line)
     q('loadTx').textContent = info.loadText
+    // Mỗi ký tự là một span riêng: chia sẻ một dải gradient liền bằng background-size/position theo vị trí ký tự
+    requestAnimationFrame(() => {
+        w3.querySelectorAll<HTMLElement>('.nm').forEach((nm) => {
+            const cs = [...nm.querySelectorAll<HTMLElement>('.ch:not(.cm)')]
+            if (!cs.length) return
+            const L = cs[0].offsetLeft
+            const last = cs[cs.length - 1]
+            const wd = last.offsetLeft + last.offsetWidth - L
+            cs.forEach((c) => {
+                c.style.backgroundSize = `${wd}px 100%`
+                c.style.backgroundPosition = `${L - c.offsetLeft}px 0`
+            })
+        })
+    })
 }
 
 export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo, hooks: IntroHooks): Promise<void> {
@@ -286,7 +300,7 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
     A(q('rings'), [{ rotate: '0deg' }, { rotate: '8deg' }], { duration: 6000, delay: 1850, easing: 'linear' })
     A(q('r1'), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1200, delay: 300 })
     A(q('r2'), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: 1200, delay: 450 })
-    A(q('ghost'), [{ opacity: 0, transform: 'translateY(30px) rotate(-8deg)' }, { opacity: 0.35, transform: 'none' }], { duration: 1400, delay: 400 })
+    A(q('ghost'), [{ opacity: 0, transform: 'translateY(30px) rotate(-8deg)' }, { opacity: 0.13, transform: 'none' }], { duration: 1400, delay: 400 })
     // Học viện rơi xuống đầu tiên (300ms), vệt sáng quét ô logo (900ms), rồi lời chào nảy từng ký tự (450ms + 55ms/chữ), rồi dòng cá nhân (1250ms)
     A(q('top'), [{ opacity: 0, transform: 'translate(-50%,-14px)' }, { opacity: 1, transform: 'translate(-50%,0)' }], { duration: 600, delay: 300 })
     A(q('shine'), [{ transform: 'translateX(-120%)' }, { transform: 'translateX(120%)' }], { duration: 900, delay: 900, easing: 'ease-in-out' })

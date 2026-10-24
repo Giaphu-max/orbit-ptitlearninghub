@@ -99,6 +99,8 @@
     --mm-orange: #f39531;
     --mm-red: #ee3b2e;
     --mm-pink: #f4878f;
+    /* Dải màu chữ tên (intro): vàng đậm hơn #F4D431 để đọc được trên nền sáng */
+    --mm-text-gradient: linear-gradient(90deg, #1f63db 0%, #41a5e1 20%, #2ec3a8 38%, #e9c21e 54%, #f39531 66%, #ee3b2e 84%, #f4878f 100%);
     --mm-ribbon: linear-gradient(90deg, #1f63db, #41a5e1 25%, #2ec3a8 45%, #f4d431 62%, #f39531 75%, #ee3b2e 88%, #f4878f);
 
     /* Kính (thanh nav thu gọn, thẻ nổi trên cảnh 3D) và nhãn 3D (.ptit-pin, không blur để nhẹ cho Safari) */

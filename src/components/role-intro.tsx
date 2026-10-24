@@ -17,6 +17,13 @@ export function RoleIntro() {
             <div data-ri="red" className="ri-red" />
             <canvas data-ri="bg" className="ri-bg" aria-hidden="true" />
             <svg data-ri="rings" className="ri-rings" viewBox="-160 -100 320 200" aria-hidden="true">
+                <defs>
+                    <linearGradient id="ri-ribbon" gradientUnits="userSpaceOnUse" x1="-150" y1="0" x2="150" y2="0">
+                        {[['0', '#1F63DB'], ['.25', '#41A5E1'], ['.45', '#2EC3A8'], ['.62', '#F4D431'], ['.75', '#F39531'], ['.88', '#EE3B2E'], ['1', '#F4878F']].map(([o, c]) => (
+                            <stop key={o} offset={o} stopColor={c} />
+                        ))}
+                    </linearGradient>
+                </defs>
                 <ellipse data-ri="r1" rx="150" ry="86" strokeWidth="1.6" pathLength={1} strokeDasharray="1" strokeDashoffset="1" style={{ opacity: 0.55 }} />
                 <ellipse data-ri="r2" rx="128" ry="72" strokeWidth="0.8" pathLength={1} strokeDasharray="1" strokeDashoffset="1" style={{ opacity: 0.3 }} />
                 <ellipse rx="104" ry="58" strokeWidth="0.6" strokeDasharray=".6 3.4" style={{ opacity: 0.35 }} />

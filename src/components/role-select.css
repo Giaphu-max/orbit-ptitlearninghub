@@ -127,7 +127,7 @@
   position: relative;
   z-index: 1;
 }
-/* Viền 2px: conic-gradient chạy vòng, vệt vàng → trắng (trình duyệt không hỗ trợ @property thì đứng yên) */
+/* Viền 2px: conic-gradient chạy vòng, vệt trắng (trình duyệt không hỗ trợ @property thì đứng yên) */
 .rs-role::before {
   content: '';
   position: absolute;
@@ -136,7 +136,7 @@
   padding: 2px;
   border-radius: inherit;
   pointer-events: none;
-  background: conic-gradient(from var(--a), transparent 0deg 240deg, #f4d431 310deg, #fff 360deg);
+  background: conic-gradient(from var(--a), transparent 0 62%, rgb(255 255 255 / 0) 64%, rgb(255 255 255 / 0.75) 74%, #fff 78%, transparent 86%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -255,9 +255,11 @@
 }
 .rs-role:hover:not(:disabled) .rs-arr,
 .rs-role:focus-visible .rs-arr {
-  background: #f4d431;
-  color: #5a4300;
-  transform: translateX(4px);
+  background: #fff;
+  color: var(--rs-block);
+  transform: translateX(6px) scale(1.08);
+  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.35);
+  animation: none;
 }
 .rs-role:active:not(:disabled) {
   transform: scale(0.985);
