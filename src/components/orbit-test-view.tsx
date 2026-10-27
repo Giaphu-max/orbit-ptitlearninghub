@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, ChevronLeft, Clock, PlayCircle, RotateCcw, Target, TriangleAlert, X } from 'lucide-react'
 import { getConcept, getCourse } from '@/data'
@@ -18,14 +18,29 @@ import {
 } from '@/lib/final-test'
 import { useCourseLessons } from '@/lib/lesson-edits'
 import { formatTime } from '@/lib/youtube'
-import { useOrbitStore, type TestAttempt } from '@/store/useOrbitStore'
+import { useOrbitStore, type ActiveTestSession, type TestAttempt } from '@/store/useOrbitStore'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 export const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.max(0, sec) % 60).padStart(2, '0')}`
 
+function isSessionValid(session?: ActiveTestSession): session is ActiveTestSession {
+    if (!session) return false
+    if (!Array.isArray(session.questions) || session.questions.length === 0) return false
+    if (typeof session.remainingSec !== 'number' || session.remainingSec <= 0) return false
+    const MAX_AGE_MS = 24 * 60 * 60 * 1000
+    if (Date.now() - session.updatedAt > MAX_AGE_MS) return false
+    return true
+}
+
 type Phase =
     | { kind: 'intro' }
-    | { kind: 'running'; questions: TestQuestion[]; deadline: number }
+    | {
+        kind: 'running'
+        questions: TestQuestion[]
+        deadline: number
+        initialIndex?: number
+        initialPicks?: Record<string, number>
+      }
     | { kind: 'result'; attempt: TestAttempt; questions?: TestQuestion[]; picks?: Record<string, number>; xp?: number }
 
 /** /test/:courseId – test tổng hợp cuối chương: câu từ ngân hàng của khóa, trộn thứ tự, có giờ. Kết quả cập nhật cây kỹ năng và XP. */
@@ -36,17 +51,65 @@ export function OrbitTestView() {
     const bank = useMemo(() => buildQuestionBank(lessons), [lessons])
     const record = useOrbitStore((s) => (courseId ? s.testRecords[courseId] : undefined))
     const recordTestResult = useOrbitStore((s) => s.recordTestResult)
+    const activeSession = useOrbitStore((s) => (courseId ? s.activeTestSessions?.[courseId] : undefined))
+    const saveTestSession = useOrbitStore((s) => s.saveTestSession)
+    const clearTestSession = useOrbitStore((s) => s.clearTestSession)
     const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
+
+    const handleAutoSave = useCallback(
+        (data: { currentIndex: number; answers: Record<string, number>; remainingSec: number }) => {
+            if (!courseId || phase.kind !== 'running') return
+            saveTestSession(courseId, {
+                courseId,
+                questionIds: phase.questions.map((q) => q.id),
+                questions: phase.questions,
+                currentIndex: data.currentIndex,
+                answers: data.answers,
+                remainingSec: data.remainingSec,
+                updatedAt: Date.now(),
+            })
+        },
+        [courseId, phase, saveTestSession],
+    )
 
     if (!course || !courseId) return <Navigate to="/" replace />
 
+    const validSession = isSessionValid(activeSession) ? activeSession : undefined
+
+    const resume = (session: ActiveTestSession) => {
+        const deadline = Date.now() + Math.max(1, session.remainingSec) * 1000
+        setPhase({
+            kind: 'running',
+            questions: session.questions,
+            deadline,
+            initialIndex: Math.min(Math.max(0, session.currentIndex), session.questions.length - 1),
+            initialPicks: session.answers,
+        })
+        window.scrollTo(0, 0)
+    }
+
     const start = () => {
+        if (courseId) clearTestSession(courseId)
         const questions = pickTestQuestions(bank)
-        setPhase({ kind: 'running', questions, deadline: Date.now() + testTimeLimit(questions.length) * 1000 })
+        const timeLimit = testTimeLimit(questions.length)
+        const deadline = Date.now() + timeLimit * 1000
+        if (courseId) {
+            saveTestSession(courseId, {
+                courseId,
+                questionIds: questions.map((q) => q.id),
+                questions,
+                currentIndex: 0,
+                answers: {},
+                remainingSec: timeLimit,
+                updatedAt: Date.now(),
+            })
+        }
+        setPhase({ kind: 'running', questions, deadline, initialIndex: 0, initialPicks: {} })
         window.scrollTo(0, 0)
     }
 
     const submit = (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => {
+        if (courseId) clearTestSession(courseId)
         const limit = testTimeLimit(questions.length)
         const durationSec = Math.min(limit, Math.round(limit - (deadline - Date.now()) / 1000))
         const answers = questions.map((q) => ({ conceptId: q.conceptId, correct: picks[q.id] === q.correctIndex, blank: picks[q.id] === undefined }))
@@ -82,11 +145,25 @@ export function OrbitTestView() {
                         bankSize={bank.length}
                         conceptCount={new Set(bank.map((q) => q.conceptId)).size}
                         last={record?.last}
+                        activeSession={validSession}
+                        onResume={resume}
+                        onDiscard={() => courseId && clearTestSession(courseId)}
                         onStart={start}
                         onShowLast={() => record && setPhase({ kind: 'result', attempt: record.last })}
                     />
                 )}
-                {phase.kind === 'running' && <Running key={phase.deadline} phase={phase} onSubmit={submit} onQuit={() => setPhase({ kind: 'intro' })} />}
+                {phase.kind === 'running' && (
+                    <Running
+                        key={phase.deadline}
+                        phase={phase}
+                        onAutoSave={handleAutoSave}
+                        onSubmit={submit}
+                        onQuit={() => {
+                            if (courseId) clearTestSession(courseId)
+                            setPhase({ kind: 'intro' })
+                        }}
+                    />
+                )}
                 {phase.kind === 'result' && <Result courseTitle={course.title} phase={phase} onRetry={start} />}
             </div>
         </div>
@@ -95,7 +172,27 @@ export function OrbitTestView() {
 
 // ─── Giới thiệu ────────────────────────────────────────────────────────────
 
-function Intro({ courseTitle, bankSize, conceptCount, last, onStart, onShowLast }: { courseTitle: string; bankSize: number; conceptCount: number; last?: TestAttempt; onStart: () => void; onShowLast: () => void }) {
+function Intro({
+    courseTitle,
+    bankSize,
+    conceptCount,
+    last,
+    activeSession,
+    onResume,
+    onDiscard,
+    onStart,
+    onShowLast,
+}: {
+    courseTitle: string
+    bankSize: number
+    conceptCount: number
+    last?: TestAttempt
+    activeSession?: ActiveTestSession
+    onResume: (session: ActiveTestSession) => void
+    onDiscard: () => void
+    onStart: () => void
+    onShowLast: () => void
+}) {
     const count = Math.min(10, bankSize)
     const enough = bankSize >= 4
     return (
@@ -108,6 +205,40 @@ function Intro({ courseTitle, bankSize, conceptCount, last, onStart, onShowLast 
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
                 Một bài test ngắn gom kiến thức của cả khóa. Kết quả cho biết bạn nắm vững từng khái niệm đến đâu và chỉ đúng đoạn video cần xem lại.
             </p>
+
+            {activeSession && (
+                <div className="mt-6 rounded-card border border-brand-200 bg-brand-50/70 p-5 shadow-card dark:border-brand-900/40 dark:bg-brand-950/20">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="space-y-1">
+                            <p className="flex items-center gap-1.5 text-eyebrow uppercase text-brand-ink">
+                                <Clock size={13} className="shrink-0" /> Tự động lưu nháp
+                            </p>
+                            <h2 className="text-base font-bold text-foreground">
+                                Phát hiện bài làm dở (Câu <span className="font-mono">{activeSession.currentIndex + 1}</span>/{activeSession.questions.length} • Đã chọn <span className="font-mono">{Object.keys(activeSession.answers).length}</span> câu)
+                            </h2>
+                            <p className="text-xs text-muted-foreground">
+                                Thời gian còn lại: <span className="font-mono font-semibold text-foreground">{clock(activeSession.remainingSec)}</span>. Bạn có thể khôi phục tiến độ hoặc làm lại bài mới.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2.5 sm:shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => onResume(activeSession)}
+                                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700"
+                            >
+                                <PlayCircle size={16} /> Làm tiếp từ câu {activeSession.currentIndex + 1}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onDiscard}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold text-muted-foreground transition hover:border-muted-foreground/40 hover:text-foreground"
+                            >
+                                <RotateCcw size={14} /> Làm lại bài mới
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <dl className="mt-8 grid gap-4 sm:grid-cols-3">
                 <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`Chọn ngẫu nhiên từ ngân hàng ${bankSize} câu, ${conceptCount} khái niệm`} />
@@ -160,40 +291,102 @@ export function Running({
     phase,
     onSubmit,
     onQuit,
+    onAutoSave,
 }: {
     phase: Extract<Phase, { kind: 'running' }>
     onSubmit: (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => void
     onQuit: () => void
+    onAutoSave?: (session: { currentIndex: number; answers: Record<string, number>; remainingSec: number }) => void
 }) {
     const { questions, deadline } = phase
-    const [index, setIndex] = useState(0)
-    const [picks, setPicks] = useState<Record<string, number>>({})
+    const initialIndex = 'initialIndex' in phase && typeof phase.initialIndex === 'number' ? phase.initialIndex : 0
+    const initialPicks = 'initialPicks' in phase && phase.initialPicks ? phase.initialPicks : {}
+    const [index, setIndex] = useState(initialIndex)
+    const [picks, setPicks] = useState<Record<string, number>>(initialPicks)
     const [left, setLeft] = useState(() => Math.max(0, Math.ceil((deadline - Date.now()) / 1000)))
+
+    const isSubmittedRef = useRef(false)
     const picksRef = useRef(picks)
+    const indexRef = useRef(index)
+    const leftRef = useRef(left)
+    const onAutoSaveRef = useRef(onAutoSave)
+
     useEffect(() => {
         picksRef.current = picks
     }, [picks])
 
-    // Đóng tab hoặc tải lại giữa chừng sẽ mất bài và không tính kết quả: hỏi lại trước khi rời trang
+    useEffect(() => {
+        indexRef.current = index
+    }, [index])
+
+    useEffect(() => {
+        leftRef.current = left
+    }, [left])
+
+    useEffect(() => {
+        onAutoSaveRef.current = onAutoSave
+    })
+
+    const saveNow = useCallback((newIndex = indexRef.current, newPicks = picksRef.current, newLeft = leftRef.current) => {
+        if (isSubmittedRef.current) return
+        onAutoSaveRef.current?.({
+            currentIndex: newIndex,
+            answers: newPicks,
+            remainingSec: newLeft,
+        })
+    }, [])
+
+    // Đóng tab hoặc tải lại giữa chừng: lưu trạng thái và hỏi lại trước khi rời trang
     useEffect(() => {
         const warn = (e: BeforeUnloadEvent) => {
+            saveNow(indexRef.current, picksRef.current, leftRef.current)
             e.preventDefault()
             e.returnValue = ''
         }
         window.addEventListener('beforeunload', warn)
         return () => window.removeEventListener('beforeunload', warn)
-    }, [])
+    }, [saveNow])
 
-    // Đếm ngược theo mốc giờ tuyệt đối, nên tab bị treo hay chạy nền vẫn không lệch giờ
+    // Khi chọn đáp án: tự động lưu
+    const isFirstPicks = useRef(true)
     useEffect(() => {
+        if (isFirstPicks.current) {
+            isFirstPicks.current = false
+            return
+        }
+        saveNow(indexRef.current, picks, leftRef.current)
+    }, [picks, saveNow])
+
+    // Khi chuyển câu: tự động lưu
+    const isFirstIndex = useRef(true)
+    useEffect(() => {
+        if (isFirstIndex.current) {
+            isFirstIndex.current = false
+            return
+        }
+        saveNow(index, picksRef.current, leftRef.current)
+    }, [index, saveNow])
+
+    // Đếm ngược theo mốc giờ tuyệt đối, mỗi 3 giây tự động lưu thời gian còn lại
+    useEffect(() => {
+        let tickCount = 0
         const tick = () => {
             const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
             setLeft(remaining)
-            if (remaining === 0) onSubmit(questions, picksRef.current, deadline, true)
+            leftRef.current = remaining
+            if (remaining === 0) {
+                isSubmittedRef.current = true
+                onSubmit(questions, picksRef.current, deadline, true)
+                return
+            }
+            tickCount++
+            if (tickCount % 6 === 0) {
+                saveNow(indexRef.current, picksRef.current, remaining)
+            }
         }
         const id = window.setInterval(tick, 500)
         return () => window.clearInterval(id)
-    }, [deadline, questions, onSubmit])
+    }, [deadline, questions, onSubmit, saveNow])
 
     const q = questions[index]
     const answered = questions.filter((x) => picks[x.id] !== undefined).length
@@ -277,7 +470,10 @@ export function Running({
             <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-border pt-6">
                 <button
                     type="button"
-                    onClick={() => onSubmit(questions, picks, deadline, false)}
+                    onClick={() => {
+                        isSubmittedRef.current = true
+                        onSubmit(questions, picks, deadline, false)
+                    }}
                     className="rounded-full bg-brand-600 px-7 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700"
                 >
                     Nộp bài{unanswered > 0 ? ` (còn ${unanswered} câu chưa trả lời)` : ''}
@@ -285,7 +481,10 @@ export function Running({
                 <button
                     type="button"
                     onClick={() => {
-                        if (answered === 0 || window.confirm('Thoát giữa chừng sẽ mất bài đang làm và không tính kết quả. Bạn chắc chứ?')) onQuit()
+                        if (answered === 0 || window.confirm('Thoát giữa chừng sẽ mất bài đang làm và không tính kết quả. Bạn chắc chứ?')) {
+                            isSubmittedRef.current = true
+                            onQuit()
+                        }
                     }}
                     className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
                 >
@@ -389,7 +588,7 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
             <section className="mt-10" aria-labelledby="plan-title">
                 <h2 id="plan-title" className="text-title text-foreground">Lộ trình ôn tập</h2>
                 {gaps.length === 0 ? (
-                    <p className="mt-3 rounded-card border border-border bg-card p-5 text-[15px] text-muted-foreground shadow-card">Không còn khái niệm nào hổng trong lượt này. Bạn có thể sang bài Orbit Daily hoặc làm lại để kiểm tra bộ câu khác.</p>
+                    <p className="mt-3 rounded-card border border-border bg-card p-5 text-[15px] text-muted-foreground shadow-card">Không còn khái niệm nào hổng trong lượt này. Bạn có thể sang phần Ôn tập hoặc làm lại để kiểm tra bộ câu khác.</p>
                 ) : (
                     <>
                         <p className="mt-1 text-sm text-muted-foreground">Với mỗi khái niệm còn hổng: xem lại đúng đoạn giảng, rồi đọc bài đọc liên quan.</p>

@@ -59,7 +59,7 @@ function weekStudied(count: number, last: string | null) {
  * Vào trang: chuỗi và XP đếm từ 0 (~1,1s), vòng cấp chạy đầy (1,4s). XP đổi sau đó: đếm dần, chip ±n bay lên/rơi xuống.
  * Hiển thị XP tiêu được (nhận − đã tiêu); cấp tính từ tổng đã kiếm nên tiêu XP không làm tụt cấp.
  */
-export function StatsPill({ tooltip = true }: { tooltip?: boolean }) {
+export function StatsPill({ tooltip = true, compact = false }: { tooltip?: boolean; compact?: boolean }) {
     const streakState = useOrbitStore((s) => s.streak)
     const total = useOrbitStore((s) => s.xp)
     const balance = useOrbitStore((s) => xpBalance(s))
@@ -141,16 +141,18 @@ export function StatsPill({ tooltip = true }: { tooltip?: boolean }) {
             data-xp-chip
             aria-label={`Chuỗi ${streak} ngày, cấp ${lv.level}, ${balance.toLocaleString('vi-VN')} XP`}
             aria-describedby={tooltip ? tipId : undefined}
-            className="stats-pill group relative flex h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full border border-border bg-card pl-3 pr-2 font-mono text-sm font-bold text-strong shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+            className={`stats-pill group relative flex shrink-0 items-center whitespace-nowrap rounded-full border border-border bg-card font-mono font-bold text-strong shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${
+                compact ? 'h-8 gap-1.5 pl-2.5 pr-2 text-xs' : 'h-10 gap-2.5 pl-3 pr-2 text-sm'
+            }`}
         >
             <span className="flex items-center gap-1.5">
                 <StreakFlame lit={streak > 0} />
                 <span className="tabular-nums">{skCount.shown}</span>
             </span>
-            <span aria-hidden className="h-[18px] w-px bg-border" />
+            <span aria-hidden className={`${compact ? 'h-3.5' : 'h-[18px]'} w-px bg-border`} />
             <span className="flex items-center gap-1.5">
-                <span className="relative h-7 w-7 shrink-0">
-                    <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden className="-rotate-90">
+                <span className={`relative shrink-0 ${compact ? 'h-5 w-5' : 'h-7 w-7'}`}>
+                    <svg width={compact ? 20 : 28} height={compact ? 20 : 28} viewBox="0 0 28 28" aria-hidden className="-rotate-90">
                         <defs>
                             <linearGradient id={`${tipId}-lv`} x1="0" y1="0" x2="1" y2="1">
                                 <stop offset="0" stopColor="var(--mm-blue)" />
@@ -170,11 +172,11 @@ export function StatsPill({ tooltip = true }: { tooltip?: boolean }) {
                             style={{ strokeDashoffset: RING_LEN * (1 - (ringReady ? lv.ratio : 0)), transition: calm() ? 'none' : 'stroke-dashoffset 1.4s var(--ease-out, cubic-bezier(.22,1,.36,1)) 0.4s' }}
                         />
                     </svg>
-                    <b className="absolute inset-0 grid place-items-center text-[11px]">{lv.level}</b>
+                    <b className={`absolute inset-0 grid place-items-center ${compact ? 'text-[9px]' : 'text-[11px]'}`}>{lv.level}</b>
                 </span>
-                <span className="pr-1.5 tabular-nums">
+                <span className={`${compact ? 'pr-0.5' : 'pr-1.5'} tabular-nums`}>
                     {xpCount.shown.toLocaleString('vi-VN')}
-                    <em className="ml-[3px] text-xs font-medium not-italic text-muted-foreground">XP</em>
+                    <em className={`ml-[2px] font-medium not-italic text-muted-foreground ${compact ? 'text-[10px]' : 'text-xs'}`}>XP</em>
                 </span>
             </span>
             {flies.map((c) => (

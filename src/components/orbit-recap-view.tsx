@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowRight, Check, ChevronLeft, Flame, PlayCircle } from 'lucide-react'
+import { ArrowRight, Camera, Check, ChevronLeft, Flame, PlayCircle } from 'lucide-react'
 import { getLessonsOfCourse } from '@/data'
 import { useEffectiveLesson, useCourseLessons } from '@/lib/lesson-edits'
 import { buildRecap, type RecapBadge, type RecapConcept, type RecapData } from '@/lib/recap'
+import { LessonBreadcrumbStepper } from '@/components/lesson/lesson-stepper'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { TEST_PASS_RATIO, CHECKPOINT_QUESTION_COUNT } from '@/lib/final-test'
 import { QUIZ_XP } from '@/lib/quiz'
@@ -121,9 +122,18 @@ function Recap({ data }: { data: RecapData }) {
             <div className="container-page py-8 lg:py-12">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-14">
                     <div className="min-w-0">
-                        <Link to={`/learning?course=${course.id}`} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
-                            <ChevronLeft size={16} /> {course.title}
-                        </Link>
+                        <LessonBreadcrumbStepper
+                            courseTitle={course.title}
+                            lessonTitle={lesson.title}
+                            lessonId={lesson.id}
+                            currentStep="recap"
+                            courseId={course.id}
+                        />
+                        <div className="mt-4">
+                            <Link to={`/learning?course=${course.id}`} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
+                                <ChevronLeft size={16} /> {course.title}
+                            </Link>
+                        </div>
                         <StageTrack data={data} />
 
                         <div className="mt-9">
@@ -501,6 +511,19 @@ function NextCard({ data }: { data: RecapData }) {
             <Link to={next.to} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-[18px] py-3.5 text-[15px] font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700">
                 {next.label} <ArrowRight size={16} />
             </Link>
+            {(course.id === 'nhiep-anh-va-anh-sang' || course.subject === 'Nhiếp ảnh') && (
+                <Link
+                    to="/studio"
+                    className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-brand-300 bg-brand-50/70 p-3.5 text-sm font-bold text-foreground shadow-sm transition hover:border-brand-500 hover:bg-brand-50"
+                >
+                    <span className="flex items-center gap-2.5 text-left">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-ink-foreground">
+                            <Camera size={16} />
+                        </span>
+                        <span>Thực hành sắp đặt ánh sáng bài học này trong Phòng Lab 3D →</span>
+                    </span>
+                </Link>
+            )}
             <Link to={`/learning?course=${course.id}`} className="mt-2.5 block text-center text-[13.5px] font-semibold text-muted-foreground hover:text-foreground">
                 Về trang khóa học
             </Link>

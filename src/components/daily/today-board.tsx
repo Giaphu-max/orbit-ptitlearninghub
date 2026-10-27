@@ -9,34 +9,37 @@ import { useUnlockAnimation, type useTodayDaily } from '@/hooks/useTodayDaily'
 
 export type Today = ReturnType<typeof useTodayDaily>
 
-/** "N/3 đã đọc"; đủ 3 bài thì chuyển xanh, bài mua thêm nối đuôi. */
+/** "N/3 đã đọc"; dạng badge/pill định hình rõ ràng kèm chấm tròn trạng thái. */
 export function TodayCount({ today, className = '' }: { today: Today; className?: string }) {
     const { readCount, limit } = today
     const freeDone = readCount >= limit
     return (
-        <p className={`text-[13px] text-muted-foreground ${className}`} aria-live="polite">
-            {freeDone ? (
-                <>
-                    <b className="font-mono text-success">
-                        ✓ {limit}/{limit}
-                    </b>{' '}
-                    bài hôm nay đã đọc
-                    {readCount > limit && (
-                        <>
-                            {' '}
-                            · <b className="font-mono text-foreground">+{readCount - limit}</b> bài mở thêm
-                        </>
-                    )}
-                </>
-            ) : (
-                <>
-                    <b className="font-mono text-foreground">
-                        {readCount}/{limit}
-                    </b>{' '}
-                    đã đọc
-                </>
-            )}
-        </p>
+        <div className={`inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-mono font-medium shadow-2xs backdrop-blur-sm ${className}`} aria-live="polite">
+            <span className={`h-1.5 w-1.5 rounded-full ${freeDone ? 'bg-success' : 'bg-brand-600 animate-pulse'}`} aria-hidden />
+            <span>
+                {freeDone ? (
+                    <>
+                        <b className="font-bold text-success">
+                            ✓ {limit}/{limit}
+                        </b>{' '}
+                        bài hôm nay đã đọc
+                        {readCount > limit && (
+                            <>
+                                {' '}
+                                · <b className="font-bold text-foreground">+{readCount - limit}</b> bài mở thêm
+                            </>
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <b className="font-bold text-foreground">
+                            {readCount}/{limit}
+                        </b>{' '}
+                        đã đọc
+                    </>
+                )}
+            </span>
+        </div>
     )
 }
 

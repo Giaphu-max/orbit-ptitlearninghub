@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, Play, RotateCcw, Repeat, Volume2, VolumeX, X } from 'lucide-react'
+import { ChevronDown, RotateCcw, Repeat, Volume2, VolumeX } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
 import { StatsPill } from '@/components/stats-pill'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { FLAGS } from '@/lib/perf'
-import { resumeLesson } from '@/lib/next-step'
 import { centerOf, enterRole } from '@/lib/role-switch'
-import { getJourneyChapter, scrollToSection, subscribeChapter } from '@/lib/scroll'
+import { getJourneyChapter, subscribeChapter } from '@/lib/scroll'
 import { useSoundStore } from '@/lib/sfx'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
@@ -16,8 +15,6 @@ export type NavTone = 'hero' | 'plain'
 interface NavItem {
     label: string
     to: string
-    /** id phần trên trang chủ mà mục này cuộn tới */
-    section?: string
     /** Mục đang chọn khi ở các trang khác trang chủ */
     match: (pathname: string) => boolean
     /** Mục của trang giảng viên (?tab=) */
@@ -25,21 +22,36 @@ interface NavItem {
 }
 
 const BASE_ITEMS: NavItem[] = [
-    { label: 'Trang chủ', to: '/', section: 'top', match: (p) => p === '/' },
-    { label: 'Hôm nay', to: '/today', match: (p) => p.startsWith('/today') || p.startsWith('/daily') },
-    { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') || p.startsWith('/checkpoint') || p.startsWith('/recap') },
-    { label: 'Studio 3D', to: '/studio', match: (p) => p.startsWith('/studio') },
+    { label: 'Trang chủ', to: '/', match: (p) => p === '/' },
+    { label: 'Ôn tập', to: '/today', match: (p) => p.startsWith('/today') || p.startsWith('/daily') },
+    { label: 'Học phần', to: '/learning', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') || p.startsWith('/checkpoint') || p.startsWith('/recap') },
+    { label: 'Phòng Lab 3D', to: '/studio', match: (p) => p.startsWith('/studio') },
+    { label: 'Tiến độ & Kỹ năng', to: '/journey', match: (p) => p.startsWith('/journey') },
 ]
 
 // Giảng viên: nav dẫn tới các mục của trang giảng viên (?tab=) thay cho các phần học tập của sinh viên
 const teacherTab = (tab: string | null, id: 'review' | 'stats' | 'tests') => (id === 'review' ? tab !== 'stats' && tab !== 'tests' : tab === id)
 const TEACHER_ITEMS: NavItem[] = [
-    { label: 'Trang chủ', to: '/', section: 'top', match: (p) => p === '/' },
+    { label: 'Trang chủ', to: '/', match: (p) => p === '/' },
     { label: 'Duyệt nội dung', to: '/teacher', match: () => false, tab: 'review' },
     { label: 'Thống kê lớp', to: '/teacher?tab=stats', match: () => false, tab: 'stats' },
     { label: 'Kết quả test', to: '/teacher?tab=tests', match: () => false, tab: 'tests' },
-    { label: 'Khóa học', to: '/learning', match: (p) => p === '/learning' },
+    { label: 'Học phần', to: '/learning', match: (p) => p === '/learning' },
 ]
+
+function getCurrentPageLabel(pathname: string): string {
+    if (pathname === '/') return 'Trang chủ'
+    if (pathname.startsWith('/today') || pathname.startsWith('/daily')) return 'Ôn tập'
+    if (pathname === '/learning') return 'Học phần'
+    if (pathname.startsWith('/lesson')) return 'Bài giảng'
+    if (pathname.startsWith('/checkpoint')) return 'Kiểm tra'
+    if (pathname.startsWith('/recap')) return 'Tổng kết'
+    if (pathname.startsWith('/test')) return 'Bài test'
+    if (pathname.startsWith('/studio')) return 'Phòng Lab 3D'
+    if (pathname.startsWith('/journey')) return 'Tiến độ & Kỹ năng'
+    if (pathname.startsWith('/teacher')) return 'Giảng viên'
+    return 'PTIT'
+}
 
 /** Trang thường: đã cuộn quá 60px (một listener scroll passive + rAF, không đọc layout). */
 function useScrolledPast(enabled: boolean, px: number) {
@@ -86,7 +98,7 @@ const initials = (name: string) =>
         .map((w) => w[0])
         .join('')
         .slice(0, 2)
-        .toUpperCase() || 'OR'
+        .toUpperCase() || 'PT'
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])'
 
@@ -97,7 +109,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabin
  */
 export function TopNav() {
     const { pathname, hash, search } = useLocation()
-    const [menuOpen, setMenuOpen] = useState(false)
+    const [navOpen, setNavOpen] = useState(false)
+    const [accountOpen, setAccountOpen] = useState(false)
     const onHome = pathname === '/'
     const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
     // Trang chủ hành trình: chỉ đọc chương đã chốt (không đọc scrollY); các trang khác và trang chủ giảm chuyển động (chapter = -1) đọc scrollY
@@ -106,66 +119,100 @@ export function TopNav() {
     const collapsed = narrow || (onHome && chapter >= 0 ? chapter >= 1 : scrolled)
     const tabParam = new URLSearchParams(search).get('tab')
     const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : it.match(pathname))
-    const goTo = (e: ReactMouseEvent, it: NavItem) => {
-        setMenuOpen(false)
-        if (!onHome || !it.section) return
-        e.preventDefault()
-        scrollToSection(it.section)
-    }
-    // Logo luôn về chương 0 của trang chủ: đang ở trang chủ thì nhảy chương (kiểu cắt khi cách ≥2 chương, do useScrollStage lo), trang khác thì navigate('/')
-    const goHome = (e: ReactMouseEvent) => {
-        setMenuOpen(false)
-        if (!onHome) return
-        e.preventDefault()
-        scrollToSection('top')
-    }
+    const pageLabel = getCurrentPageLabel(pathname)
     const role = useOrbitStore((s) => s.role)
     useOrbitStore((s) => s.lessonProgress)
-    const resume = role === 'teacher' ? undefined : resumeLesson()
 
     const items = role === 'teacher' ? TEACHER_ITEMS : BASE_ITEMS
     
     const rootRef = useRef<HTMLDivElement>(null)
-    const menuBtn = useRef<HTMLButtonElement>(null)
-    const panelRef = useRef<HTMLDivElement>(null)
+    const pageBtnRef = useRef<HTMLButtonElement>(null)
+    const accountBtnRef = useRef<HTMLButtonElement>(null)
+    const navPanelRef = useRef<HTMLDivElement>(null)
+    const accountPanelRef = useRef<HTMLDivElement>(null)
 
-    const closeMenu = useCallback((refocus = false) => {
-        setMenuOpen(false)
-        if (refocus) menuBtn.current?.focus()
+    const toggleNav = () => {
+        setNavOpen((v) => {
+            const next = !v
+            if (next) setAccountOpen(false)
+            return next
+        })
+    }
+
+    const toggleAccount = () => {
+        setAccountOpen((v) => {
+            const next = !v
+            if (next) setNavOpen(false)
+            return next
+        })
+    }
+
+    const closeAll = useCallback((refocus?: 'nav' | 'account') => {
+        setNavOpen(false)
+        setAccountOpen(false)
+        if (refocus === 'nav') pageBtnRef.current?.focus()
+        if (refocus === 'account') accountBtnRef.current?.focus()
     }, [])
 
-    // Đóng menu khi đổi trang hoặc khi nav trở về dạng rộng
-    useEffect(() => setMenuOpen(false), [pathname, hash])
+    const goTo = () => {
+        closeAll()
+    }
+    const goHome = () => {
+        closeAll()
+    }
+
+    // Đóng dropdown khi đổi trang hoặc khi nav trở về dạng rộng
     useEffect(() => {
-        if (!collapsed) setMenuOpen(false)
+        setNavOpen(false)
+        setAccountOpen(false)
+    }, [pathname, hash])
+
+    useEffect(() => {
+        if (!collapsed) {
+            setNavOpen(false)
+            setAccountOpen(false)
+        }
     }, [collapsed])
 
-    // Menu mở: Esc / bấm ra ngoài đóng; Tab xoay vòng trong panel; vào panel thì focus mục đầu tiên
+    // Esc / bấm ra ngoài đóng; Tab xoay vòng trong panel; vào panel thì focus mục đầu tiên
     useEffect(() => {
-        if (!menuOpen) return
-        const onDown = (e: MouseEvent) => !rootRef.current?.contains(e.target as Node) && closeMenu()
+        if (!navOpen && !accountOpen) return
+        const onDown = (e: MouseEvent) => {
+            if (!rootRef.current?.contains(e.target as Node)) {
+                closeAll()
+            }
+        }
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') return closeMenu(true)
-            if (e.key !== 'Tab' || !panelRef.current) return
-            const els = [menuBtn.current, ...Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))].filter((el): el is HTMLElement => !!el)
+            if (e.key === 'Escape') {
+                closeAll(navOpen ? 'nav' : 'account')
+                return
+            }
+            const activePanel = navOpen ? navPanelRef.current : accountPanelRef.current
+            if (e.key !== 'Tab' || !activePanel) return
+            const triggerBtn = navOpen ? pageBtnRef.current : accountBtnRef.current
+            const els = [triggerBtn, ...Array.from(activePanel.querySelectorAll<HTMLElement>(FOCUSABLE))].filter((el): el is HTMLElement => !!el)
             const first = els[0]
             const last = els[els.length - 1]
             if (e.shiftKey && document.activeElement === first) {
                 e.preventDefault()
-                last.focus()
+                last?.focus()
             } else if (!e.shiftKey && document.activeElement === last) {
                 e.preventDefault()
-                first.focus()
+                first?.focus()
             }
         }
         document.addEventListener('mousedown', onDown)
         document.addEventListener('keydown', onKey)
-        panelRef.current?.querySelector<HTMLElement>('a[href]')?.focus()
+        if (navOpen) {
+            navPanelRef.current?.querySelector<HTMLElement>('a[href]')?.focus()
+        } else if (accountOpen) {
+            accountPanelRef.current?.querySelector<HTMLElement>('input, button')?.focus()
+        }
         return () => {
             document.removeEventListener('mousedown', onDown)
             document.removeEventListener('keydown', onKey)
         }
-    }, [menuOpen, closeMenu])
+    }, [navOpen, accountOpen, closeAll])
 
     // Giảng viên không có chuỗi ngày/XP
     const chips = role === 'teacher' ? null : (
@@ -205,8 +252,8 @@ export function TopNav() {
                                 key={it.label}
                                 to={it.to}
                                 tabIndex={collapsed ? -1 : 0}
-                                onClick={(e) => goTo(e, it)}
-                                aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
+                                onClick={goTo}
+                                aria-current={isActive(it) ? 'page' : undefined}
                                 className={`${linkCls} ${isActive(it) ? 'font-extrabold text-brand-ink' : 'font-medium text-foreground hover:text-strong'}`}
                             >
                                 {it.label}
@@ -221,70 +268,96 @@ export function TopNav() {
                 </div>
 
                 {/* Dạng viên kính thu gọn */}
-                <div className="nav-layer nav-layer-pill justify-between gap-2 px-3 pl-3.5">
-                    {resume ? (
-                        <Link
-                            to={`/lesson/${resume.id}`}
-                            tabIndex={collapsed ? 0 : -1}
-                            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-50 px-3.5 py-2 text-[13px] font-semibold text-brand-ink transition duration-fast hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
-                        >
-                            <Play size={13} className="fill-current" aria-hidden /> Học tiếp
-                        </Link>
-                    ) : (
-                        <span className="w-2 shrink-0" />
-                    )}
-                    <Link to="/" onClick={goHome} tabIndex={collapsed ? 0 : -1} aria-label="PTIT, trang chủ" className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                <div className="nav-layer nav-layer-pill justify-between items-center gap-2 px-3 pl-3.5">
+                    {/* Khu vực bên trái: Nút tên trang hiện tại */}
+                    <button
+                        ref={pageBtnRef}
+                        type="button"
+                        tabIndex={collapsed ? 0 : -1}
+                        aria-expanded={navOpen}
+                        aria-haspopup="true"
+                        aria-controls="nav-pages-panel"
+                        onClick={toggleNav}
+                        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-50 px-3 py-1.5 text-[13px] font-bold text-brand-ink transition duration-fast hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                        title="Danh sách trang điều hướng"
+                    >
+                        <span className="h-2 w-2 rounded-full bg-brand-600 animate-pulse" aria-hidden />
+                        <span>{pageLabel}</span>
+                        <ChevronDown size={13} className={`transition-transform duration-200 ${navOpen ? 'rotate-180' : ''}`} aria-hidden />
+                    </button>
+
+                    {/* Khu vực ở giữa: Logo PTIT */}
+                    <Link
+                        to="/"
+                        onClick={goHome}
+                        tabIndex={collapsed ? 0 : -1}
+                        aria-label="PTIT, trang chủ"
+                        className="flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                    >
                         <BrandLogo className="!h-8 !w-8 !rounded-lg" />
                         <span className="text-lg font-black leading-none tracking-tight text-brand-ink">PTIT</span>
                     </Link>
-                    <div className="flex shrink-0 items-center gap-1.5">
+
+                    {/* Khu vực bên phải: Cụm Streak + XP (StatsPill compact) và Nút Avatar tròn P */}
+                    <div className="flex shrink-0 items-center gap-2">
+                        {role !== 'teacher' && <StatsPill compact tooltip={false} />}
                         <button
-                            ref={menuBtn}
+                            ref={accountBtnRef}
                             type="button"
                             tabIndex={collapsed ? 0 : -1}
-                            aria-expanded={menuOpen}
+                            aria-label={`Tài khoản của ${name}`}
+                            aria-expanded={accountOpen}
                             aria-haspopup="true"
-                            aria-controls="nav-menu-panel"
-                            onClick={() => setMenuOpen((v) => !v)}
-                            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-semibold text-foreground transition duration-fast hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                            aria-controls="nav-account-panel"
+                            onClick={toggleAccount}
+                            className="flex aspect-square h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground text-[11px] font-extrabold text-background shadow-card transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                            title="Tài khoản & cài đặt"
                         >
-                            Menu {menuOpen ? <X size={15} aria-hidden /> : <Menu size={15} aria-hidden />}
-                        </button>
-                        <span aria-hidden className="flex aspect-square h-8 w-8 items-center justify-center rounded-full bg-foreground text-[11px] font-extrabold text-background">
                             {initials(name)}
-                        </span>
+                        </button>
                     </div>
                 </div>
 
-                {/* Panel kính xổ xuống ngay dưới viên kính */}
-                {collapsed && menuOpen && (
+                {/* Dropdown danh sách trang điều hướng (bên trái) */}
+                {collapsed && navOpen && (
                     <div
-                        ref={panelRef}
-                        id="nav-menu-panel"
+                        ref={navPanelRef}
+                        id="nav-pages-panel"
                         role="dialog"
-                        aria-label="Menu điều hướng"
-                        className="nav-menu-panel ptit-glass-card absolute inset-x-0 top-full mt-2 max-h-[calc(100svh-96px)] overflow-y-auto p-4 text-foreground"
+                        aria-label="Danh sách trang điều hướng"
+                        className="nav-menu-panel ptit-glass-card absolute left-0 top-full mt-2 w-64 max-h-[calc(100svh-96px)] overflow-y-auto p-2 text-foreground shadow-raised z-50 rounded-2xl border border-border"
                     >
-                        <nav aria-label="Điều hướng chính (menu)" className="flex flex-col">
+                        <nav aria-label="Điều hướng chính (menu)" className="flex flex-col gap-1">
                             {items.map((it) => (
                                 <Link
                                     key={it.label}
                                     to={it.to}
-                                    onClick={(e) => goTo(e, it)}
-                                    aria-current={isActive(it) ? (onHome ? 'location' : 'page') : undefined}
-                                    className={`rounded-xl px-4 py-3 text-[15px] font-semibold ${isActive(it) ? 'bg-brand-50 text-brand-ink' : 'text-foreground hover:bg-muted'}`}
+                                    onClick={goTo}
+                                    aria-current={isActive(it) ? 'page' : undefined}
+                                    className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-semibold transition ${
+                                        isActive(it) 
+                                            ? 'bg-brand-50 text-brand-ink font-bold dark:bg-brand-950/40' 
+                                            : 'text-foreground hover:bg-muted'
+                                    }`}
                                 >
-                                    {it.label}
+                                    <span>{it.label}</span>
+                                    {isActive(it) && <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden />}
                                 </Link>
                             ))}
                         </nav>
-                        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                            {chips}
-                            {FLAGS.darkMode && <ThemeToggle tone="plain" className="relative ml-auto" />}
-                        </div>
-                        <div className="mt-3 border-t border-border pt-3">
-                            <AccountPanel onClose={() => closeMenu()} />
-                        </div>
+                    </div>
+                )}
+
+                {/* Popover thông tin cá nhân & cài đặt (bên phải) */}
+                {collapsed && accountOpen && (
+                    <div
+                        ref={accountPanelRef}
+                        id="nav-account-panel"
+                        role="dialog"
+                        aria-label="Tài khoản cá nhân"
+                        className="nav-menu-panel ptit-glass-card absolute right-0 top-full mt-2 w-72 max-h-[calc(100svh-96px)] overflow-y-auto p-4 text-foreground shadow-raised z-50 rounded-2xl border border-border"
+                    >
+                        <AccountPanel onClose={() => setAccountOpen(false)} />
                     </div>
                 )}
             </div>

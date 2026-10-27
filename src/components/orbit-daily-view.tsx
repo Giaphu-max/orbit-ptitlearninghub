@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { Check, ChevronLeft, Clock, X } from 'lucide-react'
+import { Check, ChevronLeft, Clock, Sparkles, X, Zap } from 'lucide-react'
 import { dailyArticles, getConcept } from '@/data'
 import type { DailyBlock } from '@/data/types'
 import { ConceptPopover, type OpenConcept } from '@/components/daily/concept-popover'
@@ -9,7 +9,8 @@ import { SourceChip } from '@/components/daily/source-chip'
 import { checkBlocks } from '@/lib/daily-text'
 import { celebrate, reactWrong } from '@/lib/feedback'
 import { nextDaily } from '@/lib/next-step'
-import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP } from '@/lib/gamification'
+import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP, localDate } from '@/lib/gamification'
+import { A2_TIERS } from '@/lib/daily-lit'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 /** /daily/:id – bài đọc ngắn có dẫn nguồn về bài giảng; trả lời đúng câu kiểm tra mới tính hoàn thành. */
@@ -152,12 +153,13 @@ export function OrbitDailyView() {
                                         block={block}
                                         pick={chosen[block.question.id]}
                                         locked={read !== undefined}
+                                        articleId={article.id}
                                         onPick={(n, el) => pick(block.question, n, el)}
                                     />
                                 ) : (
                                     <>
                                         <BlockBody block={block} onConcept={openConcept} />
-                                        <SourceChip sources={block.sources} />
+                                        <SourceChip sources={block.sources} articleId={article.id} />
                                     </>
                                 )}
                             </div>
@@ -194,17 +196,17 @@ const FRAME: Record<DailyBlock['type'], string> = { hook: 'fb-card', paragraph: 
 
 type TextBlock = Exclude<DailyBlock, { type: 'check' }>
 
-function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: string, el: HTMLElement) => void }) {
+function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: string, el: HTMLElement) => void }): React.ReactNode {
     switch (block.type) {
         case 'hook':
             return (
-                <p className="text-[clamp(2rem,7vw,3.5rem)] font-extrabold leading-[1.08] tracking-tight text-foreground">
+                <p className="text-[clamp(1.75rem,4vw,2.5rem)] font-semibold leading-[1.2] tracking-tight text-strong">
                     <InlineText text={block.text} onConcept={onConcept} />
                 </p>
             )
         case 'paragraph':
             return (
-                <p className="text-[clamp(19px,1.6vw,22px)] leading-[1.7] text-foreground">
+                <p className="text-[clamp(18px,1.5vw,21px)] leading-[1.7] text-foreground">
                     <InlineText text={block.text} onConcept={onConcept} />
                 </p>
             )
@@ -217,9 +219,9 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
             )
         case 'keypoint':
             return (
-                <section className="fb-kp rounded-panel border border-border bg-card p-6 shadow-card sm:p-7">
+                <section className="fb-kp rounded-r-xl border-l-4 border-brand-600 bg-brand-50/50 p-5 shadow-sm dark:bg-brand-950/20 sm:p-6">
                     <p className="text-eyebrow uppercase text-brand-ink">Điểm cốt lõi</p>
-                    <p className="mt-3 text-xl font-bold leading-snug text-foreground">
+                    <p className="mt-2 text-xl font-bold leading-snug text-foreground">
                         <InlineText text={block.text} onConcept={onConcept} />
                     </p>
                 </section>
@@ -228,7 +230,7 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
             return (
                 <ul className="flex flex-col gap-3">
                     {block.items.map((item, i) => (
-                        <li key={i} className="flex gap-3 text-[clamp(19px,1.6vw,22px)] leading-[1.6] text-foreground">
+                        <li key={i} className="flex gap-3 text-[clamp(18px,1.5vw,21px)] leading-[1.6] text-foreground">
                             <span aria-hidden className="mt-3 h-2 w-2 shrink-0 rounded-full bg-brand-600" />
                             <span>
                                 <InlineText text={item} onConcept={onConcept} />
@@ -239,24 +241,39 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
             )
         case 'example':
             return (
-                <section>
+                <section className="rounded-xl border border-border/60 bg-muted/50 p-5">
                     <p className="text-eyebrow uppercase text-muted-foreground">Ví dụ áp dụng</p>
-                    <p className="mt-3 text-[clamp(19px,1.6vw,22px)] leading-[1.7] text-foreground">
+                    <p className="mt-2 text-[clamp(18px,1.5vw,21px)] leading-[1.7] text-foreground">
                         <InlineText text={block.text} onConcept={onConcept} />
                     </p>
                 </section>
             )
+        default:
+            return null
     }
 }
 
-function CheckBlock({ block, pick, locked, onPick }: { block: Extract<DailyBlock, { type: 'check' }>; pick: number | undefined; locked: boolean; onPick: (i: number, el: HTMLElement) => void }) {
+function CheckBlock({ block, pick, locked, articleId, onPick }: { block: Extract<DailyBlock, { type: 'check' }>; pick: number | undefined; locked: boolean; articleId?: string; onPick: (i: number, el: HTMLElement) => void }) {
     const c = block.question
     const answered = pick !== undefined
+    const dailyRead = useOrbitStore((s) => s.dailyRead)
+    const todayDate = localDate()
+    const readToday = dailyArticles.filter((a) => dailyRead[a.id] === todayDate).length
+    const isAlreadyReadToday = articleId ? dailyRead[articleId] === todayDate : false
+    const totalReadToday = readToday + (isAlreadyReadToday ? 0 : 1)
+    const darkTiers = Math.max(0, A2_TIERS - totalReadToday)
+    const darkSuffix = darkTiers > 0 ? ` · còn ${darkTiers} tầng tối` : ''
+
     return (
-        <section className="rounded-panel border border-border bg-card p-6 shadow-card" aria-label="Kiểm tra nhanh">
-            <p className="text-eyebrow uppercase text-brand-ink">Kiểm tra nhanh</p>
-            <p className="mt-3 font-bold text-foreground">{c.prompt}</p>
-            <ul className="mt-3 flex flex-col gap-2">
+        <section className="relative overflow-hidden rounded-panel border-2 border-brand-500/25 bg-card p-6 shadow-card" aria-label="Kiểm tra nhanh">
+            <div className="flex items-center justify-between gap-3">
+                <p className="text-eyebrow uppercase text-brand-ink">Kiểm tra nhanh</p>
+                <span className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 font-mono text-xs font-bold text-brand-ink">
+                    <Zap size={12} className="fill-current" /> +{DAILY_ARTICLE_XP} XP
+                </span>
+            </div>
+            <p className="mt-3 text-lg font-bold text-foreground">{c.prompt}</p>
+            <ul className="mt-4 flex flex-col gap-2.5">
                 {c.options.map((opt, i) => {
                     const correct = answered && i === c.correctIndex && pick === c.correctIndex
                     const wrong = answered && i === pick && i !== c.correctIndex
@@ -279,7 +296,13 @@ function CheckBlock({ block, pick, locked, onPick }: { block: Extract<DailyBlock
                 })}
             </ul>
             {answered && <p className="mt-3 text-sm text-muted-foreground">{pick === c.correctIndex ? c.explanation : 'Chưa đúng, thử lại nhé. Gợi ý: mở “Nguồn” của các khối phía trên để xem lại đoạn giảng.'}</p>}
-            <SourceChip sources={block.sources} />
+            {answered && pick === c.correctIndex && (
+                <div className="mt-3 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-soft px-3.5 py-2.5 text-sm font-semibold text-brand-ink">
+                    <Sparkles size={16} className="shrink-0" />
+                    <span>Đã thắp sáng thêm 1 tầng cửa sổ tòa A2 ở trang chủ{darkSuffix}</span>
+                </div>
+            )}
+            <SourceChip sources={block.sources} articleId={articleId} />
         </section>
     )
 }

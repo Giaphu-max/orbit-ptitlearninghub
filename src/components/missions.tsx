@@ -64,20 +64,31 @@ export function MissionList({ compact = false }: { compact?: boolean }) {
     const claim = useClaim()
     const refs = useRef<Record<string, HTMLButtonElement | null>>({})
 
+    const nextPriorityId = MISSIONS.find((m) => {
+        const value = Math.min(m.target, m.progress(daily))
+        const claimed = daily.claimed.includes(m.id)
+        return !claimed && value < m.target
+    })?.id
+
     return (
         <ul className={`flex flex-col ${compact ? 'gap-3' : 'mt-4 gap-3'}`}>
             {MISSIONS.map((m) => {
                 const value = Math.min(m.target, m.progress(daily))
                 const done = value >= m.target
                 const claimed = daily.claimed.includes(m.id)
+                const isNextPriority = m.id === nextPriorityId
                 const action = claimed ? (
-                    <span className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-success">
-                        <Check size={14} /> {compact ? `+${m.rewardXp}` : `Đã nhận +${m.rewardXp} XP`}
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-success">
+                        <Check size={14} strokeWidth={2.5} /> {compact ? `+${m.rewardXp}` : `Đã nhận +${m.rewardXp} XP`}
                     </span>
                 ) : done ? (
                     <button type="button" ref={(el) => void (refs.current[m.id] = el)} onClick={(e) => claim(m, e.currentTarget)} className={SOLID_BTN}>
                         <Zap size={14} className="fill-current" /> Nhận +{m.rewardXp}{compact ? '' : ' XP'}
                     </button>
+                ) : isNextPriority ? (
+                    <Link to={missionTarget(m.id)} className={SOLID_BTN}>
+                        Làm ngay <ArrowRight size={14} />
+                    </Link>
                 ) : (
                     <Link to={missionTarget(m.id)} className={OUTLINE_BTN}>
                         Làm ngay <ArrowRight size={14} />
@@ -94,9 +105,15 @@ export function MissionList({ compact = false }: { compact?: boolean }) {
                         </li>
                     )
                 }
+                const cardCls = claimed
+                    ? 'flex flex-wrap items-center gap-4 rounded-card border border-border/50 bg-muted/30 px-4 py-3.5 opacity-65 transition'
+                    : isNextPriority
+                      ? 'flex flex-wrap items-center gap-4 rounded-card border-2 border-brand-500/40 bg-card p-5 shadow-sm ring-1 ring-brand-500/20'
+                      : 'flex flex-wrap items-center gap-4 rounded-card border border-border bg-card p-5 shadow-card'
+
                 return (
-                    <li key={m.id} className="flex flex-wrap items-center gap-4 rounded-card border border-border bg-card p-5 shadow-card">
-                        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-base ${claimed ? 'bg-success/10 text-success' : done ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-muted-foreground'}`}>
+                    <li key={m.id} className={cardCls}>
+                        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-base ${claimed ? 'bg-success/10 text-success' : isNextPriority || done ? 'bg-brand-600 text-ink-foreground shadow-sm' : 'bg-muted text-muted-foreground'}`}>
                             {claimed ? <Check size={20} /> : <Gift size={18} />}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -104,12 +121,14 @@ export function MissionList({ compact = false }: { compact?: boolean }) {
                                 <Strike on={claimed}>{m.title}</Strike>
                             </p>
                             <p className="text-sm text-muted-foreground">{m.hint}</p>
-                            <div className="mt-2 flex items-center gap-3">
-                                <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
-                                    <div className="h-full origin-left rounded-full bg-brand-600 transition-transform duration-slow" style={{ transform: `scaleX(${value / m.target})` }} />
+                            {!claimed && (
+                                <div className="mt-2 flex items-center gap-3">
+                                    <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
+                                        <div className="h-full origin-left rounded-full bg-brand-600 transition-transform duration-slow" style={{ transform: `scaleX(${value / m.target})` }} />
+                                    </div>
+                                    <span className="font-mono text-xs text-muted-foreground">{value}/{m.target}</span>
                                 </div>
-                                <span className="font-mono text-xs text-muted-foreground">{value}/{m.target}</span>
-                            </div>
+                            )}
                         </div>
                         {action}
                     </li>

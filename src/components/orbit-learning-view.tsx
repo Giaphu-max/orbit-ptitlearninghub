@@ -45,11 +45,11 @@ export function OrbitLearningView() {
             <div className="container-page py-8 lg:py-12">
                 <header className="flex flex-wrap items-end justify-between gap-6">
                     <div>
-                        <p className="text-eyebrow uppercase text-brand-ink">Khóa học</p>
+                        <p className="text-eyebrow uppercase text-brand-ink">02 · HỌC PHẦN CHUYÊN NGÀNH</p>
                         <h1 className="mt-2.5 text-[clamp(2.25rem,6vw,4rem)] font-black leading-[1.02] tracking-[-0.035em] text-foreground">Học theo chặng, có đích.</h1>
                     </div>
                     <dl className="flex gap-7">
-                        <Total value={String(totals.courses)} label="khóa" />
+                        <Total value={String(totals.courses)} label="học phần" />
                         <Total value={String(totals.lessons)} label="bài giảng" />
                         <Total value={`${totals.strong}/${totals.concepts}`} label="khái niệm vững" />
                     </dl>

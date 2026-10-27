@@ -50,14 +50,16 @@ export function TranscriptPanel({ transcript, currentTime, onSeek }: TranscriptP
                                 type="button"
                                 onClick={() => onSeek(seg.start)}
                                 aria-current={isActive ? 'true' : undefined}
-                                className={`flex w-full gap-4 rounded-xl px-3 py-2.5 text-left transition duration-fast ${
-                                    isActive ? 'bg-brand-50' : 'hover:bg-muted'
+                                className={`flex w-full gap-3.5 rounded-xl px-3 py-2.5 text-left transition duration-fast ${
+                                    isActive
+                                        ? 'bg-brand-50/80 dark:bg-brand-950/40 font-semibold text-foreground border-l-2 border-brand-600 pl-3.5 shadow-2xs'
+                                        : 'text-muted-foreground/65 hover:text-foreground hover:bg-muted/40 transition-opacity'
                                 }`}
                             >
-                                <span className={`shrink-0 pt-0.5 font-mono text-xs ${isActive ? 'font-bold text-brand-ink' : 'text-muted-foreground'}`}>
+                                <span className={`shrink-0 pt-0.5 font-mono text-xs ${isActive ? 'font-bold text-brand-ink' : 'text-muted-foreground/60'}`}>
                                     {formatTime(seg.start)}
                                 </span>
-                                <span className={`text-[15px] leading-relaxed ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{seg.text}</span>
+                                <span className={`text-[15px] leading-relaxed ${isActive ? 'font-semibold text-foreground' : 'text-muted-foreground/70'}`}>{seg.text}</span>
                             </button>
                         </li>
                     )

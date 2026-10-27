@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Camera, ChevronLeft, ClipboardCheck, MessageSquare, PanelRightClose, RotateCcw, SkipForward, Zap } from 'lucide-react'
+import { Camera, ChevronLeft, ClipboardCheck, ListVideo, MessageSquare, RotateCcw, SkipForward, Zap } from 'lucide-react'
 import { getCourse, getLessonsOfCourse, lessons } from '@/data'
 import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
@@ -11,6 +11,7 @@ import { formatTime } from '@/lib/youtube'
 import { levelFromXp } from '@/lib/gamification'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
 import { useOrbitStore } from '@/store/useOrbitStore'
+import { LessonBreadcrumbStepper } from '@/components/lesson/lesson-stepper'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
 import { ConceptTimeline } from '@/components/lesson/concept-timeline'
 import { TranscriptPanel } from '@/components/lesson/transcript-panel'
@@ -117,17 +118,27 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
 
     const lessonIndex = courseLessons.findIndex((l) => l.id === lesson.id)
 
+    const fromDaily = searchParams.get('fromDaily')
+
     return (
         <div className="w-full">
             <div className={`container-page grid gap-6 py-4 lg:py-6 ${isTutorOpen ? 'xl:grid-cols-[minmax(0,1fr)_400px]' : ''}`}>
                 {/* ── Cột chính ── */}
                 <div className="flex min-w-0 flex-col gap-5">
+                    <LessonBreadcrumbStepper
+                        courseTitle={course?.title ?? 'Học phần'}
+                        lessonTitle={lesson.title}
+                        lessonId={lesson.id}
+                        currentStep="lesson"
+                        courseId={lesson.courseId}
+                    />
+
                     <div className="flex items-center justify-between gap-3">
                         <Link
-                            to="/learning"
+                            to={course ? `/learning?course=${encodeURIComponent(course.id)}` : '/learning'}
                             className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground"
                         >
-                            <ChevronLeft size={16} /> {course?.title ?? 'Khóa học'}
+                            <ChevronLeft size={16} /> {course?.title ?? 'Học phần'}
                         </Link>
                         <span
                             className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-2 text-sm font-semibold text-muted-foreground shadow-card"
@@ -136,23 +147,72 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                             <Zap size={15} className="fill-brand-500 text-brand-500" />
                             <span className="font-mono">{xp}</span> XP · Cấp <span className="font-mono">{levelFromXp(xp)}</span>
                         </span>
-                        <button
-                            type="button"
-                            onClick={() => setIsTutorOpen((v) => !v)}
-                            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-muted-foreground shadow-card transition hover:border-muted-foreground/40"
-                        >
-                            {isTutorOpen ? <PanelRightClose size={16} /> : <MessageSquare size={16} />}
-                            {isTutorOpen ? 'Tập trung xem' : 'Mở trợ giảng AI'}
-                        </button>
+                        <div role="tablist" aria-label="Chế độ học tập" className="inline-flex items-center rounded-full border border-border bg-card p-1 shadow-card">
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={!isTutorOpen}
+                                onClick={() => setIsTutorOpen(false)}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition duration-fast ${
+                                    !isTutorOpen ? 'bg-brand-600 text-ink-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                <ListVideo size={14} /> Phụ đề
+                            </button>
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={isTutorOpen}
+                                onClick={() => setIsTutorOpen(true)}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition duration-fast ${
+                                    isTutorOpen ? 'bg-brand-600 text-ink-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                <MessageSquare size={14} /> Trợ giảng AI
+                            </button>
+                        </div>
                     </div>
 
                     <div ref={playerAreaRef} style={{ viewTransitionName: `vt-lesson-${lesson.id}` }} className="relative scroll-mt-6">
+                        {fromDaily && (
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-300 bg-brand-50/90 p-3.5 text-sm text-brand-ink shadow-sm">
+                                <span className="flex items-center gap-2 font-medium text-foreground">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-600 font-mono text-xs font-bold text-ink-foreground">
+                                        i
+                                    </span>
+                                    Bạn đang xem đoạn trích dẫn từ bài đọc ôn tập
+                                </span>
+                                <Link
+                                    to={`/daily/${fromDaily}`}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-bold text-ink-foreground shadow-sm transition hover:bg-brand-700"
+                                >
+                                    ← Quay lại hoàn thành bài đọc
+                                </Link>
+                            </div>
+                        )}
+
                         <LessonPlayer
                             containerRef={player.containerRef}
                             status={player.status}
                             error={player.error}
                             youtubeId={lesson.youtubeId}
                         />
+
+                        {phase.kind === 'reviewing' && (
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-soft p-3.5 text-sm text-foreground">
+                                <span className="flex items-center gap-2 font-medium">
+                                    <RotateCcw size={15} className="shrink-0 text-brand-ink" aria-hidden />
+                                    <span>Đang phát lại đoạn chứa đáp án · câu hỏi gỡ điểm (x2 XP) sẽ tự mở ngay sau đoạn này</span>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={quiz.nextVariant}
+                                    className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3.5 py-1.5 text-xs font-bold text-ink-foreground shadow-sm transition hover:bg-brand-700"
+                                >
+                                    Trả lời câu gỡ điểm ngay
+                                </button>
+                            </div>
+                        )}
 
                         {/* Quiz: phủ lên video từ md trở lên, dưới video trên điện thoại */}
                         <AnimatePresence>
@@ -256,15 +316,17 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 </dl>
                             </section>
 
-                            {practiceConcept && (
+                            {(lesson.courseId === 'nhiep-anh-va-anh-sang' || course?.subject === 'Nhiếp ảnh' || practiceConcept) && (
                                 <Link
-                                    to={`/studio?concept=${practiceConcept.id}`}
-                                    className="flex items-center justify-between gap-3 rounded-card border border-border bg-card p-5 shadow-card transition hover:border-brand-300"
+                                    to={practiceConcept ? `/studio?concept=${practiceConcept.id}` : '/studio'}
+                                    className="flex items-center justify-between gap-3 rounded-card border-2 border-brand-300 bg-brand-50/70 p-4 shadow-card transition hover:border-brand-500 hover:bg-brand-50"
                                 >
                                     <span>
-                                        <span className="block text-eyebrow uppercase text-brand-ink">Studio 3D</span>
-                                        <span className="mt-1 block font-bold text-foreground">Thực hành trong Studio</span>
-                                        <span className="mt-0.5 block text-xs text-muted-foreground">Đề bài: {practiceConcept.name}</span>
+                                        <span className="block text-eyebrow uppercase text-brand-ink">Phòng Lab 3D</span>
+                                        <span className="mt-1 block font-bold text-foreground">Thực hành sắp đặt ánh sáng bài học này trong Phòng Lab 3D →</span>
+                                        {practiceConcept && (
+                                            <span className="mt-0.5 block text-xs text-muted-foreground">Đề bài gợi ý: {practiceConcept.name}</span>
+                                        )}
                                     </span>
                                     <Camera size={22} className="shrink-0 text-brand-ink" />
                                 </Link>

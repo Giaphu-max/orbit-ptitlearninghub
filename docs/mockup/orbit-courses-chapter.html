@@ -1,0 +1,189 @@
+<meta charset="utf-8">
+<title>Chương Khóa học</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Chapter 02 mockup: same rhythm as 01 and 03. Text column left, A2 lobby on the right, kiosk standing in the scene with a level horizon. */
+:root{color-scheme:dark;--bg:#14141C;--fg:#F4EDE8;--muted:#B3A9A2;--line:rgba(255,240,230,.12);--card:#1E1B1C;--card-2:#262223;--brand:#C4161C;--brand-2:#8E0D12;--brand-ink:#FF8A84;
+  --sans:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;--ease:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);overflow:hidden}
+canvas#c{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.veil{position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(20,20,28,.97) 0%,rgba(20,20,28,.93) 30%,rgba(20,20,28,.45) 46%,rgba(20,20,28,0) 58%)}
+.top{position:fixed;top:0;left:0;right:0;height:64px;display:flex;align-items:center;gap:12px;padding-inline:max(16px,5vw);z-index:5;background:rgba(20,18,18,.9);border-bottom:1px solid var(--line)}
+.top b{display:flex;gap:10px;align-items:center;font-weight:800}.top b i{width:32px;height:32px;border-radius:9px;background:#fff;color:var(--brand);display:grid;place-items:center;font-style:normal;font-size:9.5px;font-weight:900}
+.top nav{display:flex;gap:4px;margin-left:24px;font-size:13px;font-weight:600;color:var(--muted)}.top nav span{padding:7px 12px;border-radius:999px}.top nav .on{background:#2A2627;color:var(--fg)}
+.xp{margin-left:auto;font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:999px;padding:7px 12px}
+.col{position:relative;z-index:2;width:min(540px,100%);height:100%;overflow:auto;padding-block:120px 40px;padding-left:max(16px,5vw,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;justify-content:center;gap:18px}
+.col>*{flex-shrink:0}
+.eb{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--brand-ink)}
+h2{margin:8px 0 0;font-size:clamp(34px,3.6vw,48px);line-height:1.05;letter-spacing:-.035em;font-weight:900;text-wrap:balance}
+.sub{margin:10px 0 0;font-size:15px;color:var(--muted)}
+.count{font-size:13px;color:var(--muted)}.count b{font-family:var(--mono);color:var(--fg)}
+/* the course in progress: biggest card */
+.big{position:relative;display:block;border-radius:22px;overflow:hidden;background:var(--card);border:1px solid var(--line);text-decoration:none;color:inherit;transition:transform .3s var(--ease),border-color .2s}
+.big:hover{transform:translateY(-3px);border-color:rgba(255,138,132,.45)}
+.big .cover{display:block;height:128px;background-size:cover;background-position:center;position:relative}
+.big .cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,27,28,0) 40%,var(--card))}
+.big .body{display:flex;padding:4px 22px 22px;display:flex;flex-direction:column;gap:10px}
+.k{font-family:var(--mono);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-ink)}
+.big h3{margin:0;font-size:24px;line-height:1.2;letter-spacing:-.02em;font-weight:800}
+.next{font-size:13px;color:var(--muted)}.next b{color:var(--fg);font-weight:600}
+.prog{display:flex;align-items:center;gap:12px}
+.bar{flex:1;height:5px;border-radius:3px;background:#3A3536;overflow:hidden}.bar i{display:block;height:100%;background:var(--brand);border-radius:3px}
+.pct{font-family:var(--mono);font-weight:700;font-size:15px}
+.go{display:inline-flex;align-items:center;gap:8px;background:var(--brand);color:#fff;font-weight:800;font-size:14px;border-radius:12px;padding:11px 16px;box-shadow:0 14px 30px -14px rgba(196,22,28,.8);white-space:nowrap}
+.row{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:10px;border-radius:16px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:inherit;transition:transform .3s var(--ease),border-color .2s}
+.row:hover{transform:translateY(-2px);border-color:rgba(255,138,132,.45)}
+.row .th{width:64px;height:64px;border-radius:12px;background-size:cover;background-position:center}
+.row b{display:block;font-size:15px;margin-top:4px}
+.row .pct{font-size:13px;color:var(--muted)}
+.all{color:var(--brand-ink);font-weight:700;text-decoration:none;font-size:14px;align-self:flex-start;border-top:1px solid var(--line);padding-top:14px;width:100%}
+.rail{position:fixed;right:max(20px,2.4vw);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:14px;z-index:4;font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.55)}
+.rail span{display:flex;align-items:center;gap:10px;justify-content:flex-end}.rail span::after{content:"";width:22px;height:1px;background:currentColor}
+.rail .on{color:#fff}.rail .on::after{width:40px;background:var(--brand)}
+.cap{position:fixed;left:max(16px,5vw);bottom:18px;font-size:12px;color:var(--muted);z-index:4}
+[data-s]{animation:rise .8s var(--ease) backwards;animation-delay:calc(var(--n)*80ms)}
+@keyframes rise{from{opacity:0;transform:translate3d(0,24px,0)}}
+:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media (max-width:860px){.rail,.top nav{display:none}.veil{background:linear-gradient(180deg,rgba(20,20,28,0) 0%,rgba(20,20,28,.9) 38%,rgba(20,20,28,.98) 50%)}.col{padding-top:46vh;justify-content:flex-start}}
+@media (max-height:780px){.big .cover{height:84px}.col{padding-top:88px;gap:14px}}
+@media (max-width:860px){.cap{display:none}}
+@media (prefers-reduced-motion:reduce){[data-s]{animation:none}*{transition:none!important}}
+</style>
+
+<canvas id="c" aria-hidden="true"></canvas>
+<div class="veil"></div>
+<header class="top"><b><i>PTIT</i>Orbit</b><nav><span class="on">Trang chủ</span><span>Hôm nay</span><span>Khóa học</span><span>Studio 3D</span></nav><span class="xp">Cấp 7 · 2.615 XP</span></header>
+<main class="col" aria-labelledby="h">
+  <div data-s style="--n:0"><div class="eb">02 · KHÓA HỌC</div><h2 id="h">Khóa học của bạn</h2><p class="sub">Học theo chặng, đích là test cuối chương.</p></div>
+  <div class="count" data-s style="--n:1"><b>2</b> khóa · đang ở <b>chặng 1/3</b> môn Dựng phim</div>
+  <a class="big" href="#" data-s style="--n:2" data-course="edit">
+    <span class="cover" id="cv-edit"></span>
+    <span class="body">
+      <span class="k">Dựng phim · Chặng 1/3</span>
+      <h3>Dựng audio và video phi tuyến</h3>
+      <span class="next">Tiếp theo: <b>Timeline và track trong Premiere</b></span>
+      <span class="prog"><span class="bar"><i style="width:15%"></i></span><span class="pct">15%</span><span class="go">▶ Học tiếp</span></span>
+    </span>
+  </a>
+  <a class="row" href="#" data-s style="--n:3" data-course="photo">
+    <span class="th" id="cv-photo"></span>
+    <span><span class="k">Nhiếp ảnh · 3 bài</span><b>Nhiếp ảnh và ánh sáng</b></span>
+    <span class="pct">Bắt đầu →</span>
+  </a>
+  <a class="all" href="#" data-s style="--n:4">Xem tất cả khóa học →</a>
+</main>
+<nav class="rail" aria-hidden="true"><span>Trang chủ</span><span>01 Hôm nay</span><span class="on">02 Khóa học</span><span>03 Studio 3D</span></nav>
+<div class="cap">⌄ Khóa học · 2/3 — cuộn tiếp: Studio</div>
+
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COURSES={
+  edit:{k:'DỰNG PHIM · CHẶNG 1/3',t:'Dựng audio và video phi tuyến',pct:15},
+  photo:{k:'NHIẾP ẢNH · 3 BÀI',t:'Nhiếp ảnh và ánh sáng',pct:0},
+};
+/* Course art, drawn once and reused for the left cards and the kiosk poster */
+function drawArt(g,w,h,id){
+  if(id==='edit'){
+    const bg=g.createLinearGradient(0,0,w,h);bg.addColorStop(0,'#3A0C10');bg.addColorStop(1,'#140608');g.fillStyle=bg;g.fillRect(0,0,w,h);
+    let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+    const rows=7,th=h*.07;
+    for(let r=0;r<rows;r++){let x=-rnd()*w*.1;const y=h*.12+r*th*1.35;
+      while(x<w){const len=w*(.06+rnd()*.22);g.fillStyle=r%3===2?`rgba(255,197,107,${.35+rnd()*.3})`:`rgba(${200+rnd()*55|0},${30+rnd()*40|0},${40+rnd()*30|0},${.55+rnd()*.4})`;
+        g.beginPath();g.roundRect(x,y,len-w*.01,th,th*.25);g.fill();x+=len+w*.008;}}
+    g.fillStyle='rgba(255,255,255,.9)';g.fillRect(w*.42,h*.06,Math.max(2,w*.004),h*.94);
+  } else {
+    g.fillStyle='#1A1714';g.fillRect(0,0,w,h);
+    const cx=w*.55,cy=h*.5,R=Math.min(w,h)*.28;
+    const beam=g.createRadialGradient(w*.15,h*.1,0,w*.15,h*.1,w*.9);beam.addColorStop(0,'rgba(255,220,170,.35)');beam.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=beam;g.fillRect(0,0,w,h);
+    const s=g.createRadialGradient(cx-R*.45,cy-R*.45,R*.05,cx,cy,R);s.addColorStop(0,'#F6E6CF');s.addColorStop(.55,'#B98F62');s.addColorStop(1,'#2A1E14');
+    g.fillStyle=s;g.beginPath();g.arc(cx,cy,R,0,Math.PI*2);g.fill();
+    g.fillStyle='rgba(0,0,0,.35)';g.beginPath();g.ellipse(cx+R*.5,cy+R*.95,R*1.1,R*.18,0,0,Math.PI*2);g.fill();
+  }
+}
+function artURL(id,w,h){const c=document.createElement('canvas');c.width=w;c.height=h;drawArt(c.getContext('2d'),w,h,id);return c.toDataURL();}
+document.getElementById('cv-edit').style.backgroundImage=`url(${artURL('edit',1080,256)})`;
+document.getElementById('cv-photo').style.backgroundImage=`url(${artURL('photo',128,128)})`;
+
+/* Kiosk poster: art full-bleed, dark gradient at the bottom, course name + stage + progress. Decorative only. */
+const PW=1024,PH=640;const pc=document.createElement('canvas');pc.width=PW;pc.height=PH;const pg=pc.getContext('2d');
+const posterTex=new THREE.CanvasTexture(pc);posterTex.colorSpace=THREE.SRGBColorSpace;posterTex.anisotropy=8;
+function drawPoster(id){const c=COURSES[id];drawArt(pg,PW,PH,id);
+  const fade=pg.createLinearGradient(0,PH*.35,0,PH);fade.addColorStop(0,'rgba(10,8,8,0)');fade.addColorStop(1,'rgba(10,8,8,.95)');pg.fillStyle=fade;pg.fillRect(0,0,PW,PH);
+  pg.fillStyle='#fff';pg.font='800 30px "JetBrains Mono",ui-monospace,monospace';pg.fillStyle='#FF8A84';pg.fillText(c.k,64,PH-210);
+  pg.fillStyle='#fff';pg.font='900 66px "Be Vietnam Pro",system-ui,sans-serif';
+  const words=c.t.split(' ');let line='',y=PH-140,lines=[];for(const w of words){const t=line?line+' '+w:w;if(pg.measureText(t).width>PW-140){lines.push(line);line=w;}else line=t;}lines.push(line);
+  if(lines.length>1){pg.font='900 52px "Be Vietnam Pro",system-ui,sans-serif';y=PH-160;}
+  lines.forEach((l,i)=>pg.fillText(l,64,y+i*58));
+  pg.fillStyle='rgba(255,255,255,.18)';pg.fillRect(64,PH-58,PW-260,10);pg.fillStyle='#C4161C';pg.fillRect(64,PH-58,(PW-260)*c.pct/100,10);
+  pg.fillStyle='#fff';pg.font='800 40px "JetBrains Mono",ui-monospace,monospace';pg.textAlign='right';pg.fillText(c.pct+'%',PW-64,PH-44);pg.textAlign='left';
+  posterTex.needsUpdate=true;}
+let posterId='edit';drawPoster(posterId);document.fonts.ready.then(()=>drawPoster(posterId));
+
+/* ---------- lobby ---------- */
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color('#2A2830');scene.fog=new THREE.Fog('#2A2830',14,30);
+const camera=new THREE.PerspectiveCamera(36,1,.1,80);
+scene.add(new THREE.HemisphereLight('#FFF3E4','#5A5450',1.25));
+const sun=new THREE.DirectionalLight('#FFE2BC',2.2);sun.position.set(-6,8,5);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-8,right:8,top:8,bottom:-8,near:1,far:30});sun.shadow.radius=4;sun.shadow.bias=-.0005;scene.add(sun);
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.8},o));
+function box(w,h,d,m,x,y,z,p=scene,shadow=true){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=shadow;b.receiveShadow=true;p.add(b);return b;}
+// terrazzo floor
+const fc=document.createElement('canvas');fc.width=fc.height=512;const fg=fc.getContext('2d');fg.fillStyle='#BDB9B4';fg.fillRect(0,0,512,512);
+for(let i=0;i<2600;i++){fg.fillStyle=`rgba(${Math.random()<.5?60:255},${Math.random()<.5?60:250},${Math.random()<.5?60:245},${Math.random()*.25})`;fg.fillRect(Math.random()*512,Math.random()*512,1.5,1.5);}
+fg.strokeStyle='rgba(80,75,70,.25)';fg.lineWidth=2;fg.strokeRect(0,0,512,512);
+const ft=new THREE.CanvasTexture(fc);ft.wrapS=ft.wrapT=THREE.RepeatWrapping;ft.repeat.set(12,12);ft.colorSpace=THREE.SRGBColorSpace;
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(36,36),M('#ffffff',{map:ft,roughness:.55}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+// dark band strip in the floor (like the live lobby)
+box(36,.01,1.6,M('#2E2D31',{roughness:.6}),0,.005,2.6,scene,false);
+const beige=M('#E8B98A'),wallM=M('#9E9A98'),darkM=M('#2F2E33'),white=M('#F2EFEA',{roughness:.45});
+// back wall with glass strip (A2 green glass) and pillars
+box(36,6,.3,wallM,0,3,-7);
+box(5,4.6,.1,M('#4F9C82',{roughness:.2,metalness:.2,emissive:'#1E4A3C',emissiveIntensity:.5}),-1,2.6,-6.82);
+for(let i=-2;i<=2;i++) box(.08,4.6,.14,darkM,-1+i*1.2,2.6,-6.78);
+for(const x of [-7,-3.8,2.6,6]) box(1,6,1,beige,x,3,-5.8);
+// ceiling with light strips
+box(36,.3,24,M('#3A383D'),0,6.15,0,scene,false);
+for(let z=-5;z<=5;z+=2.5) box(8,.04,.25,new THREE.MeshBasicMaterial({color:'#FFF4DE'}),0,5.98,z,scene,false);
+// reception desk + flags + plants for context
+box(3.6,1.05,.9,M('#D9D2C8'),-4.6,.525,-2.4); box(3.7,.08,1,darkM,-4.6,1.09,-2.4);
+box(.5,.5,.06,M('#C4161C',{emissive:'#C4161C',emissiveIntensity:.4}),-4.6,.6,-1.93,scene,false);
+for(const [x,z] of [[4.4,-3.6],[-7.2,1.2]]){const pot=new THREE.Mesh(new THREE.CylinderGeometry(.32,.26,.6,16),white);pot.position.set(x,.3,z);pot.castShadow=true;scene.add(pot);
+  const leaf=new THREE.Mesh(new THREE.IcosahedronGeometry(.6,0),M('#4E7A5C',{flatShading:true}));leaf.position.set(x,1.05,z);leaf.castShadow=true;scene.add(leaf);}
+const bench=box(2.4,.42,.6,M('#6F5A49'),4.6,.21,1.2);
+// ---- kiosk: base, post, head tilted back, thin bezel, poster screen ----
+const kiosk=new THREE.Group();kiosk.position.set(.6,0,-.4);kiosk.rotation.y=-.12;scene.add(kiosk);
+box(.9,.06,.62,white,0,.03,0,kiosk); box(.36,1.05,.24,white,0,.58,-.05,kiosk);
+const head=new THREE.Group();head.position.set(0,1.42,0);head.rotation.x=-.22;kiosk.add(head);
+box(1.44,.94,.07,white,0,0,0,head); // bezel: only ~2cm visible around the screen
+box(1.44,.94,.02,M('#1A1A1E'),0,0,-.045,head);
+const screen=new THREE.Mesh(new THREE.PlaneGeometry(1.4,.875),new THREE.MeshBasicMaterial({map:posterTex,toneMapped:false}));screen.position.z=.037;head.add(screen);
+const glow=new THREE.PointLight('#FF6A5A',.6,3);glow.position.set(0,0,.5);head.add(glow);
+
+/* camera: eye level, 3/4 around the WORLD vertical only, up = (0,1,0). Kiosk ≈55% of frame height, pushed to the right half. */
+const LOOK=new THREE.Vector3(.3,1.15,-.6);
+let az=.62, push=reduce?1:0, mx=0,my=0;
+function placeCam(){const d=6.4+(1-push)*1.2;const a=az+mx*.05;
+  camera.position.set(LOOK.x+Math.sin(a)*d,1.6+my*.08,LOOK.z+Math.cos(a)*d);camera.up.set(0,1,0);camera.lookAt(LOOK);}
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;
+  const desk=innerWidth>860;camera.setViewOffset(innerWidth,innerHeight,desk?-innerWidth*.15:0,desk?0:innerHeight*.2,innerWidth,innerHeight);camera.updateProjectionMatrix();}
+addEventListener('resize',resize);resize();
+addEventListener('pointermove',e=>{if(reduce)return;mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5;});
+// hovering a course on the left switches the kiosk poster
+document.querySelectorAll('[data-course]').forEach(a=>{
+  a.addEventListener('mouseenter',()=>{if(posterId!==a.dataset.course){posterId=a.dataset.course;drawPoster(posterId);}});
+  a.addEventListener('click',e=>e.preventDefault());});
+document.querySelector('.all').addEventListener('click',e=>e.preventDefault());
+let last=performance.now();
+renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1);last=now;
+  push+=(1-push)*Math.min(1,dt*1.4);placeCam();renderer.render(scene,camera);});
+</script>

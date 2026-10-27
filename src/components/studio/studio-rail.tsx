@@ -113,10 +113,62 @@ export function StudioRail({ tab, onTab, setup, onSetup, brief, onPickConcept, e
                                 })}
                             </ul>
                         </Group>
-                        <Slider label="Đèn chính" unit="%" min={0} max={100} step={1} value={setup.key} onChange={set('key')} />
-                        <Slider label="Góc đèn chính" unit="°" min={-90} max={90} step={1} value={setup.keyAngleDeg} onChange={set('keyAngleDeg')} />
-                        <Slider label="Đèn phụ (làm dịu bóng)" unit="%" min={0} max={100} step={1} value={setup.fill} onChange={set('fill')} />
-                        <Slider label="Đèn viền (tách khỏi phông)" unit="%" min={0} max={100} step={1} value={setup.rim} onChange={set('rim')} />
+                        <Slider
+                            label={
+                                <span className="flex items-center gap-2 font-medium text-foreground">
+                                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mm-orange" aria-hidden />
+                                    <span>Đèn chính (Key Light)</span>
+                                </span>
+                            }
+                            unit="%"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={setup.key}
+                            onChange={set('key')}
+                        />
+                        <Slider
+                            label={
+                                <span className="flex items-center gap-2 font-medium text-foreground">
+                                    <span className="h-2 w-2 shrink-0 rounded-full bg-mm-yellow" aria-hidden />
+                                    <span>Góc đèn chính</span>
+                                </span>
+                            }
+                            unit="°"
+                            min={-90}
+                            max={90}
+                            step={1}
+                            value={setup.keyAngleDeg}
+                            onChange={set('keyAngleDeg')}
+                        />
+                        <Slider
+                            label={
+                                <span className="flex items-center gap-2 font-medium text-foreground">
+                                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mm-sky" aria-hidden />
+                                    <span>Đèn phụ (Fill Light)</span>
+                                </span>
+                            }
+                            unit="%"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={setup.fill}
+                            onChange={set('fill')}
+                        />
+                        <Slider
+                            label={
+                                <span className="flex items-center gap-2 font-medium text-foreground">
+                                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-mm-pink" aria-hidden />
+                                    <span>Đèn viền (Rim Light)</span>
+                                </span>
+                            }
+                            unit="%"
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={setup.rim}
+                            onChange={set('rim')}
+                        />
                         {explanation ? (
                             <div role="status" className="rounded-card border border-brand-100 bg-brand-50 px-4 py-3">
                                 <p className="text-eyebrow uppercase text-brand-ink">Vì sao AI chọn vậy</p>
@@ -203,7 +255,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 }
 
 interface SliderProps {
-    label: string
+    label: React.ReactNode
     unit?: string
     min: number
     max: number
@@ -216,8 +268,8 @@ interface SliderProps {
 function Slider({ label, unit = '', min, max, step, value, onChange, format }: SliderProps) {
     return (
         <label className="block">
-            <span className="flex items-baseline justify-between text-[13px] text-muted-foreground">
-                {label}
+            <span className="flex items-center justify-between text-[13px] text-muted-foreground">
+                <span className="min-w-0">{label}</span>
                 <span className="font-mono font-bold text-foreground">{format ? format(value) : `${step < 1 ? value.toFixed(1) : value}${unit}`}</span>
             </span>
             <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="mt-1.5 w-full accent-brand-600" />

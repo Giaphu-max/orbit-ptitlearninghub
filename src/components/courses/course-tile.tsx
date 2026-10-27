@@ -29,14 +29,19 @@ export function CourseTile({ summary, selected, onSelect }: { summary: CourseSum
             <span className={`relative block aspect-[16/7] max-h-60 w-full overflow-hidden ${status === 'new' ? 'saturate-[.35] brightness-90' : ''}`}>
                 <CourseArt course={course} />
                 {status !== 'new' && (
-                    <b className={`absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-lg px-2 py-0.5 font-mono text-[13px] ${status === 'done' ? 'bg-success text-success-foreground' : 'bg-ink/60 text-ink-foreground'}`}>
+                    <b className={`absolute right-2.5 top-2.5 inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 font-mono shadow-sm ${status === 'done' ? 'bg-success text-success-foreground text-xs font-bold' : 'bg-card/95 text-brand-ink border border-brand-200/80 backdrop-blur-sm text-base font-bold'}`}>
                         {status === 'done' && <Check size={12} strokeWidth={3} aria-hidden />}
                         {pct}%
                     </b>
                 )}
             </span>
             <span className="flex flex-col gap-1.5 px-3 pb-3 pt-2.5 min-[760px]:px-4 min-[760px]:pb-4 min-[760px]:pt-3.5">
-                <span className="cm-chip self-start rounded-full px-2.5 py-0.5 text-[11px] font-extrabold">{course.subject}</span>
+                <div className="flex items-center justify-between gap-2">
+                    <span className="cm-chip self-start rounded-full px-2.5 py-0.5 text-[11px] font-extrabold">{course.subject}</span>
+                    {status === 'doing' && (
+                        <span className="font-mono text-base font-bold text-brand-ink">{pct}%</span>
+                    )}
+                </div>
                 <strong className="line-clamp-2 min-h-[2.6em] text-sm font-extrabold leading-[1.3] text-foreground min-[760px]:text-base">{course.title}</strong>
                 <span className="cm-mini mt-1.5" style={{ ['--f' as string]: fill }} aria-hidden>
                     {lessons.map((l, j) => (
@@ -44,7 +49,18 @@ export function CourseTile({ summary, selected, onSelect }: { summary: CourseSum
                     ))}
                     <i className={`f ${passed ? 'd' : ''}`} />
                 </span>
-                <em className={`text-xs not-italic ${status === 'doing' ? 'font-bold text-brand-ink' : 'text-muted-foreground'}`}>{sub}</em>
+                <div className="mt-1 flex items-center justify-between gap-2">
+                    <em className={`text-xs not-italic ${status === 'doing' ? 'font-bold text-brand-ink' : 'text-muted-foreground'}`}>{sub}</em>
+                    {status === 'doing' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1 text-xs font-bold text-ink-foreground shadow-brand">
+                            Học tiếp →
+                        </span>
+                    ) : status === 'new' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                            Bắt đầu
+                        </span>
+                    ) : null}
+                </div>
             </span>
         </button>
     )

@@ -789,8 +789,8 @@
     margin-top 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s, box-shadow 0.3s, border-color 0.3s;
 }
 .nav-shell[data-state='pill'] {
-  width: min(90vw, 560px);
-  max-width: min(90vw, 560px);
+  width: min(92vw, 580px);
+  max-width: min(92vw, 580px);
   height: 56px;
   margin-top: 16px;
 }

@@ -7,7 +7,7 @@ import { lessonShortTitle } from '@/lib/utils'
 import { formatTime } from '@/lib/youtube'
 
 /** Một chip "Nguồn · n" cho cả khối; bấm mới mở danh sách mốc (tên bài rút gọn). */
-export function SourceChip({ sources }: { sources: SourceRef[] }) {
+export function SourceChip({ sources, articleId }: { sources: SourceRef[]; articleId?: string }) {
     const [open, setOpen] = useState(false)
     const listId = useId()
     if (!sources.length) return null
@@ -28,10 +28,11 @@ export function SourceChip({ sources }: { sources: SourceRef[] }) {
                     {sources.map((src) => {
                         const lesson = getLesson(src.lessonId)
                         const full = lesson?.title ?? src.lessonId
+                        const href = `/lesson/${src.lessonId}?t=${src.start}${articleId ? `&fromDaily=${encodeURIComponent(articleId)}` : ''}`
                         return (
                             <li key={`${src.lessonId}-${src.start}`}>
                                 <Link
-                                    to={`/lesson/${src.lessonId}?t=${src.start}`}
+                                    to={href}
                                     title={full}
                                     aria-label={`${full}, mốc ${formatTime(src.start)}`}
                                     className="inline-flex max-w-full items-center gap-2 rounded-lg px-2 py-1 text-sm text-foreground transition hover:bg-muted"

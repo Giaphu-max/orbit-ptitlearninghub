@@ -249,6 +249,26 @@ export function OrbitStudioView() {
         <div className="w-full overflow-x-clip min-[980px]:h-[calc(100svh-var(--nav-h))]">
             <div className="mx-auto grid max-w-[1600px] gap-4 p-4 min-[980px]:h-full min-[980px]:grid-cols-[minmax(0,1fr)_340px]">
                 <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Khung làm việc studio">
+                    {/* Chỉ dẫn 3 bước cho người mới */}
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-card border border-border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground shadow-sm">
+                        <div className="flex items-center gap-2 overflow-x-auto">
+                            <span className="flex items-center gap-1.5 font-bold text-brand-ink">
+                                <span className="font-mono text-sm">①</span> Chọn đề bài & Dựng sáng
+                            </span>
+                            <span className="text-xs text-muted-foreground/40">→</span>
+                            <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                                <span className="font-mono text-sm">②</span> Căn góc & Chụp ảnh
+                            </span>
+                            <span className="text-xs text-muted-foreground/40">→</span>
+                            <span className="flex items-center gap-1.5 font-semibold text-foreground">
+                                <span className="font-mono text-sm">③</span> AI Chấm điểm
+                            </span>
+                        </div>
+                        <span className="hidden text-[11px] font-medium text-muted-foreground min-[1180px]:inline">
+                            Phòng Lab 3D · Môn Nhiếp ảnh & Ánh sáng PTIT
+                        </span>
+                    </div>
+
                     {/* Dải đề bài một dòng */}
                     <div className="flex items-center gap-3 rounded-card border border-border bg-card px-4 py-2.5 shadow-card">
                         <span className="shrink-0 text-eyebrow uppercase text-brand-ink">Đề bài</span>
@@ -371,9 +391,9 @@ export function OrbitStudioView() {
                             type="button"
                             onClick={shoot}
                             disabled={!webgl}
-                            className="inline-flex shrink-0 items-center gap-2.5 rounded-card bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                            className="inline-flex shrink-0 items-center gap-2.5 rounded-xl bg-brand-600 px-6 py-3.5 text-base font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ring-2 ring-brand-500/30"
                         >
-                            <Camera size={17} /> Chụp
+                            <Camera size={18} /> Chụp ảnh
                         </button>
                         <p className="hidden shrink-0 font-mono text-xs text-muted-foreground sm:block" aria-live="polite">{shots.length} ảnh</p>
                         <div
@@ -421,9 +441,13 @@ export function OrbitStudioView() {
                             type="button"
                             disabled={gradeDisabled}
                             onClick={() => selected && void gradeShot(selected.id)}
-                            className="ml-auto inline-flex shrink-0 items-center gap-2 rounded-card border border-border bg-muted px-4 py-3 text-sm font-extrabold text-foreground transition hover:border-brand-300 disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:ml-0"
+                            className={`ml-auto inline-flex shrink-0 items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:ml-0 ${
+                                gradeDisabled
+                                    ? 'border border-border bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50'
+                                    : 'border-2 border-brand-500/60 bg-brand-50 text-brand-ink shadow-sm hover:bg-brand-100 hover:border-brand-600 dark:bg-brand-950/40'
+                            }`}
                         >
-                            <Sparkles size={16} /> {gradeLabel}
+                            <Sparkles size={16} className={!gradeDisabled ? 'text-brand-600 animate-pulse' : ''} /> {gradeLabel}
                         </button>
                     </div>
                 </section>

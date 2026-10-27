@@ -282,7 +282,7 @@ const Title = ({ id, children }: { id?: string; children: string }) => (
         ))}
     </h2>
 )
-const Lead = ({ children }: { children: ReactNode }) => <p data-s data-compact className="mb-6 mt-4 text-[17px] leading-relaxed text-muted-foreground">{children}</p>
+const Lead = ({ children }: { children: ReactNode }) => <p data-s data-compact className="mb-6 mt-4 max-w-[48ch] text-[17px] leading-relaxed text-muted-foreground">{children}</p>
 /** Thẻ sáng (nền card) theo giao diện, nổi lên trên cảnh 3D */
 const lightCard = 'rounded-[20px] border border-border bg-card/95 shadow-raised'
 
@@ -309,7 +309,7 @@ function HeroChapter() {
                 <br />
                 <span className="ptit-gradient-text">25 phút.</span>
             </h1>
-            <p data-s className="max-w-xl text-lg leading-relaxed text-muted-foreground">Học tiếp bài đang dở, rồi đọc 3 bài ngắn AI chọn riêng cho phần bạn còn hổng.</p>
+            <p data-s className="max-w-[48ch] text-lg leading-relaxed text-muted-foreground">Lộ trình hôm nay AI xếp riêng cho bạn: xem tiếp bài giảng đang dở, rồi ôn nhanh những khái niệm còn hổng.</p>
 
             {resume ? (
                 <div data-s data-vt={`lesson-${resume.id}`}>
@@ -318,7 +318,6 @@ function HeroChapter() {
             ) : (
                 <p data-s className="max-w-md rounded-card bg-muted p-4 text-sm text-muted-foreground">Chưa có bài nào được giảng viên xuất bản.</p>
             )}
-            <span data-s data-compact className="hidden text-sm text-muted-foreground lg:block">Kéo vào khoảng trống bên phải để xoay mô hình, di vào một tòa nhà để làm nổi nó lên.</span>
         </div>
     )
 }
@@ -330,9 +329,9 @@ function DailyChapter() {
 
     return (
         <>
-            <Eyebrow>01 · Hôm nay</Eyebrow>
-            <Title id="daily-title">3 bài đọc ngắn cho hôm nay</Title>
-            <Lead>Mỗi bài khoảng 1 phút. AI chọn theo chỗ bạn còn hổng.</Lead>
+            <Eyebrow>01 · Ôn tập cá nhân hóa</Eyebrow>
+            <Title id="daily-title">Lấp lỗ hổng kiến thức chỉ với 3 phút mỗi ngày.</Title>
+            <Lead>AI xem lại những câu bạn từng làm sai, rồi tóm thành 3 bài đọc ngắn từ chính bài giảng của thầy cô. Nắm lại bản chất mà không phải xem lại cả video dài.</Lead>
             <div data-s>
                 <TodayCount today={today} />
             </div>
@@ -358,18 +357,23 @@ function CoursesChapter() {
     const rest = list.filter((c) => c !== main)
     return (
         <>
-            <Eyebrow>02 · Khóa học</Eyebrow>
-            <Title id="courses-title">Khóa học của bạn</Title>
-            <Lead>Học theo chặng, đích là test cuối chương.</Lead>
-            <p data-s className="mb-4 text-[13px] text-muted-foreground">
-                <b className="font-mono text-foreground">{list.length}</b> khóa
-                {main?.status === 'doing' && (
-                    <>
-                        {' '}
-                        · đang ở <b className="font-mono text-foreground">chặng {main.curIndex + 1}/{main.lessons.length}</b> môn {main.course.subject}
-                    </>
-                )}
-            </p>
+            <Eyebrow>02 · Học phần chuyên ngành</Eyebrow>
+            <Title id="courses-title">Học chủ động cùng bài giảng tương tác và Trợ giảng AI.</Title>
+            <Lead>Video tự dừng ở các mốc quan trọng để hỏi bạn. Chỗ nào chưa rõ, hỏi Trợ giảng AI ngay tại đó rồi bấm để tua tới đúng giây thầy cô giảng.</Lead>
+            <div data-s className="mb-4">
+                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-mono font-medium shadow-2xs backdrop-blur-sm">
+                    <span className="h-1.5 w-1.5 rounded-full bg-brand-600 animate-pulse" aria-hidden />
+                    <span>
+                        <b className="font-bold text-foreground">{list.length}</b> khóa
+                        {main?.status === 'doing' && (
+                            <>
+                                {' '}
+                                · đang ở <b className="font-bold text-foreground">chặng {main.curIndex + 1}/{main.lessons.length}</b> môn {main.course.subject}
+                            </>
+                        )}
+                    </span>
+                </span>
+            </div>
             {list.length === 0 && <p data-s className={`${lightCard} p-5 text-muted-foreground`}>Chưa có khóa học nào được giảng viên xuất bản.</p>}
             {main && (
                 <div data-s>
@@ -382,7 +386,7 @@ function CoursesChapter() {
                 </div>
             ))}
             <Link data-s to="/learning" className="mt-4 inline-flex items-center gap-1 self-start border-t border-border pt-3.5 text-sm font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
-                Xem tất cả khóa học <ArrowRight size={14} />
+                Xem tất cả học phần <ArrowRight size={14} />
             </Link>
         </>
     )
@@ -420,7 +424,7 @@ function MainCourseCard({ summary }: { summary: CourseSummary }) {
                     <span className="h-[5px] flex-1 overflow-hidden rounded bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${course.title}`}>
                         <span className="block h-full rounded bg-brand-600" style={{ width: `${pct}%` }} />
                     </span>
-                    <span className="font-mono text-[15px] font-bold">{pct}%</span>
+                    <span className="font-mono text-xl font-bold text-brand-ink">{pct}%</span>
                     {lesson && (
                         <Link to={`/lesson/${lesson.id}`} data-vt={`lesson-${lesson.id}`} className="pointer-events-auto relative z-10 inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-brand-600 px-4 py-[11px] text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                             <Play size={12} className="fill-current" /> {action}
@@ -461,15 +465,15 @@ function CourseRow({ summary }: { summary: CourseSummary }) {
 function StudioChapter() {
     return (
         <>
-            <Eyebrow>03 · Studio 3D</Eyebrow>
-            <Title id="studio-title">{'Rồi cả khuôn viên\nthành phòng chụp.'}</Title>
-            <Lead>Khối vàng của A3 thành chủ thể, dải kính xanh thành đạo cụ. Bạn đặt máy, AI đặt đèn rồi chấm ảnh.</Lead>
+            <Eyebrow>03 · Phòng thực hành ảo 3D</Eyebrow>
+            <Title id="studio-title">Từ lý thuyết trên giảng đường ra phim trường ảo 3D.</Title>
+            <Lead>Phòng thực hành Nhiếp ảnh và Ánh sáng ngay trên trình duyệt. Tự đặt đèn 3 điểm, chỉnh góc máy rồi để AI chấm ảnh, trước khi vào phòng quay thật.</Lead>
             <div data-s className="flex flex-col gap-4">
-                <Feature icon={<Sparkles size={16} />} title="Prompt-to-Environment">
-                    Mô tả ánh sáng bằng lời, AI dựng đèn, màu nền, sương và giải thích theo lý thuyết nhiếp ảnh.
+                <Feature icon={<Sparkles size={16} />} title="Thiết lập bối cảnh bằng AI">
+                    Mô tả ý đồ ánh sáng bằng lời, AI tự động dựng đèn, màu nền, độ sương và giải thích theo đúng lý thuyết nhiếp ảnh.
                 </Feature>
-                <Feature icon={<Camera size={16} />} title="Virtual Director">
-                    Chụp rồi để AI chấm bố cục, ánh sáng và khoanh đúng vùng cần chỉnh.
+                <Feature icon={<Camera size={16} />} title="Đạo diễn hình ảnh AI">
+                    Chụp thử trên mô hình 3D để AI chấm điểm bố cục, độ tương phản và khoanh vùng trực tiếp những chi tiết cần tinh chỉnh.
                 </Feature>
             </div>
             <p data-s data-compact className="mt-5 flex items-center gap-2.5 rounded-[14px] border border-border bg-card/90 px-3 py-2.5 text-[13px]">
@@ -479,7 +483,7 @@ function StudioChapter() {
                 “Studio tối, đèn chính vàng ấm từ trái, viền sáng phía sau”
             </p>
             <Link to="/studio" data-s data-vt="studio-stage" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
-                Vào Studio <ArrowRight size={16} />
+                Vào Phòng Lab 3D <ArrowRight size={16} />
             </Link>
         </>
     )

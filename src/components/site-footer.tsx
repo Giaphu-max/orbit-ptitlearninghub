@@ -26,16 +26,16 @@ export function SiteFooter() {
         {
             title: 'Học tập',
             links: [
-                { label: 'Bài đọc hôm nay', to: '/today' },
-                { label: 'Khóa học', to: '/learning' },
+                { label: 'Ôn tập', to: '/today' },
+                { label: 'Học phần', to: '/learning' },
                 ...(firstCourse ? [{ label: 'Test cuối chương', to: `/test/${firstCourse.id}` }] : []),
-                { label: 'Hành trình', to: '/journey' },
+                { label: 'Tiến độ & Kỹ năng', to: '/journey' },
             ],
         },
         {
             title: 'Công cụ',
             links: [
-                { label: 'Studio 3D', to: '/studio' },
+                { label: 'Phòng Lab 3D', to: '/studio' },
                 { label: 'Trợ giảng AI', to: lessons[0] ? `/lesson/${lessons[0].id}` : '/learning' },
                 ...(role === 'teacher' ? [{ label: 'Trang giảng viên', to: '/teacher' }] : []),
             ],

@@ -22,7 +22,7 @@ export function OrbitJourneyView() {
         <div className="w-full">
             <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 py-8 lg:px-8 lg:py-12">
                 <header>
-                    <p className="text-eyebrow uppercase text-brand-ink">Hành trình của bạn</p>
+                    <p className="text-eyebrow uppercase text-brand-ink">Tiến độ & Kỹ năng</p>
                     <h1 className="mt-3 text-headline text-foreground">Điểm thưởng đến từ việc hiểu bài</h1>
                     <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
                         XP chỉ tính khi bạn trả lời đúng, sửa được lỗi sai hoặc hoàn thành bài. Xem video lâu hay bấm nhiều không làm tăng điểm.
@@ -199,27 +199,37 @@ function SkillNodeCard({ node }: { node: ReturnType<typeof buildSkillTree>[numbe
             aria-disabled={!node.unlocked}
             onClick={(e) => !node.unlocked && e.preventDefault()}
             className={`flex items-center gap-4 rounded-card border p-4 transition duration-base ease-out ${
-                node.unlocked ? 'border-border bg-card hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-card' : 'cursor-not-allowed border-dashed border-border bg-muted/60'
+                node.unlocked
+                    ? mastered
+                        ? 'border-brand-200/90 bg-card shadow-card hover:-translate-y-0.5 hover:border-brand-400'
+                        : 'border-border bg-card shadow-sm hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-card'
+                    : 'cursor-not-allowed border-dashed border-border/70 bg-muted/25 opacity-60'
             }`}
         >
             <span
                 className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                 style={{ background: node.unlocked ? `conic-gradient(hsl(var(--brand)) ${pct * 3.6}deg, hsl(var(--muted)) 0)` : 'hsl(var(--muted))' }}
             >
-                <span className={`flex h-[46px] w-[46px] items-center justify-center rounded-full font-mono text-sm font-bold ${mastered ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-foreground'}`}>
-                    {node.unlocked ? (mastered ? <Check size={20} /> : `${pct}%`) : <Lock size={16} className="text-muted-foreground" />}
+                <span className={`flex h-[46px] w-[46px] items-center justify-center rounded-full font-mono text-sm font-bold ${mastered ? 'bg-brand-600 text-ink-foreground shadow-brand' : node.unlocked ? 'bg-card text-foreground' : 'bg-muted/80 text-muted-foreground/60'}`}>
+                    {node.unlocked ? (mastered ? <Check size={20} /> : `${pct}%`) : <Lock size={16} className="text-muted-foreground/70" />}
                 </span>
             </span>
             <span className="min-w-0">
                 <span className={`block font-bold leading-snug ${node.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>{node.concept.name}</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {node.unlocked
-                        ? mastered
-                            ? 'Đã nắm vững'
-                            : node.mastery > 0
-                              ? 'Đang nắm'
-                              : 'Chưa học'
-                        : `Cần nắm ${node.missing.map((c) => c.name).join(', ')} trước`}
+                    {node.unlocked ? (
+                        mastered ? (
+                            'Đã nắm vững'
+                        ) : node.mastery > 0 ? (
+                            'Đang nắm'
+                        ) : (
+                            'Chưa học'
+                        )
+                    ) : (
+                        <span className="font-mono text-[11px] text-muted-foreground/80">
+                            Cần mở {node.missing.map((c) => c.name).join(', ')} (≥{Math.round(UNLOCK_THRESHOLD * 100)}%)
+                        </span>
+                    )}
                 </span>
             </span>
         </Link>
@@ -250,8 +260,8 @@ function Badges() {
                     const has = earned.includes(b.id)
                     const { current, target } = badgeProgress(b, { conceptMastery, quizResults, streak, directorBest, testBest: bestTestRatio(testRecords) })
                     return (
-                        <li key={b.id} className={`flex flex-col gap-4 rounded-card border p-5 ${has ? 'border-brand-200 bg-card shadow-card' : 'border-border bg-muted/50'}`}>
-                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-muted-foreground'}`}>
+                        <li key={b.id} className={`flex flex-col gap-4 rounded-card border p-5 transition ${has ? 'border-brand-200/90 bg-card shadow-card ring-1 ring-brand-500/10' : 'border-border/60 bg-muted/25 opacity-65'}`}>
+                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-muted-foreground/60 border border-border/50'}`}>
                                 {has ? <Award size={28} /> : <Lock size={22} />}
                             </span>
                             <div>
@@ -260,9 +270,9 @@ function Badges() {
                             </div>
                             <div className="mt-auto">
                                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                                    <div className={`h-full rounded-full ${has ? 'bg-brand-600' : 'bg-muted-foreground/50'}`} style={{ width: `${(has ? 1 : current / target) * 100}%` }} />
+                                    <div className={`h-full rounded-full ${has ? 'bg-brand-600' : 'bg-muted-foreground/40'}`} style={{ width: `${(has ? 1 : current / target) * 100}%` }} />
                                 </div>
-                                <p className="mt-1.5 font-mono text-xs text-muted-foreground">{has ? 'Đã đạt' : `${current}/${target}`}</p>
+                                <p className="mt-1.5 font-mono text-xs text-muted-foreground">{has ? <span className="font-bold text-brand-ink">✓ Đã đạt</span> : `${current}/${target} để mở khóa`}</p>
                             </div>
                         </li>
                     )

@@ -139,7 +139,7 @@ footer{position:relative;z-index:8;padding:64px max(24px,4vw) 40px;background:#F
 <body>
 <div class="sky" id="sky"></div>
 <canvas id="stage" aria-hidden="true"></canvas>
-<div class="dip" id="dip"></div>
+<div class="dip" id="dip"></div><div class="dip" id="cut" style="z-index:3"></div>
 <div class="veil" id="veil"></div>
 <div class="prog" id="prog"></div>
 <nav><b><i>PTIT</i>Orbit</b><div class="links"><a class="on" href="#c0">Trang chủ</a><a href="#c1">Hôm nay</a><a href="#c2">Khóa học</a><a href="#c3">Studio 3D</a></div><div class="chips"><span>🔥 12 ngày</span><span>Cấp 7 · 2.505 XP</span></div></nav>
@@ -198,7 +198,7 @@ footer{position:relative;z-index:8;padding:64px max(24px,4vw) 40px;background:#F
   </div>
   <div class="credit"><strong>Sản phẩm dự thi “Ứng dụng AI trong giảng dạy” 2026 · Công đoàn Học viện Công nghệ Bưu chính Viễn thông</strong><span>Giảng viên đứng tên: ThS. Nguyễn Cảnh Châu · Nhóm: Nguyễn Gia Phú, Trương Thanh Hà, Nguyễn Hoàng Hiếu</span></div>
 </footer>
-<div class="hint" id="hint"><i></i>Cuộn để đi vào trường</div>
+<div class="hint" id="hint" aria-live="polite"><i></i><span>Cuộn để đi vào trường</span></div>
 <div class="screen" id="screenUI" aria-hidden="true">
   <div><div class="eb">02 · Khóa học</div><h3>Khóa học của bạn</h3></div>
   <p class="sub">Học theo chặng, đích là test cuối chương.</p>
@@ -450,26 +450,38 @@ function cameraAt(s,time){
 const journey=document.getElementById('journey'), panels=[...document.querySelectorAll('.panel')];
 const N=panels.length, PER=1;                  // viewport heights of scroll per chapter (stepping below makes this only a resting distance)
 const STOP=[0,1,1.8,3];                        // camera S for each chapter
-const SEG=[2.6,2.8,2.4];                       // flight seconds: hero→01 (orbit), 01→02 (gate, doors, kiosk), 02→03 (practice room)
-const REVEAL=.72;                              // text enters when the flight is 72% done, so it lands as the camera settles
+const SEG=[1.5,2.8,2.4];                       // flight seconds: hero→01 (orbit), 01→02 (gate, doors, kiosk), 02→03 (practice room)
+const REVEAL=[.6,.6,.72,.72];                  // per target chapter: text enters when the flight is this far along
+const BACK=.7, CHAIN=.6;                       // going back up is faster (already seen); a flick during a flight chains at 60% duration
 panels.forEach(p=>[...p.querySelectorAll('[data-s]')].forEach((el,k)=>el.style.setProperty('--n',k)));
 function sizeJourney(){journey.style.height=(100+N*PER*100)+'vh';}
 sizeJourney(); addEventListener('resize',sizeJourney);
 let S=0,lit=1,litShown=0,calm=false,state=-1,shown=-1;
 // camera tween = cubic Hermite from (S, current speed) to (target, 0): smooth start/stop, and no jolt if retargeted mid-flight
-let tw={from:0,to:0,v0:0,t0:0,D:0};
-function twAt(now){const {from,to,v0,t0,D}=tw; if(D<=0) return [to,0]; const t=clamp((now-t0)/1000/D);
+// progress p runs 0→1; scrolling during a flight raises `boost` so the SAME flight plays faster (it never skips a chapter)
+let tw={from:0,to:0,v0:0,p:1,D:0}, boost=0;
+let lastAbs=0, lastDir=0, rises=0, sawDecay=false, low=1e9, landedAt=0, aim=0, lastStep=0, lastWheel=0, touchY=null, stream=false;
+const flying=()=>tw.D>0&&tw.p<.97, flightDir=()=>Math.sign(tw.to-tw.from);
+function twAt(){const {from,to,v0,D}=tw; if(D<=0) return [to,0]; const t=clamp(tw.p);
   if(t>=1) return [to,0]; const t2=t*t,t3=t2*t;
   const p=(2*t3-3*t2+1)*from+(t3-2*t2+t)*D*v0+(-2*t3+3*t2)*to;
   const v=((6*t2-6*t)*from+(3*t2-4*t+1)*D*v0+(-6*t2+6*t)*to)/D; return [p,v];}
 function flightTime(a,b){const lo=Math.min(a,b),hi=Math.max(a,b);let d=0;
   for(let i=0;i<3;i++){const s0=STOP[i],s1=STOP[i+1];d+=SEG[i]*clamp((Math.min(hi,s1)-Math.max(lo,s0))/(s1-s0));}
   return clamp(d,.6,3.6);}                     // jumping several chapters (rail click) never takes longer than 3.6s
+let cutNext=false, revealAt=.72;
+const cutEl=document.getElementById('cut');
+function flashCut(){ if(reduce) return; cutEl.style.transition='none'; cutEl.style.opacity='1'; cutEl.getBoundingClientRect(); cutEl.style.transition='opacity .5s cubic-bezier(.22,1,.36,1)'; cutEl.style.opacity='0'; }
 function setState(i){
-  if(i===state) return; const now=performance.now(), first=state<0; state=i;
+  if(i===state) return; const now=performance.now(), first=state<0, prev=state; state=i;
   const [, v]=twAt(now), to=STOP[i];
-  tw={from:S,to,v0:(reduce||first)?0:clamp(v,-1.5,1.5),t0:now,D:(reduce||first)?0:flightTime(S,to)};
-  if(first) S=to;
+  // jumping 2+ chapters (rail, Home/End, dragging the scrollbar) is a cut, not a fast-forward through the whole path
+  const cut=first||cutNext||Math.abs(i-prev)>=2; cutNext=false;
+  const midFlight=tw.D>0&&tw.p<1, back=to<S;
+  let D=flightTime(S,to)*(back?BACK:1)*(midFlight?CHAIN:1);
+  if(reduce||cut){D=0; S=to; if(!first) flashCut();}
+  tw={from:S,to,v0:D?clamp(v,-1.5,1.5):0,p:D?0:1,D}; boost=0; if(!D) landedAt=now;
+  revealAt=back?.5:REVEAL[i];
   panels.forEach((p,k)=>{p.classList.remove('on');p.classList.toggle('past',k<i);});
   shown=-1;
   document.querySelectorAll('nav .links a').forEach((a,k)=>a.classList.toggle('on',k===i));
@@ -477,20 +489,22 @@ function setState(i){
 }
 function revealIfReady(now){
   if(shown===state) return;
-  const done=tw.D<=0||calm||(now-tw.t0)/1000>=tw.D*REVEAL;
+  const done=tw.D<=0||calm||tw.p>=revealAt;
   if(done){panels[state].classList.add('on');shown=state;}
 }
+const GUIDE=['Cuộn để đi vào trường','Hôm nay · 1/3 — cuộn tiếp: Khóa học','Khóa học · 2/3 — cuộn tiếp: Studio','Studio · 3/3 — cuộn tiếp: cuối trang'];
+function guide(){const h=document.getElementById('hint'); if(!h) return; const t=h.querySelector('span'); if(t) t.textContent=flying()?'Cuộn thêm để chạy nhanh hơn':GUIDE[Math.max(0,state)]; h.style.opacity=inStage()?1:0;}
 function readScroll(){
   const vh=innerHeight, dist=journey.offsetHeight-vh, p=clamp((scrollY-journey.offsetTop)/dist,0,.999);
   setState(Math.floor(p*N));
   const max=document.documentElement.scrollHeight-vh;
   document.getElementById('prog').style.transform=`scaleX(${max?scrollY/max:0})`;
-  document.getElementById('hint').style.opacity=scrollY>40?0:1;
+  guide();
 }
 // rail / menu: glide to the middle of that chapter's scroll range
 document.querySelectorAll('#rail a, nav .links a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();
   const c=+(a.dataset.c??[...document.querySelectorAll('nav .links a')].indexOf(a));
-  go(c);}));
+  go(c,true);}));                                   // rail: cut straight to the chapter (on the web, header links open their own pages)
 addEventListener('scroll',readScroll,{passive:true}); readScroll();
 document.querySelectorAll('[data-light]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();lit=Math.max(lit,+a.dataset.light+1);a.closest('.row').classList.add('lit','done');a.textContent='✓';}));
 const calmBtn=document.getElementById('calm');
@@ -501,36 +515,74 @@ if(window.Lenis&&!reduce){window.lenis=new Lenis({duration:1.15,smoothWheel:true
 // which used to fly through every chapter. Inside the pinned stage we take the gesture, step ONE chapter,
 // and ignore input until the camera flight is nearly done AND the momentum has died out. ?free turns it off.
 const FREE=location.search.includes('free');
-let stepLock=0, lastWheel=0, touchY=null, stream=false;
+const MIN_GAP=260;                                   // a NEW flick is always accepted (chains the flight); only the same momentum stream is ignored
 const chapterY=c=>journey.offsetTop+(journey.offsetHeight-innerHeight)*(c+.5)/N;
 function inStage(){const t=journey.offsetTop, e=t+journey.offsetHeight-innerHeight; return scrollY>=t-2&&scrollY<=e+2;}
 function step(dir){                                  // returns true if we took the input
   if(FREE||reduce||calm||!inStage()) return false;
-  const next=state+dir;
+  // not resting on the current chapter yet (e.g. coming up from the footer): settle on it first instead of skipping it
+  if(state>0&&performance.now()-lastStep>1000&&(dir<0?scrollY>chapterY(state)+4:scrollY<chapterY(state)-4)){ go(state); return true; }
+  const base=performance.now()-lastStep<1000?aim:state;   // chaining: step from where we are heading, not where the scroll is now
+  const next=base+dir;
   if(next<0) return false;                           // above hero: native
   if(next>=N){ return scrollY<chapterY(N-1)-4 ? (go(N-1),true) : false; }   // past Studio: release to the footer
   go(next); return true;
 }
-function go(c){
-  const now=performance.now(); stepLock=now+Math.max(900,flightTime(S,STOP[c])*1000*.8);
-  window.lenis?lenis.scrollTo(chapterY(c),{duration:1.1,force:true,easing:t=>1-Math.pow(1-t,3)}):scrollTo({top:chapterY(c),behavior:'smooth'});
+function go(c,cut=false){
+  lastStep=performance.now(); aim=c; if(cut) cutNext=true;
+  const y=chapterY(c);
+  if(cut){ window.lenis?lenis.scrollTo(y,{immediate:true,force:true}):scrollTo(0,y); readScroll(); return; }
+  window.lenis?lenis.scrollTo(y,{duration:.9,force:true,easing:t=>1-Math.pow(1-t,3)}):scrollTo({top:y,behavior:'smooth'});
 }
 addEventListener('wheel',e=>{
   if(FREE||reduce||calm||!inStage()) return;
   const now=performance.now(), idle=now-lastWheel; lastWheel=now;
   const dir=Math.sign(e.deltaY); if(!dir) return;
-  if(idle>=160) stream=false;                             // a pause = the previous flick (and its momentum) is over
-  if(now<stepLock||stream){ e.preventDefault(); e.stopPropagation(); return; }   // still flying, or same momentum stream
-  if(Math.abs(e.deltaY)<3) return;
-  if(step(dir)){ stream=true; e.preventDefault(); e.stopPropagation(); }
+  const ad=Math.abs(e.deltaY);
+  // Mouse wheel = discrete notches (wheelDeltaY in multiples of 120, or line mode). Everything else = trackpad.
+  const isWheel=e.deltaMode===1||(e.wheelDeltaY!==undefined&&e.wheelDeltaY!==0&&e.wheelDeltaY%120===0);
+  // A new trackpad flick: a pause (≥200ms), a real change of direction, or the delta climbing 3 events in a row
+  // after it had been decaying (finger put back down). Momentum jitter (one small bump) is not a new flick.
+  if(idle>=200||dir!==lastDir){ rises=0; sawDecay=false; low=1e9; }
+  if(ad<lastAbs) sawDecay=true; if(sawDecay) low=Math.min(low,ad);
+  rises=ad>lastAbs+1?rises+1:0;
+  const fresh=idle>=200||(dir!==lastDir&&ad>4)||(sawDecay&&rises>=3&&ad>18&&ad>low*1.6+6);
+  if(fresh&&idle<200&&dir===lastDir){ sawDecay=false; rises=0; low=1e9; }
+  const decaying=!fresh&&(ad<lastAbs*.985||ad<=6);
+  lastAbs=ad; lastDir=dir;
+  const block=()=>{e.preventDefault();e.stopPropagation();};
+
+  if(flying()){                                         // camera still flying
+    block();
+    if(dir===flightDir()){
+      // speed THIS flight up: every notch of a mouse wheel; for a trackpad only a NEW flick (not the momentum of the first one)
+      if(isWheel) boost=Math.min(3,boost+Math.min(ad/120,1)*.45);
+      else if(fresh) boost=Math.min(3,boost+1);
+    } else if(fresh&&now-lastStep>MIN_GAP) step(dir);   // a new flick the other way turns back
+    return;
+  }
+  if(now-lastStep<MIN_GAP){ block(); return; }
+  const dwell=now-landedAt;
+  // At the ends (hero up / Studio down) hand back to normal scrolling, except the momentum that just brought us here
+  const atEnd=(state===0&&dir<0)||(state===N-1&&dir>0);
+  if(atEnd){ if(decaying&&dwell<1200) block(); return; }
+  if(isWheel){
+    // steady wheel spinning keeps going chapter by chapter, but each chapter's text gets ~0.45s on screen first
+    if(!fresh&&dwell<450){ block(); return; }
+  } else if(!fresh){ block(); return; }                // trackpad: only a new flick moves on; leftover momentum is swallowed
+  if(ad<2) return;
+  if(step(dir)) block();
 },{passive:false,capture:true});
 addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;},{passive:true});
 addEventListener('touchmove',e=>{if(!FREE&&!reduce&&!calm&&inStage()&&touchY!=null){const dy=touchY-e.touches[0].clientY, dir=Math.sign(dy);
   const releasing=(state===0&&dir<0)||(state===N-1&&dir>0&&scrollY>=chapterY(N-1)-4); if(!releasing) e.preventDefault();}},{passive:false});
 addEventListener('touchend',e=>{if(touchY==null) return; const dy=touchY-e.changedTouches[0].clientY; touchY=null;
-  if(Math.abs(dy)>36&&performance.now()>stepLock) step(Math.sign(dy));},{passive:true});
+  if(Math.abs(dy)<=36) return; const d=Math.sign(dy);
+  if(flying()&&d===flightDir()){ boost=Math.min(3,boost+1.2); return; }
+  if(performance.now()-lastStep>MIN_GAP) step(d);},{passive:true});
 addEventListener('keydown',e=>{const k={ArrowDown:1,PageDown:1,' ':1,ArrowUp:-1,PageUp:-1}[e.key]; if(!k||e.target.closest('input,textarea')) return;
-  if(performance.now()<stepLock&&inStage()){e.preventDefault();return;} if(step(k)) e.preventDefault();});
+  if(inStage()&&flying()&&k===flightDir()){e.preventDefault();boost=Math.min(3,boost+.9);return;}
+  if(performance.now()-lastStep<MIN_GAP&&inStage()){e.preventDefault();return;} if(step(k)) e.preventDefault();});
 // sky picker (compare options)
 const skyLights={cream:['#FFF2E6','#B9A08E','#FFF0E0'],dusk:['#FFE6DA','#B89283','#FFE2CC'],mist:['#F1F3F5','#ACA49C','#FFF8EE'],blue:['#E4F1FF','#B8A796','#FFF3E2']};
 function setSky(k){document.documentElement.dataset.sky=k; const [a,b,c]=skyLights[k]; hemi.color.set(a); hemi.groundColor.set(b); sun.color.set(c);
@@ -579,8 +631,10 @@ addEventListener('resize',resize); resize();
 let last=performance.now(), dimV=0;
 function loop(now){
   const dt=Math.min((now-last)/1000,.2); last=now;
-  if(!calm) S=twAt(now)[0];
-  revealIfReady(now);
+  if(tw.D>0&&tw.p<1&&!calm){ const was=tw.p; tw.p=Math.min(1,tw.p+dt/tw.D*(1+boost)); if(was<.97&&tw.p>=.97) landedAt=now; }
+  boost*=Math.exp(-dt*2.2);                        // the push fades once you stop scrolling
+  if(!calm) S=twAt()[0];
+  revealIfReady(now); if(((now/250)|0)!==((last-dt*1000)/250|0)) guide();
   const fov=cameraAt(S,now), f=focusAt(S), w=innerWidth, h=desk()?innerHeight:innerHeight*.5;
   camera.setViewOffset(w,h,desk()?-w*.19*(1-f):0,0,w,h);
   camera.up.set(0,1,0).lerp(KUP,f).normalize(); camera.position.copy(pos); camera.fov=fov; camera.updateProjectionMatrix(); camera.lookAt(tgt); camera.updateMatrixWorld();

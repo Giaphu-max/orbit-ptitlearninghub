@@ -6,6 +6,7 @@ import { buildQuestionBank, CHECKPOINT_QUESTION_COUNT, pickCheckpointQuestions, 
 import { useEffectiveLesson } from '@/lib/lesson-edits'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { clock, Fact, Running } from '@/components/orbit-test-view'
+import { LessonBreadcrumbStepper } from '@/components/lesson/lesson-stepper'
 
 type Phase = { kind: 'intro' } | { kind: 'running'; questions: TestQuestion[]; deadline: number }
 
@@ -46,7 +47,16 @@ export function OrbitCheckpointView() {
         return (
             <div className="w-full">
                 <div className="mx-auto max-w-3xl px-5 py-8 lg:py-12">
-                    <Running key={phase.deadline} phase={{ ...phase }} onSubmit={submit} onQuit={() => setPhase({ kind: 'intro' })} />
+                    <LessonBreadcrumbStepper
+                        courseTitle={course?.title ?? 'Học phần'}
+                        lessonTitle={lesson.title}
+                        lessonId={lessonId}
+                        currentStep="checkpoint"
+                        courseId={lesson.courseId}
+                    />
+                    <div className="mt-6">
+                        <Running key={phase.deadline} phase={{ ...phase }} onSubmit={submit} onQuit={() => setPhase({ kind: 'intro' })} />
+                    </div>
                 </div>
             </div>
         )
@@ -55,9 +65,18 @@ export function OrbitCheckpointView() {
     return (
         <div className="w-full">
             <div className="mx-auto max-w-3xl px-5 py-8 lg:py-12">
-                <Link to={`/lesson/${lessonId}`} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
-                    <ChevronLeft size={16} /> {course?.title ?? 'Khóa học'}
-                </Link>
+                <LessonBreadcrumbStepper
+                    courseTitle={course?.title ?? 'Học phần'}
+                    lessonTitle={lesson.title}
+                    lessonId={lessonId}
+                    currentStep="checkpoint"
+                    courseId={lesson.courseId}
+                />
+                <div className="mt-6">
+                    <Link to={`/lesson/${lessonId}`} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
+                        <ChevronLeft size={16} /> Quay lại bài giảng
+                    </Link>
+                </div>
                 <p className="mt-6 text-eyebrow uppercase text-brand-ink">Test cuối chặng</p>
                 <h1 className="mt-3 text-headline text-foreground">{lesson.title}</h1>
                 <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">Sáu câu ngắn về đúng bài vừa học, ưu tiên những câu bạn chưa gặp trong video. Xong là có bản tổng kết chặng.</p>

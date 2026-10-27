@@ -124,7 +124,7 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
                             <circle cx="50" cy="50" r="42" fill="none" strokeWidth="9" className="stroke-muted" />
                             <circle cx="50" cy="50" r="42" fill="none" strokeWidth="9" strokeLinecap="round" strokeDasharray={RING_LEN} strokeDashoffset={shown ? RING_LEN * (1 - pct / 100) : RING_LEN} className="cm-ring-fg stroke-brand-600" />
                         </svg>
-                        <b className="absolute inset-0 grid place-items-center font-mono text-[22px] tracking-tight text-foreground">{pct}%</b>
+                        <b className="absolute inset-0 grid place-items-center font-mono text-2xl font-bold tracking-tight text-brand-ink">{pct}%</b>
                     </div>
                     <ul className="grid gap-1 text-[13px] text-muted-foreground">
                         <li><b className="font-mono text-foreground">{doneCount}/{lessons.length}</b> bài xong</li>

@@ -4,8 +4,19 @@ import { dailyArticles, getLesson } from '@/data'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import type { CourseCoverSpec } from '@/lib/cover-kinds'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
-import { masteryAfterTest, testXp, type TestAnswerInput } from '@/lib/final-test'
+import { masteryAfterTest, testXp, type TestAnswerInput, type TestQuestion } from '@/lib/final-test'
 import { advanceStreak, bestTestRatio, dailyFor, DAILY_LIMIT, directorXp, emptyDaily, evaluateBadges, EXTRA_READ_COST, LIGHTS_BADGE_ID, LIGHTS_XP, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
+
+/** Phiên làm bài test dở dang để tự động lưu và khôi phục khi tải lại trang/đóng tab */
+export interface ActiveTestSession {
+    courseId: string
+    questionIds: string[]
+    questions: TestQuestion[]
+    currentIndex: number
+    answers: Record<string, number>
+    remainingSec: number
+    updatedAt: number
+}
 
 // Toàn bộ trạng thái người dùng của bản demo (không có backend).
 // Lưu localStorage; mọi thao tác storage bọc try/catch để chế độ ẩn danh
@@ -125,6 +136,8 @@ interface OrbitState {
     lessonEdits: Record<string, LessonEdits>
     /** Bìa khóa học do giảng viên chỉnh (id khóa → lựa chọn); chưa có thì dùng cover trong courses.json */
     courseCovers: Record<string, CourseCoverOverride>
+    /** Phiên làm test cuối chương dở dang theo khóa (id khóa → phiên) */
+    activeTestSessions: Record<string, ActiveTestSession>
 
     setRole: (role: Role | null) => void
     setLearnerName: (name: string) => void
@@ -152,6 +165,8 @@ interface OrbitState {
     /** Ghi kết quả test cuối chặng của một bài (cùng cách cập nhật mức nắm vững và XP như test cuối chương); trả về XP được cộng */
     recordCheckpointResult: (input: { lessonId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
     markRecapSeen: (lessonId: string) => void
+    saveTestSession: (courseId: string, session: ActiveTestSession) => void
+    clearTestSession: (courseId: string) => void
     resetDemo: () => void
 }
 
@@ -202,6 +217,7 @@ export function makeDemoProfile() {
         lessonReview: {} as Record<string, ReviewStatus>,
         lessonEdits: {} as Record<string, LessonEdits>,
         courseCovers: {} as Record<string, CourseCoverOverride>,
+        activeTestSessions: {} as Record<string, ActiveTestSession>,
     }
 }
 
@@ -422,6 +438,19 @@ export const useOrbitStore = create<OrbitState>()(
 
             markRecapSeen: (lessonId) => set((s) => (s.recapSeen[lessonId] ? s : { recapSeen: { ...s.recapSeen, [lessonId]: true } })),
 
+            saveTestSession: (courseId, session) =>
+                set((s) => ({
+                    activeTestSessions: { ...(s.activeTestSessions ?? {}), [courseId]: session },
+                })),
+
+            clearTestSession: (courseId) =>
+                set((s) => {
+                    const current = s.activeTestSessions ?? {}
+                    if (!current[courseId]) return s
+                    const { [courseId]: _removed, ...rest } = current
+                    return { activeTestSessions: rest }
+                }),
+
             claimMission: (missionId) => {
                 const mission = MISSIONS.find((m) => m.id === missionId)
                 const today = dailyFor(get().daily)
@@ -434,13 +463,13 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 6,
-            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng (stageStart của demo, test cuối chặng, recapSeen); v6 thêm XP tiêu được (xpSpent), bài Daily mua thêm và nhiệm vụ ẩn.
+            version: 7,
+            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {} } as OrbitState
+                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {} } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },

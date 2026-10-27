@@ -1,0 +1,230 @@
+<meta charset="utf-8">
+<title>Hôm nay thắp tầng A2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: the "Hôm nay" chapter at night. Reading list on the left; tòa A2 on the right, one floor per read. No explanation in the UI: the building just reacts. */
+:root{color-scheme:dark;--bg:#12131C;--fg:#F4EDE8;--muted:#B3A9A2;--line:rgba(255,240,230,.12);--card:#1E1B1C;--brand:#C4161C;--brand-2:#8E0D12;--brand-ink:#FF8A84;--gold:#FFC56B;--ok:#6FD49A;
+  --sans:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;--ease:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);overflow:hidden}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.veil{position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(18,19,28,.97) 0%,rgba(18,19,28,.92) 32%,rgba(18,19,28,.4) 50%,rgba(18,19,28,0) 62%)}
+.top{position:fixed;top:0;left:0;right:0;height:64px;display:flex;align-items:center;gap:12px;padding-left:max(16px,5vw,env(safe-area-inset-left,0px));padding-right:max(16px,5vw,env(safe-area-inset-right,0px));z-index:5}
+.top b{display:flex;gap:10px;align-items:center;font-weight:800}.top b i{width:32px;height:32px;border-radius:9px;background:#fff;color:var(--brand);display:grid;place-items:center;font-style:normal;font-size:9.5px;font-weight:900}
+.xp{margin-left:auto;font-family:var(--mono);font-size:13px;border:1px solid var(--line);border-radius:999px;padding:7px 12px;transition:background .3s,color .3s}
+.xp.flash{background:var(--brand);color:#fff;border-color:transparent}
+.xp.spend{background:#2C2A33}
+.col{position:relative;z-index:2;width:min(560px,100%);height:100%;overflow:auto;padding-block:96px 40px;padding-left:max(16px,5vw,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+.eb{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.14em;color:var(--brand-ink)}
+h2{margin:8px 0 0;font-size:clamp(34px,3.6vw,48px);line-height:1.05;letter-spacing:-.035em;font-weight:900;text-wrap:balance}
+.sub{margin:10px 0 0;font-size:15px;color:var(--muted)}
+.count{font-size:13px;color:var(--muted)}.count b{font-family:var(--mono);color:var(--fg)}
+.hero{position:relative;display:block;width:100%;text-align:left;font:inherit;border:0;cursor:pointer;color:#fff;border-radius:22px;padding:24px;background:linear-gradient(150deg,#D41E25 0%,var(--brand) 40%,var(--brand-2) 100%);box-shadow:0 30px 60px -28px rgba(196,22,28,.7);overflow:hidden;transition:transform .3s var(--ease)}
+.hero:hover{transform:translateY(-3px)}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%)}
+.why{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;background:rgba(0,0,0,.22);border-radius:999px;padding:6px 11px}
+.hero h3{margin:14px 0 0;font-size:24px;line-height:1.22;letter-spacing:-.02em;font-weight:800;text-wrap:balance;max-width:22ch}
+.row{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:12px}
+.meta{font-family:var(--mono);font-size:13px;opacity:.9}
+.go{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--brand-2);font-weight:800;font-size:15px;border-radius:12px;padding:12px 18px}
+.done{background:linear-gradient(150deg,#22332A,#16211B);box-shadow:none;cursor:default}
+.done:hover{transform:none}
+.done .why{background:rgba(111,212,154,.15);color:var(--ok)}
+.more{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mini{display:flex;flex-direction:column;gap:10px;text-align:left;font:inherit;cursor:pointer;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;transition:border-color .2s,transform .3s var(--ease),opacity .3s}
+.mini:hover{border-color:rgba(255,138,132,.5);transform:translateY(-2px)}
+.mini b{font-size:14px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mini span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.mini.read{opacity:.55}.mini.read span{color:var(--ok)}
+/* extra read, paid with XP: only appears once the 3 free reads are done */
+.unlock{display:flex;align-items:center;gap:14px;border:1px dashed rgba(255,197,107,.45);border-radius:16px;padding:14px 16px;background:rgba(255,197,107,.06);animation:rise .6s var(--ease) both}
+.unlock .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:rgba(255,197,107,.15);color:var(--gold);font-size:18px;flex:none}
+.unlock div{flex:1;min-width:0}.unlock b{display:block;font-size:14px}.unlock small{font-size:12px;color:var(--muted)}
+.unlock button{font:inherit;font-weight:800;font-size:13px;border:0;border-radius:10px;padding:10px 14px;background:var(--gold);color:#3A2408;cursor:pointer;font-family:var(--mono)}
+.unlock button:disabled{opacity:.4;cursor:not-allowed}
+.missions{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.missions a{color:var(--brand-ink);font-weight:700;text-decoration:none}
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:#fff;color:#1C1A19;font-weight:700;font-size:14px;padding:10px 16px;border-radius:999px;transition:.35s var(--ease);z-index:9;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+/* hidden mission reveal */
+.secret{position:fixed;inset:0;display:grid;place-items:center;z-index:10;background:radial-gradient(60% 60% at 70% 45%,rgba(255,197,107,.18),rgba(10,10,16,.8));opacity:0;pointer-events:none;transition:opacity .6s}
+.secret.on{opacity:1;pointer-events:auto}
+.secret .box{width:min(420px,calc(100vw - 32px));border-radius:24px;padding:28px;background:linear-gradient(150deg,#D41E25,#8E0D12);color:#fff;text-align:center;box-shadow:0 40px 80px -30px rgba(0,0,0,.8);transform:scale(.85);transition:transform .7s var(--ease)}
+.secret.on .box{transform:none}
+.secret small{font-family:var(--mono);letter-spacing:.14em;font-size:11px;opacity:.85}
+.secret h3{margin:10px 0 6px;font-size:28px;letter-spacing:-.02em}
+.secret p{margin:0;opacity:.9;font-size:14px;line-height:1.5}
+.secret .gift{display:flex;flex-direction:column;align-items:center;gap:8px;margin:18px 0 20px}
+.secret .gift span{background:rgba(0,0,0,.22);border-radius:12px;padding:10px 14px;font-weight:800}.secret .gift span:first-child{font-family:var(--mono);font-size:20px}
+.secret button{font:inherit;font-weight:800;border:0;border-radius:12px;padding:12px 20px;background:#fff;color:#8E0D12;cursor:pointer}
+.reset{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;font:inherit;font-size:12px;font-family:var(--mono);background:rgba(30,27,28,.85);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 12px;cursor:pointer}
+
+.xp{position:relative}
+.xp.earn{animation:pe .7s}.xp.spend{animation:ps .7s}
+@keyframes pe{30%{background:rgba(111,212,154,.18);border-color:rgba(111,212,154,.5)}}
+@keyframes ps{30%{transform:scale(.95);opacity:.75}}
+.xpchip{position:absolute;right:12px;top:50%;font-family:var(--mono);font-weight:700;font-size:13px;pointer-events:none}
+.xpchip.earn{color:var(--ok);animation:ce 1.1s var(--ease) forwards}
+.xpchip.spend{color:var(--brand-ink);animation:cs 1.1s var(--ease) forwards}
+@keyframes ce{from{opacity:0;transform:translateY(-50%)}20%{opacity:1}to{opacity:0;transform:translateY(-200%)}}
+@keyframes cs{from{opacity:0;transform:translateY(-50%)}20%{opacity:1}to{opacity:0;transform:translateY(140%)}}
+/* locked extra read: the biggest card once the free three are done */
+.locked{cursor:default;padding:28px;background:linear-gradient(160deg,#2B2629,#1A1718);border:1px solid rgba(255,240,230,.14);box-shadow:0 30px 60px -30px rgba(0,0,0,.85);animation:rise .6s var(--ease) both}
+.locked:hover{transform:none}
+.locked::after{background:radial-gradient(circle,rgba(196,22,28,.28),transparent 70%)}
+.locked .why{background:rgba(255,255,255,.08);color:var(--muted)}
+.locked h3{font-size:30px;max-width:20ch}
+.ghost{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.ghost i{display:block;height:9px;border-radius:5px;background:rgba(255,255,255,.07)}
+.pay{display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:800;font-size:15px;border:0;border-radius:12px;padding:13px 18px;background:var(--brand);color:#fff;cursor:pointer;transition:background .2s}
+.pay:hover{background:#A81218}.pay:disabled{background:#3A3436;color:var(--muted);cursor:not-allowed}
+.pay .num{font-family:var(--mono)}
+.lk .sh{transition:transform .35s var(--ease)}
+.opening .lk .sh{transform:translateY(-4px)}
+.locked.opening{transition:transform .6s var(--ease),opacity .6s;transform:scale(.98);opacity:.5}
+@keyframes rise{from{opacity:0;transform:translate3d(0,16px,0)}}
+:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media (max-width:760px){.veil{background:linear-gradient(180deg,rgba(18,19,28,0) 0%,rgba(18,19,28,.9) 40%,rgba(18,19,28,.98) 52%)}.col{padding-top:46vh}.more{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<canvas id="c" aria-hidden="true"></canvas>
+<div class="veil"></div>
+<header class="top"><b><i>PTIT</i>Orbit</b><span class="xp" id="xp">Cấp 7 · <span id="xpn">2.480</span> XP</span></header>
+<main class="col" aria-labelledby="h">
+  <div><div class="eb">01 · HÔM NAY</div><h2 id="h">3 bài đọc ngắn cho hôm nay</h2><p class="sub">Mỗi bài khoảng 1 phút. AI chọn theo chỗ bạn còn hổng.</p></div>
+  <div class="count" id="count"><b>0/3</b> đã đọc</div>
+  <div id="heroSlot"></div>
+  <div class="more" id="more"></div>
+  <div id="unlockSlot"></div>
+  <div class="missions"><span>Nhiệm vụ hôm nay · <b style="color:var(--fg);font-family:var(--mono)">0/4</b></span><a href="#">Xem →</a></div>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<div class="secret" id="secret" role="dialog" aria-modal="true" aria-labelledby="sh"><div class="box">
+  <small>NHIỆM VỤ ẨN</small><h3 id="sh">Tòa A2 sáng đèn</h3>
+  <p>Bạn đã thắp sáng mọi tầng của tòa A2 trong một ngày.</p>
+  <div class="gift"><span>+100 XP</span><span>Huy hiệu “Người thắp đèn”</span></div>
+  <button id="closeSecret">Tuyệt</button></div></div>
+<button class="reset" id="reset">↻ Bắt đầu lại demo</button>
+
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// ---------- data (real Orbit Daily titles) ----------
+const ARTICLES=[
+  {t:'Sự kết hợp giữa nhịp hình và nhịp âm trong dựng phim',why:'Nên đọc trước · bạn mới nắm 25% “Nhịp hình”'},
+  {t:'Ba loại ánh sáng cơ bản trong quay phim và chụp ảnh',why:'Nên đọc tiếp · “Ánh sáng chủ” mới nắm 40%'},
+  {t:'Nguyên lý màu sắc cơ bản trong nhiếp ảnh và điện ảnh',why:'Nên đọc tiếp · “Tâm lý học màu sắc” mới nắm 45%'},
+  {t:'Tổ chức cấu trúc nội dung và điều hướng tiếp nhận',why:'Bài mở thêm · ôn “Tư duy dựng”'},
+  {t:'Bản chất của dựng audio và video phi tuyến trong hậu kỳ',why:'Bài mở thêm · ôn “Tính phi hủy hoại”'},
+];
+const FREE=3, N=ARTICLES.length, PER=2, FLOORS=N*PER, COST=60;
+let xp=2480, read=0, unlocked=FREE, secretShown=false;
+
+// ---------- 3D: tòa A2 at night, one floor per read ----------
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5)); renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping;
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#1B2033'); scene.fog=new THREE.Fog('#1B2033',40,90);
+const camera=new THREE.PerspectiveCamera(30,1,.1,200);
+scene.add(new THREE.HemisphereLight('#7E8BB8','#2A2433',1.1));
+const moon=new THREE.DirectionalLight('#AFC0FF',1.2); moon.position.set(-20,30,25); scene.add(moon);
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.85},o));
+const box=(w,h,d,m,x,y,z,p=scene)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);p.add(b);return b;};
+const beige=M('#7D7690'), stone=M('#6E6880'), glass=M('#2E4A4C',{roughness:.3}), dark=M('#23242E');
+box(60,.2,50,M('#2B2D3A'),0,-.1,0);
+// podium + portico
+box(22,5,8,stone,0,2.5,-2); box(22.6,.5,8.6,M('#8A839C'),0,5.25,-2);
+for(const x of [-9,-7,-5,5,7,9]) for(const y of [1.5,3.5]) box(1.1,1.2,.1,M('#33405A',{emissive:'#1A2236'}),x,y,2.06);
+[-2.3,2.3].forEach(x=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(.42,.48,5,20),M('#9B97AE'));c.position.set(x,2.5,2.6);scene.add(c);});
+box(4.6,4.6,.06,M('#3B5658',{transparent:true,opacity:.6,emissive:'#22343A'}),0,2.4,1.6);
+// tower: floors stacked on the podium
+const TOWER_Y=5.5, FLOOR_H=1.25;
+box(8,FLOORS*FLOOR_H+1.2,5,beige,0,TOWER_Y+(FLOORS*FLOOR_H+1.2)/2,-2.5);
+box(2.6,FLOORS*FLOOR_H+.6,.3,glass,0,TOWER_Y+(FLOORS*FLOOR_H+.6)/2,.1);
+const roofY=TOWER_Y+FLOORS*FLOOR_H+1.2;
+box(8.6,.6,5.6,M('#8A839C'),0,roofY+.3,-2.5); box(1.9,.7,.12,M('#C4161C',{emissive:'#C4161C',emissiveIntensity:.7}),0,roofY-.7,.32); box(5,1.4,3.4,beige,0,roofY+1.3,-2.5);
+const clockM=M('#E8E4F0',{emissive:'#FFE2B0',emissiveIntensity:.05}); const clock=new THREE.Mesh(new THREE.CylinderGeometry(.75,.75,.2,28),clockM); clock.rotation.x=Math.PI/2; clock.position.set(0,roofY+1.3,-.75); scene.add(clock);
+// windows: each floor has its own material so it can flicker or glow independently
+const floors=[];
+for(let f=0;f<FLOORS;f++){
+  const mat=new THREE.MeshStandardMaterial({color:'#2A3040',emissive:'#FFC56B',emissiveIntensity:0,roughness:.4});
+  const y=TOWER_Y+.8+f*FLOOR_H;
+  for(const x of [-3.3,-2.2,2.2,3.3]) box(.7,.8,.1,mat,x,y,.06);
+  for(const z of [-1.4,-3.6]) box(.1,.8,.7,mat,-4.06,y,z);
+  floors.push({mat,state:'flicker',t:Math.random()*10,lit:0,seed:Math.random()*100});
+}
+// a soft glow plane behind the tower that grows as floors light up
+const gc=document.createElement('canvas');gc.width=gc.height=128;const gx=gc.getContext('2d');const gg=gx.createRadialGradient(64,64,0,64,64,64);gg.addColorStop(0,'rgba(255,255,255,1)');gg.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gg;gx.fillRect(0,0,128,128);
+const glow=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(gc),color:'#FFB25A',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
+glow.position.set(0,TOWER_Y+FLOORS*FLOOR_H/2,-6); scene.add(glow);
+// trees for scale
+for(const [x,z] of [[-12,6],[-9,8],[10,7],[13,5],[-14,1],[14,0]]){const t=new THREE.Mesh(new THREE.IcosahedronGeometry(1.3,0),M('#2E4038',{flatShading:true}));t.position.set(x,2,z);scene.add(t);box(.25,1.2,.25,M('#3A2E28'),x,.6,z);}
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;
+  const desk=innerWidth>760; camera.position.set(desk?-19:-5,14,60); camera.lookAt(desk?-8:0,12,0);
+  camera.setViewOffset(innerWidth,innerHeight,desk?-innerWidth*.16:0,desk?0:innerHeight*.18,innerWidth,innerHeight);camera.updateProjectionMatrix();}
+addEventListener('resize',resize); resize();
+let last=performance.now(), allLit=0;
+renderer.setAnimationLoop(now=>{const dt=Math.min((now-last)/1000,.1); last=now;
+  floors.forEach((fl,i)=>{
+    if(fl.state==='lit'){ fl.lit=Math.min(1,fl.lit+dt*1.6); fl.mat.emissiveIntensity=.2+fl.lit*2.0; }
+    else { // unlit floors: a faulty, flickering light
+      fl.t+=dt; const n=Math.sin(fl.t*13+fl.seed)*Math.sin(fl.t*3.1+fl.seed*2);
+      const on=reduce?.18:(n>.55?.9:n>.2?.25:.04); fl.mat.emissiveIntensity+= (on-fl.mat.emissiveIntensity)*Math.min(1,dt*30);
+    }
+  });
+  const litCount=floors.filter(f=>f.state==='lit').length;
+  allLit+=((litCount===FLOORS?1:0)-allLit)*Math.min(1,dt*1.5);
+  glow.material.opacity=.03*litCount+.12*allLit; clockM.emissiveIntensity=.05+allLit*2.2;
+  renderer.render(scene,camera);
+});
+
+// ---------- UI ----------
+const $=id=>document.getElementById(id);
+const fmt=n=>n.toLocaleString('vi-VN');
+const LOCK='<svg class="lk" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path class="sh" d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+let shown=xp;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1800);}
+/* the number rolls toward the new balance: up when earning, down when spending */
+function animXP(to){const from=shown;xp=to;const t0=performance.now(),D=reduce?1:700;
+  const tick=now=>{const k=Math.min(1,(now-t0)/D),e=1-Math.pow(1-k,3);shown=Math.round(from+(to-from)*e);$('xpn').textContent=fmt(shown);if(k<1)requestAnimationFrame(tick);};requestAnimationFrame(tick);}
+function chip(text,kind){const p=$('xp');const c=document.createElement('span');c.className='xpchip '+kind;c.textContent=text;p.appendChild(c);setTimeout(()=>c.remove(),1200);
+  p.classList.remove('earn','spend');void p.offsetWidth;p.classList.add(kind);}
+const earn=n=>{animXP(xp+n);chip('+'+n,'earn');};
+const spend=n=>{animXP(xp-n);chip('−'+n,'spend');};
+function lightFloors(k){for(let j=0;j<PER;j++){const f=floors[k*PER+j];setTimeout(()=>{f.state='lit';},j*260);}}
+function readArticle(i){ if(i!==read) return;
+  lightFloors(read); read++; earn(20); toast('Đã đọc xong · +20 XP');
+  if(read===N&&!secretShown){secretShown=true;setTimeout(()=>{$('secret').classList.add('on');earn(100);$('closeSecret').focus();},1500);}
+  render();}
+function buy(){ if(xp<COST||unlocked>=N) return;
+  $('lockCard').classList.add('opening'); spend(COST);
+  setTimeout(()=>{unlocked++;render();},reduce?0:650);}
+function render(){
+  const freeDone=read>=FREE;
+  $('count').innerHTML=freeDone?`<b style="color:var(--ok)">✓ ${FREE}/${FREE}</b> bài hôm nay đã đọc`+(read>FREE?` · <b>+${read-FREE}</b> bài mở thêm`:''):`<b>${read}/${FREE}</b> đã đọc`;
+  const next=read<unlocked?read:-1, slot=$('heroSlot');
+  if(next>=0){const a=ARTICLES[next];
+    slot.innerHTML=`<button class="hero" id="heroBtn"><span class="why">${a.why}</span><h3>${a.t}</h3><span class="row"><span class="meta">1 phút · +20 XP</span><span class="go">Đọc ngay →</span></span></button>`;
+    $('heroBtn').onclick=()=>readArticle(next);
+  } else if(read<N){const a=ARTICLES[unlocked], ok=xp>=COST;
+    slot.innerHTML=`<div class="hero locked" id="lockCard"><span class="why">${LOCK} ${a.why}</span><h3>${a.t}</h3><span class="ghost" aria-hidden="true"><i></i><i></i><i style="width:58%"></i></span>
+      <span class="row"><span class="meta">1 phút đọc</span><button class="pay" id="buy" ${ok?'':'disabled'}>${LOCK}${ok?`Mở bằng <span class="num">${COST} XP</span>`:`Cần <span class="num">${COST} XP</span>`}</button></span></div>`;
+    $('buy').onclick=buy;
+  } else {
+    slot.innerHTML=`<div class="hero done"><span class="why">✓ Đã đọc hết bài hôm nay</span><h3>Hẹn bạn ngày mai.</h3><span class="row"><span class="meta">${read} bài · +${read*20} XP hôm nay</span></span></div>`;
+  }
+  const minis=[]; for(let i=0;i<Math.min(unlocked,N);i++){ if(i===next) continue; if(i>=FREE && i>=read) continue; minis.push(i); }
+  $('more').innerHTML=minis.slice(-2).map(i=>`<button class="mini ${i<read?'read':''}" data-i="${i}"><b>${ARTICLES[i].t}</b><span>${i<read?'✓ Đã đọc':'1 phút · +20 XP'}</span></button>`).join('');
+  $('more').querySelectorAll('.mini').forEach(b=>b.onclick=()=>{const i=+b.dataset.i; toast(i<read?'Mở lại bài đã đọc':'Đọc theo thứ tự ưu tiên ở thẻ lớn trước nhé');});
+  $('unlockSlot').innerHTML='';
+}
+$('closeSecret').onclick=()=>$('secret').classList.remove('on');
+$('reset').onclick=()=>{read=0;unlocked=FREE;secretShown=false;xp=shown=2480;$('xpn').textContent=fmt(xp);floors.forEach(f=>{f.state='flicker';f.lit=0;});render();};
+document.querySelector('.missions a').onclick=e=>e.preventDefault();
+render();
+</script>

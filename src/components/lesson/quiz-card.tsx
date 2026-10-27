@@ -183,9 +183,14 @@ export function QuizCard({ lesson, phase, canPlay, isRepeat, reward, onAnswer, o
                             {reviewText}
                         </blockquote>
                     )}
+                    {attempt > 0 && (
+                        <div className="rounded-xl border border-brand-200 bg-brand-50/80 p-3 text-sm font-semibold text-brand-ink">
+                            Đã lưu khái niệm này vào mục Ôn tập cá nhân hóa để bạn củng cố sau.
+                        </div>
+                    )}
                     {!hasNextVariant && (
                         <p className="text-sm text-muted-foreground">
-                            Đáp án đúng: <strong>{question.options[question.correctIndex]}</strong>. Khái niệm này sẽ được ưu tiên trong bài đọc hôm nay để bạn ôn lại.
+                            Đáp án đúng: <strong>{question.options[question.correctIndex]}</strong>.
                         </p>
                     )}
                 </motion.div>
