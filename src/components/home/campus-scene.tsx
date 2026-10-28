@@ -539,21 +539,32 @@ const HERO_OFF = START_POS.clone().sub(TARGET)
 const HERO_SPH = new THREE.Spherical().setFromVector3(HERO_OFF)
 const AZ_RANGE = (25 * Math.PI) / 180
 const POLAR_RANGE = 0.17
-/** Chừa thêm bên phải cột chữ (px) và bán kính khối cầu bao khuôn viên dùng khi tránh cột chữ */
-const TEXT_GAP = 48
 /** Khuôn viên (cả cạnh đế) chiếm tối đa chừng này bề ngang ở hero: mô hình là bối cảnh, không phải tiêu điểm */
-const HERO_MAX_W = 0.48
-/** Chừa tối thiểu bên phải khung (px) */
-const RIGHT_GAP = 72
+const HERO_MAX_W = 0.5
 const FIT_RADIUS = BOUND_RADIUS
 const RETURN_RATE = 2.2
 const _sph = new THREE.Spherical()
 const _off = new THREE.Vector3()
 /** S ≤ ngưỡng này là còn ở hero: OrbitControls và tự xoay hoạt động; vượt ngưỡng thì camera chạy theo đường bay. */
 const HERO_EPS = 0.05
-/** Màn rộng: chủ thể nằm ở nửa phải. Vùng trống rộng ~62% khung, tâm dịch sang phải 18% bề rộng. */
-const DESKTOP_REGION = 0.62
-const DESKTOP_SHIFT = 0.18
+/**
+ * Lưới chung của trang (khớp .container-page): tối đa 1440, lề 96 (≥1280), 12 cột, gap 24.
+ * Màn rộng: cột chữ chiếm 5 cột trái, chủ thể nằm giữa vùng 7 cột phải; riêng chương Học phần cột chữ rộng 6 cột nên chủ thể (kiosk) nằm giữa 6 cột phải.
+ */
+const GRID_GAP = 24
+function gridSpan(w: number, from: number, span: number) {
+    const gutter = w >= 1280 ? 96 : THREE.MathUtils.clamp(w * 0.04, 24, 96)
+    const page = Math.min(w, 1440)
+    const col = (page - gutter * 2 - GRID_GAP * 11) / 12
+    const x0 = (w - page) / 2 + gutter + from * (col + GRID_GAP)
+    const x1 = x0 + span * col + (span - 1) * GRID_GAP
+    return { x0, x1, c: (x0 + x1) / 2 }
+}
+/** Tâm vùng chủ thể (px) theo chương: 7 cột phải, riêng quanh S = 1.8 (Học phần) là 6 cột phải. */
+function subjectCenter(w: number, S: number) {
+    const t = band(S, 1.4, 1.8) * (1 - band(S, 2.3, 3))
+    return THREE.MathUtils.lerp(gridSpan(w, 5, 7).c, gridSpan(w, 6, 6).c, t)
+}
 /** Tỉ lệ rộng/cao của vùng trống mà khung chính diện A2 (chế độ tĩnh) được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
 const REF_ASPECT = 1.05
 /** Làm mượt độ tối nền khi có chữ (đích chỉ là 0/1) */
@@ -832,7 +843,8 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
 
     useEffect(() => {
         const { width: w, height: h } = size
-        const regionW = staticMode ? w : w * DESKTOP_REGION
+        const region = gridSpan(w, 5, 7)
+        const regionW = staticMode ? w : region.x1 - region.x0
         const ra = regionW / h
         const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
         // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang
@@ -843,7 +855,7 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
 
         camera.aspect = w / h
         // Cắt khung từ vị trí âm = đẩy cảnh sang phải
-        camera.setViewOffset(w, h, staticMode ? 0 : -w * DESKTOP_SHIFT, 0, w, h)
+        camera.setViewOffset(w, h, staticMode ? 0 : -(region.c - w / 2), 0, w, h)
         camera.far = Math.max(400, distance * 4)
         camera.updateProjectionMatrix()
 
@@ -859,8 +871,6 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
     }, [camera, size, controls, staticMode, heroPos, fitScale, stage])
 }
 
-const _anchor = new THREE.Vector3()
-const _dir = new THREE.Vector3()
 const _look = new THREE.Vector3()
 
 function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk, pointer }: SceneProps) {
@@ -886,7 +896,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const heroPos = useRef(START_POS.clone())
     const fitScale = useRef(1)
     // Tránh cột chữ: zoom (≤1) và độ dịch ngang (px) đã làm mượt, mép phải cột chữ (px)
-    const avoid = useRef({ zoom: 1, shift: 0, textRight: 0 })
+    const avoid = useRef({ zoom: 1, shift: 0 })
     const returning = useRef(false)
     const frame = useRef(0)
     const shadowSig = useRef('')
@@ -912,22 +922,6 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const scene = useThree((s) => s.scene)
 
     useStageFit(controls, staticMode, heroPos, fitScale, sm)
-
-    // Mép phải cột chữ (px): đo khi mount / đổi cỡ, không đọc layout trong lúc vẽ. Chưa có phần tử thì ước lượng theo lề trang + 600px.
-    useEffect(() => {
-        if (staticMode) {
-            avoid.current.textRight = 0
-            return
-        }
-        const measure = () => {
-            const el = document.querySelector('#journey .grid')
-            const r = el?.getBoundingClientRect().right
-            avoid.current.textRight = r && r > 100 ? r : Math.min(size.width * 0.5, Math.min(Math.max(24, size.width * 0.04), 96) + 600)
-        }
-        measure()
-        const t = window.setTimeout(measure, 600)
-        return () => window.clearTimeout(t)
-    }, [size, staticMode])
 
     // Đưa camera về góc nhìn ban đầu (OrbitControls lấy vị trí camera làm điểm xuất phát)
     useLayoutEffect(() => {
@@ -1129,17 +1123,16 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
         // ── Kiosk: khung nhìn dịch sang phải như mọi chương; poster DOM bám 4 góc màn 3D ──
         if (!staticMode) {
-            // Hero: khuôn viên không được chạm cột chữ bên trái. Khối cầu bao chiếu lên màn hình có tâm = tâm khung + độ dịch, bán kính r0·zoom;
-            // nếu mép trái chưa cách mép phải cột chữ + TEXT_GAP thì dịch sang phải (tới sát mép phải khung), chưa đủ thì thu nhỏ (zoom < 1).
+            // Hero: khuôn viên nằm gọn trong vùng 7 cột phải của lưới. Khối cầu bao chiếu lên màn hình có tâm = tâm khung + độ dịch, bán kính r0·zoom;
+            // tâm đặt giữa vùng, quá rộng thì thu nhỏ (zoom < 1).
             const av = avoid.current
             const w = size.width
             let zoomT = 1
-            let shiftT = w * DESKTOP_SHIFT
-            if (!live && av.textRight > 0) {
+            let shiftT = subjectCenter(w, S) - w / 2
+            if (!live) {
                 const dist = camera.position.distanceTo(TARGET)
                 const r0 = (FIT_RADIUS * size.height) / (2 * dist * Math.tan(THREE.MathUtils.degToRad(FOV / 2)))
-                const left = av.textRight + TEXT_GAP
-                const right = w - Math.max(RIGHT_GAP, w * 0.06)
+                const { x0: left, x1: right } = gridSpan(w, 5, 7)
                 const room = right - left
                 zoomT = THREE.MathUtils.clamp(Math.min(room, w * HERO_MAX_W) / (2 * r0), 0.4, 1)
                 const r = r0 * zoomT

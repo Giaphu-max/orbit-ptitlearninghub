@@ -20,7 +20,7 @@ import { useOrbitStore } from '@/store/useOrbitStore'
 export function OrbitJourneyView() {
     return (
         <div className="w-full">
-            <div className="mx-auto flex max-w-5xl flex-col gap-12 px-5 py-8 lg:px-8 lg:py-12">
+            <div className="container-page flex flex-col gap-10 py-8 lg:py-12">
                 <header>
                     <p className="text-eyebrow uppercase text-brand-ink">Tiến độ & Kỹ năng</p>
                     <h1 className="mt-3 text-headline text-foreground">Điểm thưởng đến từ việc hiểu bài</h1>
@@ -29,10 +29,16 @@ export function OrbitJourneyView() {
                     </p>
                 </header>
                 <StatusRow />
-                <Missions />
+                <div className="page-grid gap-y-10">
+                    <div className="col-span-7">
+                        <SkillTree />
+                    </div>
+                    <div className="col-span-5 flex flex-col gap-10">
+                        <Missions />
+                        <Badges />
+                    </div>
+                </div>
                 <FinalTests />
-                <SkillTree />
-                <Badges />
             </div>
         </div>
     )
@@ -80,8 +86,8 @@ function StatusRow() {
     const canFreeze = freezeAvailable(streakState)
 
     return (
-        <section aria-label="Cấp độ và chuỗi ngày học" className="grid gap-5 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <div className="rounded-panel surface-red-deep p-7 shadow-brand">
+        <section aria-label="Cấp độ và chuỗi ngày học" className="page-grid">
+            <div className="col-span-7 rounded-panel surface-red-deep p-7 shadow-brand">
                 <div className="flex items-end justify-between gap-4">
                     <div>
                         <p className="text-eyebrow uppercase text-ink-foreground/80">Cấp độ</p>
@@ -110,7 +116,7 @@ function StatusRow() {
                 </div>
             </div>
 
-            <div className="flex flex-col justify-between rounded-panel border border-border bg-card p-7 shadow-card">
+            <div className="col-span-5 flex flex-col justify-between rounded-panel border border-border bg-card p-7 shadow-card">
                 <div className="flex items-center gap-4">
                     <span className={`flex h-16 w-16 items-center justify-center rounded-full ${streak.count > 0 ? 'bg-brand-soft text-brand-ink' : 'bg-muted text-muted-foreground'}`}>
                         <Flame size={32} className={streak.count > 0 ? 'fill-current' : ''} />
@@ -255,13 +261,13 @@ function Badges() {
                 <h2 id="badges-title" className="text-title text-foreground">Huy hiệu</h2>
                 <p className="font-mono text-sm text-muted-foreground">{earned.filter((id) => shown.some((b) => b.id === id)).length}/{shown.length}</p>
             </div>
-            <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-4 grid grid-cols-3 gap-3">
                 {shown.map((b) => {
                     const has = earned.includes(b.id)
                     const { current, target } = badgeProgress(b, { conceptMastery, quizResults, streak, directorBest, testBest: bestTestRatio(testRecords) })
                     return (
-                        <li key={b.id} className={`flex flex-col gap-4 rounded-card border p-5 transition ${has ? 'border-brand-200/90 bg-card shadow-card ring-1 ring-brand-500/10' : 'border-border/60 bg-muted/25 opacity-65'}`}>
-                            <span className={`flex h-14 w-14 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-muted-foreground/60 border border-border/50'}`}>
+                        <li key={b.id} className={`flex flex-col gap-3 rounded-card border p-4 transition ${has ? 'border-brand-200/90 bg-card shadow-card ring-1 ring-brand-500/10' : 'border-border/60 bg-muted/25 opacity-65'}`}>
+                            <span className={`flex h-12 w-12 items-center justify-center rounded-full ${has ? 'bg-brand-600 text-ink-foreground shadow-brand' : 'bg-card text-muted-foreground/60 border border-border/50'}`}>
                                 {has ? <Award size={28} /> : <Lock size={22} />}
                             </span>
                             <div>

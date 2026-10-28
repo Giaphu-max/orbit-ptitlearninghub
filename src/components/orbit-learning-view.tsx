@@ -42,12 +42,9 @@ export function OrbitLearningView() {
 
     return (
         <div className="w-full">
-            <div className="container-page py-8 lg:py-12">
-                <header className="flex flex-wrap items-end justify-between gap-6">
-                    <div>
-                        <p className="text-eyebrow uppercase text-brand-ink">02 · HỌC PHẦN CHUYÊN NGÀNH</p>
-                        <h1 className="mt-2.5 text-[clamp(2.25rem,6vw,4rem)] font-black leading-[1.02] tracking-[-0.035em] text-foreground">Học theo chặng, có đích.</h1>
-                    </div>
+            <div className="container-page py-8 lg:py-10">
+                <header className="flex flex-wrap items-center justify-between gap-6">
+                    <h1 className="text-headline text-foreground">Học phần</h1>
                     <dl className="flex gap-7">
                         <Total value={String(totals.courses)} label="học phần" />
                         <Total value={String(totals.lessons)} label="bài giảng" />
@@ -59,7 +56,7 @@ export function OrbitLearningView() {
                     <p className="mt-10 rounded-card border border-border bg-card p-6 text-muted-foreground">Chưa có khóa học nào được giảng viên xuất bản.</p>
                 ) : (
                     <>
-                        <div ref={featuredRef} id={`course-${featured.course.id}`} className="section-anchor mt-10">
+                        <div ref={featuredRef} id={`course-${featured.course.id}`} className="section-anchor mt-6">
                             <FeaturedCourse key={featured.course.id} summary={featured} />
                         </div>
 
@@ -99,8 +96,8 @@ export function OrbitLearningView() {
 function Total({ value, label }: { value: string; label: string }) {
     return (
         <div className="flex flex-col">
-            <dd className="order-1 font-mono text-[32px] font-bold tracking-[-0.04em] text-foreground">{value}</dd>
-            <dt className="order-2 text-xs text-muted-foreground">{label}</dt>
+            <dd className="order-1 font-mono text-2xl font-bold tracking-[-0.04em] text-foreground">{value}</dd>
+            <dt className="order-2 text-[13px] text-muted-foreground">{label}</dt>
         </div>
     )
 }

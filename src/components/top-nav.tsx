@@ -238,7 +238,7 @@ export function TopNav() {
                 <div aria-hidden className={`ptit-glass-navbar-pill absolute inset-0 transition-opacity duration-300 ${collapsed ? 'opacity-100' : 'opacity-0'}`} />
 
                 {/* Dạng rộng */}
-                <div className="nav-layer nav-layer-wide gap-4 px-10 lg:gap-6">
+                <div className="nav-layer nav-layer-wide gap-4 px-[var(--page-gutter)] lg:gap-6">
                     <Link to="/" onClick={goHome} className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ" tabIndex={collapsed ? -1 : 0}>
                         <BrandLogo />
                         <span className="leading-tight">

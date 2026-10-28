@@ -62,15 +62,15 @@ export function OrbitHomeView() {
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
             {journey ? (
                 <section id="journey" className="pointer-events-none relative z-10" style={{ height: paged ? '100svh' : `${(CHAPTERS + 1) * 100}svh` }}>
-                    <div className={`container-page ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center pb-16 pt-24'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
-                        <div className="grid w-full max-w-[600px] items-center">
-                            <Panel id="top" index={0} wide>
+                    <div className={`container-page ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center py-[var(--nav-h)]'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
+                        <div className="grid w-full grid-cols-[minmax(0,1fr)] items-center">
+                            <Panel id="top" index={0} cols={5}>
                                 <HeroChapter />
                             </Panel>
                             <Panel id="daily" index={1}>
                                 <DailyChapter />
                             </Panel>
-                            <Panel id="courses" index={2} scroll>
+                            <Panel id="courses" index={2} cols={6}>
                                 <CoursesChapter />
                             </Panel>
                             <Panel id="studio" index={3}>
@@ -81,7 +81,7 @@ export function OrbitHomeView() {
                 </section>
             ) : (
                 <div className="pointer-events-none relative z-10">
-                    <Chapter id="top" index={0} staticMode={staticMode} wide>
+                    <Chapter id="top" index={0} staticMode={staticMode} cols={5}>
                         <HeroChapter />
                     </Chapter>
                     <Chapter id="daily" index={1} staticMode={staticMode}>
@@ -89,7 +89,7 @@ export function OrbitHomeView() {
                             <DailyChapter />
                         </Reveal>
                     </Chapter>
-                    <Chapter id="courses" index={2} staticMode={staticMode}>
+                    <Chapter id="courses" index={2} staticMode={staticMode} cols={6}>
                         <Reveal>
                             <CoursesChapter />
                         </Reveal>
@@ -111,7 +111,7 @@ export function OrbitHomeView() {
             )}
 
             {!staticMode && (
-                <div ref={dockRef} data-dock className="own-layer fixed bottom-5 right-[max(1.5rem,4vw)] z-[6] flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
+                <div ref={dockRef} data-dock className="own-layer fixed bottom-5 right-[var(--page-edge)] z-[6] flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
                     <button
                         type="button"
                         aria-pressed={calm}
@@ -225,23 +225,26 @@ function useDailyLit(stage: RefObject<number>, reduce: boolean) {
 
 // ─── Khung chương ──────────────────────────────────────────────────────────
 
+/** Bề rộng cột chữ theo lưới 12 cột của .container-page (gap 24): 5 cột ở hero, 6 cột ở chương Học phần, còn lại tối đa 520px. */
+type Cols = 5 | 6
+const colWidth = (cols?: Cols) => (cols === 5 ? 'max-w-[calc((100%-264px)*5/12+96px)]' : cols === 6 ? 'max-w-[calc((100%-264px)/2+120px)]' : 'max-w-[520px]')
+
 /**
  * Panel của hành trình: các panel xếp chồng trong một ô lưới; useScrollStage đặt class on / past, CSS (index.css) lo phần hiện ẩn
  * và hiện từng phần tử [data-s] theo nhịp cố định. Panel không `on` thì visibility: hidden (không nhận chuột).
  * Màn hẹp: khung chỉ cao ~56svh nên phần tử [data-compact] (câu dẫn, nhiệm vụ, chú thích) được ẩn để panel vừa khung.
  */
-function Panel({ id, index, wide, scroll, children }: { id: string; index: number; wide?: boolean; scroll?: boolean; children: ReactNode }) {
+function Panel({ id, index, cols, children }: { id: string; index: number; cols?: Cols; children: ReactNode }) {
     return (
-        <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${wide ? 'max-w-[600px]' : 'max-w-[520px]'}`}>
-            {/* scroll: phần tử con không co lại khi cột thấp; thiếu chỗ thì cột tự cuộn bên trong */}
-            <div className={`pointer-events-auto ${scroll ? '-m-1 flex max-h-[calc(100svh-10rem)] flex-col overflow-y-auto p-1 [&>*]:shrink-0' : ''}`}>{children}</div>
+        <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${colWidth(cols)}`}>
+            <div className="pointer-events-auto">{children}</div>
         </div>
     )
 }
 
 /** Không có hành trình (giảm chuyển động): mỗi chương một section cao tối thiểu 100vh, cột chữ bên trái (desktop) hoặc nằm dưới canvas (màn hẹp). */
-function Chapter({ id, index, staticMode, wide, children }: { id: string; index: number; staticMode: boolean; wide?: boolean; children: ReactNode }) {
-    const width = wide ? 'max-w-[600px]' : 'max-w-[520px]'
+function Chapter({ id, index, staticMode, cols, children }: { id: string; index: number; staticMode: boolean; cols?: Cols; children: ReactNode }) {
+    const width = colWidth(cols)
     return (
         <section
             id={id}
@@ -282,7 +285,7 @@ const Title = ({ id, children }: { id?: string; children: string }) => (
         ))}
     </h2>
 )
-const Lead = ({ children }: { children: ReactNode }) => <p data-s data-compact className="mb-6 mt-4 max-w-[48ch] text-[17px] leading-relaxed text-muted-foreground">{children}</p>
+const Lead = ({ children }: { children: ReactNode }) => <p data-s data-compact className="mb-6 mt-4 max-w-[48ch] [@media(max-height:860px)]:mb-4 [@media(max-height:860px)]:mt-3 text-[17px] leading-relaxed text-muted-foreground">{children}</p>
 /** Thẻ sáng (nền card) theo giao diện, nổi lên trên cảnh 3D */
 const lightCard = 'rounded-[20px] border border-border bg-card/95 shadow-raised'
 
@@ -302,7 +305,7 @@ function HeroChapter() {
 
     return (
         <div className="flex min-w-0 flex-col gap-6">
-            <h1 data-s className="text-[clamp(2.75rem,4.6vw,4.75rem)] font-black leading-[0.96] tracking-[-0.045em] text-strong [text-wrap:balance]">
+            <h1 data-s className="text-[clamp(2.5rem,4.1vw,4.25rem)] font-black leading-[0.96] tracking-[-0.045em] text-strong [text-wrap:balance]">
                 Chào {name}.
                 <br />
                 Hôm nay chỉ cần
@@ -360,7 +363,7 @@ function CoursesChapter() {
             <Eyebrow>02 · Học phần chuyên ngành</Eyebrow>
             <Title id="courses-title">Học chủ động cùng bài giảng tương tác và Trợ giảng AI.</Title>
             <Lead>Video tự dừng ở các mốc quan trọng để hỏi bạn. Chỗ nào chưa rõ, hỏi Trợ giảng AI ngay tại đó rồi bấm để tua tới đúng giây thầy cô giảng.</Lead>
-            <div data-s className="mb-4">
+            <div data-s className="mb-3">
                 <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-mono font-medium shadow-2xs backdrop-blur-sm">
                     <span className="h-1.5 w-1.5 rounded-full bg-brand-600 animate-pulse" aria-hidden />
                     <span>
@@ -380,12 +383,12 @@ function CoursesChapter() {
                     <MainCourseCard summary={main} />
                 </div>
             )}
-            {rest.map((c) => (
-                <div data-s key={c.course.id} className="mt-3">
+            {rest.slice(0, 2).map((c) => (
+                <div data-s key={c.course.id} className="mt-2.5">
                     <CourseRow summary={c} />
                 </div>
             ))}
-            <Link data-s to="/learning" className="mt-4 inline-flex items-center gap-1 self-start border-t border-border pt-3.5 text-sm font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+            <Link data-s to="/learning" className="mt-3 inline-flex items-center gap-1 self-start border-t border-border pt-3 text-sm font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                 Xem tất cả học phần <ArrowRight size={14} />
             </Link>
         </>
@@ -400,33 +403,32 @@ const kioskHover = (id: string) => ({
     onBlur: () => setKioskCourse(null),
 })
 
-/** Khóa đang học: thẻ lớn nhất cột, bìa tràn ngang chìm vào nền thẻ ở mép dưới. */
+/** Khóa đang học: bìa vuông 96px bên trái; bên phải eyebrow, tên khóa, bài tiếp theo, rồi thanh % + nút trên một hàng. */
 function MainCourseCard({ summary }: { summary: CourseSummary }) {
     const { course, lessons: ls, pct, curIndex, status } = summary
     const lesson = ls[curIndex] ?? ls[0]
     const action = status === 'done' ? 'Xem lại' : pct > 0 ? 'Học tiếp' : 'Bắt đầu'
     return (
-        <div {...kioskHover(course.id)} className={`${lightCard} group relative overflow-hidden transition duration-base ease-out focus-within:ring-2 focus-within:ring-ring/70 hover:-translate-y-0.5 hover:border-brand-300`}>
+        <div {...kioskHover(course.id)} className={`${lightCard} group relative flex gap-4 p-4 transition duration-base ease-out focus-within:ring-2 focus-within:ring-ring/70 hover:-translate-y-0.5 hover:border-brand-300`}>
             <Link to={`/learning?course=${course.id}`} aria-label={`Xem khóa ${course.title}`} className="absolute inset-0 z-0 rounded-[20px] focus-visible:outline-none" />
-            <div className="pointer-events-none relative h-32 [@media(max-height:780px)]:h-[84px]">
+            <span className="pointer-events-none relative block h-24 w-24 shrink-0 overflow-hidden rounded-xl">
                 <CourseArt course={course} className="h-full w-full" />
-                <span aria-hidden className="absolute inset-0 bg-gradient-to-b from-card/0 from-40% to-card" />
-            </div>
-            <div className="pointer-events-none relative flex flex-col gap-2.5 px-[22px] pb-[22px] pt-1">
-                <small className="font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-ink">{courseKicker(summary)}</small>
-                <b className="text-2xl font-extrabold leading-tight tracking-[-0.02em]">{course.title}</b>
+            </span>
+            <div className="pointer-events-none relative flex min-w-0 flex-1 flex-col gap-1.5">
+                <small className="truncate font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-ink">{courseKicker(summary)}</small>
+                <b className="text-xl font-extrabold leading-tight tracking-[-0.02em]">{course.title}</b>
                 {lesson && (
-                    <span className="text-[13px] text-muted-foreground">
+                    <span className="truncate text-[13px] text-muted-foreground">
                         Tiếp theo: <b className="font-semibold text-foreground">{lesson.title}</b>
                     </span>
                 )}
-                <span className="flex items-center gap-3">
+                <span className="mt-1 flex items-center gap-3">
                     <span className="h-[5px] flex-1 overflow-hidden rounded bg-muted" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ ${course.title}`}>
                         <span className="block h-full rounded bg-brand-600" style={{ width: `${pct}%` }} />
                     </span>
-                    <span className="font-mono text-xl font-bold text-brand-ink">{pct}%</span>
+                    <span className="font-mono text-lg font-bold text-brand-ink">{pct}%</span>
                     {lesson && (
-                        <Link to={`/lesson/${lesson.id}`} data-vt={`lesson-${lesson.id}`} className="pointer-events-auto relative z-10 inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-brand-600 px-4 py-[11px] text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                        <Link to={`/lesson/${lesson.id}`} data-vt={`lesson-${lesson.id}`} className="pointer-events-auto relative z-10 inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-brand-600 px-4 py-[9px] text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                             <Play size={12} className="fill-current" /> {action}
                         </Link>
                     )}
@@ -436,26 +438,21 @@ function MainCourseCard({ summary }: { summary: CourseSummary }) {
     )
 }
 
-/** Hàng gọn cho các khóa còn lại: thumbnail 64px, subject · số bài, tên khóa, bên phải "Bắt đầu →" hoặc %. */
+/** Hàng một dòng cho các khóa còn lại: ô 48px, tên khóa, bên phải "Bắt đầu →" hoặc %. */
 function CourseRow({ summary }: { summary: CourseSummary }) {
-    const { course, lessons: ls, status, pct } = summary
+    const { course, status, pct } = summary
     return (
         <Link
             to={`/learning?course=${course.id}`}
             aria-label={`Xem khóa ${course.title}`}
             {...kioskHover(course.id)}
-            className={`${lightCard} group grid grid-cols-[64px_1fr_auto] items-center gap-3.5 p-2.5 transition duration-base ease-out hover:-translate-y-0.5 hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70`}
+            className={`${lightCard} group grid grid-cols-[48px_1fr_auto] items-center gap-3.5 p-2 transition duration-base ease-out hover:-translate-y-0.5 hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70`}
         >
-            <span className={`block h-16 w-16 overflow-hidden rounded-xl ${status === 'new' ? 'saturate-[.5]' : ''}`}>
+            <span className={`block h-12 w-12 overflow-hidden rounded-lg ${status === 'new' ? 'saturate-[.5]' : ''}`}>
                 <CourseArt course={course} className="h-full w-full" />
             </span>
-            <span className="min-w-0">
-                <small className="block truncate font-mono text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-ink">
-                    {course.subject} · {ls.length} bài
-                </small>
-                <b className="mt-1 line-clamp-2 block text-[15px] leading-snug">{course.title}</b>
-            </span>
-            <span className="pr-1 font-mono text-[13px] text-muted-foreground">{pct > 0 ? `${pct}%` : 'Bắt đầu →'}</span>
+            <b className="truncate text-[15px] leading-snug">{course.title}</b>
+            <span className="pr-2 font-mono text-[13px] text-muted-foreground">{pct > 0 ? `${pct}%` : 'Bắt đầu →'}</span>
         </Link>
     )
 }
