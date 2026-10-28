@@ -43,7 +43,7 @@ type Phase =
       }
     | { kind: 'result'; attempt: TestAttempt; questions?: TestQuestion[]; picks?: Record<string, number>; xp?: number }
 
-/** /test/:courseId – test tổng hợp cuối chương: câu từ ngân hàng của khóa, trộn thứ tự, có giờ. Kết quả cập nhật cây kỹ năng và XP. */
+/** /test/:courseId – test tổng hợp cuối chương: câu từ ngân hàng của khóa, trộn thứ tự, có giờ. Kết quả cập nhật bản đồ kỹ năng và XP. */
 export function OrbitTestView() {
     const { courseId } = useParams()
     const course = courseId ? getCourse(courseId) : undefined
@@ -130,8 +130,8 @@ export function OrbitTestView() {
             context: `Test cuối chương · ${course.title}`,
             headline: correct / attempt.total >= TEST_PASS_RATIO ? 'Nắm chắc cả chương.' : 'Biết chỗ hổng là đã đi được nửa đường.',
             rows: rows.filter((r) => r.xp > 0 || rows.length === 1),
-            next: weakestStep ?? { label: 'Xem cây kỹ năng', to: '/journey' },
-        }, { source: 'test', next: weakestStep ?? { label: 'Xem cây kỹ năng', to: '/journey' } })
+            next: weakestStep ?? { label: 'Xem bản đồ kỹ năng', to: '/journey' },
+        }, { source: 'test', next: weakestStep ?? { label: 'Xem bản đồ kỹ năng', to: '/journey' } })
         setPhase({ kind: 'result', attempt, questions, picks, xp })
         window.scrollTo(0, 0)
     }
@@ -534,7 +534,7 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
 
             <section className="mt-10" aria-labelledby="mastery-title">
                 <h2 id="mastery-title" className="text-title text-foreground">Mức nắm vững từng khái niệm</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Thanh là mức sau test, đã gộp với kết quả học trước đó. Cây kỹ năng được cập nhật theo đây.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Thanh là mức sau test, đã gộp với kết quả học trước đó. Bản đồ kỹ năng được cập nhật theo đây.</p>
                 <ul className="mt-5 flex flex-col gap-3">
                     {openConcepts.map((c) => {
                         const after = Math.round(c.after * 100)
@@ -655,7 +655,7 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
                     <RotateCcw size={16} /> Làm lại với bộ câu khác
                 </button>
                 <Link to="/journey" className="rounded-full border border-border bg-card px-6 py-3 text-sm font-bold text-foreground transition hover:bg-muted">
-                    Xem cây kỹ năng
+                    Xem bản đồ kỹ năng
                 </Link>
             </div>
         </>

@@ -504,7 +504,7 @@ function NextCard({ data }: { data: RecapData }) {
                 {next.unlocked.length > 0 && (
                     <>
                         {' '}
-                        Vừa mở trên cây kỹ năng: <b className="text-foreground">{next.unlocked.map((u) => u.name).join(', ')}</b> (nhờ nắm {[...new Set(next.unlocked.map((u) => u.because))].join('; ')} từ {Math.round(UNLOCK_THRESHOLD * 100)}%).
+                        Vừa mở trên bản đồ kỹ năng: <b className="text-foreground">{next.unlocked.map((u) => u.name).join(', ')}</b> (nhờ nắm {[...new Set(next.unlocked.map((u) => u.because))].join('; ')} từ {Math.round(UNLOCK_THRESHOLD * 100)}%).
                     </>
                 )}
             </p>

@@ -35,7 +35,7 @@ export interface RewardEvent {
     xpAfter: number
     badge?: Badge
     mastery?: { name: string; from: number; to: number }
-    /** Tên khái niệm vừa được mở khóa trên cây kỹ năng */
+    /** Tên khái niệm vừa được mở khóa trên bản đồ kỹ năng */
     unlocked: string[]
     streak: number
     next: RewardNext

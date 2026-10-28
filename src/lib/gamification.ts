@@ -161,7 +161,7 @@ export const MISSIONS: Mission[] = [
     { id: 'test', title: 'Làm một bài test cuối chương', hint: 'Nộp bài test để biết khái niệm nào còn hổng', target: 1, rewardXp: 25, progress: (d) => d.testsTaken },
 ]
 
-// ─── Cây kỹ năng ───────────────────────────────────────────────────────────
+// ─── Bản đồ kỹ năng ───────────────────────────────────────────────────────────
 
 /** Khái niệm nâng cao mở khi mọi khái niệm nền đạt mức này. */
 export const UNLOCK_THRESHOLD = 0.8

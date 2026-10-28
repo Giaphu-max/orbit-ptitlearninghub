@@ -160,7 +160,7 @@ interface OrbitState {
     claimMission: (missionId: string) => number
     /** Ghi điểm một lần chụp ở Virtual Director; trả về XP được cộng (0 nếu chưa vượt kỷ lục hoặc dưới 70 điểm) */
     recordDirectorScore: (score: number) => number
-    /** Ghi kết quả test cuối chương, cập nhật mức nắm vững (cây kỹ năng) và XP; trả về số XP được cộng */
+    /** Ghi kết quả test cuối chương, cập nhật mức nắm vững (bản đồ kỹ năng) và XP; trả về số XP được cộng */
     recordTestResult: (input: { courseId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
     /** Ghi kết quả test cuối chặng của một bài (cùng cách cập nhật mức nắm vững và XP như test cuối chương); trả về XP được cộng */
     recordCheckpointResult: (input: { lessonId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
@@ -252,7 +252,7 @@ function applyTest(s: OrbitState, prev: TestRecord | undefined, answers: TestAns
         const before = s.conceptMastery[a.conceptId]
         // Test cuối chặng có thể hỏi hai câu cùng khái niệm: câu sau tính tiếp trên mức vừa cập nhật
         const after = masteryAfterTest(conceptMastery[a.conceptId], a)
-        // Chưa có dữ liệu về khái niệm và bỏ trống: không có bằng chứng gì để ghi vào cây kỹ năng
+        // Chưa có dữ liệu về khái niệm và bỏ trống: không có bằng chứng gì để ghi vào bản đồ kỹ năng
         if (before !== undefined || !a.blank) conceptMastery[a.conceptId] = after
         return { conceptId: a.conceptId, correct: a.correct, blank: a.blank, before: before ?? null, after }
     })

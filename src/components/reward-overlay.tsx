@@ -334,7 +334,7 @@ function RewardScreen({ event, onClose }: { event: RewardEvent; onClose: () => v
                         <span className="text-[15px] leading-snug">
                             {event.unlocked.length > 0 && (
                                 <>
-                                    Đã mở khóa <strong>{event.unlocked.join(', ')}</strong> trên cây kỹ năng ·{' '}
+                                    Đã mở khóa <strong>{event.unlocked.join(', ')}</strong> trên bản đồ kỹ năng ·{' '}
                                 </>
                             )}
                             chuỗi học <strong>{event.streak} ngày</strong>

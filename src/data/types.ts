@@ -36,7 +36,7 @@ export interface Concept {
     definition: string
     /** Đoạn video giảng khái niệm này, dùng để tua lại khi sinh viên trả lời sai */
     segment: { start: Seconds; end: Seconds }
-    /** Khái niệm nền phải nắm trước (cây kỹ năng mở theo đây) */
+    /** Khái niệm nền phải nắm trước (bản đồ kỹ năng mở theo đây) */
     prerequisiteIds: string[]
 }
 

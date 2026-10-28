@@ -1,28 +1,21 @@
-import { Fragment, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'motion/react'
-import { Award, Check, ChevronDown, ChevronRight, Flame, Lock } from 'lucide-react'
-import { badges, courses, getLesson } from '@/data'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Award, Check, CheckCircle2, ChevronDown, Flame, Lock, Sparkles, Target, Video } from 'lucide-react'
+import { badges } from '@/data'
 import { CLASS_NAME, CLASSMATE_XP } from '@/data/leaderboard'
-import {
-    badgeProgress,
-    bestTestRatio,
-    buildSkillTree,
-    freezeAvailable,
-    levelProgress,
-    levelTitle,
-    UNLOCK_THRESHOLD,
-    visibleStreak,
-    type SkillNode,
-} from '@/lib/gamification'
+import { badgeProgress, bestTestRatio, buildSkillTree, levelProgress, levelTitle, UNLOCK_THRESHOLD, visibleStreak, type SkillNode } from '@/lib/gamification'
 import { primaryCourse, STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
-import { NextMission } from '@/components/missions'
+import { CourseArt } from '@/components/courses/course-cover'
+import { MissionTiles } from '@/components/missions'
+import { MASTERY_PER_CORRECT, SkillMap } from '@/components/journey/skill-map'
 import { useOrbitStore, xpBalance } from '@/store/useOrbitStore'
 
-/** Mỗi câu đúng nâng mức nắm vững khoảng chừng này (ước lượng cho dòng "Còn N câu đúng nữa"). */
-const MASTERY_PER_CORRECT = 0.15
+type Tab = 'map' | 'badges' | 'rank'
 
-/** /journey – dải trạng thái (tầng 2), khái niệm nên ôn tiếp (tầng 1), cây kỹ năng, và cột phải: việc nên làm, huy hiệu, bảng xếp hạng lớp. */
+/**
+ * /journey – 3 bước đánh số (mockup ptit-journey-v2): ① việc nên làm bây giờ (thẻ đỏ tầng 1, 8 cột) và ② nhiệm vụ hôm nay (4 cột) cùng một hàng,
+ * ③ xem lại tiến độ (12 cột) với 3 tab: Bản đồ kỹ năng | Huy hiệu | Xếp hạng lớp. Trạng thái cấp và chuỗi ngày là hai viên nhỏ ở header.
+ */
 export function OrbitJourneyView() {
     const mastery = useOrbitStore((s) => s.conceptMastery)
     const nodes = buildSkillTree(mastery)
@@ -30,153 +23,105 @@ export function OrbitJourneyView() {
     return (
         <div className="w-full">
             <div className="container-wide flex flex-col gap-7 py-8 lg:py-12">
-                <header>
-                    <p className="text-eyebrow uppercase text-brand-ink">Tiến độ & Kỹ năng</p>
-                    <h1 className="mt-3 text-headline text-foreground">Điểm thưởng đến từ việc hiểu bài</h1>
-                    <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-                        XP chỉ tính khi bạn trả lời đúng, sửa được lỗi sai hoặc hoàn thành bài. Xem video lâu hay bấm nhiều không làm tăng điểm.
-                    </p>
-                </header>
-                <StatusBand nodes={nodes} />
-                <div className="page-grid items-start gap-y-8">
-                    <div className="col-span-7 flex flex-col gap-[18px]">
-                        {focus && <FocusCard node={focus} nodes={nodes} />}
-                        <SkillTree nodes={nodes} focusId={focus?.concept.id} />
-                    </div>
-                    <aside className="col-span-5 flex flex-col gap-[22px] lg:sticky lg:top-[calc(var(--nav-h)+24px)]">
-                        <section aria-labelledby="next-title">
-                            <Label id="next-title">Việc nên làm tiếp</Label>
-                            <NextMission />
-                        </section>
-                        <BadgesCard />
-                        <Leaderboard />
-                    </aside>
+                <Header />
+                <div className="page-grid items-stretch gap-y-8">
+                    <section aria-labelledby="step-1" className="col-span-8 flex flex-col [&>a]:flex-1">
+                        <Step id="step-1" n={1} red hint="khái niệm sắp mở khóa bài mới">Việc nên làm bây giờ</Step>
+                        {focus ? <FocusCard node={focus} nodes={nodes} /> : <p className="rounded-card border border-border bg-card p-6 text-muted-foreground">Chưa có khái niệm nào.</p>}
+                    </section>
+                    <section aria-labelledby="step-2" className="col-span-4 flex flex-col">
+                        <Step id="step-2" n={2}>Nhiệm vụ hôm nay</Step>
+                        <MissionTiles />
+                    </section>
+                    <Review nodes={nodes} />
                 </div>
-                <FinalTests />
             </div>
         </div>
     )
 }
 
-/** Nhãn khối: tiêu đề 15px/800 navy, số mono muted, link đỏ bên phải. */
-function Label({ id, count, action, children }: { id?: string; count?: string; action?: React.ReactNode; children: React.ReactNode }) {
+function Step({ id, n, red, hint, children }: { id: string; n: number; red?: boolean; hint?: string; children: ReactNode }) {
     return (
-        <div className="mb-3 flex items-baseline justify-between">
-            <h2 id={id} className="text-[15px] font-extrabold tracking-tight text-strong">
-                {children}
-                {count && <em className="ml-1.5 font-mono text-[13px] font-bold not-italic text-muted-foreground">{count}</em>}
-            </h2>
-            {action}
-        </div>
+        <h2 id={id} className="mb-3 flex items-center gap-2.5 text-[15px] font-extrabold text-strong">
+            <span className={`grid h-6 w-6 place-items-center rounded-full font-mono text-xs font-bold text-ink-foreground ${red ? 'bg-brand-600' : 'bg-ink'}`}>{n}</span>
+            {children}
+            {hint && <small className="text-[13.5px] font-medium text-muted-foreground">· {hint}</small>}
+        </h2>
     )
 }
 
-const linkBtn = 'text-[13.5px] font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70'
+// ─── Header ────────────────────────────────────────────────────────────────
 
-// ─── Dải trạng thái (tầng 2): cấp độ | chuỗi ngày | khái niệm vững + huy hiệu ─────────
-
-function StatusBand({ nodes }: { nodes: SkillNode[] }) {
+function Header() {
     const xp = useOrbitStore((s) => s.xp)
     const balance = useOrbitStore((s) => xpBalance(s))
-    const streakState = useOrbitStore((s) => s.streak)
-    const earned = useOrbitStore((s) => s.earnedBadgeIds)
+    const streak = visibleStreak(useOrbitStore((s) => s.streak))
     const lp = levelProgress(xp)
-    const streak = visibleStreak(streakState)
-    const canFreeze = freezeAvailable(streakState)
-    const strong = nodes.filter((n) => n.mastery >= UNLOCK_THRESHOLD).length
-    const shown = badges.filter((b) => !b.hidden || earned.includes(b.id))
-    const gotBadges = shown.filter((b) => earned.includes(b.id)).length
-    const RING = 169.6
-
+    const R = 14
+    const C = 2 * Math.PI * R
     return (
-        <section aria-label="Trạng thái" className="grid grid-cols-[1.4fr_auto_1fr_auto_0.9fr] items-center gap-7 rounded-card border border-border bg-card px-7 py-[22px] shadow-card">
-            <div className="flex items-center gap-[18px]">
-                <span className="relative h-16 w-16 shrink-0" role="img" aria-label={`Cấp ${lp.level}`}>
-                    <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90" aria-hidden>
-                        <defs>
-                            <linearGradient id="lv-grad" x1="0" x2="1" y1="0" y2="1">
-                                <stop offset="0" style={{ stopColor: 'var(--mm-blue)' }} />
-                                <stop offset="1" style={{ stopColor: 'var(--mm-teal)' }} />
-                            </linearGradient>
-                        </defs>
-                        <circle cx="32" cy="32" r="27" fill="none" strokeWidth="6" className="stroke-muted" />
-                        <motion.circle
-                            cx="32"
-                            cy="32"
-                            r="27"
-                            fill="none"
-                            stroke="url(#lv-grad)"
-                            strokeWidth="6"
-                            strokeLinecap="round"
-                            strokeDasharray={RING}
-                            initial={{ strokeDashoffset: RING }}
-                            animate={{ strokeDashoffset: RING * (1 - lp.ratio) }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                        />
-                    </svg>
-                    <b className="absolute inset-0 grid place-items-center font-mono text-[22px] font-extrabold text-strong">{lp.level}</b>
-                </span>
-                <span className="min-w-0 flex-1">
-                    <b className="block text-[17px] font-extrabold text-strong">
-                        Cấp {lp.level} · {levelTitle(lp.level)}
-                    </b>
-                    <span
-                        className="relative my-2.5 block h-[7px] overflow-hidden rounded bg-muted"
-                        role="progressbar"
-                        aria-valuemin={0}
-                        aria-valuemax={lp.span}
-                        aria-valuenow={lp.into}
-                        aria-label={`Tiến độ lên cấp ${lp.level + 1}`}
+        <header className="flex items-end justify-between gap-10">
+            <div>
+                <p className="text-eyebrow uppercase text-brand-ink">Tiến độ & Kỹ năng</p>
+                <h1 className="mt-3 flex items-center gap-3 text-[40px] font-black leading-[1.1] tracking-[-0.03em] text-strong">
+                    Điểm thưởng đến từ việc hiểu bài
+                    <Tip
+                        label="Cách tính XP"
+                        text="XP chỉ tính khi bạn trả lời đúng, sửa được lỗi sai hoặc hoàn thành bài. Xem video lâu hay bấm nhiều không làm tăng điểm."
+                        className="relative grid h-[26px] w-[26px] place-items-center rounded-full border-[1.5px] border-border bg-card font-sans text-[13px] font-bold tracking-normal text-muted-foreground"
+                        width="w-[300px]"
+                        center
                     >
-                        <motion.i
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.round(lp.ratio * 100)}%` }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                            className="absolute inset-y-0 left-0 rounded"
-                            style={{ background: 'linear-gradient(90deg, var(--mm-blue), var(--mm-teal))' }}
-                        />
+                        ?
+                    </Tip>
+                </h1>
+            </div>
+            <div className="flex shrink-0 gap-2.5">
+                <Tip
+                    label="Chi tiết XP"
+                    text={`Tổng đã kiếm ${xp.toLocaleString('vi-VN')} XP · còn tiêu được ${balance.toLocaleString('vi-VN')} XP`}
+                    className="relative flex items-center gap-2.5 rounded-full border border-border bg-card py-2 pl-2 pr-3.5 text-[13px] text-muted-foreground"
+                    width="w-max"
+                    right
+                >
+                    <span className="relative h-[34px] w-[34px]" role="img" aria-label={`Cấp ${lp.level}`}>
+                        <svg width="34" height="34" viewBox="0 0 34 34" className="-rotate-90" aria-hidden>
+                            <circle cx="17" cy="17" r={R} fill="none" strokeWidth="4" className="stroke-muted" />
+                            <circle cx="17" cy="17" r={R} fill="none" strokeWidth="4" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - lp.ratio)} className="stroke-mm-blue" />
+                        </svg>
+                        <b className="absolute inset-0 grid place-items-center font-mono text-[13px] font-extrabold text-strong">{lp.level}</b>
                     </span>
-                    <small className="font-mono text-[12.5px] text-muted-foreground">
-                        <span tabIndex={0} className="group/tip relative cursor-help border-b border-dashed border-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
-                            {xp.toLocaleString('vi-VN')} / {(xp + lp.toNext).toLocaleString('vi-VN')} XP
-                            <span role="tooltip" className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-10 whitespace-nowrap rounded-lg bg-ink px-2.5 py-[7px] font-sans text-xs font-semibold text-ink-foreground opacity-0 transition duration-base group-hover/tip:opacity-100 group-focus-visible/tip:opacity-100">
-                                Tổng đã kiếm {xp.toLocaleString('vi-VN')} XP · còn tiêu được {balance.toLocaleString('vi-VN')} XP
-                            </span>
-                        </span>{' '}
-                        · còn {lp.toNext.toLocaleString('vi-VN')} XP lên Cấp {lp.level + 1} “{levelTitle(lp.level + 1)}”
-                    </small>
+                    <span className="text-left">
+                        <b className="block font-sans text-[14.5px] font-extrabold leading-tight text-strong">{levelTitle(lp.level)}</b>
+                        còn {lp.toNext.toLocaleString('vi-VN')} XP lên cấp {lp.level + 1}
+                    </span>
+                </Tip>
+                <span className="flex items-center gap-2.5 rounded-full border border-border bg-card py-2 pl-2 pr-3.5 text-[13px] text-muted-foreground">
+                    <span className={`grid h-[34px] w-[34px] place-items-center rounded-full ${streak.count > 0 ? 'bg-brand-50 text-brand-ink' : 'bg-muted text-muted-foreground'}`}>
+                        <Flame size={17} className={streak.count > 0 ? 'fill-current' : ''} />
+                    </span>
+                    <span>
+                        <b className="block text-[14.5px] font-extrabold leading-tight text-strong">{streak.count} ngày</b>chuỗi học
+                    </span>
                 </span>
             </div>
-            <span aria-hidden className="h-14 w-px bg-border" />
-            <div className="flex items-center gap-3.5">
-                <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-[14px] ${streak.count > 0 ? 'bg-brand-50 text-brand-ink' : 'bg-muted text-muted-foreground'}`}>
-                    <Flame size={24} className={streak.count > 0 ? 'fill-current' : ''} />
-                </span>
-                <span>
-                    <b className="block font-mono text-[22px] font-extrabold text-strong">{streak.count} ngày</b>
-                    <small className="text-[13px] text-muted-foreground">chuỗi học · {canFreeze ? 'còn 1 lần đóng băng tuần này' : 'đã dùng lần đóng băng tuần này'}</small>
-                </span>
-            </div>
-            <span aria-hidden className="h-14 w-px bg-border" />
-            <div className="flex items-center gap-[18px]">
-                <span>
-                    <small className="block text-[13px] text-muted-foreground">Khái niệm vững</small>
-                    <b className="font-mono text-lg font-extrabold text-strong">
-                        {strong}/{nodes.length}
-                    </b>
-                </span>
-                <span>
-                    <small className="block text-[13px] text-muted-foreground">Huy hiệu</small>
-                    <b className="font-mono text-lg font-extrabold text-strong">
-                        {gotBadges}/{shown.length}
-                    </b>
-                </span>
-            </div>
-        </section>
+        </header>
     )
 }
 
-// ─── Nên ôn tiếp (tầng 1) ──────────────────────────────────────────────────
+/** Phần tử có tooltip nền tối: hiện khi rê chuột hoặc focus (tabIndex 0). */
+function Tip({ label, text, className, width, center, right, children }: { label: string; text: string; className: string; width: string; center?: boolean; right?: boolean; children: ReactNode }) {
+    return (
+        <span tabIndex={0} aria-label={label} className={`group/tip cursor-help focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${className}`}>
+            {children}
+            <span role="tooltip" className={`pointer-events-none absolute top-[calc(100%+10px)] z-20 -translate-y-1 rounded-[10px] bg-ink px-3 py-2.5 text-left font-sans text-[13px] font-medium leading-[1.5] tracking-normal text-ink-foreground opacity-0 transition duration-base group-hover/tip:translate-y-0 group-hover/tip:opacity-100 group-focus-visible/tip:translate-y-0 group-focus-visible/tip:opacity-100 ${width} ${center ? 'left-1/2 -translate-x-1/2' : right ? 'right-0' : 'left-0'}`}>
+                {text}
+            </span>
+        </span>
+    )
+}
+
+// ─── Bước 1: nên ôn tiếp ───────────────────────────────────────────────────
 
 /** Khái niệm nên ôn: đã mở khóa, chưa đạt ngưỡng, mức cao nhất (ưu tiên cái chặn khái niệm sau); không có thì khái niệm yếu nhất. */
 function pickFocus(nodes: SkillNode[]): SkillNode | undefined {
@@ -191,265 +136,261 @@ function FocusCard({ node, nodes }: { node: SkillNode; nodes: SkillNode[] }) {
     const after = nodes.find((o) => o.missing.some((m) => m.id === node.concept.id))
     const left = Math.max(1, Math.ceil((UNLOCK_THRESHOLD - node.mastery) / MASTERY_PER_CORRECT))
     const reached = node.mastery >= UNLOCK_THRESHOLD
-    const C = 219.9
+    const C = 295.3
     return (
         <Link
             to={`/lesson/${node.lessonId}?t=${Math.floor(node.concept.segment.start)}`}
-            className="tier-1-bob surface-red grid grid-cols-[auto_1fr_auto] items-center gap-[22px] rounded-[22px] px-[26px] py-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+            className="surface-red grid grid-cols-[auto_1fr] items-center gap-7 rounded-3xl px-[34px] py-[30px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
         >
-            <span className="relative h-[84px] w-[84px]" role="img" aria-label={`Nắm vững ${pct}%`}>
-                <svg width="84" height="84" viewBox="0 0 84 84" className="-rotate-90" aria-hidden>
-                    <circle cx="42" cy="42" r="35" fill="none" strokeWidth="8" style={{ stroke: 'hsl(var(--ink-foreground) / 0.25)' }} />
-                    <circle cx="42" cy="42" r="35" fill="none" strokeWidth="8" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - node.mastery)} style={{ stroke: 'hsl(var(--ink-foreground))' }} />
+            <span className="relative h-28 w-28" role="img" aria-label={`Nắm vững ${pct}%`}>
+                <svg width="112" height="112" viewBox="0 0 112 112" className="-rotate-90" aria-hidden>
+                    <circle cx="56" cy="56" r="47" fill="none" strokeWidth="10" style={{ stroke: 'hsl(var(--ink-foreground) / 0.25)' }} />
+                    <circle cx="56" cy="56" r="47" fill="none" strokeWidth="10" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - node.mastery)} style={{ stroke: 'hsl(var(--ink-foreground))' }} />
                 </svg>
-                <b className="absolute inset-0 grid place-items-center font-mono text-xl font-extrabold">{pct}%</b>
+                <b className="absolute inset-0 grid place-items-center font-mono text-[26px] font-extrabold">{pct}%</b>
             </span>
             <span>
                 <small className="text-xs font-bold uppercase tracking-[0.12em] text-ink-foreground/85">Nên ôn tiếp</small>
-                <h3 className="mt-1.5 text-2xl font-black leading-tight tracking-[-0.02em]">{node.concept.name}</h3>
-                {!reached && (
-                    <p className="mt-2 text-[14.5px] leading-normal text-ink-foreground/90">
-                        {after ? <>Đạt {Math.round(UNLOCK_THRESHOLD * 100)}% để mở “{after.concept.name}”. </> : <>Đạt {Math.round(UNLOCK_THRESHOLD * 100)}% để nắm vững. </>}Còn {left} câu đúng nữa.
-                    </p>
+                <h3 className="mt-2 text-[34px] font-black leading-[1.12] tracking-[-0.025em]">{node.concept.name}</h3>
+                {!reached && <p className="mt-2.5 text-[15.5px] leading-normal text-ink-foreground/90">Còn {left} câu đúng nữa là đạt {Math.round(UNLOCK_THRESHOLD * 100)}%.</p>}
+                {after && (
+                    <span className="mt-3.5 inline-flex items-center gap-2 rounded-full border border-ink-foreground/30 bg-ink-foreground/15 px-3 py-1.5 text-[13.5px] font-semibold">
+                        <Lock size={14} /> Mở khóa “{after.concept.name}”
+                    </span>
                 )}
+                <br />
+                <span className="tier-1-bob mt-[22px] inline-flex items-center gap-2 rounded-[14px] bg-ink-foreground px-[22px] py-3.5 text-base font-extrabold text-brand-ink">Ôn khái niệm này →</span>
             </span>
-            <span className="inline-flex items-center gap-2 rounded-[14px] bg-ink-foreground px-[22px] py-3.5 text-base font-extrabold text-brand-ink">Ôn khái niệm này →</span>
         </Link>
     )
 }
 
-// ─── Cây kỹ năng ───────────────────────────────────────────────────────────
+// ─── Bước 3: xem lại tiến độ ───────────────────────────────────────────────
 
-function SkillTree({ nodes, focusId }: { nodes: SkillNode[]; focusId?: string }) {
-    const summaries = useCourseSummaries()
-    const list = [...summaries].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
-    const main = primaryCourse(list)
+function Review({ nodes }: { nodes: SkillNode[] }) {
+    const [params, setParams] = useSearchParams()
+    const earned = useOrbitStore((s) => s.earnedBadgeIds)
+    const xp = useOrbitStore((s) => s.xp)
+    const tab: Tab = params.get('tab') === 'badges' ? 'badges' : params.get('tab') === 'rank' ? 'rank' : 'map'
     const strong = nodes.filter((n) => n.mastery >= UNLOCK_THRESHOLD).length
-
-    // Chặng (bài) của khóa đang học: 2 chặng đầu hiện sẵn, còn lại thu vào <details>
-    const mainLessons = main?.lessons ?? []
-    const shownLessons = mainLessons.slice(0, 2)
-    const hiddenGroups: { course: CourseSummary['course']; lessonIds: string[]; chang: number[] }[] = []
-    if (main && mainLessons.length > 2) hiddenGroups.push({ course: main.course, lessonIds: mainLessons.slice(2).map((l) => l.id), chang: mainLessons.slice(2).map((_, i) => i + 3) })
-    for (const c of list) if (c !== main) hiddenGroups.push({ course: c.course, lessonIds: c.lessons.map((l) => l.id), chang: [] })
-    const hiddenCount = hiddenGroups.reduce((n, g) => n + nodes.filter((x) => g.lessonIds.includes(x.lessonId)).length, 0)
-    const hiddenLabel = hiddenGroups.map((g) => (g.chang.length ? `chặng ${g.chang.map((n) => String(n).padStart(2, '0')).join(', ')}` : `học phần ${g.course.subject}`)).join(' và ')
-
+    const shown = badges.filter((b) => !b.hidden || earned.includes(b.id))
+    const got = shown.filter((b) => earned.includes(b.id)).length
+    const rank = CLASSMATE_XP.filter((v) => v > xp).length + 1
+    const tabs: { id: Tab; label: string; count: string }[] = [
+        { id: 'map', label: 'Bản đồ kỹ năng', count: `${strong}/${nodes.length}` },
+        { id: 'badges', label: 'Huy hiệu', count: `${got}/${shown.length}` },
+        { id: 'rank', label: 'Xếp hạng lớp', count: `#${rank}` },
+    ]
+    const pick = (t: Tab) => setParams(t === 'map' ? {} : { tab: t }, { replace: true, preventScrollReset: true })
     return (
-        <section aria-labelledby="skills-title">
-            <Label id="skills-title" count={`${strong}/${nodes.length} vững`}>
-                Cây kỹ năng
-            </Label>
+        <section aria-labelledby="step-3" className="col-span-12">
+            <Step id="step-3" n={3}>Xem lại tiến độ</Step>
+            <div role="tablist" aria-label="Xem lại tiến độ" className="mb-3.5 flex w-max gap-1 rounded-[14px] bg-muted p-1">
+                {tabs.map((t) => (
+                    <button
+                        key={t.id}
+                        type="button"
+                        role="tab"
+                        id={`tab-${t.id}`}
+                        aria-selected={tab === t.id}
+                        aria-controls={`panel-${t.id}`}
+                        onClick={() => pick(t.id)}
+                        className={`flex items-center gap-2 rounded-[10px] px-4 py-[9px] text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${tab === t.id ? 'bg-card text-strong shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        {t.label}
+                        <em className="font-mono text-xs font-semibold not-italic opacity-75">{t.count}</em>
+                    </button>
+                ))}
+            </div>
             <div className="rounded-card border border-border bg-card shadow-card">
-                <div className="px-6 py-[22px]">
-                    {shownLessons.map((l, i) => (
-                        <LessonChain key={l.id} lessonId={l.id} index={i} nodes={nodes} focusId={focusId} />
-                    ))}
-                    {shownLessons.length === 0 && <p className="text-sm text-muted-foreground">Chưa có khái niệm nào.</p>}
+                <div key={tab} role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="sk-tab">
+                    {tab === 'map' && <MapPanel nodes={nodes} />}
+                    {tab === 'badges' && <BadgesPanel />}
+                    {tab === 'rank' && <RankPanel />}
                 </div>
-                {hiddenGroups.length > 0 && (
-                    <details className="group border-t border-border">
-                        <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-3.5 text-[13.5px] font-bold text-muted-foreground [&::-webkit-details-marker]:hidden">
-                            Xem {hiddenLabel} ({hiddenCount} khái niệm)
-                            <ChevronDown size={14} className="transition-transform duration-base group-open:rotate-180" aria-hidden />
-                        </summary>
-                        <div className="border-t border-border px-6 py-[22px]">
-                            {hiddenGroups.map((g) => (
-                                <div key={g.course.id} className="[&+&]:mt-5">
-                                    {g.lessonIds.map((lid, i) => (
-                                        <LessonChain key={lid} lessonId={lid} index={g.chang.length ? g.chang[i] - 1 : i} course={g.chang.length ? undefined : g.course.subject} nodes={nodes} focusId={focusId} />
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    </details>
-                )}
             </div>
         </section>
     )
 }
 
-/** Một chặng: tiêu đề nhỏ muted + chuỗi viên ngang nối bằng mũi tên. */
-function LessonChain({ lessonId, index, course, nodes, focusId }: { lessonId: string; index: number; course?: string; nodes: SkillNode[]; focusId?: string }) {
-    const chain = nodes.filter((n) => n.lessonId === lessonId).sort((a, b) => a.depth - b.depth)
-    if (chain.length === 0) return null
+// ─── Panel: Bản đồ kỹ năng ─────────────────────────────────────────────────
+
+const shortName = (t: string) => (t.length > 26 ? `${t.slice(0, 25).trimEnd()}…` : t)
+
+function MapPanel({ nodes }: { nodes: SkillNode[] }) {
+    const summaries = useCourseSummaries()
+    const list = [...summaries].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
+    const [courseId, setCourseId] = useState<string | undefined>()
+    const [pickIdx, setPickIdx] = useState<{ course: string; idx: number } | null>(null)
+    const course: CourseSummary | undefined = list.find((c) => c.course.id === courseId) ?? primaryCourse(list)
+    if (!course) return <p className="p-6 text-sm text-muted-foreground">Chưa có học phần nào.</p>
+    const lessons = course.lessons
+    const idx = pickIdx && pickIdx.course === course.course.id ? pickIdx.idx : Math.max(0, course.curIndex)
+    const lesson = lessons[idx]
+    const lessonNodes = lesson ? nodes.filter((n) => n.lessonId === lesson.id).sort((a, b) => a.depth - b.depth) : []
+    const courseNodes = nodes.filter((n) => lessons.some((l) => l.id === n.lessonId))
+    const doneAll = (lid: string) => {
+        const ns = nodes.filter((n) => n.lessonId === lid)
+        return ns.length > 0 && ns.every((n) => n.mastery >= UNLOCK_THRESHOLD)
+    }
     return (
-        <div className="[&+&]:mt-5 [&+&]:border-t [&+&]:border-border [&+&]:pt-5">
-            <h4 className="mb-3 text-[13.5px] font-bold text-muted-foreground">
-                {course ? `${course} · ` : ''}Chặng {String(index + 1).padStart(2, '0')} · {getLesson(lessonId)?.title}
-            </h4>
-            <div className="flex flex-wrap items-center gap-2">
-                {chain.map((n, i) => (
-                    <Fragment key={n.concept.id}>
-                        {i > 0 && <ChevronRight size={14} className="text-muted-foreground/60" aria-hidden />}
-                        <SkillPill node={n} current={n.concept.id === focusId} />
-                    </Fragment>
-                ))}
+        <div>
+            <div className="flex flex-wrap items-center justify-between gap-6 border-b border-border px-[26px] py-5">
+                <div className="flex items-center gap-4">
+                    <span className="block h-14 w-14 shrink-0 overflow-hidden rounded-[14px]">
+                        <CourseArt course={course.course} className="h-full w-full" />
+                    </span>
+                    <div>
+                        <small className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-brand-ink">Bản đồ kỹ năng của học phần</small>
+                        <CourseMenu list={list} current={course} onPick={(id) => { setCourseId(id); setPickIdx(null) }} />
+                        <p className="text-[13px] text-muted-foreground">{course.course.subject} · {lessons.length} bài giảng · {courseNodes.length} khái niệm</p>
+                    </div>
+                </div>
+                <ol className="flex items-center gap-2 text-[12.5px] font-semibold leading-tight text-muted-foreground" aria-label="Cách bản đồ hoạt động">
+                    <HowStep icon={<Video size={17} />}>Bài giảng của thầy cô</HowStep>
+                    <Arrow />
+                    <HowStep icon={<Sparkles size={17} />} grad>AI tách thành các khái niệm</HowStep>
+                    <Arrow />
+                    <HowStep icon={<CheckCircle2 size={17} />}>Quiz đúng thì khái niệm sáng lên</HowStep>
+                    <Arrow />
+                    <HowStep icon={<Target size={17} />} red>Biết mình hiểu tới đâu, không chỉ xem bao lâu</HowStep>
+                </ol>
+            </div>
+            <div className="px-[26px] pb-6 pt-5">
+                <div className="mb-1.5 flex items-center justify-between gap-4">
+                    <div className="flex flex-wrap gap-2">
+                        {lessons.map((l, i) => (
+                            <button
+                                key={l.id}
+                                type="button"
+                                aria-pressed={i === idx}
+                                onClick={() => setPickIdx({ course: course.course.id, idx: i })}
+                                className={`flex items-center gap-2 rounded-full border bg-card py-[7px] pl-2 pr-3.5 text-[13.5px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${i === idx ? 'border-strong text-strong ring-[3px] ring-ink/5' : 'border-border text-muted-foreground hover:border-brand-300'}`}
+                            >
+                                <i className={`grid h-[22px] w-[22px] place-items-center rounded-full font-mono text-[10px] font-bold not-italic ${doneAll(l.id) ? 'bg-brand-600 text-ink-foreground' : i === idx ? 'bg-ink text-ink-foreground' : 'bg-muted text-muted-foreground'}`}>{doneAll(l.id) ? <Check size={12} strokeWidth={3} /> : i + 1}</i>
+                                Chặng {String(i + 1).padStart(2, '0')} · {shortName(l.title)}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="flex shrink-0 items-center gap-2 text-[12.5px] font-semibold text-muted-foreground" aria-hidden>
+                        <i className="h-3 w-3 rounded-full bg-brand-600" /> Vững
+                        <i className="ml-2 h-3.5 w-3.5 rounded-full border-[3px] border-brand-600" /> Đang học
+                        <i className="ml-2 h-3 w-3 rounded-full bg-muted-foreground/30" /> Chưa mở
+                    </p>
+                </div>
+                {lesson && <SkillMap key={`${lesson.id}`} nodes={lessonNodes} lessonId={lesson.id} />}
+                <p className="mt-1 text-center text-[13px] text-muted-foreground">
+                    Trả lời đúng quiz → khái niệm sáng dần · đủ <b className="text-strong">{Math.round(UNLOCK_THRESHOLD * 100)}%</b> → mở trạm kế tiếp
+                </p>
             </div>
         </div>
     )
 }
 
-/** Viên ngang: vòng % nhỏ 26px + tên một dòng. Vững: nền đỏ-50, vòng đặc có tích. Đang ôn tiếp: viền đỏ 2px + quầng. Chưa mở: nền muted, khóa. */
-function SkillPill({ node, current }: { node: SkillNode; current: boolean }) {
-    const pct = Math.round(node.mastery * 100)
-    const mastered = node.mastery >= UNLOCK_THRESHOLD
-    const locked = !node.unlocked
-    const tone = locked
-        ? 'border-transparent bg-muted text-muted-foreground/70'
-        : mastered
-          ? 'border-brand-200 bg-brand-50 text-strong'
-          : current
-            ? 'border-2 border-brand-600 bg-card text-strong shadow-[0_0_0_4px_hsl(var(--brand)/0.12)]'
-            : 'border-border bg-card text-strong'
-    const ring = (
-        <span
-            className={`relative grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full font-mono text-[10px] font-bold ${mastered ? 'bg-brand-600 text-ink-foreground' : ''}`}
-            style={!mastered && !locked ? { background: `conic-gradient(hsl(var(--brand)) ${pct * 3.6}deg, hsl(var(--muted)) 0)` } : undefined}
-        >
-            {!mastered && !locked && <span aria-hidden className="absolute inset-1 rounded-full bg-card" />}
-            <span className="relative z-[1]">{locked ? <Lock size={12} /> : mastered ? <Check size={13} strokeWidth={3} /> : pct}</span>
-        </span>
+function HowStep({ icon, grad, red, children }: { icon: ReactNode; grad?: boolean; red?: boolean; children: ReactNode }) {
+    return (
+        <li className="flex max-w-[150px] items-center gap-2">
+            <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-[11px] ${grad ? 'text-ink-foreground' : red ? 'bg-brand-50 text-brand-ink' : 'bg-muted text-strong'}`} style={grad ? { background: 'linear-gradient(135deg, var(--mm-blue), var(--mm-teal))' } : undefined}>
+                {icon}
+            </span>
+            <span className={red ? 'font-extrabold text-strong' : ''}>{children}</span>
+        </li>
     )
-    const cls = `inline-flex items-center gap-[9px] whitespace-nowrap rounded-full border py-2 pl-2 pr-3.5 text-sm font-semibold ${tone}`
-    return locked ? (
-        <span className={cls} title={`Cần mở ${node.missing.map((c) => c.name).join(', ')} (≥${Math.round(UNLOCK_THRESHOLD * 100)}%)`}>
-            {ring}
-            {node.concept.name}
-        </span>
-    ) : (
-        <Link to={`/lesson/${node.lessonId}?t=${Math.floor(node.concept.segment.start)}`} className={`${cls} transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70`}>
-            {ring}
-            {node.concept.name}
-        </Link>
+}
+const Arrow = () => <span aria-hidden className="text-muted-foreground/60">→</span>
+
+/** Tên học phần là nút chọn (dropdown) – đổi học phần thì bản đồ đổi. */
+function CourseMenu({ list, current, onPick }: { list: CourseSummary[]; current: CourseSummary; onPick: (id: string) => void }) {
+    const [open, setOpen] = useState(false)
+    const ref = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        if (!open) return
+        const away = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+        const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+        document.addEventListener('mousedown', away)
+        document.addEventListener('keydown', esc)
+        return () => {
+            document.removeEventListener('mousedown', away)
+            document.removeEventListener('keydown', esc)
+        }
+    }, [open])
+    return (
+        <div ref={ref} className="relative">
+            <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(!open)} className="mt-0.5 flex items-center gap-1.5 rounded-lg text-left text-xl font-black tracking-tight text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                {current.course.title}
+                <ChevronDown size={18} className={`transition-transform duration-base ${open ? 'rotate-180' : ''}`} />
+            </button>
+            {open && (
+                <ul role="listbox" aria-label="Chọn học phần" className="absolute left-0 top-[calc(100%+6px)] z-20 min-w-[280px] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-raised">
+                    {list.map((c) => (
+                        <li key={c.course.id} role="option" aria-selected={c.course.id === current.course.id}>
+                            <button type="button" onClick={() => { onPick(c.course.id); setOpen(false) }} className={`flex w-full items-center justify-between gap-4 px-4 py-2.5 text-left text-sm font-bold hover:bg-muted ${c.course.id === current.course.id ? 'text-brand-ink' : 'text-strong'}`}>
+                                {c.course.title}
+                                <span className="font-mono text-xs text-muted-foreground">{c.pct}%</span>
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
     )
 }
 
-// ─── Huy hiệu ──────────────────────────────────────────────────────────────
+// ─── Panel: Huy hiệu ───────────────────────────────────────────────────────
 
-function BadgesCard() {
+const BADGE_TONE = ['bg-brand-600', 'bg-mm-blue', 'bg-mm-teal']
+
+function BadgesPanel() {
     const earned = useOrbitStore((s) => s.earnedBadgeIds)
     const conceptMastery = useOrbitStore((s) => s.conceptMastery)
     const quizResults = useOrbitStore((s) => s.quizResults)
     const streak = useOrbitStore((s) => s.streak)
     const directorBest = useOrbitStore((s) => s.directorBest)
     const testRecords = useOrbitStore((s) => s.testRecords)
-    const [all, setAll] = useState(false)
-
-    // Huy hiệu ẩn chỉ xuất hiện sau khi đã nhận
-    const shown = badges.filter((b) => !b.hidden || earned.includes(b.id))
     const ctx = { conceptMastery, quizResults, streak, directorBest, testBest: bestTestRatio(testRecords) }
-    const info = shown.map((b) => ({ b, has: earned.includes(b.id), ...badgeProgress(b, ctx) }))
-    // 3 huy hiệu: mới nhận gần nhất, rồi các huy hiệu gần đạt nhất
-    const latest = [...info].filter((i) => i.has).sort((a, b) => earned.indexOf(b.b.id) - earned.indexOf(a.b.id))[0]
-    const near = info.filter((i) => !i.has).sort((a, b) => b.current / b.target - a.current / a.target)
-    const top = [...(latest ? [latest] : []), ...near, ...info.filter((i) => i.has && i !== latest)].slice(0, 3)
-
+    // Huy hiệu ẩn chưa nhận: hiện ô mờ "Huy hiệu ẩn"
+    const info = badges.map((b) => ({ b, has: earned.includes(b.id), ...badgeProgress(b, ctx) }))
     return (
-        <section aria-labelledby="badges-title">
-            <Label
-                id="badges-title"
-                action={
-                    <button type="button" onClick={() => setAll(!all)} aria-expanded={all} className={linkBtn}>
-                        {all ? 'Thu gọn' : `Xem tất cả ${shown.length} →`}
-                    </button>
-                }
-            >
-                Huy hiệu
-            </Label>
-            <div className="rounded-card border border-border bg-card p-4 shadow-card">
-                <ul className="grid grid-cols-3 gap-2.5">
-                    {top.map(({ b, has, current, target }) => (
-                        <li key={b.id} className="rounded-[14px] bg-muted px-2 py-3.5 text-center">
-                            <span className={`mx-auto mb-2 grid h-10 w-10 place-items-center rounded-xl text-ink-foreground ${has ? 'bg-brand-600' : 'bg-mm-blue'}`}>
-                                <Award size={20} />
-                            </span>
-                            <b className="block text-[12.5px] leading-tight text-strong">{b.name}</b>
-                            <small className="mt-1 block font-mono text-[11px] text-muted-foreground">{has ? (b === latest?.b ? 'mới nhận' : 'đã đạt') : `${current}/${target}`}</small>
-                        </li>
-                    ))}
-                </ul>
-                {all && (
-                    <ul className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-                        {info.map(({ b, has, current, target }) => (
-                            <li key={b.id} className={`flex items-start gap-3 rounded-xl px-3 py-2.5 ${has ? 'bg-brand-50' : ''}`}>
-                                <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg ${has ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-muted-foreground'}`}>{has ? <Award size={16} /> : <Lock size={14} />}</span>
-                                <span className="min-w-0 flex-1">
-                                    <b className="block text-sm text-strong">{b.name}</b>
-                                    <span className="block text-[13px] leading-snug text-muted-foreground">{b.description}</span>
-                                </span>
-                                <span className="shrink-0 font-mono text-xs text-muted-foreground">{has ? 'Đã đạt' : `${current}/${target}`}</span>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-        </section>
+        <ul className="grid grid-cols-5 gap-3 p-[26px]">
+            {info.map(({ b, has, current, target }, i) => {
+                const hidden = b.hidden && !has
+                return (
+                    <li key={b.id} className={`rounded-2xl bg-muted px-2.5 py-[18px] text-center ${hidden ? 'opacity-50' : ''}`}>
+                        <span className={`mx-auto mb-2.5 grid h-11 w-11 place-items-center rounded-[13px] text-ink-foreground ${hidden ? 'bg-muted-foreground/60' : BADGE_TONE[i % BADGE_TONE.length]}`}>{hidden ? <Lock size={20} /> : <Award size={22} />}</span>
+                        <b className="block text-[13px] leading-tight text-strong">{hidden ? 'Huy hiệu ẩn' : b.name}</b>
+                        <small className="mt-1 block font-mono text-[11.5px] text-muted-foreground">{has ? 'đã nhận' : hidden ? 'chưa mở' : `${current}/${target}`}</small>
+                    </li>
+                )
+            })}
+        </ul>
     )
 }
 
-// ─── Bảng xếp hạng lớp (dữ liệu mẫu, ẩn danh) ──────────────────────────────
+// ─── Panel: Xếp hạng lớp (dữ liệu mẫu, ẩn danh) ─────────────────────────────
 
-function Leaderboard() {
+function RankPanel() {
     const xp = useOrbitStore((s) => s.xp)
     const [all, setAll] = useState(false)
-    const rows = [...CLASSMATE_XP.map((v) => ({ me: false, xp: v })), { me: true, xp }].sort((a, b) => b.xp - a.xp || Number(b.me) - Number(a.me))
+    const rows = [...CLASSMATE_XP.map((v) => ({ me: false, xp: v })), { me: true, xp }].sort((a, b) => b.xp - a.xp || Number(b.me) - Number(a.me)).map((r, i) => ({ ...r, rank: i + 1 }))
     const mine = rows.findIndex((r) => r.me)
-    const visible = all ? rows.map((r, i) => ({ ...r, rank: i + 1 })) : rows.map((r, i) => ({ ...r, rank: i + 1 })).slice(Math.max(0, mine - 1), mine + 2)
+    const visible = all ? rows : rows.slice(Math.max(0, mine - 1), mine + 2)
     return (
-        <section aria-labelledby="lb-title">
-            <Label
-                id="lb-title"
-                action={
-                    <button type="button" onClick={() => setAll(!all)} aria-expanded={all} className={linkBtn}>
-                        {all ? 'Thu gọn' : 'Xem cả lớp →'}
-                    </button>
-                }
-            >
-                Bảng xếp hạng lớp {CLASS_NAME}
-            </Label>
-            <ul className={`overflow-y-auto rounded-card border border-border bg-card py-1.5 shadow-card ${all ? 'max-h-[360px]' : ''}`}>
+        <div className="max-w-[640px] p-[26px]">
+            <p className="mb-2 flex items-baseline justify-between text-[13.5px] text-muted-foreground">
+                Lớp {CLASS_NAME}
+                <button type="button" onClick={() => setAll(!all)} aria-expanded={all} className="font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                    {all ? 'Thu gọn' : 'Xem cả lớp →'}
+                </button>
+            </p>
+            <ul className={all ? 'max-h-[360px] overflow-y-auto' : ''}>
                 {visible.map((r) => (
-                    <li key={r.rank} className={`grid grid-cols-[34px_1fr_auto] items-center gap-2.5 px-[22px] py-2.5 text-sm ${r.me ? 'bg-brand-50' : ''}`}>
+                    <li key={r.rank} className={`grid grid-cols-[40px_1fr_auto] items-center gap-2.5 rounded-xl px-4 py-3 text-[14.5px] ${r.me ? 'bg-brand-50' : ''}`}>
                         <span className={`font-mono text-[13px] font-bold ${r.me ? 'text-brand-ink' : 'text-muted-foreground'}`}>#{r.rank}</span>
                         {r.me ? <b className="text-brand-ink">Bạn</b> : <span className="text-foreground">Sinh viên ẩn danh</span>}
                         <span className={`font-mono text-[13px] font-bold ${r.me ? 'text-brand-ink' : 'text-strong'}`}>{r.xp.toLocaleString('vi-VN')}</span>
                     </li>
                 ))}
             </ul>
-        </section>
+        </div>
     )
 }
-
-// ─── Test cuối chương ──────────────────────────────────────────────────────
-
-function FinalTests() {
-    const records = useOrbitStore((s) => s.testRecords)
-    return (
-        <section aria-labelledby="tests-title">
-            <h2 id="tests-title" className="text-title text-foreground">Test cuối chương</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Kiểm tra cả khóa, biết khái niệm nào còn hổng và nhận lộ trình ôn tập.</p>
-            <ul className="mt-5 flex flex-col gap-3">
-                {courses.map((c) => {
-                    const r = records[c.id]
-                    return (
-                        <li key={c.id}>
-                            <Link to={`/test/${c.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card p-5 shadow-card transition hover:border-brand-300">
-                                <span>
-                                    <span className="block font-bold text-foreground">{c.title}</span>
-                                    <span className="mt-1 block text-sm text-muted-foreground">
-                                        {r ? `Tốt nhất ${r.bestCorrect}/${r.bestTotal} · ${r.attempts} lượt làm` : 'Chưa làm lần nào'}
-                                    </span>
-                                </span>
-                                <span className="inline-flex items-center gap-1 text-sm font-bold text-brand-ink">
-                                    {r ? 'Làm lại hoặc xem kết quả' : 'Làm test'} <ChevronRight size={16} />
-                                </span>
-                            </Link>
-                        </li>
-                    )
-                })}
-            </ul>
-        </section>
-    )
-}
-

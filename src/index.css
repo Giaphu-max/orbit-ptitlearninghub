@@ -1173,3 +1173,22 @@
 @media (prefers-reduced-motion: reduce) {
   .kiosk-poster-in { animation: none; }
 }
+
+/* Bản đồ kỹ năng (/journey): trạm hiện lần lượt, đường vẽ dần, nước dâng trong trạm đang học, quầng nhịp. Giảm chuyển động: tắt hết. */
+.sk-pop { opacity: 0; animation: sk-pop 0.5s var(--ease-out) forwards; }
+@keyframes sk-pop { from { opacity: 0; transform: translate(-50%, -38px) scale(0.6); } to { opacity: 1; transform: translate(-50%, -38px) scale(1); } }
+.sk-road { transition: stroke-dashoffset 1.4s var(--ease-out) 0.2s; }
+.sk-water { transition: height 1.2s var(--ease-out); }
+.sk-water::before { content: ''; position: absolute; left: -50%; top: -14px; width: 200%; height: 28px; border-radius: 42%; background: hsl(var(--brand) / 0.55); animation: sk-wave 5s linear infinite; }
+@keyframes sk-wave { to { transform: rotate(360deg); } }
+.sk-ping { animation: sk-ping 2s ease-out infinite; }
+@keyframes sk-ping { from { transform: scale(0.9); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
+.sk-tab { animation: sk-tab 0.3s var(--ease-out); }
+@keyframes sk-tab { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sk-pop { opacity: 1; animation: none; transform: translate(-50%, -38px); }
+  .sk-road, .sk-water { transition: none; }
+  .sk-water::before, .sk-ping { animation: none; }
+  .sk-ping { display: none; }
+  .sk-tab { animation: none; }
+}
