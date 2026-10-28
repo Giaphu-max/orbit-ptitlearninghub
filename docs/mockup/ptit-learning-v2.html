@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Học phần v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#FAFAFC;
+  --blue:#1F63DB;--sky:#41A5E1;--teal:#2EC3A8;--ok:#1E7F55;--ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+  --gut:clamp(40px,4vw,80px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(60% 50% at 100% 0%,rgba(244,135,143,.10),transparent 70%),var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.box{max-width:1760px;margin:0 auto;padding:0 var(--gut)}
+.nav .box{display:flex;align-items:center;gap:44px;height:92px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tile{width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.brand .tile img{width:76%}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:22px;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+.links{display:flex;gap:34px;font-size:16.5px}.links .on{color:var(--red-ink);font-weight:800}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.stats{display:flex;align-items:center;gap:10px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 12px;font:700 14px var(--mono);color:var(--navy)}
+.stats i{width:1px;height:18px;background:var(--line)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+main{padding:20px 0 80px}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:start}
+.c8{grid-column:span 8}.c4{grid-column:span 4}
+.lbl{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 12px}
+.lbl h2{margin:0;font-size:15px;font-weight:800;color:var(--navy)}
+.lbl h2 em{font-style:normal;font:700 13px var(--mono);color:var(--muted);margin-left:6px}
+.lbl a{font-size:13.5px;font-weight:700;color:var(--red-ink)}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 1px 2px rgba(10,26,80,.04)}
+.mono{font-family:var(--mono)}
+
+/* ---- tier 1: continue ---- */
+.cont{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:0;overflow:hidden;height:100%;align-content:start;box-shadow:0 30px 60px -36px rgba(226,38,28,.45),0 1px 2px rgba(10,26,80,.04)}
+.player{position:relative;min-height:340px;background:radial-gradient(90% 120% at 20% 20%,#1D2F78 0%,#0A1A50 60%,#060F33 100%);overflow:hidden;cursor:pointer}
+.player .slide{position:absolute;left:28px;top:26px;right:44%;color:#fff}
+.player .slide small{font:700 10px var(--mono);letter-spacing:.14em;color:#9FB4FF}
+.player .slide b{display:block;margin-top:10px;font-size:26px;line-height:1.12;font-weight:900;letter-spacing:-.02em}
+.player .tl{display:grid;gap:6px;margin-top:18px}
+.player .tl i{display:block;height:8px;border-radius:3px;background:rgba(255,255,255,.85)}
+.player .tl i:nth-child(2){background:#41A5E1}.player .tl i:nth-child(3){background:#2EC3A8}
+.player .who{position:absolute;right:-10px;bottom:0;height:104%;transition:transform 6s ease-out}
+.player:hover .who{transform:scale(1.04) translateX(-6px)}
+.player .mid{position:absolute;left:38%;top:62%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;color:var(--red);box-shadow:0 12px 30px rgba(0,0,0,.35);transition:transform .3s var(--ease)}
+.player:hover .mid{transform:scale(1.08)}
+.player .tc{position:absolute;right:14px;top:14px;font:700 12px var(--mono);color:#fff;background:rgba(0,0,0,.45);padding:5px 8px;border-radius:6px}
+.player .pb{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.25)}
+.player .pb i{display:block;height:100%;width:46%;background:var(--red)}
+.info{padding:30px 32px;display:flex;flex-direction:column}
+.eb{display:flex;align-items:center;gap:8px;font:700 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--red-ink)}
+.eb .dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:live 2s ease-out infinite}
+@keyframes live{0%{box-shadow:0 0 0 0 rgba(226,38,28,.45)}70%,100%{box-shadow:0 0 0 8px rgba(226,38,28,0)}}
+.info h1{margin:12px 0 0;font-size:30px;line-height:1.18;font-weight:900;letter-spacing:-.025em;color:var(--navy)}
+.info .crs{margin-top:8px;font-size:14.5px;color:var(--muted)}
+.info .crs b{color:var(--ink);font-weight:700}
+.meta{margin-top:20px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.meta .row{display:flex;align-items:center;gap:10px}
+.dots{display:flex;gap:4px}.dots i{width:12px;height:12px;border-radius:3px;background:var(--sunk)}.dots i.on{background:var(--red)}.dots i.half{background:#F4A39C}
+.meta .k{font:500 13px var(--mono);color:var(--muted)}
+.cta{margin-top:auto;padding-top:24px;display:flex;align-items:center;gap:14px}
+.btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);color:#fff;font-weight:800;font-size:16px;padding:15px 22px;border-radius:14px;box-shadow:0 14px 26px -12px rgba(226,38,28,.7);animation:bob 3s 1s ease-in-out infinite;border:0;cursor:pointer}
+.btn:hover{animation:none;transform:translateY(-2px)}
+@keyframes bob{50%{translate:0 -6px}}
+@media (prefers-reduced-motion:reduce){.btn,.eb .dot{animation:none}}
+.cta small{font-size:13px;color:var(--muted)}
+
+/* path: collapsed by default */
+.path{grid-column:1 / -1;border-top:1px solid var(--line)}
+.path summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;padding:16px 22px}
+.path summary::-webkit-details-marker{display:none}
+.path summary b{font-size:14.5px;color:var(--navy);font-weight:800;white-space:nowrap}
+.path summary b em{font-style:normal;font:600 12.5px var(--mono);color:var(--muted);margin-left:8px}
+.step{display:flex;align-items:center}
+.step .n{width:12px;height:12px;border-radius:50%;border:2px solid #C8CCD8;background:#fff;flex:none}
+.step .n.cur{border-color:var(--red);background:var(--red);box-shadow:0 0 0 4px rgba(226,38,28,.14)}
+.step .n.goal{border-radius:3px;transform:rotate(45deg)}
+.step .seg{flex:1;height:3px;background:var(--line);margin:0 6px;border-radius:2px;position:relative;overflow:hidden}
+.step .seg.p i{position:absolute;inset:0 auto 0 0;width:46%;background:var(--red)}
+.path summary .tg{font-size:13.5px;font-weight:700;color:var(--red-ink);white-space:nowrap}
+.path summary .tg i{display:inline-block;font-style:normal;transition:transform .25s}
+.path[open] summary .tg i{transform:rotate(180deg)}
+.lessons{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:4px 22px 22px}
+.ls{border-radius:14px;padding:12px;background:var(--sunk);font-size:13.5px}
+.ls .th{aspect-ratio:16/9;border-radius:10px;background:linear-gradient(150deg,#2A3A7E,#0A1A50);margin-bottom:10px;position:relative}
+.ls .th span{position:absolute;right:6px;bottom:6px;font:700 10.5px var(--mono);color:#fff;background:rgba(0,0,0,.45);padding:2px 5px;border-radius:4px}
+.ls small{font:500 11.5px var(--mono);color:var(--muted)}
+.ls b{display:block;margin-top:3px;color:var(--navy);font-weight:700;line-height:1.35}
+.ls.cur{background:var(--red-50);outline:2px solid var(--red-100)}
+.ls.goal .th{background:repeating-conic-gradient(#E9EBF2 0 25%,#F6F7FA 0 50%) 0 0/18px 18px}
+
+/* ---- right column ---- */
+.sum{display:grid;grid-template-columns:repeat(3,1fr);padding:18px 6px}
+.sum div{text-align:center}
+.sum div+div{border-left:1px solid var(--line)}
+.sum b{display:block;font:800 22px var(--mono);color:var(--navy)}
+.sum small{font-size:12.5px;color:var(--muted)}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--sunk);margin-bottom:12px}
+.tabs button{flex:1;border:0;background:none;font:600 13px var(--sans);color:var(--muted);padding:8px 6px;border-radius:9px;cursor:pointer}
+.tabs button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(10,26,80,.1)}
+.tabs button em{font-style:normal;font-family:var(--mono);margin-left:4px;opacity:.7}
+.list{padding:6px}
+.ci{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:12px;border-radius:14px;transition:background .2s}
+.ci:hover{background:var(--sunk)}
+.ci .cv{width:64px;height:64px;border-radius:14px;position:relative;overflow:hidden}
+.ci b{display:block;font-size:15px;font-weight:800;color:var(--navy);line-height:1.3}
+.ci small{display:block;margin-top:3px;font-size:12.5px;color:var(--muted)}
+.ci .tag{display:inline-block;margin-bottom:4px;font:700 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--red-ink)}
+.ring{position:relative;width:44px;height:44px}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:700 11px var(--mono);color:var(--navy)}
+.ci .go{font-size:13px;font-weight:800;color:var(--red-ink)}
+.ci.active{background:var(--red-50)}
+.grid{align-items:stretch}
+.c8,.lib{display:flex;flex-direction:column}
+.c8>.card,.libc{flex:1}
+.libc{padding:18px 16px 10px}
+.kpi{display:flex;gap:20px;padding:0 6px 14px;font-size:13.5px;color:var(--muted)}
+.kpi b{font:800 15px var(--mono);color:var(--navy);margin-right:4px}
+.libc .tabs{margin:0 0 6px}
+.libc .list{padding:0}
+.tip{padding:18px 20px;display:flex;gap:14px;align-items:flex-start}
+.tip .ic{width:38px;height:38px;border-radius:11px;background:var(--red-50);color:var(--red-ink);display:grid;place-items:center;flex:none}
+.tip b{display:block;font-size:14.5px;color:var(--navy)}
+.tip p{margin:4px 0 0;font-size:13.5px;color:var(--muted);line-height:1.5}
+.note{position:fixed;left:18px;bottom:18px;max-width:320px;background:var(--navy);color:#fff;font-size:12.5px;line-height:1.5;padding:12px 14px;border-radius:12px;cursor:pointer;box-shadow:0 18px 40px -16px rgba(10,26,80,.5)}
+.note b{color:#FFB199}
+
+.welcome{display:grid;grid-template-columns:1fr minmax(0,620px);gap:24px;align-items:center;padding:22px;border-radius:24px;background:#FBF1F1;border:1px solid #F3DBDB;margin-bottom:28px}
+.wl{padding-left:10px}
+.welcome h1{margin:0;font-size:26px;font-weight:500;color:var(--ink);letter-spacing:-.01em}.welcome h1 b{font-weight:800;color:var(--navy)}
+.ok-chip{display:inline-block;margin-top:14px;padding:6px 12px;border-radius:999px;background:#EAF7EE;border:1px solid #BFE3CB;color:#1E7F55;font-size:13.5px;font-weight:600}
+.ov{border-radius:16px;background:#fff;overflow:hidden;border:1px solid #F3DBDB}
+.ovh{text-align:center;padding:10px;background:#F6E1E1;font:800 13px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:#BC2626}
+.ovb{display:grid;grid-template-columns:repeat(3,1fr);padding:14px 16px;gap:10px}
+.ovb span{display:grid;grid-template-columns:42px 1fr;column-gap:10px;align-items:center}
+.oi{grid-row:span 2;width:42px;height:42px;border-radius:12px;background:var(--red-50);color:var(--red-ink);display:grid;place-items:center}
+.ovb b{font:800 18px var(--mono);color:var(--navy)}.ovb small{font-size:12.5px;color:var(--muted)}
+.sub2{font:600 12.5px var(--mono);color:var(--muted)}
+.week{padding:18px;display:flex;flex-direction:column}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.d{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;border-radius:12px}
+.d small{font-size:11.5px;font-weight:700;color:var(--muted)}.d b{font:700 16px var(--mono);color:var(--navy);width:34px;height:34px;display:grid;place-items:center;border-radius:50%}
+.d i{width:6px;height:6px;border-radius:50%}
+.d.done i{background:#2E9E5B}.d.up i{background:#EAAE3C}
+.d.today b{background:#BC2626;color:#fff}.d.today i{background:#BC2626}
+.agenda{display:flex;flex-direction:column;gap:6px;padding-top:12px;flex:1}
+.ag{display:grid;grid-template-columns:74px 1fr;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;transition:background .2s}
+.ag:hover{background:var(--sunk)}
+.ag .t{font:700 12px var(--mono);color:var(--muted)}
+.ag b{display:block;font-size:14px;color:var(--navy)}.ag small{font-size:12.5px;color:var(--muted)}
+.ag.now{background:var(--red-50)}.ag.now .t{color:var(--red-ink)}
+.leg{display:flex;justify-content:center;gap:18px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.leg span{display:flex;align-items:center;gap:6px}.leg i{width:7px;height:7px;border-radius:50%}.leg .g{background:#2E9E5B}.leg .y{background:#EAAE3C}.leg .r{background:#BC2626}
+.lop{margin-top:44px}
+.loph{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.loph h2{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+.filters{display:flex;gap:10px}
+.search{display:flex;align-items:center;gap:8px;width:320px;padding:0 16px;height:44px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)}
+.search input{border:0;outline:0;font:inherit;font-size:14px;flex:1;background:none}
+.sel{height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:14px;color:var(--navy)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.cc{display:flex;flex-direction:column;padding:12px;border-radius:18px;background:#fff;border:1px solid var(--line);transition:transform .25s var(--ease),box-shadow .25s}
+.cc:hover{transform:translateY(-4px);box-shadow:0 20px 40px -24px rgba(10,26,80,.3)}
+.cov{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden}
+.cov .code{position:absolute;left:10px;bottom:10px;padding:4px 9px;border-radius:7px;background:rgba(255,255,255,.92);font:600 12px var(--mono);color:var(--navy)}
+.cb{padding:12px 4px 10px}
+.ml{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.cb b{display:block;margin-top:6px;font-size:17px;font-weight:800;color:var(--navy);line-height:1.3}
+.cf{margin-top:auto;display:flex;align-items:center;gap:8px;padding:12px 4px 2px;border-top:1px solid var(--line);font-size:14px;font-weight:700;color:var(--navy)}
+.cf img{width:24px}.cf .pb{margin-left:auto;width:90px;height:7px;border-radius:4px;background:var(--sunk);overflow:hidden}.cf .pb i{display:block;height:100%;background:#BC2626;border-radius:4px}
+.cf .pp{font:700 13px var(--mono)}
+.soon{margin-left:auto;font-size:12px;font-weight:700;color:var(--muted);background:var(--sunk);padding:4px 10px;border-radius:999px}
+.cc.dim .cov{filter:saturate(.55) opacity(.75)}
+.ft{margin-top:64px;background:#8E2421;color:#fff}
+.ftop{display:flex;align-items:center;gap:14px;padding:34px 0 26px;border-bottom:1px solid rgba(255,255,255,.18)}
+.flogo{width:46px;height:46px;border-radius:12px;background:#fff;display:grid;place-items:center}.flogo img{width:76%}
+.ftop b{display:block;font-size:15px;letter-spacing:.02em}.ftop small{font-size:12.5px;opacity:.8}
+.fl{margin-left:auto;display:flex;gap:28px;font-size:14px;opacity:.9}
+.fbot{padding:18px 0;font-size:13px;opacity:.75;text-align:center}
+.lib .lbl{align-items:center}
+
+/* align: banner splits on the same 8/4 line as the grid; cards on the same 4×3 columns */
+.welcome{grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;padding:22px 0 22px 22px;background:#FBF1F1}
+.welcome .wl{grid-column:span 8}
+.welcome .ov{grid-column:span 4;margin-right:22px}
+.ovb{grid-template-columns:repeat(3,1fr);padding:14px 10px}
+.ovb span{grid-template-columns:1fr;justify-items:center;text-align:center;row-gap:4px}
+.oi{grid-row:auto;width:36px;height:36px}
+.grid{align-items:stretch}
+.c8,.lib{display:flex;flex-direction:column}
+.c8>.card,.lib>.card{flex:1}
+.cards{gap:24px}
+</style></head>
+<body>
+<header class="nav"><div class="box">
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Học viện Công nghệ BCVT</small></span></span>
+  <nav class="links"><span>Trang chủ</span><span>Ôn tập</span><span class="on">Học phần</span><span>Studio 3D</span><span>Tiến độ &amp; Kỹ năng</span></nav>
+  <span class="right"><span class="stats"><span style="color:#D41F16">12</span><i></i>7 · 2.480 <small style="font-weight:500;color:#646880">XP</small></span><span class="avatar">P</span></span>
+</div></header>
+
+<main class="box">
+  <section class="welcome">
+    <div class="wl">
+      <h1>Chào <b>Phú</b>, học tiếp nhé</h1>
+      <span class="ok-chip">Bạn đang học đúng tiến độ</span>
+    </div>
+    <div class="ov">
+      <div class="ovh">Tổng quan học kỳ hiện tại</div>
+      <div class="ovb">
+        <span><i class="oi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/></svg></i><b>2</b><small>Học phần đang học</small></span>
+        <span><i class="oi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></i><b>1/6</b><small>Bài giảng đã xong</small></span>
+        <span><i class="oi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg></i><b>2/25</b><small>Khái niệm vững</small></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="c8">
+      <div class="lbl"><h2>Học tiếp</h2></div>
+      <div class="card cont">
+        <a class="player" href="#" aria-label="Xem tiếp từ 03:22">
+          <span class="slide"><small>CHẶNG 01 · DỰNG PHI TUYẾN</small><b>Timeline và tính phi hủy hoại</b><span class="tl"><i style="width:90%"></i><i style="width:62%"></i><i style="width:76%"></i></span></span>
+          <img class="who" src="big-color2.webp" alt="">
+          <span class="tc">03:22 / 07:19</span>
+          <span class="mid"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" style="margin-left:4px"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg></span>
+          <span class="pb"><i></i></span>
+        </a>
+        <div class="info">
+          <span class="eb"><span class="dot"></span>Dựng phim · Chặng 01/3</span>
+          <h1>Bản chất của dựng audio và video phi tuyến trong hậu kỳ</h1>
+          <div class="meta">
+            <span class="row"><span class="dots"><i class="on"></i><i class="on"></i><i class="half"></i><i></i></span><span>2/4 khái niệm vững · còn 4 phút</span></span>
+          </div>
+          <div class="cta"><a class="btn" href="#">▶&nbsp; Học tiếp từ 03:22</a></div>
+        </div>
+        <details class="path">
+        <summary>
+          <b>Dựng audio và video phi tuyến<em>15%</em></b>
+          <span class="step"><span class="n cur"></span><span class="seg p"><i></i></span><span class="n"></span><span class="seg"></span><span class="n"></span><span class="seg"></span><span class="n goal"></span></span>
+          <span class="tg">Xem các chặng <i>▾</i></span>
+        </summary>
+        <div class="lessons">
+          <div class="ls cur"><div class="th"><span>7:19</span></div><small>Chặng 01 · đang học</small><b>Bản chất của dựng audio và video phi tuyến</b></div>
+          <div class="ls"><div class="th"><span>6:25</span></div><small>Chặng 02</small><b>Tổ chức cấu trúc nội dung và điều hướng tiếp nhận</b></div>
+          <div class="ls"><div class="th"><span>6:19</span></div><small>Chặng 03</small><b>Nhịp điệu dựng phim</b></div>
+          <div class="ls goal"><div class="th"></div><small>Đích</small><b>Test cuối chương</b></div>
+        </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- RIGHT 4: library -->
+    <aside class="c4 lib">
+      <div class="lbl"><h2>Tuần này</h2><span class="sub2">27/10 – 02/11</span></div>
+      <div class="card week">
+        <div class="days">
+          <span class="d done"><small>T2</small><b>27</b><i></i></span>
+          <span class="d today"><small>T3</small><b>28</b><i></i></span>
+          <span class="d up"><small>T4</small><b>29</b><i></i></span>
+          <span class="d"><small>T5</small><b>30</b></span>
+          <span class="d up"><small>T6</small><b>31</b><i></i></span>
+          <span class="d"><small>T7</small><b>01</b></span>
+          <span class="d"><small>CN</small><b>02</b></span>
+        </div>
+        <div class="agenda">
+          <a class="ag now" href="#"><span class="t">Hôm nay</span><span><b>Học tiếp chặng 01</b><small>còn 4 phút video · 2 câu quiz</small></span></a>
+          <a class="ag" href="#"><span class="t">T4 29/10</span><span><b>Test cuối chặng 01</b><small>6 câu · mở khi xong video</small></span></a>
+          <a class="ag" href="#"><span class="t">T6 31/10</span><span><b>Chặng 02 · Cấu trúc nội dung</b><small>6:25 video · theo lộ trình đề xuất</small></span></a>
+        </div>
+        <div class="leg"><span><i class="g"></i>Đã học</span><span><i class="y"></i>Sắp tới</span><span><i class="r"></i>Quá hạn</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="lop">
+    <div class="loph"><h2>Lớp học phần</h2>
+      <div class="filters"><label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input placeholder="Tìm học phần"></label><button class="sel">Học kỳ 1 · 2026–2027 ▾</button><button class="sel">Tất cả tiến độ ▾</button></div>
+    </div>
+    <div class="cards">
+      <a class="cc" href="#"><div class="cov" style="background:linear-gradient(150deg,#FF5A47,#C81B12)"><svg viewBox="0 0 200 110" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"><g fill="rgba(255,255,255,.8)"><rect x="24" y="30" width="60" height="12" rx="3"/><rect x="90" y="30" width="86" height="12" rx="3"/></g><g fill="rgba(255,255,255,.4)"><rect x="24" y="48" width="96" height="12" rx="3"/><rect x="126" y="48" width="50" height="12" rx="3"/></g><path d="M24 84l6-8 6 12 6-16 6 14 6-10 6 12 6-18 6 16 6-8 6 10 6-12 6 14 6-6 6 10 6-14 6 12 6-8 6 6" stroke="#fff" stroke-width="2" fill="none" opacity=".8"/></svg><span class="code">MUL1415-20261-04</span></div><span class="cb"><span class="ml"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".85"/><path d="M10 8l6 4-6 4z" fill="#fff"/></svg>3 bài học</span><b>Dựng audio và video phi tuyến</b></span><span class="cf"><img src="ptit-logo.webp" alt=""><span>PTIT</span><span class="pb"><i style="width:15%"></i></span><b class="pp">15%</b></span></a>
+      <a class="cc" href="#"><div class="cov" style="background:radial-gradient(60% 70% at 40% 60%,#C79A72,#6E4A30)"><svg viewBox="0 0 200 110" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"><circle cx="90" cy="70" r="26" fill="#E9C3A0"/><path d="M20 0 L90 60" stroke="#FFF3D6" stroke-width="22" opacity=".25"/><circle cx="150" cy="54" r="30" fill="none" stroke="rgba(255,255,255,.35)"/></svg><span class="code">MUL1420-20261-02</span></div><span class="cb"><span class="ml"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".85"/><path d="M10 8l6 4-6 4z" fill="#fff"/></svg>3 bài học</span><b>Nhiếp ảnh và ánh sáng</b></span><span class="cf"><img src="ptit-logo.webp" alt=""><span>PTIT</span><span class="pb"><i style="width:0%"></i></span><b class="pp">0%</b></span></a>
+      <a class="cc dim" href="#"><div class="cov" style="background:linear-gradient(150deg,#3F86F5,#1748B0)"><svg viewBox="0 0 200 110" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"><g stroke="rgba(255,255,255,.55)" stroke-width="2" fill="none"><rect x="30" y="20" width="140" height="70" rx="4"/><path d="M76 20v70M124 20v70M30 43h140M30 67h140"/></g><circle cx="76" cy="43" r="6" fill="#fff"/></svg><span class="code">MUL1302-20261-01</span></div><span class="cb"><span class="ml"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".85"/><path d="M10 8l6 4-6 4z" fill="#fff"/></svg>Đang soạn</span><b>Bố cục đa phương tiện</b></span><span class="cf"><img src="ptit-logo.webp" alt=""><span>PTIT</span><span class="soon">Sắp mở</span></span></a>
+      <a class="cc dim" href="#"><div class="cov" style="background:linear-gradient(150deg,#2EC3A8,#178A76)"><svg viewBox="0 0 200 110" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"><g fill="none" stroke="rgba(255,255,255,.7)" stroke-width="3" stroke-linecap="round"><path d="M40 70c20-40 40-40 60 0s40 40 60 0"/></g><circle cx="40" cy="70" r="7" fill="#fff"/><circle cx="160" cy="70" r="7" fill="#fff"/></svg><span class="code">MUL1510-20261-03</span></div><span class="cb"><span class="ml"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".85"/><path d="M10 8l6 4-6 4z" fill="#fff"/></svg>Đang soạn</span><b>Thiết kế chuyển động</b></span><span class="cf"><img src="ptit-logo.webp" alt=""><span>PTIT</span><span class="soon">Sắp mở</span></span></a>
+    </div>
+  </section>
+</main>
+<footer class="ft"><div class="box">
+  <div class="ftop"><span class="flogo"><img src="ptit-logo.webp" alt=""></span><span><b>HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG</b><small>Posts and Telecommunications Institute of Technology</small></span>
+    <span class="fl"><a>Ôn tập</a><a>Học phần</a><a>Studio 3D</a><a>Tiến độ &amp; Kỹ năng</a></span></div>
+  <div class="fbot">Sản phẩm dự thi Ứng dụng AI trong giảng dạy 2026 · Khoa Đa phương tiện</div>
+</div></footer>
+<div class="note" onclick="this.remove()" style="left:auto;right:18px"><b>Mockup theo kiểu LMS PTIT.</b> Banner chào hồng + tổng quan học kỳ → Học tiếp + lịch tuần → lưới Lớp học phần có mã lớp → footer đỏ đậm. Bấm để ẩn.</div>
+</body></html>

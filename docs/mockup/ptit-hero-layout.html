@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Bố cục hero</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--bg:#FAFAFC;
+  --ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+  --gut:clamp(40px,4vw,80px);--max:1760px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+.box{max-width:var(--max);margin:0 auto;padding:0 var(--gut)}
+/* nav: same pieces, just on the wide container so it lines up with the content */
+.nav{position:absolute;top:0;left:0;right:0;z-index:5}
+.nav .box{display:flex;align-items:center;gap:44px;height:92px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tile{width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.brand .tile img{width:76%}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:22px;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+.links{display:flex;gap:34px;font-size:16.5px}
+.links span.on{color:var(--red-ink);font-weight:800}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.stats{display:flex;align-items:center;gap:10px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 12px;font:700 14px var(--mono);color:var(--navy)}
+.stats i{width:1px;height:18px;background:var(--line)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+
+.hero{position:relative;height:100vh;min-height:760px;overflow:hidden;
+  background:radial-gradient(42% 52% at 72% 46%,rgba(65,165,225,.13),transparent 70%),radial-gradient(30% 40% at 88% 78%,rgba(244,135,143,.12),transparent 70%),var(--bg)}
+.hero .box{position:relative;height:100%;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px;align-items:center}
+.copy{position:relative;z-index:2}
+h1{margin:0;font-weight:900;letter-spacing:-.045em;line-height:.98;color:var(--navy)}
+h1 span{display:block;white-space:nowrap}
+h1 em{font-style:normal;color:var(--red-ink)}
+.lead{margin:24px 0 0;line-height:1.55;color:var(--muted)}
+.model{position:absolute;z-index:1;pointer-events:none}
+.model img{display:block;width:100%;height:auto}
+
+/* resume card (as built) */
+.resume{text-decoration:none;color:inherit;margin-top:30px;display:grid;grid-template-columns:72px 1fr 44px;gap:18px;align-items:center;padding:16px 22px 16px 16px;border-radius:20px;background:#fff;border:1px solid var(--line);
+  box-shadow:0 18px 40px -26px rgba(10,26,80,.25);animation:bob 3s 1s ease-in-out infinite}
+@keyframes bob{50%{translate:0 -7px}}
+.thumb{width:72px;height:72px;border-radius:16px;background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);display:grid;place-items:center;color:#fff}
+.eb{font:700 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--red-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt{display:block;font-weight:800;font-size:19px;line-height:1.3;color:var(--navy);margin:4px 0 10px}
+.prog{display:flex;align-items:center;gap:12px;font:500 12px var(--mono);color:var(--muted)}
+.prog b{color:var(--navy)}
+.prog .bar{flex:1;height:5px;border-radius:3px;background:#EEF0F6}
+.prog .bar i{display:block;height:100%;width:46%;border-radius:3px;background:var(--red)}
+.go{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--red);background:var(--red-50)}
+
+.foot{position:absolute;left:0;right:0;bottom:28px;z-index:3}
+.foot .box{position:relative;display:flex;justify-content:flex-end;align-items:center;font-size:13.5px;color:var(--muted)}
+.pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px}
+.mono{font-family:var(--mono)}
+
+/* ----- A: spread — text on cols 1–5, one empty column, campus on 7–12 and bleeding past the right edge ----- */
+.A .copy{grid-column:1 / span 5}
+.A h1{font-size:clamp(58px,4.9vw,92px)}
+.A .lead{font-size:clamp(17px,1.25vw,21px);max-width:34ch}
+.A .resume{max-width:600px}
+.A .model{width:min(62vw,1180px);right:calc(var(--gut) * -1.6);top:50%;transform:translateY(-46%)}
+/* ----- A2: same spread, campus whole inside cols 7–12 ----- */
+.A2 .copy{grid-column:1 / span 5}
+.A2 h1{font-size:clamp(58px,4.9vw,92px)}
+.A2 .lead{font-size:clamp(17px,1.25vw,21px);max-width:34ch}
+.A2 .resume{max-width:600px}
+.A2 .model{width:min(50vw,940px);right:max(var(--gut),calc((100vw - var(--max))/2 + var(--gut)));top:50%;transform:translateY(-46%)}
+/* ----- C: balanced on visual centres (measured), not on bounding boxes ----- */
+.C .copy{grid-column:1 / span 5}
+.C h1{font-size:clamp(58px,4.9vw,92px)}
+.C .lead{font-size:clamp(17px,1.25vw,21px);max-width:34ch}
+.C .resume{max-width:600px}
+.C .model{transform:none}
+.cg{position:absolute;inset:0;z-index:6;pointer-events:none;display:none}
+body.c-on.C .cg{display:block}
+.cg .ln{position:absolute;left:0;right:0;border-top:1px dashed rgba(31,99,219,.7)}
+.cg .x{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid #1F63DB;border-radius:50%;background:rgba(31,99,219,.12)}
+.cg .x::before,.cg .x::after{content:"";position:absolute;background:#1F63DB;left:50%;top:-8px;bottom:-8px;width:2px;margin-left:-1px}
+.cg .x::after{top:50%;left:-8px;right:-8px;bottom:auto;height:2px;width:auto;margin:-1px 0 0}
+.cg small{position:absolute;font:700 11px var(--mono);color:#1F63DB;background:#fff;padding:2px 6px;border-radius:4px;transform:translate(14px,-26px);white-space:nowrap}
+/* ----- B: campus large in the middle-right, text overlaps its left edge on a soft veil ----- */
+.B .copy{grid-column:1 / span 5;padding:40px 44px 40px 0}
+.B .copy::before{content:"";position:absolute;inset:-120px -80px -120px -40vw;z-index:-1;background:radial-gradient(closest-side,rgba(250,250,252,.96) 55%,rgba(250,250,252,0))}
+.B h1{font-size:clamp(64px,5.6vw,104px)}
+.B .lead{font-size:clamp(17px,1.25vw,21px);max-width:34ch}
+.B .resume{max-width:600px}
+.B .model{width:min(76vw,1440px);left:30%;top:52%;transform:translateY(-44%)}
+
+.switch{position:fixed;left:50%;top:104px;transform:translateX(-50%);z-index:9;display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--navy);box-shadow:0 14px 30px -14px rgba(10,26,80,.6)}
+.switch button{border:0;background:none;color:#C9D0EA;font:600 13px var(--sans);padding:8px 14px;border-radius:999px;cursor:pointer}
+.switch button.on{background:#fff;color:var(--navy)}
+.guides{position:absolute;inset:0;z-index:4;pointer-events:none;display:none}
+.guides .box{height:100%;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:24px}
+.guides i{background:rgba(226,38,28,.06);border-left:1px dashed rgba(226,38,28,.3);border-right:1px dashed rgba(226,38,28,.3)}
+body.g .guides{display:block}
+</style></head>
+<body class="C c-on">
+<header class="nav"><div class="box">
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Học viện Công nghệ BCVT</small></span></span>
+  <nav class="links"><span class="on">Trang chủ</span><span>Ôn tập</span><span>Học phần</span><span>Studio 3D</span><span>Tiến độ &amp; Kỹ năng</span></nav>
+  <span class="right"><span class="stats"><span style="color:#D41F16">12</span><i></i>7 · 2.480 <small style="font-weight:500;color:#646880">XP</small></span><span class="avatar">P</span></span>
+</div></header>
+
+<section class="hero">
+  <div class="box">
+    <div class="copy">
+      <h1><span>Chào Phú.</span><span>Hôm nay chỉ cần</span><span><em>25 phút.</em></span></h1>
+      <p class="lead">Lộ trình hôm nay AI xếp riêng cho bạn: xem tiếp bài giảng đang dở, rồi ôn nhanh những khái niệm còn hổng.</p>
+      <a class="resume" href="#">
+        <span class="thumb"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg></span>
+        <span><span class="eb">Học tiếp · Dựng audio và video phi tuyến</span><span class="tt">Bản chất của dựng audio và video phi tuyến trong hậu kỳ</span><span class="prog"><b>03:22</b><span class="bar"><i></i></span><span>07:19</span></span></span>
+        <span class="go"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+      </a>
+    </div>
+  </div>
+  <div class="model"><img src="campus.webp" alt=""></div>
+  <div class="cg" id="cg"></div>
+  <div class="guides"><div class="box"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+  <div class="foot"><div class="box"><span class="pill" style="position:absolute;left:50%;transform:translateX(-50%)">Cuộn để khám phá các chức năng</span><span class="pill mono">Ẩn mô hình 3D</span></div></div>
+</section>
+
+<div class="switch">
+  <button data-v="C" class="on">C · Cân tổng thể</button><button data-v="A">A · Tràn mép</button><button data-v="A2">A2 · Trọn vẹn</button><button data-v="B">B · Mô hình làm nền</button><button data-c class="on">Đường cân</button><button data-g>Lưới 12 cột</button>
+</div>
+<script>
+const b=document.body;
+document.querySelectorAll('[data-v]').forEach(x=>x.onclick=()=>{b.classList.remove('A','A2','B','C');b.classList.add(x.dataset.v);document.querySelectorAll('[data-v]').forEach(y=>y.classList.toggle('on',y===x));});
+document.querySelector('[data-g]').onclick=e=>{b.classList.toggle('g');e.target.classList.toggle('on');};
+
+/* Visual centres measured on the real pixels (alpha × darkness):
+   campus image: x 0.566, y 0.615 of its box (base is heavy, clouds are sparse);
+   text block: y ≈ 0.378 of its box (big dark headline on top). Align the two centres on one line. */
+/* Balance the whole hero, not just two centres:
+   - the LEFT group is headline + lead + Học tiếp card (the card is part of the weight);
+   - the campus BODY (base + buildings, clouds excluded: 10%–96% of the image height, 7%–98% of its width)
+     spans the same height as the left group plus a little overshoot, so tops and bottoms line up;
+   - the right margin of the campus body mirrors the left margin of the text, so the page is framed symmetrically;
+   - the pair sits on the optical centre of the area under the nav. */
+const MODEL={ar:1290/1580,body:{l:.07,r:.978,t:.10,b:.957}}, NAV=92, OVER=36;
+function layoutC(){const copy=document.querySelector('.copy'),model=document.querySelector('.model'),hero=document.querySelector('.hero');
+  copy.style.transform='';model.style.cssText='';
+  if(!b.classList.contains('C'))return;
+  const vw=hero.clientWidth, vh=hero.clientHeight, r=copy.getBoundingClientRect();
+  const optical=NAV+(vh-NAV-70)*.48;                    // a bit above the middle of the free area
+  const dy=optical-(r.top+r.height/2); copy.style.transform=`translateY(${dy}px)`;
+  const top=r.top+dy, bot=top+r.height;
+  const bodyH=r.height+OVER*2, H=bodyH/(MODEL.body.b-MODEL.body.t), W=H/MODEL.ar;
+  const bodyRight=vw-r.left;                             // mirror the text's left margin
+  const left=bodyRight-MODEL.body.r*W, imgTop=(top-OVER)-MODEL.body.t*H;
+  Object.assign(model.style,{width:W+'px',left:left+'px',top:imgTop+'px',right:'auto'});
+  const g=document.getElementById('cg');g.querySelectorAll('.fr').forEach(e=>e.remove());
+  const add=(css)=>{const e=document.createElement('span');e.className='fr';e.style.cssText='position:absolute;'+css;g.appendChild(e);};
+  add(`left:0;right:0;top:${top}px;border-top:1px dashed rgba(31,99,219,.6)`);
+  add(`left:0;right:0;top:${bot}px;border-top:1px dashed rgba(31,99,219,.6)`);
+  add(`top:0;bottom:0;left:${r.left}px;border-left:1px dashed rgba(31,99,219,.6)`);
+  add(`top:0;bottom:0;left:${bodyRight}px;border-left:1px dashed rgba(31,99,219,.6)`);
+  add(`top:0;bottom:0;left:${vw/2}px;border-left:1px dashed rgba(226,38,28,.5)`);
+  add(`left:0;right:0;top:${optical}px;border-top:1px dashed rgba(226,38,28,.5)`);}
+addEventListener('resize',layoutC);document.fonts.ready.then(layoutC);
+document.querySelectorAll('[data-v]').forEach(x=>x.addEventListener('click',()=>requestAnimationFrame(layoutC)));
+document.querySelector('[data-c]').onclick=e=>{b.classList.toggle('c-on');e.target.classList.toggle('on');};
+</script>
+</body></html>

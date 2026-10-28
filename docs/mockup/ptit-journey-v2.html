@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Tiến độ v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#FAFAFC;
+  --blue:#1F63DB;--teal:#2EC3A8;--ok:#1E7F55;--ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--gut:clamp(40px,4vw,80px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(60% 50% at 100% 0%,rgba(244,135,143,.10),transparent 70%),var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}
+.box{max-width:1760px;margin:0 auto;padding:0 var(--gut)}
+.nav .box{display:flex;align-items:center;gap:44px;height:92px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tile{width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}.brand .tile img{width:76%}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:22px;line-height:1}.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+.links{display:flex;gap:34px;font-size:16.5px}.links .on{color:var(--red-ink);font-weight:800}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.stats{display:flex;align-items:center;gap:10px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 12px;font:700 14px var(--mono);color:var(--navy)}.stats i{width:1px;height:18px;background:var(--line)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+main{padding:24px 0 80px}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 1px 2px rgba(10,26,80,.04)}
+.mono{font-family:var(--mono)}
+
+/* header: title left, compact status right (replaces the status band) */
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:28px}
+.eyebrow{font:700 12.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--red-ink)}
+h1{margin:12px 0 0;font-weight:900;font-size:40px;line-height:1.1;letter-spacing:-.03em;color:var(--navy);display:flex;align-items:center;gap:12px}
+.help{position:relative;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font:700 13px var(--sans);color:var(--muted);background:#fff}
+.help::after{content:attr(data-tip);position:absolute;left:50%;top:calc(100% + 10px);transform:translateX(-50%) translateY(-4px);width:300px;background:var(--navy);color:#fff;font:500 13px/1.5 var(--sans);letter-spacing:0;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s}
+.help:hover::after{opacity:1;transform:translateX(-50%)}
+.chips{display:flex;gap:10px}
+.chip{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;color:var(--muted)}
+.chip b{display:block;font:800 14.5px var(--sans);color:var(--navy);line-height:1.2}
+.chip .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ring{position:relative}.ring svg{transform:rotate(-90deg);display:block}.ring b{position:absolute;inset:0;display:grid;place-items:center;font:800 13px var(--mono);color:var(--navy)}
+
+/* step 1: the one action */
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:stretch}
+.c8{grid-column:span 8}.c4{grid-column:span 4}.c12{grid-column:span 12}
+.step{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:15px;font-weight:800;color:var(--navy)}
+.step .n{width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font:700 12px var(--mono)}
+.step .n.r{background:var(--red)}
+.step small{font-weight:500;color:var(--muted);font-size:13.5px}
+.col{display:flex;flex-direction:column}.col>.card,.col>.focus{flex:1}
+.focus{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;padding:30px 34px;border-radius:24px;color:#fff;background:radial-gradient(70% 90% at 85% 20%,rgba(255,255,255,.14),transparent 60%),linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);box-shadow:0 26px 50px -28px rgba(226,38,28,.8)}
+.focus .big{position:relative;width:112px;height:112px}.focus .big svg{transform:rotate(-90deg)}.focus .big b{position:absolute;inset:0;display:grid;place-items:center;font:800 26px var(--mono)}
+.focus small{font:700 12px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.focus h2{margin:8px 0 0;font-size:34px;line-height:1.12;font-weight:900;letter-spacing:-.025em}
+.focus p{margin:10px 0 0;font-size:15.5px;line-height:1.5;color:rgba(255,255,255,.9)}
+.focus .unl{display:inline-flex;align-items:center;gap:8px;margin-top:14px;font-size:13.5px;font-weight:600;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);padding:6px 12px;border-radius:999px}
+.btn-w{display:inline-flex;align-items:center;gap:8px;margin-top:22px;background:#fff;color:var(--red-ink);font-weight:800;font-size:16px;padding:14px 22px;border-radius:14px;box-shadow:0 10px 20px -10px rgba(0,0,0,.35);animation:bob 3s 1s ease-in-out infinite}
+.btn-w:hover{animation:none}
+@keyframes bob{50%{translate:0 -6px}}
+@media (prefers-reduced-motion:reduce){.btn-w{animation:none}}
+
+/* step 2: today's missions as 4 icon tiles */
+.today{padding:20px 22px;display:flex;flex-direction:column}
+.today .tp{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;color:var(--muted)}
+.today .tp b{font:800 15px var(--mono);color:var(--navy)}
+.bar{height:6px;border-radius:3px;background:var(--sunk);margin:10px 0 16px;overflow:hidden}.bar i{display:block;height:100%;width:25%;background:var(--red);border-radius:3px}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;flex:1}
+.tl{position:relative;display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;background:var(--sunk);font-size:13.5px;font-weight:700;color:var(--navy);line-height:1.3;transition:transform .2s,background .2s}
+.tl:hover{transform:translateY(-2px);background:#EDEFF5}
+.tl .ti{width:36px;height:36px;border-radius:11px;background:#fff;display:grid;place-items:center;color:var(--navy)}
+.tl em{font:600 12px var(--mono);font-style:normal;color:var(--muted);margin-top:auto}
+.tl.done{background:#EAF5EF;color:var(--muted)}.tl.done .ti{background:var(--ok);color:#fff}.tl.done em{color:var(--ok)}
+.tl.next{background:var(--red-50);outline:2px solid var(--red-100)}.tl.next .ti{background:var(--red);color:#fff}.tl.next em{color:var(--red-ink)}
+
+/* step 3: everything else behind tabs */
+.tabs{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--sunk);width:max-content;margin-bottom:14px}
+.tabs button{border:0;background:none;font-weight:700;font-size:14px;color:var(--muted);padding:9px 16px;border-radius:10px;display:flex;align-items:center;gap:8px}
+.tabs button em{font:600 12px var(--mono);font-style:normal;opacity:.75}
+.tabs button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(10,26,80,.1)}
+.pane{display:none;padding:24px 26px}.pane.on{display:block;animation:f .3s var(--ease)}
+@keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.lesson h4{margin:0 0 14px;font-size:13.5px;font-weight:700;color:var(--muted);display:flex;justify-content:space-between}
+.lesson h4 a{color:var(--red-ink)}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.node{display:inline-flex;align-items:center;gap:9px;padding:8px 14px 8px 8px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:600;color:var(--navy);white-space:nowrap}
+.node .p{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 10px var(--mono);background:conic-gradient(var(--red) calc(var(--v)*1%),var(--sunk) 0);position:relative}
+.node .p::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#fff}.node .p span{position:relative;z-index:1}
+.node.ok{background:var(--red-50);border-color:var(--red-100)}.node.ok .p{background:var(--red);color:#fff}.node.ok .p::after{display:none}
+.node.lock{color:#A6ABBC;background:var(--sunk);border-color:transparent}.node.lock .p{background:transparent}.node.lock .p::after{display:none}
+.node.cur{border:2px solid var(--red);box-shadow:0 0 0 4px rgba(226,38,28,.10)}
+.arrow{color:#C3C7D3;font-size:13px}
+.others{display:flex;gap:10px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.others a{display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:12px;background:var(--sunk);font-size:13.5px;font-weight:600;color:var(--navy)}
+.others a em{font:600 12px var(--mono);font-style:normal;color:var(--muted)}
+.badges{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.bg{text-align:center;padding:18px 10px;border-radius:16px;background:var(--sunk)}
+.bg .e{width:44px;height:44px;margin:0 auto 10px;border-radius:13px;display:grid;place-items:center;color:#fff}
+.bg b{display:block;font-size:13px;color:var(--navy)}.bg small{display:block;margin-top:4px;font:500 11.5px var(--mono);color:var(--muted)}
+.bg.lock{opacity:.5}
+.lb{max-width:640px}
+.lr{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:12px 16px;font-size:14.5px;border-radius:12px}
+.lr .rk{font:700 13px var(--mono);color:var(--muted)}.lr .xp{font:700 13px var(--mono);color:var(--navy)}
+.lr.me{background:var(--red-50)}.lr.me .rk,.lr.me b{color:var(--red-ink)}
+.note{position:fixed;left:18px;bottom:18px;max-width:330px;background:var(--navy);color:#fff;font-size:12.5px;line-height:1.5;padding:12px 14px;border-radius:12px;cursor:pointer}
+.note b{color:#FFB199}
+
+.intro{display:flex;justify-content:space-between;gap:30px;align-items:center;padding:14px 18px;border-radius:14px;background:var(--sunk);margin-bottom:24px}
+.intro p{margin:0;font-size:14px;line-height:1.55;color:var(--ink);max-width:80ch}
+.intro p b{color:var(--navy)}
+.legend{display:flex;gap:16px;flex:none;font-size:12.5px;color:var(--muted);font-weight:600}
+.legend span{display:flex;align-items:center;gap:6px}
+.lg{width:18px;height:18px;border-radius:50%;display:grid;place-items:center}
+.lg svg{width:11px;height:11px}
+.lg.ok{background:var(--red);color:#fff}.lg.cur{border:3px solid var(--red);border-right-color:var(--red-100);border-bottom-color:var(--red-100)}.lg.lock{background:#E6E8F0;color:#8A90A3}
+.lg.mk{width:3px;height:14px;border-radius:2px;background:var(--navy)}
+.lh{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.lh small{display:block;font:700 11.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--red-ink)}
+.lh b{display:block;margin-top:4px;font-size:17px;color:var(--navy)}
+.lh a{font-size:13.5px;font-weight:700;color:var(--red-ink)}
+.track{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr;align-items:stretch;gap:8px}
+.ar{align-self:center;color:#C3C7D3}
+.kc{position:relative;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;border:1px solid var(--line);background:#fff}
+.kn{position:absolute;right:12px;top:10px;font:700 11px var(--mono);color:#B4B9CA}
+.ki{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:800 11px var(--mono)}
+.kt{font-size:14.5px;line-height:1.3;color:var(--navy)}
+.kb{position:relative;display:block;height:6px;border-radius:3px;background:var(--sunk);margin-top:auto}
+.kb i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--red)}
+.kb u{position:absolute;left:80%;top:-3px;width:2px;height:12px;border-radius:1px;background:var(--navy);opacity:.55}
+.kc small{font-size:12.5px;color:var(--muted);line-height:1.35}
+.kc.cur{border:2px solid var(--red);box-shadow:0 0 0 5px rgba(226,38,28,.08)}
+.kc.cur .ki{background:conic-gradient(var(--red) 40%,var(--red-100) 0);color:var(--navy);position:relative}
+.kc.cur .ki::before{content:"";position:absolute;inset:5px;border-radius:50%;background:#fff}
+.kc.cur .ki b{position:relative}
+.kc.cur small{color:var(--red-ink);font-weight:700}
+.kc.lock{background:var(--sunk);border-color:transparent}
+.kc.lock .kb{display:none}
+.kc.lock .ki{background:#E6E8F0;color:#8A90A3}.kc.lock .kt{color:#8A90A3}
+.kc.ok .ki{background:var(--red);color:#fff}
+.oth{margin-top:26px;border-top:1px solid var(--line);padding-top:16px}
+.oh{font:700 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.orow{display:grid;grid-template-columns:34px minmax(0,1fr) 120px 150px 60px;gap:16px;align-items:center;padding:10px 8px;border-radius:12px}
+.orow:hover{background:var(--sunk)}
+.os{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font:700 12px var(--mono);color:var(--muted)}
+.os.ok{background:var(--red);color:#fff}
+.on2 small{display:block;font-size:12px;color:var(--muted)}.on2 b{font-size:14.5px;color:var(--navy)}
+.pips{display:flex;gap:4px}.pips i{flex:1;height:6px;border-radius:3px;background:var(--sunk)}.pips i.f{background:var(--red)}
+.oc{font:500 12.5px var(--mono);color:var(--muted)}
+.og{font-size:13px;font-weight:700;color:var(--red-ink);text-align:right}
+
+.mapbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.chs{display:flex;gap:8px}
+.ch{display:flex;align-items:center;gap:8px;padding:7px 14px 7px 8px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13.5px;font-weight:700;color:var(--muted);cursor:pointer;transition:.2s}
+.ch i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 10px var(--mono);font-style:normal;background:var(--sunk);color:var(--muted)}
+.ch.done i{background:var(--red);color:#fff}
+.ch.on{border-color:var(--navy);color:var(--navy);box-shadow:0 0 0 3px rgba(10,26,80,.06)}
+.ch.on i{background:var(--navy);color:#fff}.ch.done.on i{background:var(--red)}
+.hint{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.hk{width:12px;height:12px;border-radius:50%;margin-left:8px}
+.hk.ok{background:var(--red)}.hk.cur{border:3px solid var(--red);width:14px;height:14px}.hk.lock{background:#DADDE6}
+.map{position:relative;height:280px;margin:0 -6px}
+.map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.road{fill:none;stroke:#EEF0F6;stroke-width:18;stroke-linecap:round}
+.road-done{fill:none;stroke:url(#rg);stroke-width:18;stroke-linecap:round;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.4s .2s var(--ease) forwards}
+.road-dash{fill:none;stroke:#fff;stroke-width:2.5;stroke-dasharray:2 12;stroke-linecap:round;opacity:.9}
+@keyframes draw{to{stroke-dashoffset:var(--off)}}
+.st{position:absolute;transform:translate(-50%,-38px);display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;opacity:0;animation:pop .5s var(--ease) forwards}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-38px) scale(.6)}to{opacity:1;transform:translate(-50%,-38px) scale(1)}}
+.st .orb{position:relative;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 10px 22px -12px rgba(10,26,80,.4);transition:transform .25s var(--ease)}
+.st:hover .orb{transform:scale(1.08)}
+.st .orb svg.rg{position:absolute;inset:0;width:76px;height:76px;transform:rotate(-90deg)}
+.st .orb .fill{position:absolute;inset:9px;border-radius:50%;overflow:hidden;background:var(--sunk)}
+.st .orb .fill i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,#FF7A6B,#E2261C);height:0;transition:height 1.2s var(--ease)}
+.st .orb .fill i::before{content:"";position:absolute;left:-50%;top:-6px;width:200%;height:12px;background:radial-gradient(12px 6px at 25% 100%,transparent 98%,#FF7A6B) 0 0/50% 100%;animation:wave 2.4s linear infinite}
+@keyframes wave{to{transform:translateX(25%)}}
+.st .orb b{position:relative;z-index:1;font:800 15px var(--mono);color:var(--navy);display:grid;place-items:center}
+.st .orb b svg{width:22px!important;height:22px!important;display:block}
+.st .lab{max-width:150px;text-align:center;font-size:13.5px;font-weight:700;line-height:1.3;color:var(--navy)}
+.st.ok .orb{background:var(--red)}.st.ok .orb .fill{display:none}.st.ok .orb b{color:#fff}
+.st.lock .orb{background:#F1F2F6;box-shadow:none}.st.lock .orb .fill{display:none}.st.lock .orb b{color:#A6ABBC}.st.lock .lab{color:#A6ABBC;font-weight:600}
+.st.cur .orb{box-shadow:0 0 0 6px rgba(226,38,28,.12),0 14px 28px -12px rgba(226,38,28,.6)}
+.st.cur .orb::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(226,38,28,.5);animation:ping 2s ease-out infinite}
+@keyframes ping{from{transform:scale(.9);opacity:1}to{transform:scale(1.35);opacity:0}}
+.st .you{position:absolute;top:-34px;white-space:nowrap;font:800 11px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--navy);padding:5px 9px;border-radius:8px}
+.st .you::after{content:"";position:absolute;left:50%;top:100%;border:5px solid transparent;border-top-color:var(--navy);transform:translateX(-50%)}
+.st.end .orb{border-radius:22px;background:var(--navy)}.st.end .orb b{color:#fff;font-size:26px}
+.tipbox{position:absolute;z-index:5;min-width:220px;transform:translate(-50%,-100%);background:var(--navy);color:#fff;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.45;opacity:0;pointer-events:none;transition:opacity .2s}
+.tipbox b{display:block;font-size:14px;margin-bottom:2px}
+.tipbox .m{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin:8px 0 6px;position:relative}
+.tipbox .m i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:#FF7A6B}
+.tipbox .m u{position:absolute;left:80%;top:-3px;width:2px;height:11px;background:#fff}
+.foot{margin:4px 0 0;text-align:center;font-size:13px;color:var(--muted)}
+.foot b{color:var(--navy)}
+
+.origin{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:0 0 20px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.crs2{display:flex;align-items:center;gap:14px;flex:none}
+.cv2{border-radius:14px;box-shadow:0 10px 20px -10px rgba(226,38,28,.6)}.cv2 svg{display:block}
+.crs2 small{display:block;font:700 11.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--red-ink)}
+.pick{display:flex;align-items:center;gap:8px;margin:4px 0 2px;padding:0;border:0;background:none;font-size:20px;font-weight:900;letter-spacing:-.015em;color:var(--navy)}
+.pick i{font-style:normal;font-size:13px;color:var(--muted);width:24px;height:24px;border-radius:7px;background:var(--sunk);display:grid;place-items:center}
+.crs2 em{font-style:normal;font-size:13px;color:var(--muted)}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.fs{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);max-width:170px;line-height:1.3}
+.fi{width:36px;height:36px;border-radius:11px;background:var(--sunk);color:var(--navy);display:grid;place-items:center;flex:none}
+.fi.ai{background:linear-gradient(135deg,#1F63DB,#2EC3A8);color:#fff}
+.fs.me .fi{background:var(--red-50);color:var(--red-ink)}
+.fs.me{color:var(--navy);font-weight:700}
+.fa{color:#C3C7D3}
+
+/* v3: clean progress orb — no liquid */
+.st .orb .fill{display:none!important}
+.st .orb svg.rg circle{stroke-width:6}
+.st.cur .orb{background:#fff;animation:breathe 2.6s ease-in-out infinite}
+@keyframes breathe{50%{box-shadow:0 0 0 10px rgba(226,38,28,.08),0 14px 28px -12px rgba(226,38,28,.6)}}
+.st.cur .orb::after{inset:-4px;border:2px solid rgba(226,38,28,.35);animation:ping 2.6s ease-out infinite}
+.st.cur .orb b{font-size:17px;color:var(--red-ink)}
+</style></head>
+<body>
+<header class="nav"><div class="box">
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Học viện Công nghệ BCVT</small></span></span>
+  <nav class="links"><span>Trang chủ</span><span>Ôn tập</span><span>Học phần</span><span>Studio 3D</span><span class="on">Tiến độ &amp; Kỹ năng</span></nav>
+  <span class="right"><span class="stats"><span style="color:#D41F16">12</span><i></i>7 · 2.480 <small style="font-weight:500;color:#646880">XP</small></span><span class="avatar">P</span></span>
+</div></header>
+
+<main class="box">
+  <header class="head">
+    <div>
+      <div class="eyebrow">Tiến độ &amp; Kỹ năng</div>
+      <h1>Điểm thưởng đến từ việc hiểu bài <span class="help" data-tip="XP chỉ tính khi bạn trả lời đúng, sửa được lỗi sai hoặc hoàn thành bài. Xem video lâu hay bấm nhiều không làm tăng điểm.">?</span></h1>
+    </div>
+    <div class="chips">
+      <span class="chip"><span class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="#F3F4F8" stroke-width="4"/><circle cx="17" cy="17" r="14" fill="none" stroke="#1F63DB" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="14"/></svg><b>7</b></span><span><b>Người dựng cảnh</b>còn 460 XP lên cấp 8</span></span>
+      <span class="chip"><span class="ic" style="background:#FFF1EF"><svg width="16" height="18" viewBox="0 0 16 18"><path d="M8 0c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 1.5.8 2.5 1.8 2.5C6 5 7.5 3 8 0z" fill="#E2261C"/></svg></span><span><b>12 ngày</b>chuỗi học</span></span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="c8 col">
+      <div class="step"><span class="n r">1</span>Việc nên làm bây giờ <small>· khái niệm sắp mở khóa bài mới</small></div>
+      <a class="focus" href="#">
+        <span class="big"><svg width="112" height="112" viewBox="0 0 112 112"><circle cx="56" cy="56" r="47" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="10"/><circle cx="56" cy="56" r="47" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-dasharray="295.3" stroke-dashoffset="177"/></svg><b>40%</b></span>
+        <span>
+          <small>Nên ôn tiếp</small>
+          <h2>Tư duy dựng</h2>
+          <p>Còn 3 câu đúng nữa là đạt 80%.</p>
+          <span class="unl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>Mở khóa “Vai trò của người xem”</span><br>
+          <span class="btn-w">Ôn khái niệm này →</span>
+        </span>
+      </a>
+    </section>
+    <section class="c4 col">
+      <div class="step"><span class="n">2</span>Nhiệm vụ hôm nay</div>
+      <div class="card today">
+        <div class="tp"><span>Làm mới lúc 00:00</span><b>1/4</b></div>
+        <div class="bar"><i></i></div>
+        <div class="tiles">
+          <a class="tl done" href="#"><span class="ti">✓</span>Đọc một bài đọc<em>+15 · xong</em></a>
+          <a class="tl next" href="#"><span class="ti"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></span>Sửa đúng một câu sau khi sai<em>+30 · làm ngay →</em></a>
+          <a class="tl" href="#"><span class="ti"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></span>Hoàn thành một bài giảng<em>+40</em></a>
+          <a class="tl" href="#"><span class="ti"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg></span>Làm một bài test cuối chương<em>+50</em></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="c12">
+      <div class="step" style="margin-top:12px"><span class="n">3</span>Xem lại tiến độ</div>
+      <div class="tabs" role="tablist">
+        <button class="on" data-t="tree">Bản đồ kỹ năng <em>2/25</em></button>
+        <button data-t="badge">Huy hiệu <em>1/5</em></button>
+        <button data-t="rank">Xếp hạng lớp <em>#7</em></button>
+      </div>
+      <div class="card">
+        <div class="pane on" id="tree">
+          <div class="origin">
+            <div class="crs2">
+              <span class="cv2"><svg viewBox="0 0 56 56" width="56" height="56"><rect width="56" height="56" rx="14" fill="url(#cvg)"/><defs><linearGradient id="cvg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF5A47"/><stop offset="1" stop-color="#C81B12"/></linearGradient></defs><g fill="rgba(255,255,255,.8)"><rect x="8" y="16" width="16" height="5" rx="2"/><rect x="27" y="16" width="21" height="5" rx="2"/></g><g fill="rgba(255,255,255,.4)"><rect x="8" y="25" width="26" height="5" rx="2"/><rect x="37" y="25" width="11" height="5" rx="2"/></g><path d="M8 41l3-4 3 6 3-8 3 7 3-5 3 6 3-9 3 8 3-4 3 5 3-6" stroke="#fff" stroke-width="1.5" fill="none" opacity=".8"/></svg></span>
+              <span><small>Bản đồ kỹ năng của học phần</small>
+                <button class="pick">Dựng audio và video phi tuyến <i>▾</i></button>
+                <em>Khoa Đa phương tiện · 3 bài giảng · 13 khái niệm</em></span>
+            </div>
+            <div class="flow" aria-label="Bản đồ này được tạo ra thế nào">
+              <span class="fs"><span class="fi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg></span>Bài giảng của thầy cô</span>
+              <span class="fa">→</span>
+              <span class="fs"><span class="fi ai"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></span>AI tách thành các khái niệm</span>
+              <span class="fa">→</span>
+              <span class="fs"><span class="fi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg></span>Quiz đúng thì khái niệm sáng lên</span>
+              <span class="fa">→</span>
+              <span class="fs me"><span class="fi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Biết mình hiểu tới đâu, không chỉ xem bao lâu</span>
+            </div>
+          </div>
+                    <div class="mapbar">
+            <div class="chs" id="chs"></div>
+            <div class="hint"><span class="hk ok"></span>Vững <span class="hk cur"></span>Đang học <span class="hk lock"></span>Chưa mở</div>
+          </div>
+          <div class="map" id="map"><svg id="mapsvg" aria-hidden="true"></svg><div id="nodes"></div><div class="tipbox" id="tipbox"></div></div>
+          
+        </div>
+        <div class="pane" id="badge">
+          <div class="badges">
+            <div class="bg"><span class="e" style="background:#E2261C">★</span><b>Bền bỉ 7 ngày</b><small>đã nhận</small></div>
+            <div class="bg"><span class="e" style="background:#1F63DB">◎</span><b>Nhà dựng phi tuyến</b><small>1/2</small></div>
+            <div class="bg"><span class="e" style="background:#2EC3A8">↺</span><b>Học từ lỗi sai</b><small>0/5</small></div>
+            <div class="bg lock"><span class="e" style="background:#A6ABBC">?</span><b>Huy hiệu ẩn</b><small>chưa mở</small></div>
+            <div class="bg lock"><span class="e" style="background:#A6ABBC">?</span><b>Huy hiệu ẩn</b><small>chưa mở</small></div>
+          </div>
+        </div>
+        <div class="pane" id="rank">
+          <div class="lb">
+            <div class="lr"><span class="rk">#6</span><span>Sinh viên ẩn danh</span><span class="xp">2.610</span></div>
+            <div class="lr me"><span class="rk">#7</span><b>Bạn</b><span class="xp">2.480</span></div>
+            <div class="lr"><span class="rk">#8</span><span>Sinh viên ẩn danh</span><span class="xp">2.395</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<div class="note" onclick="this.remove()"><b>Mockup.</b> Trang đọc theo 3 bước đánh số: ① một việc nên làm bây giờ (khối đỏ duy nhất, nút nhấp nhô) → ② nhiệm vụ hôm nay dạng ô icon → ③ cây kỹ năng / huy hiệu / xếp hạng gom vào tab, mỗi lúc chỉ hiện một. Bấm để ẩn.</div>
+<script>
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id===b.dataset.t));});
+
+const LOCK='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const CHK='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="position:relative;z-index:1"><path d="M5 12l5 5 9-10"/></svg>';
+const CH=[
+ {name:'Chặng 01',full:'Bản chất dựng phi tuyến',items:[['Dựng tuyến tính',100],['Dựng phi tuyến (NLE)',100],['Tính phi hủy hoại',85],['Quy trình 4 giai đoạn',30]]},
+ {name:'Chặng 02',full:'Cấu trúc & điều hướng tiếp nhận',cur:true,items:[['Tư duy dựng',40],['Vai trò người xem',null],['Tải trí tuệ',null],['Mục tiêu giao tiếp',null],['Dẫn dắt sự chú ý',null]]},
+ {name:'Chặng 03',full:'Nhịp điệu dựng phim',items:[['Nhịp hình',null],['Nhịp âm',null],['Cắt J/L',null],['Nhịp cảm xúc',null]]},
+];
+let curCh=1;
+const chs=document.getElementById('chs');
+CH.forEach((c,i)=>{const done=c.items.every(x=>x[1]>=80)||i===0;const b=document.createElement('button');b.className='ch'+(i===0?' done':'');b.innerHTML=`<i>${i===0?'✓':i+1}</i>${c.name} · ${c.full}`;b.onclick=()=>{curCh=i;render();};chs.appendChild(b);});
+function render(){
+  [...chs.children].forEach((b,i)=>b.classList.toggle('on',i===curCh));
+  const map=document.getElementById('map'),svg=document.getElementById('mapsvg'),nodes=document.getElementById('nodes'),tip=document.getElementById('tipbox');
+  const W=map.clientWidth,H=map.clientHeight,c=CH[curCh];
+  const items=[...c.items,['Test cuối chặng','end']];const n=items.length;
+  const pts=items.map((_,i)=>[60+(W-120)*i/(n-1),H*(i%2?0.64:0.34)]);
+  let d=`M${pts[0][0]},${pts[0][1]}`;for(let i=1;i<n;i++){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],mx=(x0+x1)/2;d+=` C${mx},${y0} ${mx},${y1} ${x1},${y1}`;}
+  // index of current (first not >=80)
+  let cur=items.findIndex(x=>x[1]!=='end'&&(x[1]===null||x[1]<80));if(cur<0)cur=n-1;
+  svg.innerHTML=`<defs><linearGradient id="rg" x1="0" x2="1"><stop offset="0" stop-color="#FF7A6B"/><stop offset="1" stop-color="#E2261C"/></linearGradient></defs><path class="road" d="${d}"/><path class="road-done" id="rd" d="${d}"/><path class="road-dash" d="${d}"/>`;
+  const rd=document.getElementById('rd'),L=rd.getTotalLength();
+  // length to current node
+  let lenTo=0;{const step=L/400;for(let t=0;t<=L;t+=step){const p=rd.getPointAtLength(t);if(p.x>=pts[cur][0]){lenTo=t;break;}}}
+  const prog=items[cur][1]&&items[cur][1]!=='end'?items[cur][1]/100:0;
+  const next=cur<n-1?pts[cur+1][0]:pts[cur][0];
+  rd.style.setProperty('--len',L);rd.style.setProperty('--off',L-lenTo-(curCh===1||curCh===0?(next-pts[cur][0])*prog*0.9:0));
+  nodes.innerHTML='';
+  items.forEach(([name,v],i)=>{
+    const st=document.createElement('div');
+    const isEnd=v==='end',ok=!isEnd&&v>=80,lock=!isEnd&&v===null,isCur=i===cur&&!isEnd;
+    st.className='st '+(isEnd?'end':ok?'ok':lock?'lock':'cur');
+    st.style.left=pts[i][0]+'px';st.style.top=pts[i][1]+'px';st.style.animationDelay=(0.15+i*0.08)+'s';
+    const R=31,C=2*Math.PI*R;
+    st.innerHTML=`${isCur&&curCh===1?'<span class="you">Bạn ở đây</span>':''}<span class="orb">${!ok&&!lock&&!isEnd?`<svg class="rg" viewBox="0 0 76 76"><circle cx="38" cy="38" r="${R}" fill="none" stroke="#FFDCD7" stroke-width="5"/><circle cx="38" cy="38" r="${R}" fill="none" stroke="#E2261C" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-v/100)}"/></svg><span class="fill"><i data-h="${v}"></i></span>`:''}<b>${isEnd?'★':ok?'':lock?LOCK:v+'%'}</b>${ok?CHK:''}</span><span class="lab">${name}</span>`;
+    if(ok)st.querySelector('.orb b').remove();
+    st.onmouseenter=()=>{tip.style.left=pts[i][0]+'px';tip.style.top=(pts[i][1]-50)+'px';
+      tip.innerHTML=isEnd?`<b>Test cuối chặng</b>6 câu · mở khi mọi khái niệm của chặng đạt 80%`:lock?`<b>${name}</b>Mở khi khái niệm trước đạt 80%`:`<b>${name}</b>${ok?'Đã vững':v+'% · còn '+Math.max(1,Math.ceil((80-v)/13))+' câu đúng nữa'}<span class="m"><i style="width:${v}%"></i><u></u></span>Bấm để ôn đúng đoạn video`;tip.style.opacity=1;};
+    st.onmouseleave=()=>tip.style.opacity=0;
+    nodes.appendChild(st);
+  });
+  requestAnimationFrame(()=>nodes.querySelectorAll('.fill i').forEach(e=>e.style.height=e.dataset.h+'%'));
+}
+render();addEventListener('resize',render);
+document.querySelector('[data-t=tree]').addEventListener('click',()=>requestAnimationFrame(render));
+</script>
+</body></html>

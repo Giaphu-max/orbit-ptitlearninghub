@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Học phần</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#FAFAFC;
+  --blue:#1F63DB;--sky:#41A5E1;--teal:#2EC3A8;--ok:#1E7F55;--ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;
+  --gut:clamp(40px,4vw,80px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(60% 50% at 100% 0%,rgba(244,135,143,.10),transparent 70%),var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.box{max-width:1760px;margin:0 auto;padding:0 var(--gut)}
+.nav .box{display:flex;align-items:center;gap:44px;height:92px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tile{width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.brand .tile img{width:76%}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:22px;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+.links{display:flex;gap:34px;font-size:16.5px}.links .on{color:var(--red-ink);font-weight:800}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.stats{display:flex;align-items:center;gap:10px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 12px;font:700 14px var(--mono);color:var(--navy)}
+.stats i{width:1px;height:18px;background:var(--line)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+main{padding:20px 0 80px}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:start}
+.c8{grid-column:span 8}.c4{grid-column:span 4}
+.lbl{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 12px}
+.lbl h2{margin:0;font-size:15px;font-weight:800;color:var(--navy)}
+.lbl h2 em{font-style:normal;font:700 13px var(--mono);color:var(--muted);margin-left:6px}
+.lbl a{font-size:13.5px;font-weight:700;color:var(--red-ink)}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 1px 2px rgba(10,26,80,.04)}
+.mono{font-family:var(--mono)}
+
+/* ---- tier 1: continue ---- */
+.cont{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:0;overflow:hidden;height:100%;align-content:start;box-shadow:0 30px 60px -36px rgba(226,38,28,.45),0 1px 2px rgba(10,26,80,.04)}
+.player{position:relative;min-height:340px;background:radial-gradient(90% 120% at 20% 20%,#1D2F78 0%,#0A1A50 60%,#060F33 100%);overflow:hidden;cursor:pointer}
+.player .slide{position:absolute;left:28px;top:26px;right:44%;color:#fff}
+.player .slide small{font:700 10px var(--mono);letter-spacing:.14em;color:#9FB4FF}
+.player .slide b{display:block;margin-top:10px;font-size:26px;line-height:1.12;font-weight:900;letter-spacing:-.02em}
+.player .tl{display:grid;gap:6px;margin-top:18px}
+.player .tl i{display:block;height:8px;border-radius:3px;background:rgba(255,255,255,.85)}
+.player .tl i:nth-child(2){background:#41A5E1}.player .tl i:nth-child(3){background:#2EC3A8}
+.player .who{position:absolute;right:-10px;bottom:0;height:104%;transition:transform 6s ease-out}
+.player:hover .who{transform:scale(1.04) translateX(-6px)}
+.player .mid{position:absolute;left:38%;top:62%;width:72px;height:72px;margin:-36px 0 0 -36px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;color:var(--red);box-shadow:0 12px 30px rgba(0,0,0,.35);transition:transform .3s var(--ease)}
+.player:hover .mid{transform:scale(1.08)}
+.player .tc{position:absolute;right:14px;top:14px;font:700 12px var(--mono);color:#fff;background:rgba(0,0,0,.45);padding:5px 8px;border-radius:6px}
+.player .pb{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.25)}
+.player .pb i{display:block;height:100%;width:46%;background:var(--red)}
+.info{padding:30px 32px;display:flex;flex-direction:column}
+.eb{display:flex;align-items:center;gap:8px;font:700 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--red-ink)}
+.eb .dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:live 2s ease-out infinite}
+@keyframes live{0%{box-shadow:0 0 0 0 rgba(226,38,28,.45)}70%,100%{box-shadow:0 0 0 8px rgba(226,38,28,0)}}
+.info h1{margin:12px 0 0;font-size:30px;line-height:1.18;font-weight:900;letter-spacing:-.025em;color:var(--navy)}
+.info .crs{margin-top:8px;font-size:14.5px;color:var(--muted)}
+.info .crs b{color:var(--ink);font-weight:700}
+.meta{margin-top:20px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.meta .row{display:flex;align-items:center;gap:10px}
+.dots{display:flex;gap:4px}.dots i{width:12px;height:12px;border-radius:3px;background:var(--sunk)}.dots i.on{background:var(--red)}.dots i.half{background:#F4A39C}
+.meta .k{font:500 13px var(--mono);color:var(--muted)}
+.cta{margin-top:auto;padding-top:24px;display:flex;align-items:center;gap:14px}
+.btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);color:#fff;font-weight:800;font-size:16px;padding:15px 22px;border-radius:14px;box-shadow:0 14px 26px -12px rgba(226,38,28,.7);animation:bob 3s 1s ease-in-out infinite;border:0;cursor:pointer}
+.btn:hover{animation:none;transform:translateY(-2px)}
+@keyframes bob{50%{translate:0 -6px}}
+@media (prefers-reduced-motion:reduce){.btn,.eb .dot{animation:none}}
+.cta small{font-size:13px;color:var(--muted)}
+
+/* path: collapsed by default */
+.path{grid-column:1 / -1;border-top:1px solid var(--line)}
+.path summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;padding:16px 22px}
+.path summary::-webkit-details-marker{display:none}
+.path summary b{font-size:14.5px;color:var(--navy);font-weight:800;white-space:nowrap}
+.path summary b em{font-style:normal;font:600 12.5px var(--mono);color:var(--muted);margin-left:8px}
+.step{display:flex;align-items:center}
+.step .n{width:12px;height:12px;border-radius:50%;border:2px solid #C8CCD8;background:#fff;flex:none}
+.step .n.cur{border-color:var(--red);background:var(--red);box-shadow:0 0 0 4px rgba(226,38,28,.14)}
+.step .n.goal{border-radius:3px;transform:rotate(45deg)}
+.step .seg{flex:1;height:3px;background:var(--line);margin:0 6px;border-radius:2px;position:relative;overflow:hidden}
+.step .seg.p i{position:absolute;inset:0 auto 0 0;width:46%;background:var(--red)}
+.path summary .tg{font-size:13.5px;font-weight:700;color:var(--red-ink);white-space:nowrap}
+.path summary .tg i{display:inline-block;font-style:normal;transition:transform .25s}
+.path[open] summary .tg i{transform:rotate(180deg)}
+.lessons{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:4px 22px 22px}
+.ls{border-radius:14px;padding:12px;background:var(--sunk);font-size:13.5px}
+.ls .th{aspect-ratio:16/9;border-radius:10px;background:linear-gradient(150deg,#2A3A7E,#0A1A50);margin-bottom:10px;position:relative}
+.ls .th span{position:absolute;right:6px;bottom:6px;font:700 10.5px var(--mono);color:#fff;background:rgba(0,0,0,.45);padding:2px 5px;border-radius:4px}
+.ls small{font:500 11.5px var(--mono);color:var(--muted)}
+.ls b{display:block;margin-top:3px;color:var(--navy);font-weight:700;line-height:1.35}
+.ls.cur{background:var(--red-50);outline:2px solid var(--red-100)}
+.ls.goal .th{background:repeating-conic-gradient(#E9EBF2 0 25%,#F6F7FA 0 50%) 0 0/18px 18px}
+
+/* ---- right column ---- */
+.sum{display:grid;grid-template-columns:repeat(3,1fr);padding:18px 6px}
+.sum div{text-align:center}
+.sum div+div{border-left:1px solid var(--line)}
+.sum b{display:block;font:800 22px var(--mono);color:var(--navy)}
+.sum small{font-size:12.5px;color:var(--muted)}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--sunk);margin-bottom:12px}
+.tabs button{flex:1;border:0;background:none;font:600 13px var(--sans);color:var(--muted);padding:8px 6px;border-radius:9px;cursor:pointer}
+.tabs button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(10,26,80,.1)}
+.tabs button em{font-style:normal;font-family:var(--mono);margin-left:4px;opacity:.7}
+.list{padding:6px}
+.ci{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:12px;border-radius:14px;transition:background .2s}
+.ci:hover{background:var(--sunk)}
+.ci .cv{width:64px;height:64px;border-radius:14px;position:relative;overflow:hidden}
+.ci b{display:block;font-size:15px;font-weight:800;color:var(--navy);line-height:1.3}
+.ci small{display:block;margin-top:3px;font-size:12.5px;color:var(--muted)}
+.ci .tag{display:inline-block;margin-bottom:4px;font:700 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--red-ink)}
+.ring{position:relative;width:44px;height:44px}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:700 11px var(--mono);color:var(--navy)}
+.ci .go{font-size:13px;font-weight:800;color:var(--red-ink)}
+.ci.active{background:var(--red-50)}
+.grid{align-items:stretch}
+.c8,.lib{display:flex;flex-direction:column}
+.c8>.card,.libc{flex:1}
+.libc{padding:18px 16px 10px}
+.kpi{display:flex;gap:20px;padding:0 6px 14px;font-size:13.5px;color:var(--muted)}
+.kpi b{font:800 15px var(--mono);color:var(--navy);margin-right:4px}
+.libc .tabs{margin:0 0 6px}
+.libc .list{padding:0}
+.tip{padding:18px 20px;display:flex;gap:14px;align-items:flex-start}
+.tip .ic{width:38px;height:38px;border-radius:11px;background:var(--red-50);color:var(--red-ink);display:grid;place-items:center;flex:none}
+.tip b{display:block;font-size:14.5px;color:var(--navy)}
+.tip p{margin:4px 0 0;font-size:13.5px;color:var(--muted);line-height:1.5}
+.note{position:fixed;left:18px;bottom:18px;max-width:320px;background:var(--navy);color:#fff;font-size:12.5px;line-height:1.5;padding:12px 14px;border-radius:12px;cursor:pointer;box-shadow:0 18px 40px -16px rgba(10,26,80,.5)}
+.note b{color:#FFB199}
+</style></head>
+<body>
+<header class="nav"><div class="box">
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Học viện Công nghệ BCVT</small></span></span>
+  <nav class="links"><span>Trang chủ</span><span>Ôn tập</span><span class="on">Học phần</span><span>Studio 3D</span><span>Tiến độ &amp; Kỹ năng</span></nav>
+  <span class="right"><span class="stats"><span style="color:#D41F16">12</span><i></i>7 · 2.480 <small style="font-weight:500;color:#646880">XP</small></span><span class="avatar">P</span></span>
+</div></header>
+
+<main class="box">
+  <div class="grid">
+    <!-- LEFT 8: the one thing to do -->
+    <section class="c8">
+      <div class="lbl"><h2>Học tiếp</h2></div>
+      <div class="card cont">
+        <a class="player" href="#" aria-label="Xem tiếp từ 03:22">
+          <span class="slide"><small>CHẶNG 01 · DỰNG PHI TUYẾN</small><b>Timeline và tính phi hủy hoại</b><span class="tl"><i style="width:90%"></i><i style="width:62%"></i><i style="width:76%"></i></span></span>
+          <img class="who" src="big-color2.webp" alt="">
+          <span class="tc">03:22 / 07:19</span>
+          <span class="mid"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" style="margin-left:4px"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z"/></svg></span>
+          <span class="pb"><i></i></span>
+        </a>
+        <div class="info">
+          <span class="eb"><span class="dot"></span>Dựng phim · Chặng 01/3</span>
+          <h1>Bản chất của dựng audio và video phi tuyến trong hậu kỳ</h1>
+          <div class="meta">
+            <span class="row"><span class="dots"><i class="on"></i><i class="on"></i><i class="half"></i><i></i></span><span>2/4 khái niệm vững · còn 4 phút</span></span>
+          </div>
+          <div class="cta"><a class="btn" href="#">▶&nbsp; Học tiếp từ 03:22</a></div>
+        </div>
+        <details class="path">
+        <summary>
+          <b>Dựng audio và video phi tuyến<em>15%</em></b>
+          <span class="step"><span class="n cur"></span><span class="seg p"><i></i></span><span class="n"></span><span class="seg"></span><span class="n"></span><span class="seg"></span><span class="n goal"></span></span>
+          <span class="tg">Xem các chặng <i>▾</i></span>
+        </summary>
+        <div class="lessons">
+          <div class="ls cur"><div class="th"><span>7:19</span></div><small>Chặng 01 · đang học</small><b>Bản chất của dựng audio và video phi tuyến</b></div>
+          <div class="ls"><div class="th"><span>6:25</span></div><small>Chặng 02</small><b>Tổ chức cấu trúc nội dung và điều hướng tiếp nhận</b></div>
+          <div class="ls"><div class="th"><span>6:19</span></div><small>Chặng 03</small><b>Nhịp điệu dựng phim</b></div>
+          <div class="ls goal"><div class="th"></div><small>Đích</small><b>Test cuối chương</b></div>
+        </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- RIGHT 4: library -->
+    <aside class="c4 lib">
+      <div class="lbl"><h2>Học phần của bạn<em>2</em></h2></div>
+      <div class="card libc">
+        <div class="kpi"><span><b>6</b> bài giảng</span><span><b>2/25</b> khái niệm vững</span></div>
+        <div class="tabs"><button class="on">Tất cả</button><button>Đang học</button><button>Chưa học</button><button>Đã xong</button></div>
+        <div class="list"><a class="ci active" href="#">
+            <span class="cv" style="background:linear-gradient(150deg,#FF5A47,#C81B12)"><svg viewBox="0 0 64 64" width="64" height="64"><g fill="rgba(255,255,255,.75)"><rect x="8" y="18" width="20" height="6" rx="2"/><rect x="31" y="18" width="25" height="6" rx="2"/></g><g fill="rgba(255,255,255,.35)"><rect x="8" y="28" width="30" height="6" rx="2"/><rect x="41" y="28" width="15" height="6" rx="2"/></g><path d="M8 46 l3-4 3 6 3-8 3 7 3-5 3 6 3-9 3 8 3-4 3 5 3-6 3 7 3-3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".8"/></svg></span>
+            <span><span class="tag">Dựng phim · đang học</span><b>Dựng audio và video phi tuyến</b><small>Chặng 1/3 · 20 phút video</small></span>
+            <span class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="#F3F4F8" stroke-width="4"/><circle cx="22" cy="22" r="18" fill="none" stroke="#E2261C" stroke-width="4" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="96"/></svg><b>15%</b></span>
+          </a>
+          <a class="ci" href="#">
+            <span class="cv" style="background:radial-gradient(60% 60% at 40% 60%,#C79A72,#7A5236)"><svg viewBox="0 0 64 64" width="64" height="64"><circle cx="28" cy="38" r="13" fill="#E9C3A0"/><path d="M6 8 L28 30" stroke="#FFF3D6" stroke-width="6" opacity=".35"/></svg></span>
+            <span><span class="tag" style="color:#8A5A36">Nhiếp ảnh · chưa bắt đầu</span><b>Nhiếp ảnh và ánh sáng</b><small>3 bài · 31 phút</small></span>
+            <span class="go">Bắt đầu →</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+<div class="note" onclick="this.remove()"><b>Mockup bố cục.</b> Trái 8 cột: bài đang học dở là khối duy nhất nổi và có chuyển động; lộ trình các chặng thu gọn, bấm để mở. Phải 4 cột: thư viện học phần + số liệu. Bấm để ẩn ghi chú.</div>
+</body></html>
