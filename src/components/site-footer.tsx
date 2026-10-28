@@ -3,8 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { courses, lessons } from '@/data'
 import { scrollToSection } from '@/lib/scroll'
 import { useOrbitStore } from '@/store/useOrbitStore'
-import { BrandLogo } from '@/components/brand-logo'
-import { FACULTY_LOGO_URL } from '@/lib/brand'
+import { LOCKUP_URL } from '@/lib/brand'
 
 const PTIT_URL = 'https://ptit.edu.vn'
 
@@ -14,7 +13,7 @@ interface FooterLink {
     external?: boolean
 }
 
-/** Footer đỏ thương hiệu PTIT: logo, mô tả ngắn, nhóm link và thông tin sản phẩm dự thi. Dùng chung cho mọi trang và tấm trượt của trang chủ. */
+/** Footer đỏ thương hiệu PTIT: lockup chính thức đơn sắc trắng, mô tả ngắn, nhóm link và thông tin sản phẩm dự thi. Dùng chung cho mọi trang và tấm trượt của trang chủ. */
 export function SiteFooter() {
     const role = useOrbitStore((s) => s.role)
     const { pathname } = useLocation()
@@ -62,26 +61,23 @@ export function SiteFooter() {
             <div className="container-wide py-12 lg:py-14">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
                     <div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <Link to="/" className="inline-flex items-center gap-3 align-middle rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70" aria-label="PTIT, trang chủ">
-                                <BrandLogo />
-                                <span className="text-xl font-black tracking-tight text-ink-foreground">PTIT</span>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <Link
+                                to="/"
+                                className="inline-block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
+                                aria-label="Học viện Công nghệ Bưu chính Viễn thông"
+                            >
+                                <img
+                                    src={LOCKUP_URL}
+                                    alt="Học viện Công nghệ Bưu chính Viễn thông"
+                                    className="h-[56px] w-auto object-contain [filter:brightness(0)_invert(1)]"
+                                />
                             </Link>
-                            <span aria-hidden className="mx-1 hidden h-7 w-px bg-ink-foreground/[0.18] sm:inline-block" />
-                            <span className="inline-flex items-center rounded-xl bg-ink-foreground px-2.5 py-1.5 shadow-sm">
-                                <img src={FACULTY_LOGO_URL} alt="Khoa Đa phương tiện" className="h-8 w-auto object-contain" loading="lazy" />
-                            </span>
+                            <span aria-hidden className="hidden h-10 w-px bg-ink-foreground/25 sm:inline-block" />
+                            <span className="text-[14px] font-bold text-ink-foreground whitespace-nowrap">Khoa Đa phương tiện</span>
                         </div>
-                        <div className="mt-3.5">
-                            <b className="block text-[14px] font-extrabold uppercase tracking-[0.02em] text-ink-foreground">
-                                Học viện Công nghệ Bưu chính Viễn thông
-                            </b>
-                            <span className="mt-0.5 block text-xs text-ink-foreground/80">
-                                Posts and Telecommunications Institute of Technology
-                            </span>
-                        </div>
-                        <p className="mt-3.5 max-w-sm text-sm leading-relaxed text-ink-foreground/80">
-                            Nền tảng học tập có điểm dừng cho sinh viên PTIT: trợ giảng AI bám bài giảng thật, bài đọc ngắn mỗi ngày và phần thưởng gắn với việc hiểu bài.
+                        <p className="mt-4 max-w-[44ch] text-[14px] leading-relaxed text-ink-foreground/85">
+                            Học theo đúng bài giảng của thầy cô, hỏi trợ giảng AI ngay khi chưa hiểu và ôn lại phần còn hổng mỗi ngày.
                         </p>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:contents">
@@ -111,8 +107,7 @@ export function SiteFooter() {
                 <div className="mt-12 flex flex-col gap-1.5 border-t border-ink-foreground/[0.18] pt-6 text-sm text-ink-foreground/80 text-left">
                     <p className="font-semibold text-ink-foreground">Sản phẩm dự thi Ứng dụng AI trong giảng dạy 2026 · Công đoàn Học viện Công nghệ Bưu chính Viễn thông</p>
                     <p>Giảng viên đứng tên: ThS. Nguyễn Cảnh Châu</p>
-                    <p>Nhóm thực hiện: Nguyễn Gia Phú, Trương Thanh Hà, Nguyễn Hoàng Hiếu</p>
-                    <p>Nội dung AI được giảng viên duyệt trước khi hiển thị</p>
+                    <p>Nhóm thực hiện: Nguyễn Gia Phú, Trương Thanh Hà</p>
                 </div>
             </div>
         </footer>
