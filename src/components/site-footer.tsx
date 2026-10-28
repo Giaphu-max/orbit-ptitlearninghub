@@ -61,22 +61,18 @@ export function SiteFooter() {
             <div className="container-wide py-12 lg:py-14">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
                     <div>
-                        <div className="flex flex-wrap items-center gap-4">
-                            <Link
-                                to="/"
-                                className="inline-block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
-                                aria-label="Học viện Công nghệ Bưu chính Viễn thông"
-                            >
-                                <img
-                                    src={LOCKUP_URL}
-                                    alt="Học viện Công nghệ Bưu chính Viễn thông"
-                                    className="h-[56px] w-auto object-contain [filter:brightness(0)_invert(1)]"
-                                />
-                            </Link>
-                            <span aria-hidden className="hidden h-10 w-px bg-ink-foreground/25 sm:inline-block" />
-                            <span className="text-[14px] font-bold text-ink-foreground whitespace-nowrap">Khoa Đa phương tiện</span>
-                        </div>
-                        <p className="mt-4 max-w-[44ch] text-[14px] leading-relaxed text-ink-foreground/85">
+                        <Link
+                            to="/"
+                            className="inline-block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70"
+                            aria-label="Học viện Công nghệ Bưu chính Viễn thông"
+                        >
+                            <img
+                                src={LOCKUP_URL}
+                                alt="Học viện Công nghệ Bưu chính Viễn thông"
+                                className="h-[56px] w-auto object-contain [filter:brightness(0)_invert(1)]"
+                            />
+                        </Link>
+                        <p className="mt-5 max-w-[44ch] text-[14px] leading-relaxed text-ink-foreground/85">
                             Học theo đúng bài giảng của thầy cô, hỏi trợ giảng AI ngay khi chưa hiểu và ôn lại phần còn hổng mỗi ngày.
                         </p>
                     </div>
