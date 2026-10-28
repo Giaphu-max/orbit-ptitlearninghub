@@ -39,8 +39,8 @@ export default {
         foreground: token('foreground'),
         /** Tiêu đề navy (giao diện tối trùng foreground) */
         strong: token('foreground-strong'),
-        /** Nền footer đỏ đậm PTIT (cố định ở cả hai giao diện) */
-        footer: token('footer-bg'),
+        /** Nền footer đỏ thương hiệu PTIT (theo --brand-800: 154 21 14) */
+        footer: 'rgb(var(--footer-bg) / <alpha-value>)',
         surface: token('surface'),
         primary: { DEFAULT: token('primary'), foreground: token('primary-foreground') },
         secondary: { DEFAULT: token('secondary'), foreground: token('secondary-foreground') },
