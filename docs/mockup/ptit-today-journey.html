@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Ôn tập và Tiến độ</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red2:#C81B12;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#FAFAFC;--card:#fff;
+  --blue:#1F63DB;--sky:#41A5E1;--teal:#2EC3A8;--ok:#1E7F55;--win:#FFB25E;
+  --ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(60% 50% at 100% 0%,rgba(244,135,143,.10),transparent 70%),var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+/* nav (unchanged from app) */
+.nav{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:44px;padding:20px 96px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tile{width:48px;height:48px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}
+.brand .tile img{width:76%}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:22px;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+.links{display:flex;gap:34px}
+.links button{background:none;border:0;padding:6px 0;color:var(--ink);font-weight:500;font-size:16.5px}
+.links button.on{color:var(--red-ink);font-weight:800}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.stats{display:flex;align-items:center;gap:10px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 12px;font:700 14px var(--mono);color:var(--navy)}
+.stats .d{width:1px;height:18px;background:var(--line)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+/* wide content */
+.wrap{max-width:1760px;margin:0 auto;padding:28px clamp(40px,4vw,80px) 80px}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:start}
+.c7{grid-column:span 7}.c5{grid-column:span 5}.c12{grid-column:span 12}
+.sticky{position:sticky;top:24px}
+.eyebrow{font:700 12.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--red-ink)}
+h1{margin:12px 0 0;font-weight:900;font-size:44px;line-height:1.08;letter-spacing:-.035em;color:var(--navy)}
+.lead{margin:12px 0 0;max-width:62ch;font-size:16px;line-height:1.6;color:var(--muted)}
+.head{margin-bottom:28px}
+.lbl{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 12px}
+.lbl h2{margin:0;font-size:15px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+.lbl h2 em{font-style:normal;font:700 13px var(--mono);color:var(--muted);margin-left:6px}
+.lbl a{font-size:13.5px;font-weight:700;color:var(--red-ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 1px 2px rgba(10,26,80,.04)}
+.sub{font-size:13.5px;color:var(--muted)}
+.mono{font-family:var(--mono)}
+
+/* tier 1: the only moving thing on a page */
+.t1{animation:bob 3s 1.2s ease-in-out infinite}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -7px}}
+.t1:hover{animation:none}
+@media (prefers-reduced-motion:reduce){.t1{animation:none}}
+
+/* ---------- TODAY ---------- */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:34px 36px 30px;color:#fff;background:radial-gradient(70% 90% at 85% 20%,rgba(255,255,255,.16),transparent 60%),linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);
+  box-shadow:0 24px 48px -26px rgba(226,38,28,.75);min-height:300px;display:flex;flex-direction:column}
+.hero .why{align-self:flex-start;font-size:13px;font-weight:700;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);padding:6px 12px;border-radius:999px}
+.hero h3{margin:22px 0 0;font-size:34px;line-height:1.15;font-weight:900;letter-spacing:-.025em;max-width:22ch}
+.hero p{margin:12px 0 0;font-size:15px;line-height:1.55;color:rgba(255,255,255,.86);max-width:52ch}
+.hero .row{margin-top:auto;padding-top:26px;display:flex;align-items:center;justify-content:space-between}
+.hero .meta{font:600 13px var(--mono);color:rgba(255,255,255,.85)}
+.btn-w{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--red-ink);font-weight:800;font-size:16px;padding:14px 22px;border-radius:14px;border:0;box-shadow:0 10px 20px -10px rgba(0,0,0,.35)}
+.rows{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.r{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;background:#fff;border:1px solid var(--line);transition:border-color .2s,transform .2s}
+.r:hover{border-color:var(--red-100);transform:translateX(2px)}
+.r .n{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font:700 12px var(--mono);background:var(--sunk);color:var(--muted);flex:none}
+.r b{font-size:15px;font-weight:700;color:var(--navy);flex:1}
+.r .m{font:500 12.5px var(--mono);color:var(--muted)}
+.r .go{font-size:13.5px;font-weight:800;color:var(--red-ink)}
+.r.done{background:transparent}
+.r.done b{color:var(--muted);font-weight:600}
+.r.done .n{background:#E6F4EE;color:var(--ok)}
+.r.done .go{color:var(--ok);font-weight:700}
+/* A2 tower */
+.a2{display:grid;grid-template-columns:96px 1fr;gap:20px;align-items:center;padding:20px 22px}
+.a2 svg{display:block}
+.a2 h3{margin:0;font-size:15px;font-weight:800;color:var(--navy)}
+.a2 p{margin:6px 0 0;font-size:14px;line-height:1.5;color:var(--ink)}
+.a2 p b{color:var(--red-ink)}
+.a2 .hint{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.win{fill:#D9DEEA}
+.win.lit{fill:var(--win);filter:drop-shadow(0 0 3px rgba(255,178,94,.9))}
+/* missions compact */
+.ms{padding:6px 0}
+.mi{display:flex;align-items:center;gap:12px;padding:12px 22px}
+.mi+.mi{border-top:1px solid var(--line)}
+.mi .ic{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:none;display:grid;place-items:center}
+.mi.ok .ic{background:var(--ok);border-color:var(--ok);color:#fff}
+.mi span{flex:1;font-size:14.5px;color:var(--navy);font-weight:600}
+.mi.ok span{color:var(--muted);text-decoration:line-through;font-weight:500}
+.mi .x{font:700 12.5px var(--mono);color:var(--muted)}
+.mi a{font-size:13.5px;font-weight:800;color:var(--red-ink)}
+details summary{list-style:none;cursor:pointer;padding:12px 22px;border-top:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--muted);display:flex;justify-content:space-between}
+details summary::-webkit-details-marker{display:none}
+details summary i{font-style:normal;transition:transform .25s}
+details[open] summary i{transform:rotate(180deg)}
+
+/* ---------- JOURNEY ---------- */
+.band{display:grid;grid-template-columns:1.4fr auto 1fr auto .9fr;align-items:center;gap:28px;padding:22px 28px;margin-bottom:28px}
+.band .vr{width:1px;height:56px;background:var(--line)}
+.lv{display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:64px;height:64px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:800 22px var(--mono);color:var(--navy)}
+.lv .t{flex:1;min-width:0}
+.lv .t b{display:block;font-size:17px;font-weight:800;color:var(--navy)}
+.lv .bar{display:block;position:relative;height:7px;border-radius:4px;background:var(--sunk);margin:10px 0 7px;overflow:hidden}
+.lv .bar i{position:absolute;inset:0 auto 0 0;width:84%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--teal))}
+.lv .t small{font:500 12.5px var(--mono);color:var(--muted)}
+.tip{position:relative;cursor:help;border-bottom:1px dashed #B8BDCC}
+.tip::after{content:attr(data-tip);position:absolute;left:0;top:calc(100% + 8px);white-space:nowrap;background:var(--navy);color:#fff;font:600 12px var(--sans);padding:7px 10px;border-radius:8px;opacity:0;transform:translateY(-3px);pointer-events:none;transition:.2s}
+.tip:hover::after{opacity:1;transform:none}
+.sk{display:flex;align-items:center;gap:14px}
+.sk .f{width:48px;height:48px;border-radius:14px;background:var(--red-50);display:grid;place-items:center}
+.sk b{display:block;font:800 22px var(--mono);color:var(--navy)}
+.sk small{font-size:13px;color:var(--muted)}
+.bd{display:flex;align-items:center;gap:10px}
+.bd .pip{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px}
+.bd small{display:block;font-size:13px;color:var(--muted)}
+.bd b{font:800 18px var(--mono);color:var(--navy)}
+/* focus concept: tier 1 */
+.focus{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;padding:24px 26px;border-radius:22px;color:#fff;background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);box-shadow:0 24px 48px -26px rgba(226,38,28,.75);margin-bottom:18px}
+.focus .big{position:relative;width:84px;height:84px}
+.focus .big svg{transform:rotate(-90deg)}
+.focus .big b{position:absolute;inset:0;display:grid;place-items:center;font:800 20px var(--mono)}
+.focus small{font:700 12px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.focus h3{margin:6px 0 0;font-size:24px;line-height:1.2;font-weight:900;letter-spacing:-.02em}
+.focus p{margin:8px 0 0;font-size:14.5px;color:rgba(255,255,255,.88);line-height:1.5}
+/* tree */
+.tree{padding:22px 24px}
+.lesson+.lesson{margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
+.lesson h4{margin:0 0 12px;font-size:13.5px;font-weight:700;color:var(--muted)}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.node{display:inline-flex;align-items:center;gap:9px;padding:8px 14px 8px 8px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;font-weight:600;color:var(--navy);white-space:nowrap}
+.node .p{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 10px var(--mono);background:conic-gradient(var(--red) calc(var(--v)*1%),var(--sunk) 0);position:relative}
+.node .p::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#fff}
+.node .p span{position:relative;z-index:1}
+.node.ok{background:var(--red-50);border-color:var(--red-100)}
+.node.ok .p{background:var(--red);color:#fff}.node.ok .p::after{display:none}
+.node.lock{color:#A6ABBC;background:var(--sunk);border-color:transparent}
+.node.lock .p{background:transparent}.node.lock .p::after{display:none}
+.node.cur{border:2px solid var(--red);box-shadow:0 0 0 4px rgba(226,38,28,.10)}
+.arrow{color:#C3C7D3;font-size:13px}
+.more{display:block;text-align:center;margin-top:16px;padding:12px;border-radius:12px;background:var(--sunk);font-size:13.5px;font-weight:700;color:var(--muted)}
+/* side */
+.next{padding:20px 22px}
+.next .mt{display:flex;gap:14px;align-items:flex-start}
+.next .mt .gi{width:40px;height:40px;border-radius:12px;background:var(--red-50);color:var(--red-ink);display:grid;place-items:center;flex:none}
+.next b{display:block;font-size:16px;color:var(--navy);font-weight:800}
+.next p{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+.next .pb{height:5px;border-radius:3px;background:var(--sunk);margin-top:12px}
+.next .ft{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.btn-r{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-weight:800;font-size:14px;padding:10px 16px;border-radius:12px;border:0}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
+.bg{text-align:center;padding:14px 8px;border-radius:14px;background:var(--sunk)}
+.bg .e{width:40px;height:40px;margin:0 auto 8px;border-radius:12px;display:grid;place-items:center;color:#fff}
+.bg b{display:block;font-size:12.5px;color:var(--navy);line-height:1.3}
+.bg small{display:block;margin-top:3px;font:500 11px var(--mono);color:var(--muted)}
+.lb{padding:6px 0}
+.lr{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 22px;font-size:14px}
+.lr .rk{font:700 13px var(--mono);color:var(--muted)}
+.lr .xp{font:700 13px var(--mono);color:var(--navy)}
+.lr.me{background:var(--red-50)}
+.lr.me .rk,.lr.me b{color:var(--red-ink)}
+.side>*+*{margin-top:22px}
+.page{display:none}.page.on{display:block;animation:fade .35s var(--ease)}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.note{position:fixed;left:18px;bottom:18px;cursor:pointer;max-width:300px;background:var(--navy);color:#fff;font-size:12.5px;line-height:1.5;padding:12px 14px;border-radius:12px;box-shadow:0 18px 40px -16px rgba(10,26,80,.5)}
+.note b{color:#FFB199}
+</style></head>
+<body>
+<nav class="nav">
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Học viện Công nghệ BCVT</small></span></span>
+  <div class="links"><button>Trang chủ</button><button data-p="today" class="on">Ôn tập</button><button>Học phần</button><button>Phòng Lab 3D</button><button data-p="journey">Tiến độ &amp; Kỹ năng</button></div>
+  <div class="right"><span class="stats"><span style="color:#D41F16"><svg width="13" height="15" viewBox="0 0 16 18" style="vertical-align:-2px"><path d="M8 0c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 1.5.8 2.5 1.8 2.5C6 5 7.5 3 8 0z" fill="#E2261C"/></svg> 12</span><span class="d"></span>7 · 2.480 <small style="font-weight:500;color:#646880">XP</small></span><span class="avatar">P</span></div>
+</nav>
+
+<!-- ================= TODAY ================= -->
+<main class="wrap page on" id="today">
+  <header class="head">
+    <div class="eyebrow">Ôn tập cá nhân hóa</div>
+    <h1>Lấp lỗ hổng kiến thức chỉ với 3 phút mỗi ngày.</h1>
+    <p class="lead">AI xem lại những câu bạn từng làm sai, rồi tóm thành 3 bài đọc ngắn từ chính bài giảng của thầy cô. Nắm lại bản chất mà không phải xem lại cả video dài.</p>
+  </header>
+  <div class="grid">
+    <section class="c7">
+      <div class="lbl"><h2>Bài hôm nay<em>1/3</em></h2></div>
+      <a class="hero t1" href="#">
+        <span class="why">Nên đọc trước · bạn mới nắm 25% “Nhịp hình”</span>
+        <h3>Tổ chức cấu trúc nội dung và điều hướng tiếp nhận</h3>
+        <p>Tóm từ 3 đoạn giảng của chặng 02, kèm mốc thời gian để xem lại đúng chỗ.</p>
+        <span class="row"><span class="meta">1 phút · +20 XP · 1 câu kiểm tra</span><span class="btn-w">Đọc ngay →</span></span>
+      </a>
+      <div class="rows">
+        <a class="r" href="#"><span class="n">2</span><b>Sự kết hợp giữa nhịp hình và nhịp âm trong dựng phim</b><span class="m">1 phút · +20 XP</span><span class="go">Đọc →</span></a>
+        <a class="r done" href="#"><span class="n">✓</span><b>Bản chất của dựng audio và video phi tuyến trong hậu kỳ</b><span class="m">+20 XP</span><span class="go">Đã đọc</span></a>
+      </div>
+    </section>
+    <aside class="c5 sticky side">
+      <div>
+        <div class="lbl"><h2>Tòa A2 ở trang chủ</h2></div>
+        <div class="card a2">
+          <svg width="96" height="140" viewBox="0 0 96 140" aria-hidden="true" id="tower"></svg>
+          <div>
+            <h3>1 tầng đã sáng</h3>
+            <p>Mỗi bài đọc xong thắp thêm một tầng cửa sổ. <b>Còn 9 tầng tối.</b></p>
+            <div class="hint">Đèn tắt khi sang ngày mới.</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="lbl"><h2>Nhiệm vụ ôn tập</h2><a href="#" data-go="journey">Tất cả nhiệm vụ →</a></div>
+        <div class="card">
+          <div class="ms">
+            <div class="mi ok"><span class="ic">✓</span><span>Đọc một bài đọc hôm nay</span><span class="x">+15</span></div>
+            <div class="mi"><span class="ic"></span><span>Sửa đúng một câu sau khi sai</span><a href="#">Làm →</a></div>
+          </div>
+          <details><summary>Xem 2 nhiệm vụ khác <i>▾</i></summary>
+            <div class="mi"><span class="ic"></span><span>Hoàn thành một bài giảng</span><a href="#">Làm →</a></div>
+            <div class="mi"><span class="ic"></span><span>Làm một bài test cuối chương</span><a href="#">Làm →</a></div>
+          </details>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- ================= JOURNEY ================= -->
+<main class="wrap page" id="journey">
+  <header class="head">
+    <div class="eyebrow">Tiến độ &amp; Kỹ năng</div>
+    <h1>Điểm thưởng đến từ việc hiểu bài</h1>
+    <p class="lead">XP chỉ tính khi bạn trả lời đúng, sửa được lỗi sai hoặc hoàn thành bài. Xem video lâu hay bấm nhiều không làm tăng điểm.</p>
+  </header>
+
+  <!-- tier 2: one status band instead of two big cards -->
+  <section class="card band" aria-label="Trạng thái">
+    <div class="lv">
+      <span class="ring"><svg width="64" height="64" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#1F63DB"/><stop offset="1" stop-color="#2EC3A8"/></linearGradient></defs><circle cx="32" cy="32" r="27" fill="none" stroke="#F3F4F8" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="27"/></svg><b>7</b></span>
+      <span class="t"><b>Cấp 7 · Người dựng cảnh</b><span class="bar"><i></i></span><small><span class="tip" data-tip="Tổng đã kiếm 2.480 XP · còn tiêu được 2.480 XP">2.480 / 2.940 XP</span> · còn 460 XP lên Cấp 8 “Nhà làm phim”</small></span>
+    </div>
+    <span class="vr"></span>
+    <div class="sk"><span class="f"><svg width="22" height="24" viewBox="0 0 16 18"><path d="M8 0c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 1.5.8 2.5 1.8 2.5C6 5 7.5 3 8 0z" fill="#E2261C"/></svg></span><span><b>12 ngày</b><small>chuỗi học · còn 1 lần đóng băng tuần này</small></span></div>
+    <span class="vr"></span>
+    <div class="bd"><span><small>Khái niệm vững</small><b>2/25</b></span><span style="margin-left:18px"><small>Huy hiệu</small><b>4/12</b></span></div>
+  </section>
+
+  <div class="grid">
+    <section class="c7">
+      <!-- tier 1 -->
+      <a class="focus t1" href="#">
+        <span class="big"><svg width="84" height="84" viewBox="0 0 84 84"><circle cx="42" cy="42" r="35" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="8"/><circle cx="42" cy="42" r="35" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-dasharray="219.9" stroke-dashoffset="83.6"/></svg><b>62%</b></span>
+        <span><small>Nên ôn tiếp</small><h3>Tính phi hủy hoại (non-destructive)</h3><p>Đạt 80% để mở “Quy trình dựng 4 giai đoạn”. Còn 2 câu đúng nữa.</p></span>
+        <span class="btn-w">Ôn khái niệm này →</span>
+      </a>
+      <div class="lbl"><h2>Cây kỹ năng<em>2/25 vững</em></h2></div>
+      <div class="card tree">
+        <div class="lesson"><h4>Chặng 01 · Bản chất của dựng audio và video phi tuyến</h4>
+          <div class="chain">
+            <span class="node ok"><span class="p"><span>✓</span></span>Dựng tuyến tính</span><span class="arrow">→</span>
+            <span class="node ok"><span class="p"><span>✓</span></span>Dựng phi tuyến (NLE)</span><span class="arrow">→</span>
+            <span class="node cur" style="--v:62"><span class="p"><span>62</span></span>Tính phi hủy hoại</span><span class="arrow">→</span>
+            <span class="node lock"><span class="p"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Quy trình dựng 4 giai đoạn</span>
+          </div></div>
+        <div class="lesson"><h4>Chặng 02 · Tổ chức cấu trúc nội dung và điều hướng tiếp nhận</h4>
+          <div class="chain">
+            <span class="node" style="--v:40"><span class="p"><span>40</span></span>Tư duy dựng</span><span class="arrow">→</span>
+            <span class="node lock"><span class="p"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Vai trò của người xem</span><span class="arrow">→</span>
+            <span class="node lock"><span class="p"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Mục tiêu giao tiếp</span>
+          </div></div>
+        <details><summary style="border-top:1px solid var(--line);margin:20px -24px -22px;padding:14px 24px;border-radius:0 0 20px 20px">Xem chặng 03 và học phần Nhiếp ảnh (16 khái niệm) <i>▾</i></summary>
+          <div class="lesson" style="margin-top:20px"><h4>Chặng 03 · Nhịp điệu dựng phim</h4>
+            <div class="chain"><span class="node" style="--v:25"><span class="p"><span>25</span></span>Nhịp hình</span><span class="arrow">→</span><span class="node lock"><span class="p"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Nhịp âm</span><span class="arrow">→</span><span class="node lock"><span class="p"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Cắt J/L</span></div></div>
+        </details>
+      </div>
+    </section>
+
+    <aside class="c5 sticky side">
+      <div>
+        <div class="lbl"><h2>Việc nên làm tiếp</h2></div>
+        <div class="card next">
+          <div class="mt"><span class="gi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg></span><span><b>Sửa đúng một câu sau khi sai</b><p>Xem lại đoạn video rồi làm câu biến thể · +30 XP</p></span></div>
+          <div class="ft"><span class="sub mono">0/1</span><a class="btn-r" href="#">Làm ngay →</a></div>
+        </div>
+        <details class="card" style="margin-top:10px;overflow:hidden"><summary style="border-top:0">3 nhiệm vụ khác hôm nay · 1/4 xong <i>▾</i></summary>
+          <div class="mi ok"><span class="ic">✓</span><span>Đọc một bài đọc hôm nay</span><span class="x">+15</span></div>
+          <div class="mi"><span class="ic"></span><span>Hoàn thành một bài giảng</span><a href="#">Làm →</a></div>
+          <div class="mi"><span class="ic"></span><span>Làm một bài test cuối chương</span><a href="#">Làm →</a></div>
+        </details>
+      </div>
+      <div>
+        <div class="lbl"><h2>Huy hiệu</h2><a href="#">Xem tất cả 12 →</a></div>
+        <div class="card badges">
+          <div class="bg"><span class="e" style="background:#E2261C">✦</span><b>Học từ lỗi sai</b><small>mới nhận</small></div>
+          <div class="bg"><span class="e" style="background:#1F63DB">◎</span><b>Bắt nhịp</b><small>3/5 câu</small></div>
+          <div class="bg"><span class="e" style="background:#2EC3A8">▲</span><b>Chuỗi 14 ngày</b><small>còn 2 ngày</small></div>
+        </div>
+      </div>
+      <div>
+        <div class="lbl"><h2>Bảng xếp hạng lớp D24PT</h2><a href="#">Xem cả lớp →</a></div>
+        <div class="card lb">
+          <div class="lr"><span class="rk">#6</span><span>Sinh viên ẩn danh</span><span class="xp">2.610</span></div>
+          <div class="lr me"><span class="rk">#7</span><b>Bạn</b><span class="xp">2.480</span></div>
+          <div class="lr"><span class="rk">#8</span><span>Sinh viên ẩn danh</span><span class="xp">2.395</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="note" onclick="this.remove()" title="Bấm để ẩn"><b>Mockup bố cục.</b> Mỗi trang chỉ một khối đỏ có chuyển động (việc nên làm tiếp). Bấm “Ôn tập” / “Tiến độ &amp; Kỹ năng” trên thanh để đổi trang.</div>
+
+<script>
+/* A2 tower: 10 floors × 4 windows, floor 1 lit */
+const t=document.getElementById('tower');let s='<rect x="10" y="10" width="76" height="126" rx="4" fill="#fff" stroke="#E6E8F0"/><rect x="40" y="2" width="16" height="10" rx="2" fill="#E6E8F0"/><rect x="44" y="14" width="8" height="120" fill="#BDEFE6"/>';
+for(let f=0;f<10;f++){const y=122-f*11.4;for(const x of [16,27,58,69]){s+=`<rect class="win${f<1?' lit':''}" x="${x}" y="${y}" width="8" height="7" rx="1.5"/>`;}}
+t.innerHTML=s;
+document.querySelectorAll('[data-p],[data-go]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();const p=b.dataset.p||b.dataset.go;
+  document.querySelectorAll('.page').forEach(x=>x.classList.toggle('on',x.id===p));document.querySelectorAll('.links button').forEach(x=>x.classList.toggle('on',x.dataset.p===p));scrollTo(0,0);}));
+</script>
+</body></html>

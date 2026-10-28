@@ -1,6 +1,6 @@
-import { useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Check, Gift, Zap } from 'lucide-react'
+import { Check, ChevronDown, Gift } from 'lucide-react'
 import { celebrate } from '@/lib/feedback'
 import { announceRewards, dailyFor, MISSIONS, type Mission } from '@/lib/gamification'
 import { missionTarget, resumeLesson } from '@/lib/next-step'
@@ -51,89 +51,131 @@ function useClaim() {
     }
 }
 
-const OUTLINE_BTN = 'inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 border-brand-600 bg-transparent px-4 py-2 text-sm font-bold text-brand-ink transition hover:bg-brand-soft'
-const SOLID_BTN = 'inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700'
-
-/** Danh sách nhiệm vụ hằng ngày dùng ở trang Hành trình (đầy đủ) và thẻ Trang chủ (gọn). */
-export function MissionList({ compact = false }: { compact?: boolean }) {
+function useMissionState() {
     const dailyRaw = useOrbitStore((s) => s.daily)
-    // Đọc lại khi tiến độ bài/Daily đổi để đích "Làm ngay" luôn đúng
+    // Đọc lại khi tiến độ bài/Daily đổi để đích "Làm →" luôn đúng
     useOrbitStore((s) => s.lessonProgress)
     useOrbitStore((s) => s.dailyRead)
     const daily = dailyFor(dailyRaw)
-    const claim = useClaim()
-    const refs = useRef<Record<string, HTMLButtonElement | null>>({})
-
-    const nextPriorityId = MISSIONS.find((m) => {
+    const state = (m: Mission) => {
         const value = Math.min(m.target, m.progress(daily))
-        const claimed = daily.claimed.includes(m.id)
-        return !claimed && value < m.target
-    })?.id
+        return { value, done: value >= m.target, claimed: daily.claimed.includes(m.id) }
+    }
+    return { state }
+}
 
+/** Một dòng nhiệm vụ gọn (tầng 2): vòng trạng thái | tên | "+XP" (đã nhận, gạch ngang) hoặc link chữ. Không có nút viền/nút đặc. */
+function MissionRow({ m }: { m: Mission }) {
+    const { state } = useMissionState()
+    const claim = useClaim()
+    const { done, claimed } = state(m)
     return (
-        <ul className={`flex flex-col ${compact ? 'gap-3' : 'mt-4 gap-3'}`}>
-            {MISSIONS.map((m) => {
-                const value = Math.min(m.target, m.progress(daily))
-                const done = value >= m.target
-                const claimed = daily.claimed.includes(m.id)
-                const isNextPriority = m.id === nextPriorityId
-                const action = claimed ? (
-                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-success">
-                        <Check size={14} strokeWidth={2.5} /> {compact ? `+${m.rewardXp}` : `Đã nhận +${m.rewardXp} XP`}
-                    </span>
-                ) : done ? (
-                    <button type="button" ref={(el) => void (refs.current[m.id] = el)} onClick={(e) => claim(m, e.currentTarget)} className={SOLID_BTN}>
-                        <Zap size={14} className="fill-current" /> Nhận +{m.rewardXp}{compact ? '' : ' XP'}
-                    </button>
-                ) : isNextPriority ? (
-                    <Link to={missionTarget(m.id)} className={SOLID_BTN}>
-                        Làm ngay <ArrowRight size={14} />
-                    </Link>
-                ) : (
-                    <Link to={missionTarget(m.id)} className={OUTLINE_BTN}>
-                        Làm ngay <ArrowRight size={14} />
-                    </Link>
-                )
+        <li className="flex items-center gap-3 border-t border-border px-[22px] py-3 first:border-t-0">
+            <span className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border-2 ${claimed ? 'border-success bg-success text-ink-foreground' : 'border-border'}`}>
+                {claimed && <Check size={12} strokeWidth={3} />}
+            </span>
+            <span className={`flex-1 text-[14.5px] ${claimed ? 'font-medium text-muted-foreground' : 'font-semibold text-strong'}`}>
+                <Strike on={claimed}>{m.title}</Strike>
+            </span>
+            {claimed ? (
+                <span className="font-mono text-[12.5px] font-bold text-muted-foreground">+{m.rewardXp}</span>
+            ) : done ? (
+                <button type="button" onClick={(e) => claim(m, e.currentTarget)} className="text-[13.5px] font-extrabold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                    Nhận +{m.rewardXp} →
+                </button>
+            ) : (
+                <Link to={missionTarget(m.id)} className="text-[13.5px] font-extrabold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                    Làm →
+                </Link>
+            )}
+        </li>
+    )
+}
 
-                if (compact) {
-                    return (
-                        <li key={m.id} className="flex items-center justify-between gap-3 text-sm">
-                            <span className={claimed ? 'text-muted-foreground' : 'font-semibold text-foreground'}>
-                                <Strike on={claimed}>{m.title}</Strike>
+/** Phần "Xem N nhiệm vụ khác" thu trong <details> (tầng 3). */
+function MoreMissions({ missions, label, flat }: { missions: Mission[]; label: string; flat?: boolean }) {
+    if (missions.length === 0) return null
+    return (
+        <details className={`group ${flat ? 'overflow-hidden rounded-card border border-border bg-card' : ''}`}>
+            <summary className={`flex cursor-pointer list-none items-center justify-between px-[22px] py-3 text-[13.5px] font-bold text-muted-foreground [&::-webkit-details-marker]:hidden ${flat ? '' : 'border-t border-border'}`}>
+                {label}
+                <ChevronDown size={14} className="transition-transform duration-base group-open:rotate-180" aria-hidden />
+            </summary>
+            <ul className="border-t border-border">
+                {missions.map((m) => (
+                    <MissionRow key={m.id} m={m} />
+                ))}
+            </ul>
+        </details>
+    )
+}
+
+/** /today: nhiệm vụ liên quan bài đọc và sửa lỗi; các nhiệm vụ còn lại thu vào "Xem N nhiệm vụ khác". */
+export function ReviewMissions({ ids }: { ids: string[] }) {
+    const main = MISSIONS.filter((m) => ids.includes(m.id))
+    const rest = MISSIONS.filter((m) => !ids.includes(m.id))
+    return (
+        <div className="overflow-hidden rounded-card border border-border bg-card shadow-card">
+            <ul className="py-1.5">
+                {main.map((m) => (
+                    <MissionRow key={m.id} m={m} />
+                ))}
+            </ul>
+            <MoreMissions missions={rest} label={`Xem ${rest.length} nhiệm vụ khác`} />
+        </div>
+    )
+}
+
+/** /journey: MỘT nhiệm vụ ưu tiên nhất (chưa nhận) + các nhiệm vụ khác trong <details>. */
+export function NextMission() {
+    const { state } = useMissionState()
+    const claim = useClaim()
+    const next = MISSIONS.find((m) => !state(m).claimed)
+    const others = MISSIONS.filter((m) => m !== next)
+    const doneCount = MISSIONS.filter((m) => state(m).claimed).length
+    return (
+        <div>
+            <div className="rounded-card border border-border bg-card p-5 shadow-card">
+                {next ? (
+                    <>
+                        <div className="flex items-start gap-3.5">
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-ink">
+                                <Gift size={18} />
                             </span>
-                            {action}
-                        </li>
-                    )
-                }
-                const cardCls = claimed
-                    ? 'flex flex-wrap items-center gap-4 rounded-card border border-border/50 bg-muted/30 px-4 py-3.5 opacity-65 transition'
-                    : isNextPriority
-                      ? 'flex flex-wrap items-center gap-4 rounded-card border-2 border-brand-500/40 bg-card p-5 shadow-sm ring-1 ring-brand-500/20'
-                      : 'flex flex-wrap items-center gap-4 rounded-card border border-border bg-card p-5 shadow-card'
-
-                return (
-                    <li key={m.id} className={cardCls}>
-                        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-base ${claimed ? 'bg-success/10 text-success' : isNextPriority || done ? 'bg-brand-600 text-ink-foreground shadow-sm' : 'bg-muted text-muted-foreground'}`}>
-                            {claimed ? <Check size={20} /> : <Gift size={18} />}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                            <p className={`font-bold ${claimed ? 'text-muted-foreground' : 'text-foreground'}`}>
-                                <Strike on={claimed}>{m.title}</Strike>
-                            </p>
-                            <p className="text-sm text-muted-foreground">{m.hint}</p>
-                            {!claimed && (
-                                <div className="mt-2 flex items-center gap-3">
-                                    <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
-                                        <div className="h-full origin-left rounded-full bg-brand-600 transition-transform duration-slow" style={{ transform: `scaleX(${value / m.target})` }} />
-                                    </div>
-                                    <span className="font-mono text-xs text-muted-foreground">{value}/{m.target}</span>
-                                </div>
+                            <span>
+                                <b className="block text-base font-extrabold text-strong">{next.title}</b>
+                                <p className="mt-1 text-[13.5px] text-muted-foreground">
+                                    {next.hint} · +{next.rewardXp} XP
+                                </p>
+                            </span>
+                        </div>
+                        <div className="mt-3 h-[5px] rounded-sm bg-muted">
+                            <div className="h-full rounded-sm bg-brand-600" style={{ width: `${(state(next).value / next.target) * 100}%` }} />
+                        </div>
+                        <div className="mt-3 flex items-center justify-between">
+                            <span className="font-mono text-[13.5px] text-muted-foreground">
+                                {state(next).value}/{next.target}
+                            </span>
+                            {state(next).done ? (
+                                <button type="button" onClick={(e) => claim(next, e.currentTarget)} className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-extrabold text-ink-foreground transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                                    Nhận +{next.rewardXp} XP →
+                                </button>
+                            ) : (
+                                <Link to={missionTarget(next.id)} className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-extrabold text-ink-foreground transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                                    Làm ngay →
+                                </Link>
                             )}
                         </div>
-                        {action}
-                    </li>
-                )
-            })}
-        </ul>
+                    </>
+                ) : (
+                    <p className="flex items-center gap-2 text-[15px] font-bold text-success">
+                        <Check size={16} strokeWidth={3} /> Xong mọi nhiệm vụ hôm nay.
+                    </p>
+                )}
+            </div>
+            <div className="mt-2.5">
+                <MoreMissions missions={others} label={`${others.length} nhiệm vụ khác hôm nay · ${doneCount}/${MISSIONS.length} xong`} flat />
+            </div>
+        </div>
     )
 }

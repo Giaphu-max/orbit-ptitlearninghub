@@ -429,6 +429,16 @@
     transition: transform var(--duration-base) var(--ease-out), filter var(--duration-base);
   }
   .surface-red:hover { filter: brightness(1.05); transform: translateY(-3px); }
+  /* Tầng 1 ("việc nên làm tiếp"): khối DUY NHẤT trên mỗi màn có chuyển động lặp. Nhấp nhô 3s, dừng khi hover, tắt khi giảm chuyển động */
+  .tier-1-bob { animation: tier-1-bob 3s 1.2s ease-in-out infinite; }
+  .tier-1-bob:hover { animation: none; }
+  @keyframes tier-1-bob {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -7px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tier-1-bob { animation: none; }
+  }
   .surface-red-deep {
     color: hsl(var(--ink-foreground));
     background-image: linear-gradient(135deg, #e2261c 0%, #c81b12 100%);

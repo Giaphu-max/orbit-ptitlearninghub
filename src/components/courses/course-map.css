@@ -24,10 +24,11 @@
 @keyframes cm-ping { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
 
 .cm-route { scrollbar-width: thin; }
-.cm-stations { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 1fr); gap: 20px; min-width: min-content; }
-.cm-thumbbox { height: 147px; display: flex; align-items: flex-end; }
-.cm-thumb { height: 128px; width: 87%; }
-.cm-st[data-cur='true'] .cm-thumb { height: 147px; width: 100%; }
+/* Cột chặng đang học rộng và ảnh lớn ~1.3 lần; các chặng khác thu nhỏ; mốc test cuối là cột hẹp. --cm-cols đặt inline theo số chặng */
+.cm-stations { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 1fr); grid-template-columns: var(--cm-cols, none); gap: 20px; min-width: min-content; }
+.cm-thumbbox { height: 168px; display: flex; align-items: flex-end; }
+.cm-thumb { height: 112px; width: 84%; }
+.cm-st[data-cur='true'] .cm-thumb { height: 168px; width: 100%; }
 .cm-dot { position: relative; margin: 13px 0 13px 14px; }
 
 /* Ô khóa: chip môn + đường chặng mini theo màu môn */

@@ -31,8 +31,10 @@ export function OrbitLearningView() {
         strong: summaries.reduce((n, c) => n + c.strongCount, 0),
         concepts: summaries.reduce((n, c) => n + c.conceptCount, 0),
     }
-    const counts = (f: Filter) => (f === 'all' ? summaries.length : summaries.filter((c) => c.status === f).length)
-    const list = summaries.filter((c) => filter === 'all' || c.status === filter).sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
+    // Khóa đang hiện ở thẻ lớn không lặp lại trong lưới
+    const others = summaries.filter((c) => c.course.id !== featured?.course.id)
+    const counts = (f: Filter) => (f === 'all' ? others.length : others.filter((c) => c.status === f).length)
+    const list = others.filter((c) => filter === 'all' || c.status === filter).sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
 
     const select = (id: string) => {
         setParams({ course: id }, { replace: true, preventScrollReset: true })

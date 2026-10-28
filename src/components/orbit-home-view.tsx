@@ -12,7 +12,7 @@ import { A2_TIERS, FINALE_STEP_MS, type DailyLit } from '@/lib/daily-lit'
 import { announceRewards, LIGHTS_XP, localDate } from '@/lib/gamification'
 import { CHAPTERS, PIN_SWAP, useScrollStage, useStageMode } from '@/hooks/useScrollStage'
 import { useTodayDaily } from '@/hooks/useTodayDaily'
-import { TodayCount, TodayHeroCard, TodayMiniCards, TodayMissionLine } from '@/components/daily/today-board'
+import { TodayHeroCard, TodayMissionLine, TodayRows } from '@/components/daily/today-board'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { CampusStage } from '@/components/home/campus-stage'
 import { KioskScreen, type KioskBridge } from '@/components/home/kiosk-screen'
@@ -305,12 +305,10 @@ function HeroChapter() {
 
     return (
         <div className="flex min-w-0 flex-col gap-6">
-            <h1 data-s className="text-[clamp(2.5rem,4.1vw,4.25rem)] font-black leading-[0.96] tracking-[-0.045em] text-strong [text-wrap:balance]">
-                Chào {name}.
-                <br />
-                Hôm nay chỉ cần
-                <br />
-                <span className="ptit-gradient-text">25 phút.</span>
+            <h1 data-s className="text-[clamp(2.25rem,4.1vw,3.85rem)] font-black leading-[0.96] tracking-[-0.045em] text-strong">
+                <span className="block whitespace-nowrap">Chào {name}.</span>
+                <span className="block whitespace-nowrap">Hôm nay chỉ cần</span>
+                <span className="ptit-gradient-text block whitespace-nowrap">25 phút.</span>
             </h1>
             <p data-s className="max-w-[48ch] text-lg leading-relaxed text-muted-foreground">Lộ trình hôm nay AI xếp riêng cho bạn: xem tiếp bài giảng đang dở, rồi ôn nhanh những khái niệm còn hổng.</p>
 
@@ -332,17 +330,14 @@ function DailyChapter() {
 
     return (
         <>
-            <Eyebrow>01 · Ôn tập cá nhân hóa</Eyebrow>
+            <Eyebrow>01 · Ôn tập cá nhân hóa · {Math.min(today.readCount, today.limit)}/{today.limit} đã đọc</Eyebrow>
             <Title id="daily-title">Lấp lỗ hổng kiến thức chỉ với 3 phút mỗi ngày.</Title>
             <Lead>AI xem lại những câu bạn từng làm sai, rồi tóm thành 3 bài đọc ngắn từ chính bài giảng của thầy cô. Nắm lại bản chất mà không phải xem lại cả video dài.</Lead>
             <div data-s>
-                <TodayCount today={today} />
-            </div>
-            <div data-s className="mt-4">
-                <TodayHeroCard today={today} />
+                <TodayHeroCard today={today} compact />
             </div>
             <div data-s className="mt-3">
-                <TodayMiniCards today={today} />
+                <TodayRows today={today} max={2} />
             </div>
             <div data-s data-compact className="mt-4">
                 <TodayMissionLine today={today} />
@@ -363,20 +358,6 @@ function CoursesChapter() {
             <Eyebrow>02 · Học phần chuyên ngành</Eyebrow>
             <Title id="courses-title">Học chủ động cùng bài giảng tương tác và Trợ giảng AI.</Title>
             <Lead>Video tự dừng ở các mốc quan trọng để hỏi bạn. Chỗ nào chưa rõ, hỏi Trợ giảng AI ngay tại đó rồi bấm để tua tới đúng giây thầy cô giảng.</Lead>
-            <div data-s className="mb-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1 text-xs font-mono font-medium shadow-2xs backdrop-blur-sm">
-                    <span className="h-1.5 w-1.5 rounded-full bg-brand-600 animate-pulse" aria-hidden />
-                    <span>
-                        <b className="font-bold text-foreground">{list.length}</b> khóa
-                        {main?.status === 'doing' && (
-                            <>
-                                {' '}
-                                · đang ở <b className="font-bold text-foreground">chặng {main.curIndex + 1}/{main.lessons.length}</b> môn {main.course.subject}
-                            </>
-                        )}
-                    </span>
-                </span>
-            </div>
             {list.length === 0 && <p data-s className={`${lightCard} p-5 text-muted-foreground`}>Chưa có khóa học nào được giảng viên xuất bản.</p>}
             {main && (
                 <div data-s>

@@ -541,6 +541,9 @@ const AZ_RANGE = (25 * Math.PI) / 180
 const POLAR_RANGE = 0.17
 /** Khuôn viên (cả cạnh đế) chiếm tối đa chừng này bề ngang ở hero: mô hình là bối cảnh, không phải tiêu điểm */
 const HERO_MAX_W = 0.5
+/** Riêng hero: mô hình to thêm 15% so với vừa khít vùng 7 cột, và hạ xuống (tỉ lệ chiều cao khung) để tâm mô hình ngang tâm khối chữ */
+const HERO_SCALE = 1.15
+const HERO_DROP = 0.05
 const FIT_RADIUS = BOUND_RADIUS
 const RETURN_RATE = 2.2
 const _sph = new THREE.Spherical()
@@ -896,7 +899,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const heroPos = useRef(START_POS.clone())
     const fitScale = useRef(1)
     // Tránh cột chữ: zoom (≤1) và độ dịch ngang (px) đã làm mượt, mép phải cột chữ (px)
-    const avoid = useRef({ zoom: 1, shift: 0 })
+    const avoid = useRef({ zoom: 1, shift: 0, drop: 0 })
     const returning = useRef(false)
     const frame = useRef(0)
     const shadowSig = useRef('')
@@ -1134,18 +1137,18 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 const r0 = (FIT_RADIUS * size.height) / (2 * dist * Math.tan(THREE.MathUtils.degToRad(FOV / 2)))
                 const { x0: left, x1: right } = gridSpan(w, 5, 7)
                 const room = right - left
-                zoomT = THREE.MathUtils.clamp(Math.min(room, w * HERO_MAX_W) / (2 * r0), 0.4, 1)
-                const r = r0 * zoomT
-                const c = THREE.MathUtils.clamp(w / 2 + shiftT, left + r, right - r)
-                shiftT = c - w / 2
+                zoomT = THREE.MathUtils.clamp(Math.min(room, w * HERO_MAX_W) / (2 * r0), 0.4, 1) * HERO_SCALE
             }
+            const dropT = live ? 0 : size.height * HERO_DROP
             const kk = reduce ? 1 : 1 - Math.exp(-delta * 6)
             av.zoom += (zoomT - av.zoom) * kk
             av.shift += (shiftT - av.shift) * kk
+            av.drop += (dropT - av.drop) * kk
             const ox = -av.shift
-            if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01 || Math.abs(camera.zoom - av.zoom) > 1e-4) {
+            const oy = -av.drop
+            if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01 || Math.abs(oy - (camera.view?.offsetY ?? 0)) > 0.01 || Math.abs(camera.zoom - av.zoom) > 1e-4) {
                 camera.zoom = av.zoom
-                camera.setViewOffset(size.width, size.height, ox, 0, size.width, size.height)
+                camera.setViewOffset(size.width, size.height, ox, oy, size.width, size.height)
             }
         }
         camera.updateMatrixWorld()

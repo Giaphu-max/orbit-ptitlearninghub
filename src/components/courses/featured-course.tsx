@@ -135,7 +135,7 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
             </div>
 
             <div className="cm-route overflow-x-auto px-5 pb-8 pt-7 min-[760px]:px-8">
-                <div ref={stationsRef} className="cm-stations relative isolate">
+                <div ref={stationsRef} className="cm-stations relative isolate" style={{ ['--cm-cols' as string]: [...lessons.map((_, i) => (i === curIndex ? 'minmax(300px,1.4fr)' : 'minmax(180px,1fr)')), 'minmax(150px,0.6fr)'].join(' ') }}>
                     <div ref={trackRef} className="cm-track bg-muted" aria-hidden>
                         <i className="cm-track-fill bg-brand-600" />
                     </div>
@@ -161,7 +161,7 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
                                     {isCur && <span className="cm-ping absolute -inset-[9px] rounded-full border-2 border-brand-600" />}
                                 </span>
                                 <span className="font-mono text-[11px] text-muted-foreground">Chặng {String(i + 1).padStart(2, '0')}</span>
-                                <h3 className="mb-2 mt-1 text-base font-extrabold leading-[1.3] tracking-tight text-foreground">{l.title}</h3>
+                                <h3 className={`mb-2 mt-1 leading-[1.3] tracking-tight ${isCur ? 'text-lg font-black text-foreground' : 'text-sm font-bold text-muted-foreground'}`}>{l.title}</h3>
                                 <div className="flex items-center gap-[5px]" aria-label={`${strong}/${l.concepts.length} khái niệm vững`}>
                                     {l.concepts.map((c) => (
                                         <span key={c.id} title={c.name} className="relative h-3 w-3 overflow-hidden rounded bg-muted">
@@ -172,7 +172,7 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
                                 </div>
                                 <span className={`mt-2.5 text-[13px] font-bold ${isCur ? 'text-brand-ink' : 'text-muted-foreground'}`}>{state}</span>
                                 {isCur && (
-                                    <span className="mt-3 inline-flex items-center gap-2 self-start rounded-full bg-brand-600 px-4 py-2.5 text-sm font-extrabold text-ink-foreground shadow-brand">
+                                    <span className="tier-1-bob mt-3 inline-flex items-center gap-2 self-start rounded-full bg-brand-600 px-4 py-2.5 text-sm font-extrabold text-ink-foreground shadow-brand">
                                         <span aria-hidden className="border-y-[6px] border-l-[9px] border-y-transparent border-l-ink-foreground" />
                                         {p > 0 ? 'Học tiếp' : 'Bắt đầu'}
                                     </span>
@@ -187,26 +187,16 @@ export function FeaturedCourse({ summary }: { summary: CourseSummary }) {
                             </div>
                         )
                     })}
-                    <Link
-                        to={`/test/${course.id}`}
-                        style={{ transitionDelay: `${80 + lessons.length * 90}ms` }}
-                        className="cm-st group flex flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-4 focus-visible:ring-offset-card"
-                    >
-                        <div className="cm-thumbbox">
-                            <div className="cm-thumb relative grid place-items-center overflow-hidden rounded-2xl bg-muted">
-                                <span aria-hidden className="absolute inset-0 opacity-[0.09] [background:repeating-conic-gradient(hsl(var(--foreground))_0_25%,transparent_0_50%)_0_0/22px_22px]" />
-                                <span className="relative rounded-[14px] border border-border bg-card px-3.5 py-2.5 text-center">
-                                    <b className="block font-mono text-2xl text-foreground">{record ? `${record.bestCorrect}/${record.bestTotal}` : '—'}</b>
-                                    <span className="text-[11px] text-muted-foreground">{record ? 'điểm tốt nhất' : 'chưa làm'}</span>
-                                </span>
-                            </div>
-                        </div>
+                    <div style={{ transitionDelay: `${80 + lessons.length * 90}ms` }} className="cm-st flex flex-col rounded-2xl">
+                        <div className="cm-thumbbox" aria-hidden />
                         <span data-dot aria-hidden className="cm-dot z-[1] h-[18px] w-[18px] rotate-45 rounded border-[3px] border-muted bg-card" />
                         <span className="font-mono text-[11px] text-muted-foreground">Đích</span>
-                        <h3 className="mb-2 mt-1 text-base font-extrabold leading-[1.3] tracking-tight text-foreground">Test cuối chương</h3>
-                        <span className="text-[13px] font-bold text-muted-foreground">Biết khái niệm nào còn hổng</span>
-                        <span className="mt-3 inline-flex self-start rounded-full border border-border px-3.5 py-2 text-sm font-bold text-foreground">Làm test</span>
-                    </Link>
+                        <h3 className="mb-1 mt-1 text-sm font-bold leading-[1.3] text-muted-foreground">Test cuối chương</h3>
+                        {record && <span className="font-mono text-xs text-muted-foreground">Tốt nhất {record.bestCorrect}/{record.bestTotal}</span>}
+                        <Link to={`/test/${course.id}`} className="mt-1.5 self-start text-[13px] font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
+                            Làm test →
+                        </Link>
+                    </div>
                 </div>
             </div>
         </article>
