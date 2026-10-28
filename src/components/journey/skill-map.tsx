@@ -7,14 +7,15 @@ import { UNLOCK_THRESHOLD, type SkillNode } from '@/lib/gamification'
 export const MASTERY_PER_CORRECT = 0.15
 const H = 280
 const PAD = 70
-const RING = 2 * Math.PI * 33
+const R = 32
+const RING = 2 * Math.PI * R
 
 const calm = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const questionsLeft = (m: number) => Math.max(1, Math.ceil((UNLOCK_THRESHOLD - m) / MASTERY_PER_CORRECT))
 
 /**
  * Bản đồ kỹ năng của MỘT chặng (bài): đường cong uốn lượn nối các trạm xen kẽ cao/thấp, mỗi khái niệm một trạm tròn 76px đặt đúng trên đường,
- * trạm cuối là "Test cuối chặng". Đoạn đã đi tô đỏ (vẽ dần), trạm đang học có nước dâng đúng %. Vị trí tính theo bề ngang thẻ (ResizeObserver).
+ * trạm cuối là "Test cuối chặng". Đoạn đã đi tô đỏ (vẽ dần), trạm đang học có vòng tiến độ SVG đỏ đúng % (không nước dâng).
  * Component được remount (key) khi đổi chặng / mở tab để chạy lại hiệu ứng.
  */
 export function SkillMap({ nodes, lessonId }: { nodes: SkillNode[]; lessonId: string }) {
@@ -126,23 +127,38 @@ export function SkillMap({ nodes, lessonId }: { nodes: SkillNode[]; lessonId: st
 
 function Station({ node, state, here, x, y, delay, drawn, onHover }: { node: SkillNode; state: 'ok' | 'doing' | 'lock'; here: boolean; x: number; y: number; delay: number; drawn: boolean; onHover: (on: boolean) => void }) {
     const pct = Math.round(node.mastery * 100)
+    const isZero = pct === 0
+    const isDoing = state === 'doing'
+    const isCurrentDoing = here && !isZero
+
     const body = (
         <>
             {here && <span className="absolute -top-[34px] whitespace-nowrap rounded-lg bg-ink px-2.5 py-[5px] text-[11px] font-extrabold uppercase tracking-[0.06em] text-ink-foreground after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-[5px] after:border-transparent after:border-t-ink">Bạn ở đây</span>}
-            <span className={`relative grid h-[76px] w-[76px] place-items-center rounded-full shadow-raised transition-transform duration-base group-hover:scale-[1.08] ${state === 'ok' ? 'bg-brand-600' : state === 'lock' ? 'bg-muted shadow-none' : 'bg-card'} ${here ? 'shadow-[0_0_0_6px_hsl(var(--brand)/0.12)]' : ''}`}>
+            <span className={`relative grid h-[76px] w-[76px] place-items-center rounded-full shadow-raised transition-transform duration-base group-hover:scale-[1.08] ${state === 'ok' ? 'bg-brand-600' : state === 'lock' ? 'bg-muted shadow-none' : 'bg-card'} ${isCurrentDoing ? 'sk-breathe' : ''}`}>
                 {state === 'ok' && <Check size={30} strokeWidth={3} className="text-ink-foreground" />}
                 {state === 'lock' && <Lock size={22} className="text-muted-foreground/70" />}
-                {state === 'doing' && (
+                {isDoing && (
                     <>
                         <svg viewBox="0 0 76 76" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
-                            <circle cx="38" cy="38" r="33" fill="none" strokeWidth="5" className="stroke-muted" />
-                            <circle cx="38" cy="38" r="33" fill="none" strokeWidth="5" strokeLinecap="round" strokeDasharray={RING} strokeDashoffset={RING * (1 - node.mastery)} className="stroke-brand-600" />
+                            <circle cx="38" cy="38" r={R} fill="none" strokeWidth="6" className="stroke-brand-100" />
+                            {!isZero && (
+                                <circle
+                                    cx="38"
+                                    cy="38"
+                                    r={R}
+                                    fill="none"
+                                    strokeWidth="6"
+                                    strokeLinecap="round"
+                                    strokeDasharray={RING}
+                                    strokeDashoffset={drawn ? RING * (1 - node.mastery) : RING}
+                                    className="stroke-brand-600 transition-[stroke-dashoffset] duration-slow"
+                                />
+                            )}
                         </svg>
-                        <span className="absolute inset-[9px] overflow-hidden rounded-full bg-muted">
-                            <i className="sk-water absolute inset-x-0 bottom-0 block" style={{ height: drawn ? `${pct}%` : '0%', background: 'linear-gradient(180deg, hsl(var(--brand) / 0.7), hsl(var(--brand)))' }} />
-                        </span>
-                        <b className="relative z-[1] font-mono text-[15px] font-extrabold text-strong">{pct}%</b>
-                        {here && <span aria-hidden className="sk-ping absolute -inset-1.5 rounded-full border-2 border-brand-600/50" />}
+                        <b className={`relative z-[1] font-mono text-[17px] font-extrabold ${isZero ? 'text-muted-foreground' : 'text-brand-ink'}`}>
+                            {pct}%
+                        </b>
+                        {isCurrentDoing && <span aria-hidden className="sk-ping pointer-events-none absolute -inset-1 rounded-full border-2 border-brand-600/35" />}
                     </>
                 )}
             </span>

@@ -279,9 +279,6 @@ function MapPanel({ nodes }: { nodes: SkillNode[] }) {
                     </p>
                 </div>
                 {lesson && <SkillMap key={`${lesson.id}`} nodes={lessonNodes} lessonId={lesson.id} />}
-                <p className="mt-1 text-center text-[13px] text-muted-foreground">
-                    Trả lời đúng quiz → khái niệm sáng dần · đủ <b className="text-strong">{Math.round(UNLOCK_THRESHOLD * 100)}%</b> → mở trạm kế tiếp
-                </p>
             </div>
         </div>
     )
