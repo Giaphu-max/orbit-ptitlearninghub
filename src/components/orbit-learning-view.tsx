@@ -19,7 +19,8 @@ export function OrbitLearningView() {
     const { hash } = useLocation()
     const [expanded, setExpanded] = useState(false)
     const [toast, setToast] = useState(false)
-    const topRef = useRef<HTMLDivElement>(null)
+    const continueSectionRef = useRef<HTMLElement>(null)
+    const continueTitleRef = useRef<HTMLHeadingElement>(null)
     const name = useOrbitStore((s) => s.learnerName)
     const streak = useOrbitStore((s) => s.streak)
     const progress = useOrbitStore((s) => s.lessonProgress)
@@ -41,22 +42,43 @@ export function OrbitLearningView() {
     const select = (id: string) => {
         setParams({ course: id }, { replace: true, preventScrollReset: true })
         setExpanded(true)
-        const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        topRef.current?.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' })
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const sectionEl = continueSectionRef.current
+                const titleEl = continueTitleRef.current
+                if (!sectionEl || !titleEl) return
+
+                const navEl = (document.querySelector('header[data-nav]') || document.querySelector('header')) as HTMLElement | null
+                const navBottom = navEl ? navEl.getBoundingClientRect().bottom : 80
+                const offset = (navBottom > 0 ? navBottom : 80) + 32
+
+                const secRect = sectionEl.getBoundingClientRect()
+                // Nếu khối Học tiếp đã nằm trọn trong màn hình thì không cuộn
+                const isFullyVisible = secRect.top >= navBottom && secRect.bottom <= window.innerHeight
+                if (isFullyVisible) return
+
+                const titleRect = titleEl.getBoundingClientRect()
+                const targetTop = Math.max(0, window.scrollY + titleRect.top - offset)
+                const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+                window.scrollTo({
+                    top: targetTop,
+                    behavior: calm ? 'auto' : 'smooth',
+                })
+            })
+        })
     }
 
     return (
         <div className="w-full">
             <div className="container-wide py-8 lg:py-10">
-                <div ref={topRef} className="section-anchor">
-                    <LearningBanner name={name} summaries={summaries} behind={behind} />
-                </div>
+                <LearningBanner name={name} summaries={summaries} behind={behind} />
                 {!featured ? (
                     <p className="mt-6 rounded-card border border-border bg-card p-6 text-muted-foreground">Chưa có khóa học nào được giảng viên xuất bản.</p>
                 ) : (
                     <div className="page-grid mt-6 items-stretch">
-                        <section className="col-span-8 flex flex-col [&>article]:flex-1">
-                            <h2 className="mb-3 text-[15px] font-extrabold text-strong">Học tiếp</h2>
+                        <section ref={continueSectionRef} className="col-span-8 flex flex-col [&>article]:flex-1">
+                            <h2 ref={continueTitleRef} className="mb-3 text-[15px] font-extrabold text-strong">Học tiếp</h2>
                             <ContinueCard key={featured.course.id} summary={featured} expanded={expanded} onToggle={setExpanded} />
                         </section>
                         <WeekCard week={week} plan={plan} />

@@ -3,8 +3,10 @@ import { BookOpen, CheckCircle2, Target } from 'lucide-react'
 import type { CourseSummary } from '@/lib/course-map'
 
 /**
- * Banner chào ở đầu /learning: lưới 12 cột (gap 24) theo phong cách LMS PTIT.
- * Trái 6 cột = lời chào + chip tiến độ (căn giữa dọc); phải 6 cột = khung "Tổng quan học kỳ hiện tại" (3 chỉ số nằm ngang).
+ * Banner chào ở đầu /learning: thiết kế nhẹ, tươi và gọn (thông tin phụ).
+ * Lưới 12 cột (gap 24) theo tỷ lệ 6/6:
+ * - Trái: lời chào (20px ink, tên navy) + chip tiến độ (12.5px) cùng 1 hàng.
+ * - Phải: nhãn eyebrow 11.5px + 3 chỉ số nằm ngang ngăn cách bằng vạch dọc mảnh.
  */
 export function LearningBanner({ name, summaries, behind }: { name: string; summaries: CourseSummary[]; behind: boolean }) {
     const doing = summaries.filter((c) => c.status === 'doing').length
@@ -14,24 +16,36 @@ export function LearningBanner({ name, summaries, behind }: { name: string; summ
     const concepts = summaries.reduce((n, c) => n + c.conceptCount, 0)
 
     return (
-        <section aria-label="Chào mừng" className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-[22px] overflow-hidden rounded-3xl border border-brand-100 bg-brand-50 items-center">
-            <div className="col-span-1 lg:col-span-6 flex flex-col justify-center">
-                <h1 className="text-[26px] font-medium leading-tight tracking-[-0.01em] text-foreground">
-                    Chào <b className="font-black text-strong">{name}</b>, học tiếp nhé
-                </h1>
-                <p className={`mt-3 self-start rounded-full border px-3 py-1.5 text-[14px] font-semibold ${behind ? 'border-warning/50 bg-warning/15 text-foreground' : 'border-success/30 bg-success/10 text-success'}`}>
-                    {behind ? 'Bạn đang chậm 1 bài so với lộ trình' : 'Bạn đang học đúng tiến độ'}
-                </p>
-            </div>
-            <div className="col-span-1 lg:col-span-6">
-                <div className="overflow-hidden rounded-2xl border border-brand-100 bg-card">
-                    <h2 className="bg-brand-100 px-3 py-2 text-center text-[13px] font-extrabold uppercase tracking-[0.06em] text-brand-ink">
+        <section
+            aria-label="Chào mừng"
+            className="rounded-[20px] border border-border bg-card px-5 py-4 shadow-card"
+        >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center">
+                {/* Trái 6 cột: Lời chào + chip cùng hàng */}
+                <div className="col-span-1 lg:col-span-6 flex flex-wrap items-center gap-2.5 sm:gap-3.5">
+                    <h1 className="text-[20px] font-normal leading-snug text-brand-ink">
+                        Chào <b className="font-extrabold text-strong">{name}</b>, học tiếp nhé
+                    </h1>
+                    <span
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[12.5px] font-semibold whitespace-nowrap ${
+                            behind
+                                ? 'border-warning/40 bg-warning/10 text-foreground'
+                                : 'border-success/25 bg-success/10 text-success'
+                        }`}
+                    >
+                        {behind ? 'Bạn đang chậm 1 bài so với lộ trình' : 'Bạn đang học đúng tiến độ'}
+                    </span>
+                </div>
+
+                {/* Phải 6 cột: Tổng quan học kỳ & 3 chỉ số */}
+                <div className="col-span-1 lg:col-span-6 flex flex-col justify-center gap-1.5 lg:pl-2">
+                    <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
                         Tổng quan học kỳ hiện tại
-                    </h2>
-                    <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 px-4 py-3.5">
-                        <Metric icon={<BookOpen size={19} />} value={String(doing)} label="Học phần đang học" />
-                        <Metric icon={<CheckCircle2 size={19} />} value={`${lessonsDone}/${lessons}`} label="Bài giảng đã xong" />
-                        <Metric icon={<Target size={19} />} value={`${strong}/${concepts}`} label="Khái niệm vững" />
+                    </span>
+                    <ul className="grid grid-cols-3 divide-x divide-border">
+                        <Metric icon={<BookOpen size={16} />} value={String(doing)} label="Học phần đang học" />
+                        <Metric icon={<CheckCircle2 size={16} />} value={`${lessonsDone}/${lessons}`} label="Bài giảng đã xong" />
+                        <Metric icon={<Target size={16} />} value={`${strong}/${concepts}`} label="Khái niệm vững" />
                     </ul>
                 </div>
             </div>
@@ -41,14 +55,17 @@ export function LearningBanner({ name, summaries, behind }: { name: string; summ
 
 function Metric({ icon, value, label }: { icon: ReactNode; value: string; label: string }) {
     return (
-        <li className="flex items-center gap-3 min-w-0">
-            <span className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-xl border border-border bg-card text-brand-ink">
+        <li className="flex items-center gap-2.5 px-3 first:pl-0 last:pr-0 min-w-0">
+            <span
+                aria-hidden
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600"
+            >
                 {icon}
             </span>
-            <span className="min-w-0">
-                <b className="block font-mono text-[18px] font-extrabold leading-tight text-strong">{value}</b>
-                <small className="block text-[13px] text-muted-foreground leading-snug">{label}</small>
-            </span>
+            <div className="min-w-0">
+                <b className="block font-mono text-[16px] font-extrabold leading-tight text-strong">{value}</b>
+                <span className="block text-[12.5px] leading-tight text-muted-foreground truncate">{label}</span>
+            </div>
         </li>
     )
 }
