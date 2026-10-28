@@ -117,7 +117,8 @@ export function measureBalance() {
         // 1. Đo kích thước tự nhiên lúc chưa dời/scale
         const r = el.getBoundingClientRect()
         const naturalH = r.height
-        const naturalW = r.width
+        // scrollWidth gồm cả phần chữ tràn ra ngoài cột (tiêu đề chương Học phần rộng 6 cột)
+        const naturalW = Math.max(r.width, el.scrollWidth)
         const naturalY0 = r.top
         const naturalX0 = r.left
 

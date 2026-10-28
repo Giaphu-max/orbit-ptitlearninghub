@@ -69,16 +69,16 @@ export function OrbitHomeView() {
                 <section id="journey" className="pointer-events-none relative z-10" style={{ height: paged ? '100svh' : `${(CHAPTERS + 1) * 100}svh` }}>
                     <div className={`container-wide ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center py-[var(--nav-h)]'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
                         <div className="grid w-full grid-cols-[minmax(0,1fr)] items-center">
-                            <Panel id="top" index={0} cols={5}>
+                            <Panel id="top" index={0}>
                                 <HeroChapter />
                             </Panel>
-                            <Panel id="daily" index={1} cols={5}>
+                            <Panel id="daily" index={1}>
                                 <DailyChapter />
                             </Panel>
-                            <Panel id="courses" index={2} cols={6}>
+                            <Panel id="courses" index={2}>
                                 <CoursesChapter />
                             </Panel>
-                            <Panel id="studio" index={3} cols={5}>
+                            <Panel id="studio" index={3}>
                                 <StudioChapter />
                             </Panel>
                         </div>
@@ -86,20 +86,20 @@ export function OrbitHomeView() {
                 </section>
             ) : (
                 <div className="pointer-events-none relative z-10">
-                    <Chapter id="top" index={0} staticMode={staticMode} cols={5}>
+                    <Chapter id="top" index={0} staticMode={staticMode}>
                         <HeroChapter />
                     </Chapter>
-                    <Chapter id="daily" index={1} staticMode={staticMode} cols={5}>
+                    <Chapter id="daily" index={1} staticMode={staticMode}>
                         <Reveal>
                             <DailyChapter />
                         </Reveal>
                     </Chapter>
-                    <Chapter id="courses" index={2} staticMode={staticMode} cols={6}>
+                    <Chapter id="courses" index={2} staticMode={staticMode}>
                         <Reveal>
                             <CoursesChapter />
                         </Reveal>
                     </Chapter>
-                    <Chapter id="studio" index={3} staticMode={staticMode} cols={5}>
+                    <Chapter id="studio" index={3} staticMode={staticMode}>
                         <Reveal>
                             <StudioChapter />
                         </Reveal>
@@ -230,18 +230,19 @@ function useDailyLit(stage: RefObject<number>, reduce: boolean) {
 
 // ─── Khung chương ──────────────────────────────────────────────────────────
 
-/** Bề rộng cột chữ theo lưới 12 cột của .container-wide (gap 24): 5 cột ở hero và chương 01/03, 6 cột ở chương Học phần. */
-type Cols = 5 | 6
-const colWidth = (cols?: Cols) => (cols === 6 ? 'max-w-[calc((100%-264px)/2+120px)]' : 'max-w-[calc((100%-264px)*5/12+96px)]')
+/** Bề rộng cột chữ theo lưới 12 cột của .container-wide (gap 24): cả hero và 3 chương đều 5 cột (mép phải khối bấm thẳng hàng). */
+const colWidth = 'max-w-[calc((100%-264px)*5/12+96px)]'
+/** Riêng chương Học phần: tiêu đề + đoạn dẫn tràn ra 6 cột (= 6/5 bề rộng 5 cột + 4,8px) để giữ nguyên ngắt dòng; khối bấm vẫn 5 cột. */
+const wide6 = 'w-[calc(6/5*100%+4.8px)]'
 
 /**
  * Panel của hành trình: các panel xếp chồng trong một ô lưới; useScrollStage đặt class on / past, CSS (index.css) lo phần hiện ẩn
  * và hiện từng phần tử [data-s] theo nhịp cố định. Panel không `on` thì visibility: hidden (không nhận chuột).
  * Màn hẹp: khung chỉ cao ~56svh nên phần tử [data-compact] (câu dẫn, nhiệm vụ, chú thích) được ẩn để panel vừa khung.
  */
-function Panel({ id, index, cols, children }: { id: string; index: number; cols?: Cols; children: ReactNode }) {
+function Panel({ id, index, children }: { id: string; index: number; children: ReactNode }) {
     return (
-        <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${colWidth(cols)}`}>
+        <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${colWidth}`}>
             {/* data-text: nhóm chữ của chương, hero-balance đo và dời bằng transform; --g / --tt = hệ số thu khoảng cách / cỡ tiêu đề */}
             <div data-text className="pointer-events-auto">{children}</div>
         </div>
@@ -249,8 +250,8 @@ function Panel({ id, index, cols, children }: { id: string; index: number; cols?
 }
 
 /** Không có hành trình (giảm chuyển động): mỗi chương một section cao tối thiểu 100vh, cột chữ bên trái (desktop) hoặc nằm dưới canvas (màn hẹp). */
-function Chapter({ id, index, staticMode, cols, children }: { id: string; index: number; staticMode: boolean; cols?: Cols; children: ReactNode }) {
-    const width = colWidth(cols)
+function Chapter({ id, index, staticMode, children }: { id: string; index: number; staticMode: boolean; children: ReactNode }) {
+    const width = colWidth
     return (
         <section
             id={id}
@@ -368,8 +369,10 @@ function CoursesChapter() {
     return (
         <>
             <Eyebrow>02 · Học phần chuyên ngành</Eyebrow>
-            <Title id="courses-title">Học chủ động cùng bài giảng tương tác và Trợ giảng AI.</Title>
-            <Lead>Video tự dừng ở các mốc quan trọng để hỏi bạn. Chỗ nào chưa rõ, hỏi Trợ giảng AI ngay tại đó rồi bấm để tua tới đúng giây thầy cô giảng.</Lead>
+            <div className={`${wide6} max-w-none`}>
+                <Title id="courses-title">Học chủ động cùng bài giảng tương tác và Trợ giảng AI.</Title>
+                <Lead>Video tự dừng ở các mốc quan trọng để hỏi bạn. Chỗ nào chưa rõ, hỏi Trợ giảng AI ngay tại đó rồi bấm để tua tới đúng giây thầy cô giảng.</Lead>
+            </div>
             {list.length === 0 && <p data-s className={`${lightCard} p-5 text-muted-foreground`}>Chưa có khóa học nào được giảng viên xuất bản.</p>}
             {main && (
                 <div data-s>
