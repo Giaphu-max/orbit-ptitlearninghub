@@ -104,6 +104,12 @@ export function SiteFooter() {
                     <p className="font-semibold text-ink-foreground">Sản phẩm dự thi Ứng dụng AI trong giảng dạy 2026 · Công đoàn Học viện Công nghệ Bưu chính Viễn thông</p>
                     <p>Giảng viên đứng tên: ThS. Nguyễn Cảnh Châu</p>
                     <p>Nhóm thực hiện: Nguyễn Gia Phú, Trương Thanh Hà</p>
+                    <p>
+                        Liên hệ:{' '}
+                        <a href="tel:0941836219" className="hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ink-foreground/70">
+                            0941 836 219
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>
