@@ -14,7 +14,8 @@
       "motif": "timeline",
       "accent": "film",
       "seed": 0
-    }
+    },
+    "classCode": "MUL1415-20261-04"
   },
   {
     "id": "nhiep-anh-va-anh-sang",
@@ -31,6 +32,7 @@
       "motif": "light",
       "accent": "photo",
       "seed": 0
-    }
+    },
+    "classCode": "MUL1416-20261-02"
   }
 ]

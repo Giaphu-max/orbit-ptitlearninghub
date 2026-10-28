@@ -20,6 +20,8 @@ export interface Course {
     instructor: string
     description: string
     lessonIds: string[]
+    /** Mã lớp học phần hiển thị trên thẻ ở /learning (dữ liệu mẫu) */
+    classCode?: string
     /** Bìa tự sinh (họa tiết, màu nhấn, seed); thiếu thì suy từ subject */
     cover?: CourseCoverSpec
 }

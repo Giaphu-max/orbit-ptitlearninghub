@@ -119,6 +119,9 @@
     --pin-border: #ffffff;
     --pin-shadow: 0 4px 12px rgb(10 26 80 / 0.08);
 
+    /* Footer đỏ đậm PTIT (#8E2421); chữ ink-foreground trắng: tương phản 8,7:1, chữ phụ 75% ≈ 5,7:1 */
+    --footer-bg: 2 60% 35%;
+
     /* Vai trò shadcn */
     --primary: var(--brand);
     --primary-foreground: var(--brand-foreground);
