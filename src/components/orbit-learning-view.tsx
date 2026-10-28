@@ -10,7 +10,7 @@ import { useOrbitStore } from '@/store/useOrbitStore'
 
 /**
  * /learning (mockup ptit-learning-v2) – mọi khối nằm trên lưới 12 cột gap 24 trong .container-wide, các khối cùng hàng stretch:
- * banner chào (8/4) → hàng 2: "Học tiếp" (8) + "Tuần này" (4) → "Lớp học phần" (lưới 4 thẻ × 3 cột).
+ * banner chào (6/6) → hàng 2: "Học tiếp" (8) + "Tuần này" (4) → "Lớp học phần" (lưới 4 thẻ × 3 cột).
  * Khóa đang xem ở thẻ "Học tiếp" lưu trong ?course=id; bấm một thẻ lớp học phần thì chọn khóa đó và cuộn lên.
  */
 export function OrbitLearningView() {
