@@ -65,26 +65,26 @@ function useMissionState() {
 }
 
 /** Một dòng nhiệm vụ gọn (tầng 2): vòng trạng thái | tên | "+XP" (đã nhận, gạch ngang) hoặc link chữ. Không có nút viền/nút đặc. */
-function MissionRow({ m }: { m: Mission }) {
+function MissionRow({ m, muted = false }: { m: Mission; muted?: boolean }) {
     const { state } = useMissionState()
     const claim = useClaim()
     const { done, claimed } = state(m)
     return (
-        <li className="flex items-center gap-3 border-t border-border px-[22px] py-3 first:border-t-0">
+        <li className="flex items-center gap-3 border-t border-border px-6 py-3 first:border-t-0">
             <span className={`grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border-2 ${claimed ? 'border-success bg-success text-ink-foreground' : 'border-border'}`}>
                 {claimed && <Check size={12} strokeWidth={3} />}
             </span>
-            <span className={`flex-1 text-[14.5px] ${claimed ? 'font-medium text-muted-foreground' : 'font-semibold text-strong'}`}>
+            <span className={`min-w-0 flex-1 text-[14.5px] ${claimed || muted ? 'font-medium text-muted-foreground' : 'font-semibold text-strong'}`}>
                 <Strike on={claimed}>{m.title}</Strike>
             </span>
             {claimed ? (
-                <span className="font-mono text-[12.5px] font-bold text-muted-foreground">+{m.rewardXp}</span>
+                <span className="shrink-0 whitespace-nowrap font-mono text-[12.5px] font-bold text-muted-foreground">+{m.rewardXp}</span>
             ) : done ? (
-                <button type="button" onClick={(e) => claim(m, e.currentTarget)} className="text-[13.5px] font-extrabold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                <button type="button" onClick={(e) => claim(m, e.currentTarget)} className="shrink-0 whitespace-nowrap text-[13.5px] font-extrabold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                     Nhận +{m.rewardXp} →
                 </button>
             ) : (
-                <Link to={missionTarget(m.id)} className="text-[13.5px] font-extrabold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+                <Link to={missionTarget(m.id)} className="shrink-0 whitespace-nowrap text-[13.5px] font-extrabold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                     Làm →
                 </Link>
             )}
@@ -110,20 +110,26 @@ function MoreMissions({ missions, label, flat }: { missions: Mission[]; label: s
     )
 }
 
-/** /today: nhiệm vụ liên quan bài đọc và sửa lỗi; các nhiệm vụ còn lại thu vào "Xem N nhiệm vụ khác". */
-export function ReviewMissions({ ids }: { ids: string[] }) {
-    const main = MISSIONS.filter((m) => ids.includes(m.id))
-    const rest = MISSIONS.filter((m) => !ids.includes(m.id))
-    return (
-        <div className="overflow-hidden rounded-card border border-border bg-card shadow-card">
-            <ul className="py-1.5">
-                {main.map((m) => (
-                    <MissionRow key={m.id} m={m} />
-                ))}
-            </ul>
-            <MoreMissions missions={rest} label={`Xem ${rest.length} nhiệm vụ khác`} />
-        </div>
-    )
+/** /today (phần dưới thẻ "Hôm nay của bạn"): đủ mọi nhiệm vụ, chia hai nhóm "Nhiệm vụ ôn tập" (ids) và "Việc khác hôm nay", giãn đều theo chiều cao thẻ. */
+export function TodayMissionsList({ reviewIds }: { reviewIds: string[] }) {
+    const { state } = useMissionState()
+    const main = MISSIONS.filter((m) => reviewIds.includes(m.id))
+    const rest = MISSIONS.filter((m) => !reviewIds.includes(m.id))
+    const group = (label: string, list: Mission[], muted: boolean) =>
+        list.length > 0 && (
+            <section aria-label={label}>
+                <h3 className="flex items-baseline justify-between px-6 pb-1.5 text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                    {label}
+                    <span className="font-mono text-xs normal-case tracking-normal">{list.filter((m) => state(m).claimed).length}/{list.length}</span>
+                </h3>
+                <ul>
+                    {list.map((m) => (
+                        <MissionRow key={m.id} m={m} muted={muted} />
+                    ))}
+                </ul>
+            </section>
+        )
+    return <div className="flex flex-1 flex-col justify-evenly gap-3 py-4">{group('Nhiệm vụ ôn tập', main, false)}{group('Việc khác hôm nay', rest, true)}</div>
 }
 
 /** /journey: MỘT nhiệm vụ ưu tiên nhất (chưa nhận) + các nhiệm vụ khác trong <details>. */
