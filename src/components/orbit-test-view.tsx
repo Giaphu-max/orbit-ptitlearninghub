@@ -138,7 +138,7 @@ export function OrbitTestView() {
 
     return (
         <div className="w-full">
-            <div className="mx-auto max-w-3xl px-5 py-8 lg:py-12">
+            <div className="container-wide py-8 lg:py-12"><div className="mx-auto max-w-3xl">
                 {phase.kind === 'intro' && (
                     <Intro
                         courseTitle={course.title}
@@ -165,6 +165,7 @@ export function OrbitTestView() {
                     />
                 )}
                 {phase.kind === 'result' && <Result courseTitle={course.title} phase={phase} onRetry={start} />}
+            </div>
             </div>
         </div>
     )

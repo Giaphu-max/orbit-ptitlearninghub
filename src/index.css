@@ -686,6 +686,13 @@
     margin-inline: auto;
     padding-inline: var(--page-gutter);
   }
+  /* Khung rộng cho các trang con (không dùng cho nav và chương trang chủ): max 1760, lề clamp(40px, 4vw, 80px). Dùng cùng .page-grid */
+  .container-wide {
+    width: 100%;
+    max-width: 1760px;
+    margin-inline: auto;
+    padding-inline: clamp(40px, 4vw, 80px);
+  }
   /* Lưới 12 cột của container: dùng với col-span-* (7/5 ở /today, /journey; 5/7 ở hero) */
   .page-grid {
     display: grid;

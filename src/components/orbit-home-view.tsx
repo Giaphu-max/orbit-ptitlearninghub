@@ -171,7 +171,7 @@ function useDailyLit(stage: RefObject<number>, reduce: boolean) {
     const today = localDate()
     const readToday = dailyArticles.filter((a) => read[a.id] === today).length
     const claimed = lightsDay === today
-    const pending = !claimed && readToday > 0 && dailyArticles.every((a) => read[a.id])
+    const pending = !claimed && readToday > 0 && dailyArticles.every((a) => read[a.id] === today)
     // Ghi trong render (đồng bộ) để cảnh vừa dựng đã có giá trị đúng; ref không gây render
     ref.current.read = readToday
     if (!playing.current) {

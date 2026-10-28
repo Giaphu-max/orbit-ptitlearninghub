@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check } from 'lucide-react'
 import type { DailyArticle } from '@/data/types'
-import { DAILY_ARTICLE_XP, EXTRA_READ_COST } from '@/lib/gamification'
+import { EXTRA_READ_COST } from '@/lib/gamification'
 import { useUnlockAnimation, type useTodayDaily } from '@/hooks/useTodayDaily'
 
 // Các khối dùng chung của chương Hôm nay (trang chủ) và trang /today: dòng đếm, thẻ lớn "việc tiếp theo", thẻ nhỏ, dòng nhiệm vụ.
@@ -54,12 +54,12 @@ function LockIcon({ size = 16 }: { size?: number }) {
 
 /** Thẻ lớn: luôn là việc cần làm tiếp theo (bài ưu tiên / bài khóa mở bằng XP / đã hết bài). */
 export function TodayHeroCard({ today, className = '' }: { today: Today; className?: string }) {
-    const { priority, locked, allDone, canAfford, reasonFor, unlockExtra } = today
+    const { priority, locked, allDone, canAfford, reasonFor, unlockExtra, isReview, reviewLabel, xpFor } = today
     const { opening, run } = useUnlockAnimation(locked, unlockExtra)
     const lockedArticle = opening ?? locked
 
     if (lockedArticle) {
-        return <LockedCard article={lockedArticle} reason={reasonFor(lockedArticle, 'Bài mở thêm')} canAfford={canAfford} opening={Boolean(opening)} onUnlock={run} className={className} />
+        return <LockedCard article={lockedArticle} reason={isReview(lockedArticle) ? reviewLabel(lockedArticle) : reasonFor(lockedArticle, 'Bài mở thêm')} canAfford={canAfford} opening={Boolean(opening)} onUnlock={run} className={className} />
     }
     if (priority) {
         return (
@@ -69,11 +69,11 @@ export function TodayHeroCard({ today, className = '' }: { today: Today; classNa
                 className={`group relative flex flex-col overflow-hidden rounded-[22px] surface-red p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${className}`}
             >
                 <span aria-hidden className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-[radial-gradient(circle,hsl(var(--ink-foreground)/0.18),transparent_70%)]" />
-                <span className="relative inline-flex self-start rounded-full bg-ink-foreground/20 px-3 py-1.5 text-xs font-bold">{reasonFor(priority, 'Nên đọc trước')}</span>
+                <span className="relative inline-flex self-start rounded-full bg-ink-foreground/20 px-3 py-1.5 text-xs font-bold">{isReview(priority) ? reviewLabel(priority) : reasonFor(priority, 'Nên đọc trước')}</span>
                 <b className="relative mt-3.5 block max-w-[22ch] text-balance text-[24px] font-extrabold leading-[1.22] tracking-[-0.02em]">{priority.title}</b>
                 <span className="relative mt-5 flex items-center justify-between gap-3">
                     <span className="font-mono text-[13px] opacity-90">
-                        {priority.readingMinutes} phút · +{DAILY_ARTICLE_XP} XP
+                        {priority.readingMinutes} phút · +{xpFor(priority)} XP
                     </span>
                     <span className="inline-flex items-center gap-2 rounded-xl bg-ink-foreground px-[18px] py-3 text-[15px] font-extrabold text-brand-ink">
                         Đọc ngay <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />

@@ -31,7 +31,7 @@ export function OrbitTeacherView() {
 
     return (
         <div className="w-full">
-            <div className="mx-auto flex max-w-5xl flex-col gap-8 px-5 py-8 lg:px-8 lg:py-12">
+            <div className="container-wide flex flex-col gap-8 py-8 lg:py-12">
                 <header>
                     <p className="text-eyebrow uppercase text-brand-ink">Dành cho giảng viên</p>
                     <h1 className="mt-3 text-headline text-foreground">Duyệt nội dung và theo dõi lớp</h1>

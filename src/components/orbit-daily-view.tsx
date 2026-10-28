@@ -9,7 +9,7 @@ import { SourceChip } from '@/components/daily/source-chip'
 import { checkBlocks } from '@/lib/daily-text'
 import { celebrate, reactWrong } from '@/lib/feedback'
 import { nextDaily } from '@/lib/next-step'
-import { announceRewards, DAILY_ARTICLE_XP, DAILY_CHECK_XP, localDate } from '@/lib/gamification'
+import { announceRewards, DAILY_CHECK_XP, dailyXp, localDate } from '@/lib/gamification'
 import { A2_TIERS } from '@/lib/daily-lit'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -19,6 +19,10 @@ export function OrbitDailyView() {
     const article = dailyArticles.find((a) => a.id === articleId)
     const read = useOrbitStore((s) => (article ? s.dailyRead[article.id] : undefined))
     const complete = useOrbitStore((s) => s.completeDailyArticle)
+    const [earnedXp, setEarnedXp] = useState(0)
+    // Bài đã đọc ở ngày trước = ôn lại: làm lại câu kiểm tra, nửa XP
+    const doneToday = read === localDate()
+    const xp = dailyXp(doneToday ? undefined : read)
     const [chosen, setChosen] = useState<Record<string, number>>({})
     const [concept, setConcept] = useState<OpenConcept | null>(null)
     const hadWrong = useRef(false)
@@ -103,9 +107,11 @@ export function OrbitDailyView() {
         }
     }
 
+    const checkXp = Math.min(DAILY_CHECK_XP, Math.round(xp / 4))
     const finish = () => {
         const before = useOrbitStore.getState()
-        if (complete(article.id, DAILY_ARTICLE_XP) === 0) return
+        if (complete(article.id, xp) === 0) return
+        setEarnedXp(xp)
         const after = useOrbitStore.getState()
         const upcoming = nextDaily()
         const nextStep = upcoming ? { label: 'Bài đọc kế tiếp', to: `/daily/${upcoming.id}` } : { label: 'Xem tóm tắt hôm nay', to: '/today' }
@@ -116,8 +122,8 @@ export function OrbitDailyView() {
                 context: `Hoàn thành · ${article.title}`,
                 headline: hadWrong.current ? 'Sai một lần, hiểu tận gốc.' : 'Thêm một mảnh ghép.',
                 rows: [
-                    { label: 'Đọc xong bài', xp: DAILY_ARTICLE_XP - DAILY_CHECK_XP },
-                    { label: 'Trả lời đúng câu kiểm tra', xp: DAILY_CHECK_XP },
+                    { label: 'Đọc xong bài', xp: xp - checkXp },
+                    { label: 'Trả lời đúng câu kiểm tra', xp: checkXp },
                 ],
                 next: nextStep,
             },
@@ -138,7 +144,7 @@ export function OrbitDailyView() {
                 {/* Header bài đọc: nơi thẻ Orbit Daily ở trang chủ morph tới (cùng view-transition-name) */}
                 <div style={{ viewTransitionName: `vt-daily-${article.id}` }} className="mt-6">
                     <p className="flex items-center gap-2 text-eyebrow uppercase text-brand-ink">
-                        <Clock size={13} /> {article.readingMinutes} phút đọc · +{DAILY_ARTICLE_XP} XP
+                        <Clock size={13} /> {article.readingMinutes} phút đọc · +{xp} XP
                     </p>
                     <h1 className="mt-3 text-headline text-foreground">{article.title}</h1>
                 </div>
@@ -152,7 +158,8 @@ export function OrbitDailyView() {
                                     <CheckBlock
                                         block={block}
                                         pick={chosen[block.question.id]}
-                                        locked={read !== undefined}
+                                        locked={doneToday}
+                                        xp={xp}
                                         articleId={article.id}
                                         onPick={(n, el) => pick(block.question, n, el)}
                                     />
@@ -168,9 +175,9 @@ export function OrbitDailyView() {
                 </div>
 
                 <div className="mt-10 flex flex-wrap items-center gap-3 rounded-panel border border-border bg-card p-6 shadow-card">
-                    {read ? (
+                    {doneToday ? (
                         <span className="inline-flex items-center gap-2 text-sm font-bold text-success">
-                            <Check size={16} /> Đã hoàn thành, +{DAILY_ARTICLE_XP} XP đã nhận
+                            <Check size={16} /> Đã hoàn thành{earnedXp > 0 ? `, +${earnedXp} XP đã nhận` : ' hôm nay'}
                         </span>
                     ) : (
                         <button
@@ -253,7 +260,7 @@ function BlockBody({ block, onConcept }: { block: TextBlock; onConcept: (id: str
     }
 }
 
-function CheckBlock({ block, pick, locked, articleId, onPick }: { block: Extract<DailyBlock, { type: 'check' }>; pick: number | undefined; locked: boolean; articleId?: string; onPick: (i: number, el: HTMLElement) => void }) {
+function CheckBlock({ block, pick, locked, xp, articleId, onPick }: { block: Extract<DailyBlock, { type: 'check' }>; pick: number | undefined; locked: boolean; xp: number; articleId?: string; onPick: (i: number, el: HTMLElement) => void }) {
     const c = block.question
     const answered = pick !== undefined
     const dailyRead = useOrbitStore((s) => s.dailyRead)
@@ -269,7 +276,7 @@ function CheckBlock({ block, pick, locked, articleId, onPick }: { block: Extract
             <div className="flex items-center justify-between gap-3">
                 <p className="text-eyebrow uppercase text-brand-ink">Kiểm tra nhanh</p>
                 <span className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 font-mono text-xs font-bold text-brand-ink">
-                    <Zap size={12} className="fill-current" /> +{DAILY_ARTICLE_XP} XP
+                    <Zap size={12} className="fill-current" /> +{xp} XP
                 </span>
             </div>
             <p className="mt-3 text-lg font-bold text-foreground">{c.prompt}</p>

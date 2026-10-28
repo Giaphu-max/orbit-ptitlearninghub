@@ -247,7 +247,7 @@ export function OrbitStudioView() {
 
     return (
         <div className="w-full overflow-x-clip min-[980px]:h-[calc(100svh-var(--nav-h))]">
-            <div className="mx-auto grid max-w-[1600px] gap-4 p-4 min-[980px]:h-full min-[980px]:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="container-wide grid gap-4 py-4 min-[980px]:h-full min-[980px]:grid-cols-[minmax(0,1fr)_340px]">
                 <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Khung làm việc studio">
                     {/* Chỉ dẫn 3 bước cho người mới */}
                     <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-card border border-border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground shadow-sm">

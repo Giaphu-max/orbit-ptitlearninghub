@@ -14,13 +14,13 @@ import {
     visibleStreak,
 } from '@/lib/gamification'
 import { MissionList } from '@/components/missions'
-import { useOrbitStore } from '@/store/useOrbitStore'
+import { useOrbitStore, xpBalance } from '@/store/useOrbitStore'
 
 /** /journey – cấp độ, chuỗi ngày học, nhiệm vụ hằng ngày, cây kỹ năng và huy hiệu. */
 export function OrbitJourneyView() {
     return (
         <div className="w-full">
-            <div className="container-page flex flex-col gap-10 py-8 lg:py-12">
+            <div className="container-wide flex flex-col gap-10 py-8 lg:py-12">
                 <header>
                     <p className="text-eyebrow uppercase text-brand-ink">Tiến độ & Kỹ năng</p>
                     <h1 className="mt-3 text-headline text-foreground">Điểm thưởng đến từ việc hiểu bài</h1>
@@ -81,6 +81,7 @@ function FinalTests() {
 function StatusRow() {
     const xp = useOrbitStore((s) => s.xp)
     const streakState = useOrbitStore((s) => s.streak)
+    const balance = useOrbitStore((s) => xpBalance(s))
     const lp = levelProgress(xp)
     const streak = visibleStreak(streakState)
     const canFreeze = freezeAvailable(streakState)
@@ -93,6 +94,9 @@ function StatusRow() {
                         <p className="text-eyebrow uppercase text-ink-foreground/80">Cấp độ</p>
                         <p className="mt-2 font-mono text-6xl font-bold leading-none">{lp.level}</p>
                         <p className="mt-2 text-lg font-bold">{levelTitle(lp.level)}</p>
+                        <p className="mt-2 font-mono text-sm text-ink-foreground/85">
+                            Tổng {xp.toLocaleString('vi-VN')} XP · còn tiêu được {balance.toLocaleString('vi-VN')} XP
+                        </p>
                     </div>
                     <p className="inline-flex items-center gap-1.5 rounded-full bg-ink-foreground/15 px-4 py-2 font-mono text-sm font-bold">
                         <Zap size={15} className="fill-current" /> {xp.toLocaleString('vi-VN')} XP
@@ -180,7 +184,7 @@ function SkillTree() {
                                 {Array.from({ length: maxDepth + 1 }, (_, d) => (
                                     <Fragment key={d}>
                                         {d > 0 && <ChevronRight className="mt-9 shrink-0 self-start text-muted-foreground" size={28} aria-hidden />}
-                                        <div className="flex min-w-[200px] flex-1 flex-col gap-4">
+                                        <div className="flex min-w-[260px] flex-1 flex-col gap-4">
                                             {lessonNodes.filter((n) => n.depth === d).map((n) => (
                                                 <SkillNodeCard key={n.concept.id} node={n} />
                                             ))}
@@ -221,7 +225,7 @@ function SkillNodeCard({ node }: { node: ReturnType<typeof buildSkillTree>[numbe
                 </span>
             </span>
             <span className="min-w-0">
-                <span className={`block font-bold leading-snug ${node.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>{node.concept.name}</span>
+                <span title={node.concept.name} className={`line-clamp-2 block font-bold leading-snug ${node.unlocked ? 'text-foreground' : 'text-muted-foreground'}`}>{node.concept.name}</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
                     {node.unlocked ? (
                         mastered ? (

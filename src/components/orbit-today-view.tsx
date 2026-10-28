@@ -3,7 +3,7 @@ import { dailyArticles, getConcept } from '@/data'
 import { MissionList } from '@/components/missions'
 import { TodayCount, TodayHeroCard, TodayMiniCards } from '@/components/daily/today-board'
 import { useTodayDaily } from '@/hooks/useTodayDaily'
-import { DAILY_ARTICLE_XP, localDate } from '@/lib/gamification'
+import { localDate } from '@/lib/gamification'
 import { A2_TIERS } from '@/lib/daily-lit'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -15,7 +15,7 @@ export function OrbitTodayView() {
 
     return (
         <div className="w-full">
-            <div className="container-page flex flex-col gap-8 py-8 lg:py-12">
+            <div className="container-wide flex flex-col gap-8 py-8 lg:py-12">
                 <header className="page-grid items-end">
                     <div className="col-span-7">
                         <p className="text-eyebrow uppercase text-brand-ink">Ôn tập cá nhân hóa</p>
@@ -84,7 +84,7 @@ function DoneBlock() {
             </p>
             <h2 className="mt-3 text-[clamp(1.6rem,3vw,2.2rem)] font-extrabold leading-tight tracking-[-0.03em] text-foreground">Hôm nay đủ rồi. Hẹn bạn ngày mai.</h2>
             <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-                Bạn đã đọc {done.length} bài (+{done.length * DAILY_ARTICLE_XP} XP). Để kiến thức ngấm, hãy nghỉ.
+                Bạn đã đọc {done.length} bài. Để kiến thức ngấm, hãy nghỉ.
             </p>
             <ul className="mt-5 flex flex-col gap-2">
                 {done.map((a) => (

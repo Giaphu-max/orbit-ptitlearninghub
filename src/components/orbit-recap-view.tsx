@@ -119,7 +119,7 @@ function Recap({ data }: { data: RecapData }) {
 
     return (
         <div ref={root} data-play={play} className="w-full">
-            <div className="container-page py-8 lg:py-12">
+            <div className="container-wide py-8 lg:py-12">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-14">
                     <div className="min-w-0">
                         <LessonBreadcrumbStepper

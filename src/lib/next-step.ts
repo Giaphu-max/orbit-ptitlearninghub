@@ -16,20 +16,31 @@ export function gapScore(a: DailyArticle, mastery: Record<string, number>) {
     return a.conceptIds.reduce((sum, id) => sum + (1 - (mastery[id] ?? 0.5)), 0) / Math.max(1, a.conceptIds.length)
 }
 
-/** Bài mỗi ngày (3 miễn phí + bài mua thêm): bài đã đọc hôm nay, rồi bài chưa đọc ưu tiên theo lỗ hổng kiến thức. */
-export function todaysDaily(read: Record<string, string>, mastery: Record<string, number>, extra = 0): DailyArticle[] {
+/**
+ * Kho bài Daily theo thứ tự ưu tiên hôm nay: bài đã đọc hôm nay, bài chưa đọc (lỗ hổng lớn nhất trước),
+ * rồi bài ôn lại đã đọc ở ngày trước (lỗ hổng lớn nhất trước, ngang nhau thì bài đọc cũ nhất trước) để kho nhỏ không bao giờ cạn.
+ */
+export function dailyPool(read: Record<string, string>, mastery: Record<string, number>): DailyArticle[] {
     const today = localDate()
     return [
         ...dailyArticles.filter((a) => read[a.id] === today),
         ...dailyArticles.filter((a) => !read[a.id]).sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery)),
-    ].slice(0, DAILY_LIMIT + extra)
+        ...dailyArticles
+            .filter((a) => read[a.id] && read[a.id] !== today)
+            .sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery) || read[a.id].localeCompare(read[b.id])),
+    ]
+}
+
+/** Bài mỗi ngày (3 miễn phí + bài mua thêm). */
+export function todaysDaily(read: Record<string, string>, mastery: Record<string, number>, extra = 0): DailyArticle[] {
+    return dailyPool(read, mastery).slice(0, DAILY_LIMIT + extra)
 }
 
 /** Bài Daily chưa đọc ưu tiên nhất trong lượt hôm nay (undefined khi đã đủ lượt hoặc hết bài). */
 export function nextDaily(): DailyArticle | undefined {
     const { dailyRead, conceptMastery, dailyUnlocks } = useOrbitStore.getState()
     return todaysDaily(dailyRead, conceptMastery, extraReadsToday(dailyUnlocks))
-        .filter((a) => !dailyRead[a.id])
+        .filter((a) => dailyRead[a.id] !== localDate())
         .sort((a, b) => gapScore(b, conceptMastery) - gapScore(a, conceptMastery))[0]
 }
 

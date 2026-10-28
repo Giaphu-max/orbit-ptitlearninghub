@@ -279,7 +279,7 @@ export const useOrbitStore = create<OrbitState>()(
             setLearnerName: (name) => set({ learnerName: name.trim().slice(0, 24) || DEFAULT_LEARNER_NAME }),
 
             completeDailyArticle: (articleId, xp) => {
-                if (get().dailyRead[articleId]) return 0
+                if (get().dailyRead[articleId] === localDate()) return 0
                 set((s) => {
                     const today = dailyFor(s.daily)
                     return {
@@ -311,7 +311,7 @@ export const useOrbitStore = create<OrbitState>()(
                 const s = get()
                 const today = localDate()
                 const readToday = dailyArticles.filter((a) => s.dailyRead[a.id] === today).length
-                if (s.lightsDay === today || readToday === 0 || !dailyArticles.every((a) => s.dailyRead[a.id])) return 0
+                if (s.lightsDay === today || readToday === 0 || !dailyArticles.every((a) => s.dailyRead[a.id] === today)) return 0
                 set((st) => ({ xp: st.xp + LIGHTS_XP, lightsDay: today, earnedBadgeIds: st.earnedBadgeIds.includes(LIGHTS_BADGE_ID) ? st.earnedBadgeIds : [...st.earnedBadgeIds, LIGHTS_BADGE_ID] }))
                 return LIGHTS_XP
             },

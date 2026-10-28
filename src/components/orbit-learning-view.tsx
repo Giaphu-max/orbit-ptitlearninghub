@@ -42,7 +42,7 @@ export function OrbitLearningView() {
 
     return (
         <div className="w-full">
-            <div className="container-page py-8 lg:py-10">
+            <div className="container-wide py-8 lg:py-10">
                 <header className="flex flex-wrap items-center justify-between gap-6">
                     <h1 className="text-headline text-foreground">Học phần</h1>
                     <dl className="flex gap-7">

@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { dailyArticles, getConcept } from '@/data'
+import { getConcept } from '@/data'
 import type { DailyArticle } from '@/data/types'
-import { DAILY_ARTICLE_XP, dailyFor, EXTRA_READ_COST, MISSIONS } from '@/lib/gamification'
-import { DAILY_LIMIT, extraReadsToday, gapScore, todaysDaily } from '@/lib/next-step'
+import { dailyFor, dailyXp, EXTRA_READ_COST, localDate, MISSIONS } from '@/lib/gamification'
+import { DAILY_LIMIT, dailyPool, extraReadsToday, gapScore, todaysDaily } from '@/lib/next-step'
 import { useOrbitStore, xpBalance } from '@/store/useOrbitStore'
 
 /** Bài Orbit Daily hôm nay + trạng thái; dùng chung cho chương Hôm nay ở trang chủ và trang /today. */
 export function useTodayDaily() {
-    const read = useOrbitStore((s) => s.dailyRead)
+    const lastRead = useOrbitStore((s) => s.dailyRead)
     const mastery = useOrbitStore((s) => s.conceptMastery)
     const unlocks = useOrbitStore((s) => s.dailyUnlocks)
     const balance = useOrbitStore((s) => xpBalance(s))
@@ -15,13 +15,17 @@ export function useTodayDaily() {
     const dailyRaw = useOrbitStore((s) => s.daily)
     useOrbitStore((s) => s.lessonProgress)
 
-    // 3 bài miễn phí mỗi ngày + bài mua thêm (bài đã đọc từ ngày trước không quay lại)
+    // 3 bài miễn phí mỗi ngày + bài mua thêm; hết bài chưa đọc thì bổ sung bài ôn lại (đã đọc ở ngày trước)
+    const today = localDate()
     const extra = extraReadsToday(unlocks)
-    const articles = todaysDaily(read, mastery, extra)
+    const articles = todaysDaily(lastRead, mastery, extra)
+    // read = chỉ các bài đã hoàn thành HÔM NAY; lastRead giữ ngày đọc gần nhất (để gắn nhãn Ôn lại)
+    const read = Object.fromEntries(Object.entries(lastRead).filter(([, d]) => d === today))
+    const isReview = (a: DailyArticle) => Boolean(lastRead[a.id]) && lastRead[a.id] !== today
     const readCount = articles.filter((a) => read[a.id]).length
     const priority = [...articles.filter((a) => !read[a.id])].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
     // Bài kế tiếp đang khóa: đã đọc hết các bài đang mở mà kho còn bài chưa đọc
-    const locked = priority ? undefined : dailyArticles.filter((a) => !read[a.id] && !articles.includes(a)).sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
+    const locked = priority ? undefined : dailyPool(lastRead, mastery)[articles.length]
     const allDone = articles.length > 0 && !priority && !locked
     const canAfford = balance >= EXTRA_READ_COST
 
@@ -37,10 +41,22 @@ export function useTodayDaily() {
         return m === undefined ? `${lead} · bạn chưa làm quiz “${name}”` : `${lead} · bạn mới nắm ${Math.round(m * 100)}% “${name}”`
     }
 
-    /** Dòng ghi chú dưới tiêu đề thẻ nhỏ */
-    const noteFor = (a: DailyArticle) => (read[a.id] ? `Đã đọc · +${DAILY_ARTICLE_XP} XP` : `${a.readingMinutes} phút · +${DAILY_ARTICLE_XP} XP`)
+    /** "Ôn lại · đọc lần trước dd/mm" cho bài đã đọc ở ngày trước */
+    const reviewLabel = (a: DailyArticle) => {
+        const [, m, d] = (lastRead[a.id] ?? '').split('-')
+        return `Ôn lại · đọc lần trước ${d}/${m}`
+    }
+    /** Số XP của một bài: ôn lại chỉ một nửa */
+    const xpFor = (a: DailyArticle) => dailyXp(lastRead[a.id] === today ? undefined : lastRead[a.id])
 
-    return { articles, read, mastery, readCount, priority, locked, allDone, canAfford, balance, extra, missionsDone, missionsTotal: MISSIONS.length, reasonFor, noteFor, unlockExtra, limit: DAILY_LIMIT }
+    /** Dòng ghi chú dưới tiêu đề thẻ nhỏ */
+    const noteFor = (a: DailyArticle) => {
+        const xp = xpFor(a)
+        if (read[a.id]) return 'Đã đọc'
+        return isReview(a) ? `${reviewLabel(a)} · +${xp} XP` : `${a.readingMinutes} phút · +${xp} XP`
+    }
+
+    return { articles, read, mastery, readCount, priority, locked, allDone, canAfford, balance, extra, missionsDone, missionsTotal: MISSIONS.length, reasonFor, noteFor, isReview, reviewLabel, xpFor, unlockExtra, limit: DAILY_LIMIT }
 }
 
 /**

@@ -110,6 +110,8 @@ export const freezeAvailable = (s: StreakState, now = new Date()) => s.freezeUse
 
 /** XP khi đọc xong một bài Orbit Daily (trả lời đúng câu kiểm tra). */
 export const DAILY_ARTICLE_XP = 20
+/** XP một bài Daily: đọc lần đầu đủ DAILY_ARTICLE_XP; bài ôn lại (đã đọc ở ngày trước) chỉ một nửa, làm tròn. `lastRead` = ngày đọc gần nhất từ dailyRead. */
+export const dailyXp = (lastRead: string | undefined) => (lastRead ? Math.round(DAILY_ARTICLE_XP / 2) : DAILY_ARTICLE_XP)
 /** Số bài Orbit Daily miễn phí mỗi ngày; bài thứ 4 trở đi mở bằng XP. */
 export const DAILY_LIMIT = 3
 /** Giá mở thêm một bài Daily (trừ vào XP tiêu được, không làm tụt cấp). */

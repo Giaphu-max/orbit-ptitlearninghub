@@ -46,7 +46,7 @@ export function OrbitCheckpointView() {
     if (phase.kind === 'running') {
         return (
             <div className="w-full">
-                <div className="mx-auto max-w-3xl px-5 py-8 lg:py-12">
+                <div className="container-wide py-8 lg:py-12"><div className="mx-auto max-w-3xl">
                     <LessonBreadcrumbStepper
                         courseTitle={course?.title ?? 'Học phần'}
                         lessonTitle={lesson.title}
@@ -58,13 +58,14 @@ export function OrbitCheckpointView() {
                         <Running key={phase.deadline} phase={{ ...phase }} onSubmit={submit} onQuit={() => setPhase({ kind: 'intro' })} />
                     </div>
                 </div>
+                </div>
             </div>
         )
     }
 
     return (
         <div className="w-full">
-            <div className="mx-auto max-w-3xl px-5 py-8 lg:py-12">
+            <div className="container-wide py-8 lg:py-12"><div className="mx-auto max-w-3xl">
                 <LessonBreadcrumbStepper
                     courseTitle={course?.title ?? 'Học phần'}
                     lessonTitle={lesson.title}
@@ -96,6 +97,7 @@ export function OrbitCheckpointView() {
                     </Link>
                 </div>
                 {!enough && <p className="mt-4 text-sm text-muted-foreground">Bài này chưa đủ câu hỏi để làm test cuối chặng.</p>}
+            </div>
             </div>
         </div>
     )
