@@ -122,6 +122,20 @@
     /* Footer đỏ thương hiệu PTIT (theo --brand-800: 154 21 14) */
     --footer-bg: 154 21 14;
 
+    /* Banner chào /learning theo phong cách LMS PTIT */
+    --welcome-bg: #FDF3F3;
+    --welcome-border: #F6DCDC;
+    --welcome-header-bg: #FBE6E6;
+    --welcome-header-text: #D41F16;
+    --welcome-icon-bg: #FFF1EF;
+    --welcome-icon-text: #E2261C;
+    --welcome-divider: #F1E4E4;
+
+    /* Chip tiến độ học tập LMS (xanh tươi) */
+    --success-soft: #EAF8EE;
+    --success-soft-border: #BFE8CC;
+    --success-bright: #1E8F50;
+
     /* Vai trò shadcn */
     --primary: var(--brand);
     --primary-foreground: var(--brand-foreground);
@@ -263,6 +277,18 @@
     --secondary: 20 8% 16%;
     --secondary-foreground: 30 15% 94%;
     --accent-foreground: 6 90% 80%;
+
+    --welcome-bg: rgb(43 15 17 / 0.5);
+    --welcome-border: rgb(122 37 40 / 0.4);
+    --welcome-header-bg: rgb(58 20 22 / 0.8);
+    --welcome-header-text: #f87171;
+    --welcome-icon-bg: rgb(58 20 22 / 0.6);
+    --welcome-icon-text: #ef4444;
+    --welcome-divider: rgb(122 37 40 / 0.3);
+
+    --success-soft: rgb(20 83 45 / 0.25);
+    --success-soft-border: rgb(34 197 94 / 0.25);
+    --success-bright: #4ade80;
     --ring: 4 79% 56%;
 
     --success: 152 55% 45%;

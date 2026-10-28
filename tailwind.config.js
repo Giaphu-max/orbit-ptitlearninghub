@@ -41,6 +41,19 @@ export default {
         strong: token('foreground-strong'),
         /** Nền footer đỏ thương hiệu PTIT (theo --brand-800: 154 21 14) */
         footer: 'rgb(var(--footer-bg) / <alpha-value>)',
+        /** Banner chào LMS PTIT */
+        welcome: {
+          bg: 'var(--welcome-bg)',
+          border: 'var(--welcome-border)',
+          header: 'var(--welcome-header-bg)',
+          'header-text': 'var(--welcome-header-text)',
+          icon: 'var(--welcome-icon-bg)',
+          'icon-text': 'var(--welcome-icon-text)',
+          divider: 'var(--welcome-divider)',
+        },
+        'success-soft': 'var(--success-soft)',
+        'success-soft-border': 'var(--success-soft-border)',
+        'success-bright': 'var(--success-bright)',
         surface: token('surface'),
         primary: { DEFAULT: token('primary'), foreground: token('primary-foreground') },
         secondary: { DEFAULT: token('secondary'), foreground: token('secondary-foreground') },
