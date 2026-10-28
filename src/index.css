@@ -155,9 +155,9 @@
     /* Nhịp khoảng cách trong chương trang chủ (nhân --g khi cột chữ phải thu cho vừa khung, xem hero-balance) */
     --ch-gap-title: 16px;
     --ch-gap-lead: 20px;
-    --ch-gap-body: 32px;
-    --ch-gap-card: 12px;
-    --ch-gap-link: 24px;
+    --ch-gap-body: 28px;
+    --ch-gap-card: 10px;
+    --ch-gap-link: 20px;
     /* Chiều cao thanh điều hướng cố định (h-10 của nút + 2×20px) */
     --nav-h: 5rem;
     --duration-fast: 150ms;

@@ -282,10 +282,10 @@ function Reveal({ children }: { children: ReactNode }) {
 }
 
 const Eyebrow = ({ children }: { children: ReactNode }) => <p data-s className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-ink">{children}</p>
-/** Nhịp khoảng cách chương (token --ch-gap-* ở index.css, nhân --g khi chương phải thu cho vừa khung): eyebrow → tiêu đề 16, tiêu đề → dẫn 20, dẫn → nội dung 32, giữa thẻ 12, nội dung → link 24 */
+/** Nhịp khoảng cách chương (token --ch-gap-* ở index.css, nhân --g khi chương phải thu cho vừa khung): eyebrow → tiêu đề 16, tiêu đề → dẫn 20, dẫn → nội dung 28, giữa hàng 10, nội dung → link 20 */
 const gap = (token: string) => `calc(var(--ch-gap-${token}) * var(--g, 1))`
 const Title = ({ id, children }: { id?: string; children: string }) => (
-    <h2 data-s id={id} style={{ marginTop: gap('title'), fontSize: 'calc(clamp(40px, 3.2vw, 56px) * var(--tt, 1))' }} className="font-extrabold leading-[1.08] tracking-[-0.03em]">
+    <h2 data-s id={id} style={{ marginTop: gap('title'), fontSize: 'clamp(36px, 2.8vw, 48px)' }} className="font-extrabold leading-[1.08] tracking-[-0.03em]">
         {children.split('\n').map((line, i) => (
             <span key={i} className="block">
                 {line}
@@ -294,7 +294,7 @@ const Title = ({ id, children }: { id?: string; children: string }) => (
     </h2>
 )
 const Lead = ({ children }: { children: ReactNode }) => (
-    <p data-s data-compact style={{ marginTop: gap('lead'), marginBottom: gap('body'), fontSize: 'clamp(17px, 1.25vw, 19px)' }} className="max-w-[46ch] leading-relaxed text-muted-foreground">
+    <p data-s data-compact style={{ marginTop: gap('lead'), marginBottom: gap('body'), fontSize: '17px', lineHeight: '1.6' }} className="max-w-[46ch] text-muted-foreground">
         {children}
     </p>
 )
@@ -348,7 +348,7 @@ function DailyChapter() {
             <div data-s>
                 <TodayHeroCard today={today} compact />
             </div>
-            <div data-s className="mt-3">
+            <div data-s style={{ marginTop: gap('card') }}>
                 <TodayRows today={today} max={2} />
             </div>
             <div data-s data-compact style={{ marginTop: gap('link') }}>
@@ -466,7 +466,7 @@ function StudioChapter() {
                     Chụp thử trên mô hình 3D để AI chấm điểm bố cục, độ tương phản và khoanh vùng trực tiếp những chi tiết cần tinh chỉnh.
                 </Feature>
             </div>
-            <p data-s data-compact style={{ marginTop: gap('card') }} className="flex items-center gap-2.5 rounded-[14px] border border-border bg-card/90 px-3 py-2.5 text-[13px]">
+            <p data-s data-compact style={{ marginTop: gap('card') }} className="flex items-center gap-2.5 rounded-[14px] border border-border bg-card/90 p-3 text-[13px]">
                 <span aria-hidden className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg bg-brand-600">
                     <Sparkles size={14} />
                 </span>
@@ -481,7 +481,7 @@ function StudioChapter() {
 
 function Feature({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
     return (
-        <div className="grid grid-cols-[30px_1fr] gap-3 text-sm text-muted-foreground">
+        <div className="grid grid-cols-[30px_1fr] gap-3 text-[15px] leading-relaxed text-muted-foreground">
             <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-muted text-brand-ink">{icon}</span>
             <span>
                 <b className="text-foreground">{title}:</b> {children}

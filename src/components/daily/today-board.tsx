@@ -42,15 +42,15 @@ export function TodayHeroCard({ today, className = '', compact = false }: { toda
                 className={`tier-1-bob group relative flex flex-col overflow-hidden rounded-[22px] surface-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${compact ? 'p-6' : 'min-h-[300px] px-9 pb-[30px] pt-[34px]'} ${className}`}
             >
                 <span aria-hidden className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-[radial-gradient(circle,hsl(var(--ink-foreground)/0.18),transparent_70%)]" />
-                <span className="relative inline-flex self-start rounded-full bg-ink-foreground/20 px-3 py-1.5 text-xs font-bold">{isReview(priority) ? reviewLabel(priority) : reasonFor(priority, 'Nên đọc trước')}</span>
-                <b className={`relative block max-w-[22ch] text-balance font-black tracking-[-0.025em] ${compact ? 'mt-3.5 text-[24px] font-extrabold leading-[1.22]' : 'mt-[22px] text-[34px] leading-[1.15]'}`}>{priority.title}</b>
+                <span className={`relative inline-flex self-start rounded-full bg-ink-foreground/20 font-bold ${compact ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'}`}>{isReview(priority) ? reviewLabel(priority) : reasonFor(priority, 'Nên đọc trước')}</span>
+                <b className={`relative block max-w-[22ch] text-balance font-black tracking-[-0.025em] ${compact ? 'mt-2.5 text-[26px] font-extrabold leading-[1.18]' : 'mt-[22px] text-[34px] leading-[1.15]'}`}>{priority.title}</b>
                 {!compact && <span className="relative mt-3 line-clamp-2 max-w-[52ch] text-[15px] leading-[1.55] text-ink-foreground/85">{articleBlurb(priority)}</span>}
-                <span className={`relative mt-auto flex items-center justify-between gap-3 ${compact ? 'pt-5' : 'pt-[26px]'}`}>
+                <span className={`relative mt-auto flex items-center justify-between gap-3 ${compact ? 'pt-3.5' : 'pt-[26px]'}`}>
                     <span className="font-mono text-[13px] font-semibold opacity-90">
                         {priority.readingMinutes} phút · +{xpFor(priority)} XP{!compact && ` · ${checkCount(priority)} câu kiểm tra`}
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-[14px] bg-ink-foreground px-[22px] py-3.5 text-base font-extrabold text-brand-ink">
-                        Đọc ngay <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
+                    <span className={`inline-flex items-center gap-2 font-extrabold text-brand-ink ${compact ? 'rounded-xl bg-ink-foreground px-4 py-2.5 text-sm' : 'rounded-[14px] bg-ink-foreground px-[22px] py-3.5 text-base'}`}>
+                        Đọc ngay <ArrowRight size={compact ? 14 : 16} className="transition group-hover:translate-x-0.5" />
                     </span>
                 </span>
             </Link>
