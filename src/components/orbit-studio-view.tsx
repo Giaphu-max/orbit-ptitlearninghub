@@ -265,7 +265,7 @@ export function OrbitStudioView() {
                             </span>
                         </div>
                         <span className="hidden text-[11px] font-medium text-muted-foreground min-[1180px]:inline">
-                            Phòng Lab 3D · Môn Nhiếp ảnh & Ánh sáng PTIT
+                            Studio 3D · Môn Nhiếp ảnh & Ánh sáng
                         </span>
                     </div>
 

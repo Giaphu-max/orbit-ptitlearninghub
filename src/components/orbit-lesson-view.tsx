@@ -322,8 +322,8 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                     className="flex items-center justify-between gap-3 rounded-card border-2 border-brand-300 bg-brand-50/70 p-4 shadow-card transition hover:border-brand-500 hover:bg-brand-50"
                                 >
                                     <span>
-                                        <span className="block text-eyebrow uppercase text-brand-ink">Phòng Lab 3D</span>
-                                        <span className="mt-1 block font-bold text-foreground">Thực hành sắp đặt ánh sáng bài học này trong Phòng Lab 3D →</span>
+                                        <span className="block text-eyebrow uppercase text-brand-ink">Studio 3D</span>
+                                        <span className="mt-1 block font-bold text-foreground">Thực hành sắp đặt ánh sáng bài học này trong Studio 3D →</span>
                                         {practiceConcept && (
                                             <span className="mt-0.5 block text-xs text-muted-foreground">Đề bài gợi ý: {practiceConcept.name}</span>
                                         )}

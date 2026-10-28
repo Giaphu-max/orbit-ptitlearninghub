@@ -38,3 +38,12 @@ Giao diện tối đang **tạm tắt** nhưng code vẫn còn nguyên (token `.
 - Cờ: `FLAGS.darkMode` trong `src/lib/perf.ts` (đang `false`) và `DARK_MODE` trong script ở `index.html`. Hai chỗ phải cùng giá trị.
 - Khi `false`: ẩn mọi nút sáng/tối, luôn bỏ class `dark` trên `<html>`, bỏ qua theme đã lưu, cảnh 3D luôn ban ngày.
 - Bật lại: đổi cả hai thành `true`.
+
+## Điều hướng chính (Navigation)
+
+Hệ thống điều hướng toàn ứng dụng sử dụng cấu trúc route và nhãn hiển thị:
+- **Trang chủ** (`/`)
+- **Ôn tập** (`/today`)
+- **Học phần** (`/learning`)
+- **Studio 3D** (`/studio`)
+- **Tiến độ & Kỹ năng** (`/journey`)

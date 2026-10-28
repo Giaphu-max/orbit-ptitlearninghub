@@ -33,7 +33,7 @@ export function SiteFooter() {
         {
             title: 'Công cụ',
             links: [
-                { label: 'Phòng Lab 3D', to: '/studio' },
+                { label: 'Studio 3D', to: '/studio' },
                 { label: 'Trợ giảng AI', to: lessons[0] ? `/lesson/${lessons[0].id}` : '/learning' },
                 ...(role === 'teacher' ? [{ label: 'Trang giảng viên', to: '/teacher' }] : []),
             ],

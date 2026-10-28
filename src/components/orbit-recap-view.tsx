@@ -520,7 +520,7 @@ function NextCard({ data }: { data: RecapData }) {
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-ink-foreground">
                             <Camera size={16} />
                         </span>
-                        <span>Thực hành sắp đặt ánh sáng bài học này trong Phòng Lab 3D →</span>
+                        <span>Thực hành sắp đặt ánh sáng bài học này trong Studio 3D →</span>
                     </span>
                 </Link>
             )}

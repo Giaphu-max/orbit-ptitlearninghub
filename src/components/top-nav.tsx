@@ -25,7 +25,7 @@ const BASE_ITEMS: NavItem[] = [
     { label: 'Trang chủ', to: '/', match: (p) => p === '/' },
     { label: 'Ôn tập', to: '/today', match: (p) => p.startsWith('/today') || p.startsWith('/daily') },
     { label: 'Học phần', to: '/learning', match: (p) => p === '/learning' || p.startsWith('/lesson') || p.startsWith('/test') || p.startsWith('/checkpoint') || p.startsWith('/recap') },
-    { label: 'Phòng Lab 3D', to: '/studio', match: (p) => p.startsWith('/studio') },
+    { label: 'Studio 3D', to: '/studio', match: (p) => p.startsWith('/studio') },
     { label: 'Tiến độ & Kỹ năng', to: '/journey', match: (p) => p.startsWith('/journey') },
 ]
 
@@ -47,7 +47,7 @@ function getCurrentPageLabel(pathname: string): string {
     if (pathname.startsWith('/checkpoint')) return 'Kiểm tra'
     if (pathname.startsWith('/recap')) return 'Tổng kết'
     if (pathname.startsWith('/test')) return 'Bài test'
-    if (pathname.startsWith('/studio')) return 'Phòng Lab 3D'
+    if (pathname.startsWith('/studio')) return 'Studio 3D'
     if (pathname.startsWith('/journey')) return 'Tiến độ & Kỹ năng'
     if (pathname.startsWith('/teacher')) return 'Giảng viên'
     return 'PTIT'

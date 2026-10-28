@@ -455,7 +455,7 @@ function CourseRow({ summary }: { summary: CourseSummary }) {
 function StudioChapter() {
     return (
         <>
-            <Eyebrow>03 · Phòng thực hành ảo 3D</Eyebrow>
+            <Eyebrow>03 · Studio 3D</Eyebrow>
             <Title id="studio-title">Từ lý thuyết trên giảng đường ra phim trường ảo 3D.</Title>
             <Lead>Phòng thực hành Nhiếp ảnh và Ánh sáng ngay trên trình duyệt. Tự đặt đèn 3 điểm, chỉnh góc máy rồi để AI chấm ảnh, trước khi vào phòng quay thật.</Lead>
             <div data-s className="flex flex-col" style={{ gap: gap('card') }}>
@@ -473,7 +473,7 @@ function StudioChapter() {
                 “Studio tối, đèn chính vàng ấm từ trái, viền sáng phía sau”
             </p>
             <Link to="/studio" data-s data-vt="studio-stage" style={{ marginTop: gap('link') }} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
-                Vào Phòng Lab 3D <ArrowRight size={16} />
+                Vào Studio 3D <ArrowRight size={16} />
             </Link>
         </>
     )
