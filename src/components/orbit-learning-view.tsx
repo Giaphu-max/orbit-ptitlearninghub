@@ -4,7 +4,6 @@ import { ClassGrid } from '@/components/courses/class-grid'
 import { ContinueCard } from '@/components/courses/continue-card'
 import { LearningBanner } from '@/components/courses/learning-banner'
 import { WeekCard } from '@/components/courses/week-card'
-import { SiteFooter } from '@/components/site-footer'
 import { defaultCourse, useCourseSummaries } from '@/lib/course-map'
 import { buildPlan, buildWeek, isBehind } from '@/lib/week-plan'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -70,7 +69,6 @@ export function OrbitLearningView() {
                     Giảng viên đang chuẩn bị nội dung
                 </p>
             )}
-            <SiteFooter />
         </div>
     )
 }

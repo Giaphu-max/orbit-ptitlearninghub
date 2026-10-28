@@ -4,7 +4,16 @@ import { Loader2 } from 'lucide-react'
 import { TopNav } from '@/components/top-nav'
 import { OrbitRoleSelect } from '@/components/orbit-role-select'
 import { RewardOverlay } from '@/components/reward-overlay'
+import { SiteFooter } from '@/components/site-footer'
 import { useOrbitStore } from '@/store/useOrbitStore'
+
+// Các route toàn màn hình hoặc có footer riêng không hiển thị layout footer
+const HIDE_FOOTER_PREFIXES = ['/lesson', '/test', '/checkpoint', '/studio']
+
+function shouldShowFooter(pathname: string): boolean {
+    if (pathname === '/') return false
+    return !HIDE_FOOTER_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'))
+}
 
 export function MainLayout() {
     const location = useLocation()
@@ -13,6 +22,7 @@ export function MainLayout() {
 
     // Thanh điều hướng cố định ở đầu mọi trang; trên trang chủ nó đè lên hero, các trang khác chừa chỗ bằng --nav-h
     const isHome = location.pathname === '/'
+    const showFooter = shouldShowFooter(location.pathname)
 
     if (!role) return <OrbitRoleSelect />
 
@@ -33,15 +43,16 @@ export function MainLayout() {
             <div className="flex min-w-0 flex-1 flex-col">
                 <TopNav />
                 <main className={`relative flex min-w-0 flex-1 flex-col ${isHome ? '' : 'pt-[var(--nav-h)]'}`}>
-                <Suspense
-                    fallback={
-                        <div className="flex flex-1 items-center justify-center py-32 text-muted-foreground">
-                            <Loader2 className="animate-spin" size={32} aria-label="Đang tải trang" />
-                        </div>
-                    }
-                >
-                    <Outlet />
-                </Suspense>
+                    <Suspense
+                        fallback={
+                            <div className="flex flex-1 items-center justify-center py-32 text-muted-foreground">
+                                <Loader2 className="animate-spin" size={32} aria-label="Đang tải trang" />
+                            </div>
+                        }
+                    >
+                        <Outlet />
+                        {showFooter && <SiteFooter />}
+                    </Suspense>
                 </main>
             </div>
             <RewardOverlay />
