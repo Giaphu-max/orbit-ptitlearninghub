@@ -8,6 +8,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { CAMPUS } from './campus-palette'
 import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, LOBBY_SCALE, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
 import { STUDIO_Z } from './campus-room'
+import { measureBalance } from '@/lib/hero-balance'
 import { PERF_ON, PerfHud } from './campus-perf'
 import { isWebKit } from '@/lib/browser'
 import { FLAGS } from '@/lib/perf'
@@ -255,14 +256,23 @@ function Flag({ color, x, index, reduce }: { color: string; x: number; index: nu
 
 const CLOUD_PUFFS: [number, number, number, number][] = [[0, 0, 0, 1.6], [1.6, -0.2, 0.3, 1.2], [-1.5, -0.3, -0.2, 1.1], [0.6, 0.6, 0, 1.1]]
 
+const _cloud = new THREE.Vector3()
 function Cloud({ index, reduce }: { index: number; reduce: boolean }) {
     const ref = useRef<THREE.Group>(null)
     const speed = 0.6 + index * 0.15
-    useFrame((_, delta) => {
+    useFrame(({ camera, size }, delta) => {
         const g = ref.current
-        if (!g || reduce) return
-        g.position.x += speed * Math.min(delta, 0.05)
-        if (g.position.x > 34) g.position.x = -34
+        if (!g) return
+        if (!reduce) {
+            g.position.x += speed * Math.min(delta, 0.05)
+            if (g.position.x > 34) g.position.x = -34
+        }
+        // Mây nằm trong vùng navbar (desktop, đã có số đo cân bố cục) thì ẩn để không đè chữ menu
+        if (page.body.length) {
+            const y = ((1 - _cloud.copy(g.position).project(camera).y) / 2) * size.height
+            const hide = y < page.safe.top
+            if (g.visible === hide) g.visible = !hide
+        } else if (!g.visible) g.visible = true
     })
     return (
         <group ref={ref} position={[-30 + index * 17, 20 + (index % 2) * 3, -16 + index * 7]}>
@@ -541,32 +551,23 @@ const AZ_RANGE = (25 * Math.PI) / 180
 const POLAR_RANGE = 0.17
 /** Khuôn viên (cả cạnh đế) chiếm tối đa chừng này bề ngang ở hero: mô hình là bối cảnh, không phải tiêu điểm */
 const HERO_MAX_W = 0.5
-/** Riêng hero: mô hình to thêm 15% so với vừa khít vùng 7 cột, và hạ xuống (tỉ lệ chiều cao khung) để tâm mô hình ngang tâm khối chữ */
-const HERO_SCALE = 1.15
-const HERO_DROP = 0.05
-const FIT_RADIUS = BOUND_RADIUS
 const RETURN_RATE = 2.2
 const _sph = new THREE.Spherical()
 const _off = new THREE.Vector3()
 /** S ≤ ngưỡng này là còn ở hero: OrbitControls và tự xoay hoạt động; vượt ngưỡng thì camera chạy theo đường bay. */
 const HERO_EPS = 0.05
 /**
- * Lưới chung của trang (khớp .container-page): tối đa 1440, lề 96 (≥1280), 12 cột, gap 24.
- * Màn rộng: cột chữ chiếm 5 cột trái, chủ thể nằm giữa vùng 7 cột phải; riêng chương Học phần cột chữ rộng 6 cột nên chủ thể (kiosk) nằm giữa 6 cột phải.
+ * Lưới chung của trang (khớp .container-wide): tối đa 1760, lề clamp(40px, 4vw, 80px), 12 cột, gap 24.
+ * Chỉ dùng cho khung dự phòng (màn < 1280px, chưa có số đo cân bố cục): chủ thể nằm giữa 7 cột phải.
  */
 const GRID_GAP = 24
 function gridSpan(w: number, from: number, span: number) {
-    const gutter = w >= 1280 ? 96 : THREE.MathUtils.clamp(w * 0.04, 24, 96)
-    const page = Math.min(w, 1440)
-    const col = (page - gutter * 2 - GRID_GAP * 11) / 12
-    const x0 = (w - page) / 2 + gutter + from * (col + GRID_GAP)
+    const gutter = THREE.MathUtils.clamp(w * 0.04, 40, 80)
+    const pageW = Math.min(w, 1760)
+    const col = (pageW - gutter * 2 - GRID_GAP * 11) / 12
+    const x0 = (w - pageW) / 2 + gutter + from * (col + GRID_GAP)
     const x1 = x0 + span * col + (span - 1) * GRID_GAP
     return { x0, x1, c: (x0 + x1) / 2 }
-}
-/** Tâm vùng chủ thể (px) theo chương: 7 cột phải, riêng quanh S = 1.8 (Học phần) là 6 cột phải. */
-function subjectCenter(w: number, S: number) {
-    const t = band(S, 1.4, 1.8) * (1 - band(S, 2.3, 3))
-    return THREE.MathUtils.lerp(gridSpan(w, 5, 7).c, gridSpan(w, 6, 6).c, t)
 }
 /** Tỉ lệ rộng/cao của vùng trống mà khung chính diện A2 (chế độ tĩnh) được viết cho; vùng hẹp hơn thì camera lùi xa tương ứng. */
 const REF_ASPECT = 1.05
@@ -615,6 +616,108 @@ const gateLook = new THREE.CatmullRomCurve3([A2_FACE.clone(), GATE_SIGN, new THR
 const ROOM_A = lobbyPoint(0, 2.5, -13.6)
 const ROOM_B = lobbyPoint(0, 2.4, -19)
 const ROOM_LOOK = lobbyPoint(0, 1.5, STUDIO_Z)
+
+// ── Cân bố cục (hero-balance): VẬT THỂ CHÍNH của từng chương = phần THÂN (không mây, sương, mặt đất trải ngoài đế), đơn vị cảnh ──
+//   0 hero: cả khuôn viên · 1 tòa A2 · 2 kiosk · 3 chủ thể + đèn studio
+const BODIES: THREE.Box3[] = [
+    new THREE.Box3(new THREE.Vector3(-24, 0, -22), new THREE.Vector3(24, 15, 18)),
+    new THREE.Box3(new THREE.Vector3(-8.6, 0, -21.7), new THREE.Vector3(12.6, 15, 7)),
+    new THREE.Box3(new THREE.Vector3(KSCR.center.x - 0.55, KSCR.baseY, KSCR.center.z - 0.55), new THREE.Vector3(KSCR.center.x + 0.55, KSCR.topY, KSCR.center.z + 0.55)),
+    new THREE.Box3().setFromCenterAndSize(lobbyPoint(0, 0, STUDIO_Z).add(new THREE.Vector3(0, 1.15, 0)), new THREE.Vector3(6.4, 2.3, 3.6)),
+]
+/** Giới hạn zoom từng chương: kiosk và studio không thu quá nhỏ (tường phòng phải còn phủ khung) */
+const ZOOM_RANGE: [number, number][] = [[0.4, 1.8], [0.5, 1.8], [0.85, 1.8], [0.85, 1.8]]
+interface Rect4 { x0: number; y0: number; x1: number; y1: number }
+interface Stops { zoom: number[]; sx: number[]; sy: number[]; natural: Rect4[]; size: string; key: number }
+const _tmpCam = new THREE.PerspectiveCamera()
+const _pp = new THREE.Vector3()
+const _look3 = new THREE.Vector3()
+const _pos3 = new THREE.Vector3()
+/** Khung chữ nhật (px, chưa zoom / view offset) mà thân chương `i` chiếm trên màn ở điểm dừng của chương, từ 8 góc Box3 */
+function naturalRect(i: number, heroDist: number, w: number, h: number): Rect4 {
+    const stopS = [0, 1, 1.8, 3][i]
+    let fov = FOV
+    if (i === 0) {
+        _pos3.copy(TARGET).add(_look3.copy(HERO_OFF).setLength(heroDist))
+        _look3.copy(TARGET)
+    } else fov = transitCamera(stopS, _pos3, _look3)
+    _tmpCam.fov = fov
+    _tmpCam.aspect = w / h
+    _tmpCam.near = 0.1
+    _tmpCam.far = 2000
+    _tmpCam.zoom = 1
+    _tmpCam.clearViewOffset()
+    _tmpCam.position.copy(_pos3)
+    _tmpCam.up.set(0, 1, 0)
+    _tmpCam.lookAt(_look3)
+    _tmpCam.updateProjectionMatrix()
+    _tmpCam.updateMatrixWorld(true)
+    const b = BODIES[i]
+    const r: Rect4 = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity }
+    for (let k = 0; k < 8; k++) {
+        _pp.set(k & 1 ? b.max.x : b.min.x, k & 2 ? b.max.y : b.min.y, k & 4 ? b.max.z : b.min.z).project(_tmpCam)
+        const px = ((_pp.x + 1) / 2) * w
+        const py = ((1 - _pp.y) / 2) * h
+        r.x0 = Math.min(r.x0, px)
+        r.x1 = Math.max(r.x1, px)
+        r.y0 = Math.min(r.y0, py)
+        r.y1 = Math.max(r.y1, py)
+    }
+    return r
+}
+/**
+ * Khớp camera vào khung đích (page.body) của từng chương: giữ góc nhìn, chỉ đổi zoom (chiều cao thân khớp) và view offset (vị trí khớp).
+ * Ảnh sau zoom z và dịch s: px = w/2 + z·(p − w/2) + s. Chưa có số đo (màn < 1280px) thì dùng vùng 7 cột phải như cũ.
+ */
+function fitStops(st: Stops, w: number, h: number) {
+    for (let i = 0; i < 4; i++) {
+        const n = st.natural[i]
+        const nw = n.x1 - n.x0
+        const nh = n.y1 - n.y0
+        const t = page.body[i]
+        const [lo, hi] = ZOOM_RANGE[i]
+        const ncy = (n.y0 + n.y1) / 2
+        let z = 1
+        let tcx: number
+        let tcy = ncy
+        if (t) {
+            z = THREE.MathUtils.clamp((t.y1 - t.y0) / nh, lo, hi)
+            tcx = t.x1 - (z * nw) / 2
+            tcy = (t.y0 + t.y1) / 2
+        } else {
+            const region = gridSpan(w, 5, 7)
+            if (i === 0) z = THREE.MathUtils.clamp(Math.min(region.x1 - region.x0, w * HERO_MAX_W) / nw, lo, 1)
+            tcx = region.c
+        }
+        st.zoom[i] = z
+        st.sx[i] = tcx - (w / 2 + z * ((n.x0 + n.x1) / 2 - w / 2))
+        st.sy[i] = tcy - (h / 2 + z * (ncy - h / 2))
+    }
+    st.key = page.balanceKey
+}
+/** Tham số khớp tại S: bay hero→A2 tuyến tính theo vòng quanh, hai chặng sau đổi quanh điểm cắt cảnh (cùng độ rộng với màn tối) */
+function sampleStops(st: Stops, S: number, out: { zoom: number; sx: number; sy: number }) {
+    let a = 3
+    let b = 3
+    let k = 0
+    if (S < 1) {
+        a = 0
+        b = 1
+        k = band(S, HERO_EPS, 1)
+    } else if (S < 1.8) {
+        a = 1
+        b = 2
+        k = smoothstep(clamp01((band(S, 1, 1.8) - (CUT2 - 0.07)) / 0.14))
+    } else if (S < 3) {
+        a = 2
+        b = 3
+        k = smoothstep(clamp01((band(S, 1.8, 3) - (CUT3 - 0.07)) / 0.14))
+    }
+    out.zoom = lerp(st.zoom[a], st.zoom[b], k)
+    out.sx = lerp(st.sx[a], st.sx[b], k)
+    out.sy = lerp(st.sy[a], st.sy[b], k)
+}
+
 /** S tại điểm cắt chương 02: từ đây trở đi là "trong nhà" (trời, nắng, đèn sảnh đổi trong lúc tối màn) */
 const INDOOR_S = 1 + 0.8 * CUT2
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
@@ -840,7 +943,7 @@ interface SceneProps {
  * (nửa phải trên màn rộng) bằng view offset của camera; camera hero lùi đủ xa để khối cầu bao khuôn viên nằm gọn
  * trong vùng đó.
  */
-function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>) {
+function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, heroDist: React.MutableRefObject<number>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>) {
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const size = useThree((s) => s.size)
 
@@ -854,6 +957,7 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
         const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * ra)
         const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / tanHalf
         const distance = Math.max(fitW, fitH)
+        heroDist.current = distance
         fitScale.current = Math.max(1, REF_ASPECT / ra)
 
         camera.aspect = w / h
@@ -871,7 +975,7 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
             controls.current?.update()
         }
         return () => camera.clearViewOffset()
-    }, [camera, size, controls, staticMode, heroPos, fitScale, stage])
+    }, [camera, size, controls, staticMode, heroPos, heroDist, fitScale, stage])
 }
 
 const _look = new THREE.Vector3()
@@ -900,6 +1004,9 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const fitScale = useRef(1)
     // Tránh cột chữ: zoom (≤1) và độ dịch ngang (px) đã làm mượt, mép phải cột chữ (px)
     const avoid = useRef({ zoom: 1, shift: 0, drop: 0 })
+    const heroDist = useRef(START_POS.distanceTo(TARGET))
+    const stops = useRef<Stops>({ zoom: [1, 1, 1, 1], sx: [0, 0, 0, 0], sy: [0, 0, 0, 0], natural: [], size: '', key: -1 })
+    const sampled = useRef({ zoom: 1, sx: 0, sy: 0 })
     const returning = useRef(false)
     const frame = useRef(0)
     const shadowSig = useRef('')
@@ -924,7 +1031,22 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
     const domElement = useThree((s) => s.gl.domElement)
     const scene = useThree((s) => s.scene)
 
-    useStageFit(controls, staticMode, heroPos, fitScale, sm)
+    useStageFit(controls, staticMode, heroPos, heroDist, fitScale, sm)
+
+    // Khung tự nhiên của thân từng chương (tính lại khi đổi kích thước): báo tỉ lệ cho hero-balance, rồi khớp zoom + view offset vào khung đích
+    useEffect(() => {
+        if (staticMode) return
+        const { width: w, height: h } = size
+        const st = stops.current
+        st.natural = [0, 1, 2, 3].map((i) => naturalRect(i, heroDist.current, w, h))
+        st.size = `${w}x${h}`
+        const aspects = st.natural.map((r) => (r.x1 - r.x0) / (r.y1 - r.y0))
+        if (aspects.some((a, i) => Math.abs(a - (page.aspect[i] ?? 0)) > 0.01)) {
+            page.aspect = aspects
+            measureBalance()
+        }
+        fitStops(st, w, h)
+    }, [size, staticMode])
 
     // Đưa camera về góc nhìn ban đầu (OrbitControls lấy vị trí camera làm điểm xuất phát)
     useLayoutEffect(() => {
@@ -1126,24 +1248,16 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
 
         // ── Kiosk: khung nhìn dịch sang phải như mọi chương; poster DOM bám 4 góc màn 3D ──
         if (!staticMode) {
-            // Hero: khuôn viên nằm gọn trong vùng 7 cột phải của lưới. Khối cầu bao chiếu lên màn hình có tâm = tâm khung + độ dịch, bán kính r0·zoom;
-            // tâm đặt giữa vùng, quá rộng thì thu nhỏ (zoom < 1).
+            // Cân bố cục: zoom + view offset lấy từ khung đích của chương (hero-balance), nội suy theo S; đo lại (page.balanceKey) thì khớp lại một lần
             const av = avoid.current
-            const w = size.width
-            let zoomT = 1
-            let shiftT = subjectCenter(w, S) - w / 2
-            if (!live) {
-                const dist = camera.position.distanceTo(TARGET)
-                const r0 = (FIT_RADIUS * size.height) / (2 * dist * Math.tan(THREE.MathUtils.degToRad(FOV / 2)))
-                const { x0: left, x1: right } = gridSpan(w, 5, 7)
-                const room = right - left
-                zoomT = THREE.MathUtils.clamp(Math.min(room, w * HERO_MAX_W) / (2 * r0), 0.4, 1) * HERO_SCALE
-            }
-            const dropT = live ? 0 : size.height * HERO_DROP
+            const st = stops.current
+            if (st.natural.length && st.key !== page.balanceKey) fitStops(st, size.width, size.height)
+            const sp = sampled.current
+            if (st.natural.length) sampleStops(st, S, sp)
             const kk = reduce ? 1 : 1 - Math.exp(-delta * 6)
-            av.zoom += (zoomT - av.zoom) * kk
-            av.shift += (shiftT - av.shift) * kk
-            av.drop += (dropT - av.drop) * kk
+            av.zoom += (sp.zoom - av.zoom) * kk
+            av.shift += (sp.sx - av.shift) * kk
+            av.drop += (sp.sy - av.drop) * kk
             const ox = -av.shift
             const oy = -av.drop
             if (Math.abs(ox - (camera.view?.offsetX ?? 0)) > 0.01 || Math.abs(oy - (camera.view?.offsetY ?? 0)) > 0.01 || Math.abs(camera.zoom - av.zoom) > 1e-4) {

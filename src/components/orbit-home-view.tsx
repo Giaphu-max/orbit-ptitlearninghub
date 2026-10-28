@@ -5,6 +5,8 @@ import { getCourse, lessons } from '@/data'
 import { CourseArt } from '@/components/courses/course-cover'
 import { courseKicker, primaryCourse, STATUS_ORDER, useCourseSummaries, type CourseSummary } from '@/lib/course-map'
 import { trackPage } from '@/lib/page-metrics'
+import { trackBalance } from '@/lib/hero-balance'
+import { BalanceGuides } from '@/components/home/balance-guides'
 import { FLAGS, mountPerfHud } from '@/lib/perf'
 import { overlay } from '@/lib/stage-signal'
 import { dailyArticles } from '@/data'
@@ -47,6 +49,8 @@ export function OrbitHomeView() {
 
     // Số đo layout (footer, hành trình, scrollHeight) đo một lần + khi resize; layout effect chạy trước effect của useScrollStage
     useLayoutEffect(() => trackPage(() => footerRef.current).stop, [])
+    // Cân nhóm chữ ↔ vật thể chính của chương (đo một lần khi mount / resize / font tải xong)
+    useEffect(() => (journey && !staticMode ? trackBalance() : undefined), [journey, staticMode])
     useEffect(() => mountPerfHud(), [])
 
     return (
@@ -57,23 +61,24 @@ export function OrbitHomeView() {
             <div ref={veilRef} aria-hidden data-static={staticMode} className="stage-veil own-layer pointer-events-none fixed inset-0 z-[1]" />
             {!staticMode && !FLAGS.noKiosk && <KioskScreen screenRef={screenRef} />}
             <BenchRunner />
+            {FLAGS.balance && journey && !staticMode && <BalanceGuides />}
             <div ref={barRef} aria-hidden data-bar className="own-layer pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 mm-ribbon-bg" />
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
             {journey ? (
                 <section id="journey" className="pointer-events-none relative z-10" style={{ height: paged ? '100svh' : `${(CHAPTERS + 1) * 100}svh` }}>
-                    <div className={`container-page ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center py-[var(--nav-h)]'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
+                    <div className={`container-wide ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center py-[var(--nav-h)]'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
                         <div className="grid w-full grid-cols-[minmax(0,1fr)] items-center">
                             <Panel id="top" index={0} cols={5}>
                                 <HeroChapter />
                             </Panel>
-                            <Panel id="daily" index={1}>
+                            <Panel id="daily" index={1} cols={5}>
                                 <DailyChapter />
                             </Panel>
                             <Panel id="courses" index={2} cols={6}>
                                 <CoursesChapter />
                             </Panel>
-                            <Panel id="studio" index={3}>
+                            <Panel id="studio" index={3} cols={5}>
                                 <StudioChapter />
                             </Panel>
                         </div>
@@ -84,7 +89,7 @@ export function OrbitHomeView() {
                     <Chapter id="top" index={0} staticMode={staticMode} cols={5}>
                         <HeroChapter />
                     </Chapter>
-                    <Chapter id="daily" index={1} staticMode={staticMode}>
+                    <Chapter id="daily" index={1} staticMode={staticMode} cols={5}>
                         <Reveal>
                             <DailyChapter />
                         </Reveal>
@@ -94,7 +99,7 @@ export function OrbitHomeView() {
                             <CoursesChapter />
                         </Reveal>
                     </Chapter>
-                    <Chapter id="studio" index={3} staticMode={staticMode}>
+                    <Chapter id="studio" index={3} staticMode={staticMode} cols={5}>
                         <Reveal>
                             <StudioChapter />
                         </Reveal>
@@ -225,9 +230,9 @@ function useDailyLit(stage: RefObject<number>, reduce: boolean) {
 
 // ─── Khung chương ──────────────────────────────────────────────────────────
 
-/** Bề rộng cột chữ theo lưới 12 cột của .container-page (gap 24): 5 cột ở hero, 6 cột ở chương Học phần, còn lại tối đa 520px. */
+/** Bề rộng cột chữ theo lưới 12 cột của .container-wide (gap 24): 5 cột ở hero và chương 01/03, 6 cột ở chương Học phần. */
 type Cols = 5 | 6
-const colWidth = (cols?: Cols) => (cols === 5 ? 'max-w-[calc((100%-264px)*5/12+96px)]' : cols === 6 ? 'max-w-[calc((100%-264px)/2+120px)]' : 'max-w-[520px]')
+const colWidth = (cols?: Cols) => (cols === 6 ? 'max-w-[calc((100%-264px)/2+120px)]' : 'max-w-[calc((100%-264px)*5/12+96px)]')
 
 /**
  * Panel của hành trình: các panel xếp chồng trong một ô lưới; useScrollStage đặt class on / past, CSS (index.css) lo phần hiện ẩn
@@ -237,7 +242,8 @@ const colWidth = (cols?: Cols) => (cols === 5 ? 'max-w-[calc((100%-264px)*5/12+9
 function Panel({ id, index, cols, children }: { id: string; index: number; cols?: Cols; children: ReactNode }) {
     return (
         <div id={id} data-panel={index} data-journey className={`col-start-1 row-start-1 w-full max-[859px]:[&_[data-compact]]:hidden ${colWidth(cols)}`}>
-            <div className="pointer-events-auto">{children}</div>
+            {/* data-text: nhóm chữ của chương, hero-balance đo và dời bằng transform; --g / --tt = hệ số thu khoảng cách / cỡ tiêu đề */}
+            <div data-text className="pointer-events-auto">{children}</div>
         </div>
     )
 }
@@ -249,7 +255,7 @@ function Chapter({ id, index, staticMode, cols, children }: { id: string; index:
         <section
             id={id}
             data-chapter={index}
-            className={`section-anchor container-page flex min-h-[100svh] pb-16 ${staticMode ? 'scroll-mt-0 items-start' : 'items-center pt-24'}`}
+            className={`section-anchor container-wide flex min-h-[100svh] pb-16 ${staticMode ? 'scroll-mt-0 items-start' : 'items-center pt-24'}`}
             style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}
         >
             <div className={`pointer-events-auto w-full ${width}`}>{children}</div>
@@ -276,8 +282,10 @@ function Reveal({ children }: { children: ReactNode }) {
 }
 
 const Eyebrow = ({ children }: { children: ReactNode }) => <p data-s className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-ink">{children}</p>
+/** Nhịp khoảng cách chương (token --ch-gap-* ở index.css, nhân --g khi chương phải thu cho vừa khung): eyebrow → tiêu đề 16, tiêu đề → dẫn 20, dẫn → nội dung 32, giữa thẻ 12, nội dung → link 24 */
+const gap = (token: string) => `calc(var(--ch-gap-${token}) * var(--g, 1))`
 const Title = ({ id, children }: { id?: string; children: string }) => (
-    <h2 data-s id={id} className="mt-3 text-[clamp(1.9rem,3.4vw,2.75rem)] font-extrabold leading-[1.08] tracking-[-0.03em]">
+    <h2 data-s id={id} style={{ marginTop: gap('title'), fontSize: 'calc(clamp(40px, 3.2vw, 56px) * var(--tt, 1))' }} className="font-extrabold leading-[1.08] tracking-[-0.03em]">
         {children.split('\n').map((line, i) => (
             <span key={i} className="block">
                 {line}
@@ -285,7 +293,11 @@ const Title = ({ id, children }: { id?: string; children: string }) => (
         ))}
     </h2>
 )
-const Lead = ({ children }: { children: ReactNode }) => <p data-s data-compact className="mb-6 mt-4 max-w-[48ch] [@media(max-height:860px)]:mb-4 [@media(max-height:860px)]:mt-3 text-[17px] leading-relaxed text-muted-foreground">{children}</p>
+const Lead = ({ children }: { children: ReactNode }) => (
+    <p data-s data-compact style={{ marginTop: gap('lead'), marginBottom: gap('body'), fontSize: 'clamp(17px, 1.25vw, 19px)' }} className="max-w-[46ch] leading-relaxed text-muted-foreground">
+        {children}
+    </p>
+)
 /** Thẻ sáng (nền card) theo giao diện, nổi lên trên cảnh 3D */
 const lightCard = 'rounded-[20px] border border-border bg-card/95 shadow-raised'
 
@@ -304,16 +316,16 @@ function HeroChapter() {
     const resumeAt = resume ? progress[resume.id]?.lastPositionSec ?? 0 : 0
 
     return (
-        <div className="flex min-w-0 flex-col gap-6">
-            <h1 data-s className="text-[clamp(2.25rem,4.1vw,3.85rem)] font-black leading-[0.96] tracking-[-0.045em] text-strong">
+        <div className="flex min-w-0 flex-col" style={{ gap: 'calc(24px * var(--g, 1))' }}>
+            <h1 data-s style={{ fontSize: 'calc(clamp(58px, 4.9vw, 92px) * var(--tt, 1))' }} className="font-black leading-[0.96] tracking-[-0.045em] text-strong">
                 <span className="block whitespace-nowrap">Chào {name}.</span>
                 <span className="block whitespace-nowrap">Hôm nay chỉ cần</span>
                 <span className="ptit-gradient-text block whitespace-nowrap">25 phút.</span>
             </h1>
-            <p data-s className="max-w-[48ch] text-lg leading-relaxed text-muted-foreground">Lộ trình hôm nay AI xếp riêng cho bạn: xem tiếp bài giảng đang dở, rồi ôn nhanh những khái niệm còn hổng.</p>
+            <p data-s style={{ fontSize: 'clamp(17px, 1.25vw, 21px)' }} className="max-w-[34ch] leading-relaxed text-muted-foreground">Lộ trình hôm nay AI xếp riêng cho bạn: xem tiếp bài giảng đang dở, rồi ôn nhanh những khái niệm còn hổng.</p>
 
             {resume ? (
-                <div data-s data-vt={`lesson-${resume.id}`}>
+                <div data-s data-vt={`lesson-${resume.id}`} className="max-w-[600px]">
                     <ResumeCard lesson={resume} courseTitle={getCourse(resume.courseId)?.title ?? 'Khóa học'} resumeSec={resumeAt} />
                 </div>
             ) : (
@@ -339,7 +351,7 @@ function DailyChapter() {
             <div data-s className="mt-3">
                 <TodayRows today={today} max={2} />
             </div>
-            <div data-s data-compact className="mt-4">
+            <div data-s data-compact style={{ marginTop: gap('link') }}>
                 <TodayMissionLine today={today} />
             </div>
         </>
@@ -365,11 +377,11 @@ function CoursesChapter() {
                 </div>
             )}
             {rest.slice(0, 2).map((c) => (
-                <div data-s key={c.course.id} className="mt-2.5">
+                <div data-s key={c.course.id} style={{ marginTop: gap('card') }}>
                     <CourseRow summary={c} />
                 </div>
             ))}
-            <Link data-s to="/learning" className="mt-3 inline-flex items-center gap-1 self-start border-t border-border pt-3 text-sm font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+            <Link data-s to="/learning" style={{ marginTop: gap('link') }} className="inline-flex items-center gap-1 self-start border-t border-border pt-3 text-sm font-bold text-brand-ink hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                 Xem tất cả học phần <ArrowRight size={14} />
             </Link>
         </>
@@ -446,7 +458,7 @@ function StudioChapter() {
             <Eyebrow>03 · Phòng thực hành ảo 3D</Eyebrow>
             <Title id="studio-title">Từ lý thuyết trên giảng đường ra phim trường ảo 3D.</Title>
             <Lead>Phòng thực hành Nhiếp ảnh và Ánh sáng ngay trên trình duyệt. Tự đặt đèn 3 điểm, chỉnh góc máy rồi để AI chấm ảnh, trước khi vào phòng quay thật.</Lead>
-            <div data-s className="flex flex-col gap-4">
+            <div data-s className="flex flex-col" style={{ gap: gap('card') }}>
                 <Feature icon={<Sparkles size={16} />} title="Thiết lập bối cảnh bằng AI">
                     Mô tả ý đồ ánh sáng bằng lời, AI tự động dựng đèn, màu nền, độ sương và giải thích theo đúng lý thuyết nhiếp ảnh.
                 </Feature>
@@ -454,13 +466,13 @@ function StudioChapter() {
                     Chụp thử trên mô hình 3D để AI chấm điểm bố cục, độ tương phản và khoanh vùng trực tiếp những chi tiết cần tinh chỉnh.
                 </Feature>
             </div>
-            <p data-s data-compact className="mt-5 flex items-center gap-2.5 rounded-[14px] border border-border bg-card/90 px-3 py-2.5 text-[13px]">
+            <p data-s data-compact style={{ marginTop: gap('card') }} className="flex items-center gap-2.5 rounded-[14px] border border-border bg-card/90 px-3 py-2.5 text-[13px]">
                 <span aria-hidden className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg bg-brand-600">
                     <Sparkles size={14} />
                 </span>
                 “Studio tối, đèn chính vàng ấm từ trái, viền sáng phía sau”
             </p>
-            <Link to="/studio" data-s data-vt="studio-stage" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
+            <Link to="/studio" data-s data-vt="studio-stage" style={{ marginTop: gap('link') }} className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                 Vào Phòng Lab 3D <ArrowRight size={16} />
             </Link>
         </>

@@ -31,6 +31,7 @@ export const FLAGS = {
     noSky: q.has('nosky'),
     sticky: q.has('sticky'),
     docScroll: q.has('docscroll'),
+    balance: q.has('balance'),
     bench: q.has('bench'),
 }
 

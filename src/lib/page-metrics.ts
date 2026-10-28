@@ -16,6 +16,12 @@ export const page = {
     /** Trang chủ paged (không cuộn tài liệu): footer là tấm phủ fixed, footerP = tiến độ trượt lên 0..1 */
     paged: false,
     footerP: 0,
+    /** Cân bố cục (hero-balance): nhóm chữ và khung đích của vật thể chính từng chương (px, trống khi < 1280px), vùng tự do, tỉ lệ rộng/cao vật thể (cảnh ghi), và số lần đo (cảnh tính lại khi đổi) */
+    text: [] as { x0: number; y0: number; x1: number; y1: number }[],
+    body: [] as { x0: number; y0: number; x1: number; y1: number }[],
+    safe: { top: 80, bottom: 800 },
+    aspect: [] as number[],
+    balanceKey: 0,
 }
 
 /** Footer còn cách đáy màn bao nhiêu (px, âm = đã vào) → 0..1 mức footer phủ lên màn */

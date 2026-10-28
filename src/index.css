@@ -148,10 +148,16 @@
 
     /* Motion */
     /* Lưới chung: tối đa 1440, lề ngang 96 (≥1280), 12 cột, gap 24. Cảnh 3D trang chủ (campus-scene gridSpan) dùng cùng số */
-    --page-max: 1440px;
-    --page-gutter: clamp(24px, 4vw, 96px);
+    --page-max: 1760px;
+    --page-gutter: clamp(40px, 4vw, 80px);
     --page-gap: 24px;
     --page-edge: max(var(--page-gutter), calc((100vw - var(--page-max)) / 2 + var(--page-gutter)));
+    /* Nhịp khoảng cách trong chương trang chủ (nhân --g khi cột chữ phải thu cho vừa khung, xem hero-balance) */
+    --ch-gap-title: 16px;
+    --ch-gap-lead: 20px;
+    --ch-gap-body: 32px;
+    --ch-gap-card: 12px;
+    --ch-gap-link: 24px;
     /* Chiều cao thanh điều hướng cố định (h-10 của nút + 2×20px) */
     --nav-h: 5rem;
     --duration-fast: 150ms;
@@ -680,11 +686,7 @@
   opacity: 0;
 }
 
-@media (min-width: 1280px) {
-  :root { --page-gutter: 96px; }
-}
-
-/* Khung nội dung chung (.container-page): max-width 1440, lề 24px (điện thoại) đến 96px (desktop), căn giữa; nav và mọi trang dùng chung để thẳng hàng mép logo / avatar */
+/* Khung nội dung chung (.container-page, cùng số với .container-wide): max-width 1760, lề clamp(40px, 4vw, 80px), căn giữa; nav và mọi trang dùng chung để thẳng hàng mép logo / avatar */
 @layer components {
   /* Phần trên trang chủ: cuộn tới không bị thanh điều hướng che */
   .section-anchor {
@@ -813,7 +815,7 @@
 .nav-shell {
   position: relative;
   width: 100%;
-  max-width: 1440px;
+  max-width: var(--page-max);
   height: var(--nav-h);
   margin-top: 0;
   border-radius: 0;
