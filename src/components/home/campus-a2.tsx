@@ -15,7 +15,7 @@ export const FLOOR_H = 0.33
 /** Nhóm nội thất: vẽ theo toạ độ bản mẫu rồi thu một nửa và đặt vào trong đế (cục bộ tòa A2) */
 export const LOBBY_AT: Vec3 = [0, FLOOR_H - 0.06, 0.9 - 6]
 export const LOBBY_SCALE = 0.5
-const FY = 0.12 // sàn sảnh trong toạ độ nội thất, cao hơn tấm nền để không bị z-fighting
+export const FY = 0.12 // sàn sảnh trong toạ độ nội thất, cao hơn tấm nền để không bị z-fighting
 /** Mặt trên của đế (chân của thân tháp) */
 export const PODIUM_TOP = 5.6
 
@@ -58,7 +58,13 @@ export function kioskScreenFrame() {
     const base = kiosk.getWorldPosition(new THREE.Vector3())
     // Đỉnh kiosk = mép trên khung màn (đầu ngả TILT)
     const topY = head.getWorldPosition(new THREE.Vector3()).y + ((SCR_H + 0.14) / 2) * Math.cos(TILT) * KS * LOBBY_SCALE
-    return { baseY: base.y, topY, center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE, matrix: screen.matrixWorld.clone(), up: new THREE.Vector3(0, 1, 0).transformDirection(screen.matrixWorld), right: new THREE.Vector3(1, 0, 0).transformDirection(screen.matrixWorld) }
+    const corners: THREE.Vector3[] = []
+    const kx0 = -1.25, kx1 = 1.25, ky0 = 0, ky1 = 2.85, kz0 = -0.6, kz1 = 0.6
+    for (let k = 0; k < 8; k++) {
+        const p = new THREE.Vector3(k & 1 ? kx1 : kx0, k & 2 ? ky1 : ky0, k & 4 ? kz1 : kz0)
+        corners.push(p.applyMatrix4(kiosk.matrixWorld))
+    }
+    return { baseY: base.y, topY, center: screen.getWorldPosition(new THREE.Vector3()), normal: new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld), height: SCR_H * KS * LOBBY_SCALE, matrix: screen.matrixWorld.clone(), up: new THREE.Vector3(0, 1, 0).transformDirection(screen.matrixWorld), right: new THREE.Vector3(1, 0, 0).transformDirection(screen.matrixWorld), corners }
 }
 
 const HW = 10.35 // nửa bề ngang đế

@@ -12,7 +12,7 @@ import { createMaterials, PropBlue, PropColumn, PropGreen, PropYellow, STUDIO_PR
 /** Tâm studio ở đầu lớp (z trong hệ nội thất) */
 export const STUDIO_Z = -27.5
 /** Mét (studio) → đơn vị nội thất: nhân vật ~2,1 m cao ~3 đơn vị, bằng chiều cao người so với bàn học */
-const K = 1.45
+export const K = 1.45
 const STUDIO_TARGET: Vec3 = [0, 1.1, 0]
 
 const LOOK = DEFAULT_SETUP.look

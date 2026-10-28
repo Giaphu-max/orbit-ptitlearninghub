@@ -6,8 +6,8 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { CAMPUS } from './campus-palette'
-import { A2_AT, A2Lobby, A2Podium, a2Point, HallA2, kioskScreenFrame, LOBBY_SCALE, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
-import { STUDIO_Z } from './campus-room'
+import { A2_AT, A2Lobby, A2Podium, a2Point, FY, HallA2, kioskScreenFrame, LOBBY_SCALE, lobbyPoint, PODIUM_TOP, SCR_H, SCR_W } from './campus-a2'
+import { K, STUDIO_Z } from './campus-room'
 import { measureBalance } from '@/lib/hero-balance'
 import { PERF_ON, PerfHud } from './campus-perf'
 import { isWebKit } from '@/lib/browser'
@@ -617,23 +617,40 @@ const ROOM_A = lobbyPoint(0, 2.5, -13.6)
 const ROOM_B = lobbyPoint(0, 2.4, -19)
 const ROOM_LOOK = lobbyPoint(0, 1.5, STUDIO_Z)
 
-// ── Cân bố cục (hero-balance): VẬT THỂ CHÍNH của từng chương = phần THÂN (không mây, sương, mặt đất trải ngoài đế), đơn vị cảnh ──
+function makeCorners(
+    x0: number, y0: number, z0: number,
+    x1: number, y1: number, z1: number,
+    transform?: (x: number, y: number, z: number) => THREE.Vector3,
+): THREE.Vector3[] {
+    const pts: THREE.Vector3[] = []
+    for (let k = 0; k < 8; k++) {
+        const x = k & 1 ? x1 : x0
+        const y = k & 2 ? y1 : y0
+        const z = k & 4 ? z1 : z0
+        pts.push(transform ? transform(x, y, z) : new THREE.Vector3(x, y, z))
+    }
+    return pts
+}
+
+// ── Cân bố cục (hero-balance): VẬT THỂ CHÍNH của từng chương = 8 GÓC của phần THÂN, đổi sang thế giới đúng scale + xoay ──
 //   0 hero: cả khuôn viên · 1 tòa A2 · 2 kiosk · 3 chủ thể + đèn studio
-const BODIES: THREE.Box3[] = [
-    new THREE.Box3(new THREE.Vector3(-24, 0, -22), new THREE.Vector3(24, 15, 18)),
-    new THREE.Box3(new THREE.Vector3(-8.6, 0, -21.7), new THREE.Vector3(12.6, 15, 7)),
-    new THREE.Box3(new THREE.Vector3(KSCR.center.x - 0.55, KSCR.baseY, KSCR.center.z - 0.55), new THREE.Vector3(KSCR.center.x + 0.55, KSCR.topY, KSCR.center.z + 0.55)),
-    new THREE.Box3().setFromCenterAndSize(lobbyPoint(0, 0, STUDIO_Z).add(new THREE.Vector3(0, 1.15, 0)), new THREE.Vector3(6.4, 2.3, 3.6)),
+const BODIES: THREE.Vector3[][] = [
+    makeCorners(-24, 0, -22, 24, 15, 18),
+    makeCorners(-10.4, 0, -22.5, 10.4, 15.5, 6, a2Point),
+    KSCR.corners,
+    makeCorners(-2.2, FY, STUDIO_Z - 1.2, 2.2, FY + 2.3 * K, STUDIO_Z + 1.2, lobbyPoint),
 ]
 /** Giới hạn zoom từng chương: kiosk và studio không thu quá nhỏ (tường phòng phải còn phủ khung) */
 const ZOOM_RANGE: [number, number][] = [[0.4, 1.8], [0.5, 1.8], [0.85, 1.8], [0.85, 1.8]]
-interface Rect4 { x0: number; y0: number; x1: number; y1: number }
+interface Rect4 { x0: number; y0: number; x1: number; y1: number; valid: boolean }
 interface Stops { zoom: number[]; sx: number[]; sy: number[]; natural: Rect4[]; size: string; key: number }
 const _tmpCam = new THREE.PerspectiveCamera()
 const _pp = new THREE.Vector3()
 const _look3 = new THREE.Vector3()
 const _pos3 = new THREE.Vector3()
-/** Khung chữ nhật (px, chưa zoom / view offset) mà thân chương `i` chiếm trên màn ở điểm dừng của chương, từ 8 góc Box3 */
+const _camDir = new THREE.Vector3()
+const _toCorner = new THREE.Vector3()
+/** Khung chữ nhật (px, chưa zoom / view offset) mà thân chương `i` chiếm trên màn ở điểm dừng của chương, từ 8 góc */
 function naturalRect(i: number, heroDist: number, w: number, h: number): Rect4 {
     const stopS = [0, 1, 1.8, 3][i]
     let fov = FOV
@@ -652,16 +669,36 @@ function naturalRect(i: number, heroDist: number, w: number, h: number): Rect4 {
     _tmpCam.lookAt(_look3)
     _tmpCam.updateProjectionMatrix()
     _tmpCam.updateMatrixWorld(true)
-    const b = BODIES[i]
-    const r: Rect4 = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity }
-    for (let k = 0; k < 8; k++) {
-        _pp.set(k & 1 ? b.max.x : b.min.x, k & 2 ? b.max.y : b.min.y, k & 4 ? b.max.z : b.min.z).project(_tmpCam)
+
+    _camDir.subVectors(_look3, _pos3).normalize()
+    const corners = BODIES[i]
+    const r: Rect4 = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity, valid: true }
+    let dropped = 0
+
+    for (let k = 0; k < corners.length; k++) {
+        const pt = corners[k]
+        const dotDist = _toCorner.subVectors(pt, _pos3).dot(_camDir)
+        if (dotDist <= _tmpCam.near) {
+            dropped++
+            continue
+        }
+        _pp.copy(pt).project(_tmpCam)
+        if (_pp.z < -1 || _pp.z > 1) {
+            dropped++
+            continue
+        }
         const px = ((_pp.x + 1) / 2) * w
         const py = ((1 - _pp.y) / 2) * h
         r.x0 = Math.min(r.x0, px)
         r.x1 = Math.max(r.x1, px)
         r.y0 = Math.min(r.y0, py)
         r.y1 = Math.max(r.y1, py)
+    }
+
+    const nw = r.x1 - r.x0
+    const nh = r.y1 - r.y0
+    if (dropped > 2 || nw > 1.5 * w || nh > 1.5 * h || !isFinite(r.x0) || !isFinite(r.y0)) {
+        r.valid = false
     }
     return r
 }
@@ -670,28 +707,40 @@ function naturalRect(i: number, heroDist: number, w: number, h: number): Rect4 {
  * Ảnh sau zoom z và dịch s: px = w/2 + z·(p − w/2) + s. Chưa có số đo (màn < 1280px) thì dùng vùng 7 cột phải như cũ.
  */
 function fitStops(st: Stops, w: number, h: number) {
+    const maxSx = 0.22 * w
+    const maxSy = 0.15 * h
+
     for (let i = 0; i < 4; i++) {
         const n = st.natural[i]
-        const nw = n.x1 - n.x0
-        const nh = n.y1 - n.y0
-        const t = page.body[i]
         const [lo, hi] = ZOOM_RANGE[i]
-        const ncy = (n.y0 + n.y1) / 2
-        let z = 1
-        let tcx: number
-        let tcy = ncy
-        if (t) {
-            z = THREE.MathUtils.clamp((t.y1 - t.y0) / nh, lo, hi)
-            tcx = t.x1 - (z * nw) / 2
-            tcy = (t.y0 + t.y1) / 2
+
+        if (n && n.valid && page.body[i]) {
+            const nw = n.x1 - n.x0
+            const nh = n.y1 - n.y0
+            const t = page.body[i]!
+            const ncy = (n.y0 + n.y1) / 2
+            const z = THREE.MathUtils.clamp((t.y1 - t.y0) / nh, lo, hi)
+            const tcx = t.x1 - (z * nw) / 2
+            const tcy = (t.y0 + t.y1) / 2
+            st.zoom[i] = z
+            const sx = tcx - (w / 2 + z * ((n.x0 + n.x1) / 2 - w / 2))
+            const sy = tcy - (h / 2 + z * (ncy - h / 2))
+            st.sx[i] = THREE.MathUtils.clamp(sx, -maxSx, maxSx)
+            st.sy[i] = THREE.MathUtils.clamp(sy, -maxSy, maxSy)
         } else {
-            const region = gridSpan(w, 5, 7)
-            if (i === 0) z = THREE.MathUtils.clamp(Math.min(region.x1 - region.x0, w * HERO_MAX_W) / nw, lo, 1)
-            tcx = region.c
+            // Không khớp hoặc màn nhỏ (<1280px) chưa có số đo: dùng zoom 1 (hero tính riêng) và view offset cũ như trước hero-balance
+            const region = gridSpan(w, i === 2 ? 6 : 5, i === 2 ? 6 : 7)
+            let z = 1
+            if (i === 0 && n && n.valid) {
+                const nw = n.x1 - n.x0
+                z = THREE.MathUtils.clamp(Math.min(region.x1 - region.x0, w * HERO_MAX_W) / nw, lo, 1)
+            }
+            st.zoom[i] = z
+            const sx = region.c - w / 2
+            const sy = n && n.valid ? ((n.y0 + n.y1) / 2) - (h / 2 + z * (((n.y0 + n.y1) / 2) - h / 2)) : 0
+            st.sx[i] = THREE.MathUtils.clamp(sx, -maxSx, maxSx)
+            st.sy[i] = THREE.MathUtils.clamp(sy, -maxSy, maxSy)
         }
-        st.zoom[i] = z
-        st.sx[i] = tcx - (w / 2 + z * ((n.x0 + n.x1) / 2 - w / 2))
-        st.sy[i] = tcy - (h / 2 + z * (ncy - h / 2))
     }
     st.key = page.balanceKey
 }
@@ -1039,8 +1088,7 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
         const { width: w, height: h } = size
         const st = stops.current
         st.natural = [0, 1, 2, 3].map((i) => naturalRect(i, heroDist.current, w, h))
-        st.size = `${w}x${h}`
-        const aspects = st.natural.map((r) => (r.x1 - r.x0) / (r.y1 - r.y0))
+        const aspects = st.natural.map((r) => (r.valid && r.y1 > r.y0 ? (r.x1 - r.x0) / (r.y1 - r.y0) : 1))
         if (aspects.some((a, i) => Math.abs(a - (page.aspect[i] ?? 0)) > 0.01)) {
             page.aspect = aspects
             measureBalance()
