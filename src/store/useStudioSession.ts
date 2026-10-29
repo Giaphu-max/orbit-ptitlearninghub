@@ -38,7 +38,6 @@ interface StudioSessionState {
     selectedId: number | null
     /** Ngăn phải (Xem ảnh / kết quả chấm) đang mở */
     drawerOpen: boolean
-    lightboxOpen: boolean
     galleryOpen: boolean
     galleryFilter: GalleryFilter
     compareMode: boolean
@@ -51,7 +50,6 @@ interface StudioSessionState {
     /** Mở khu xem ảnh cho một ảnh: chọn ảnh VÀ mở */
     openShot: (id: number) => void
     openDrawer: (open: boolean) => void
-    setLightbox: (open: boolean) => void
     setGallery: (open: boolean) => void
     setFilter: (f: GalleryFilter) => void
     setCompareMode: (on: boolean) => void
@@ -68,7 +66,6 @@ export const useStudioSession = create<StudioSessionState>()((set, get) => ({
     shots: [],
     selectedId: null,
     drawerOpen: false,
-    lightboxOpen: false,
     galleryOpen: false,
     galleryFilter: 'all',
     compareMode: false,
@@ -82,7 +79,6 @@ export const useStudioSession = create<StudioSessionState>()((set, get) => ({
     select: (id) => set({ selectedId: id, drawerOpen: id !== null }),
     openShot: (id) => set({ selectedId: id, drawerOpen: true }),
     openDrawer: (open) => set({ drawerOpen: open }),
-    setLightbox: (open) => set({ lightboxOpen: open }),
     setGallery: (open) => set(open ? { galleryOpen: true } : { galleryOpen: false, compareMode: false, compareIds: [] }),
     setFilter: (f) => set({ galleryFilter: f }),
     setCompareMode: (on) => set({ compareMode: on, compareIds: [] }),
@@ -101,7 +97,7 @@ export const useStudioSession = create<StudioSessionState>()((set, get) => ({
             shots: rest,
             compareIds: s.compareIds.filter((x) => x !== id),
             ...(selectedId === id ? { selectedId: neighbour?.id ?? null, drawerOpen: neighbour ? s.drawerOpen : false } : {}),
-            ...(rest.length === 0 ? { lightboxOpen: false, galleryOpen: false, compareMode: false } : {}),
+            ...(rest.length === 0 ? { galleryOpen: false, compareMode: false } : {}),
         }))
         return index
     },

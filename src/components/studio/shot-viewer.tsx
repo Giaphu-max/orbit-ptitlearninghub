@@ -1,301 +1,388 @@
-import { useRef, useState } from 'react'
-import { AlertCircle, ArrowRight, ChevronLeft, ChevronRight, Maximize2, RotateCcw, Sparkles, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { motion, useReducedMotion } from 'motion/react'
+import { AlertCircle, ArrowRight, ChevronLeft, ChevronRight, Grid3x3, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
 import type { FixSuggestion } from '@/lib/api-types'
+import type { StudioBrief } from '@/data/types'
+import { compositionHint, lightingHint, type HintLevel } from '@/lib/studio-hints'
 import { describeChange } from '@/lib/studio-suggest'
-import { snapshotRows } from '@/lib/studio-snapshot'
+import { elevationLabel, snapshotRows } from '@/lib/studio-snapshot'
 import { gradeShot, useStudioSession, type StudioShot } from '@/store/useStudioSession'
+import { ViewerBoundary } from '@/components/studio/viewer-boundary'
 
 interface Props {
     shot: StudioShot
     index: number
     total: number
-    passScore: number
+    /** Đề của ảnh này (đề lúc chụp) */
+    brief: StudioBrief
+    briefIndex: number
+    briefCount: number
     onClose: () => void
-    /** Đưa cảnh về thiết lập lúc chụp ảnh này (và đóng khu xem ảnh) */
+    /** Đưa cảnh về thiết lập lúc chụp ảnh này (và đóng popup) */
     onReuse: (shot: StudioShot) => void
     onDelete: (shot: StudioShot) => void
     /** Áp một gợi ý khắc phục vào studio */
     onTry: (change: NonNullable<FixSuggestion['change']>) => void
 }
 
-/** Khu xem ảnh / AI chấm rộng toàn chiều ngang, thay chỗ khung 3D + bảng bên. Lưới 8 | 4: ảnh + thiết lập | điểm và lỗi. */
-export function ShotViewer({ shot, index, total, passScore, onClose, onReuse, onDelete, onTry }: Props) {
+/** Popup xem ảnh / AI chấm, nổi trên trang studio (portal ra body). Đặt trong AnimatePresence để có hiệu ứng đóng. */
+export function ShotViewer(props: Props) {
+    const reduced = useReducedMotion()
+    const { onClose } = props
+    return createPortal(
+        <motion.div
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/55 p-10 backdrop-blur-[6px]"
+            initial={reduced ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0 }}
+            transition={{ duration: reduced ? 0 : 0.28, ease: 'easeOut' }}
+            onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <ViewerBoundary onBack={onClose}>
+                <ShotDialog {...props} />
+            </ViewerBoundary>
+        </motion.div>,
+        document.body,
+    )
+}
+
+const DOT: Record<HintLevel, string> = { good: 'bg-mm-teal', near: 'bg-mm-orange', unclear: 'bg-muted-foreground/40' }
+const LEVEL_TEXT: Record<HintLevel, string> = { good: 'đạt', near: 'gần đạt', unclear: 'chưa rõ' }
+
+function ShotDialog({ shot, index, total, brief, briefIndex, briefCount, onClose, onReuse, onDelete, onTry }: Props) {
+    const reduced = useReducedMotion()
     const { status } = shot
     // Dữ liệu chấm có thể thiếu trường (định dạng cũ/lỗi): đọc phòng thủ
     const result = shot.result && { ...shot.result, criteria: shot.result.criteria ?? [], areas: (shot.result.areas ?? []).map((a) => ({ ...a, fixes: a.fixes ?? [] })), tips: shot.result.tips ?? [], creativityBonus: shot.result.creativityBonus ?? 0 }
+    const graded = status === 'done' && Boolean(result)
     const [active, setActive] = useState<number | null>(null)
+    const [grid, setGrid] = useState(false)
+    const [ratio, setRatio] = useState(3 / 2)
     const issueRefs = useRef<(HTMLLIElement | null)[]>([])
-    const rows = snapshotRows(shot)
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const rows = snapshotRows(shot).filter((r) => r.group !== 'env')
+    const passed = result ? result.overall >= brief.passScore : false
+    const shots = useStudioSession((s) => s.shots)
+
+    // Khóa cuộn body, focus vào hộp khi mở, trả focus về thumbnail khi đóng
+    useEffect(() => {
+        const opener = document.activeElement as HTMLElement | null
+        const shotId = shot.id
+        const prevOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        dialogRef.current?.focus()
+        return () => {
+            document.body.style.overflow = prevOverflow
+            const id = useStudioSession.getState().selectedId ?? shotId
+            const thumb = document.querySelector<HTMLElement>(`[data-shot-id="${id}"]`)
+            ;(thumb ?? opener)?.focus?.()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    useEffect(() => setActive(null), [shot.id])
+
     const step = (d: number) => {
         const next = useStudioSession.getState().shots[index + d]
         if (next) useStudioSession.getState().select(next.id)
     }
     const goIssue = (i: number) => {
         setActive(i)
-        issueRefs.current[i]?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+        issueRefs.current[i]?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' })
     }
-    const passed = result ? result.overall >= passScore : false
+    const ext = /^data:image\/(\w+)/.exec(shot.image)?.[1] ?? 'jpeg'
+    const grading = status === 'grading'
 
     return (
-        <div aria-live="polite" className="pb-10">
-            {/* Thanh trên: quay lại | ảnh x/y ‹ › | điểm tổng | xóa */}
-            <div className="flex flex-wrap items-center gap-4 border-b border-border pb-4">
-                <button type="button" onClick={onClose} className="inline-flex items-center gap-1 rounded-full py-1.5 pr-3 text-sm font-bold text-muted-foreground transition hover:text-strong">
-                    <ChevronLeft size={16} /> Quay lại studio
-                </button>
-                <div className="flex items-center gap-1.5">
-                    <span className="mr-1 font-mono text-sm font-bold text-strong">
-                        Ảnh {index + 1}/{total}
-                    </span>
-                    <IconBtn label="Ảnh trước" disabled={index <= 0} onClick={() => step(-1)}>
+        <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shot-dialog-title"
+            tabIndex={-1}
+            initial={reduced ? false : { opacity: 0, scale: 0.97, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, scale: 0.97, y: 12 }}
+            transition={{ duration: reduced ? 0 : 0.28, ease: 'easeOut' }}
+            className="grid max-h-[calc(100vh-80px)] w-[min(1240px,calc(100vw-80px))] grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)] overflow-hidden rounded-[24px] bg-card shadow-raised focus:outline-none"
+        >
+            {/* Cột trái: ảnh */}
+            <div className="flex min-h-0 min-w-0 flex-col bg-ink p-[18px] text-ink-foreground">
+                <div className="flex items-center gap-2.5 pb-3.5">
+                    <NavBtn label="Ảnh trước" disabled={index <= 0} onClick={() => step(-1)}>
                         <ChevronLeft size={16} />
-                    </IconBtn>
-                    <IconBtn label="Ảnh sau" disabled={index >= total - 1} onClick={() => step(1)}>
+                    </NavBtn>
+                    <b className="font-mono text-[13px] font-bold">
+                        Ảnh {index + 1}/{total}
+                    </b>
+                    <NavBtn label="Ảnh sau" disabled={index >= total - 1} onClick={() => step(1)}>
                         <ChevronRight size={16} />
-                    </IconBtn>
+                    </NavBtn>
+                    <span className="ml-auto flex items-center gap-2">
+                        <span className="rounded-[7px] bg-ink-foreground/10 px-[9px] py-[5px] font-mono text-xs font-semibold text-ink-foreground/85">
+                            {shot.setup.focalLengthMm}mm · {elevationLabel(shot.setup.elevationDeg)}
+                        </span>
+                        <NavBtn label="Lưới 1/3" pressed={grid} onClick={() => setGrid((g) => !g)}>
+                            <Grid3x3 size={15} />
+                        </NavBtn>
+                    </span>
                 </div>
-                <div className="ml-auto flex items-center gap-3">
-                    {status === 'done' && result ? (
-                        <>
-                            <span className="font-mono text-4xl font-bold leading-none tracking-tight text-brand-ink">
-                                {result.overall}
-                                <span className="text-xl font-semibold text-muted-foreground">/100</span>
-                            </span>
-                            <span className={`rounded-full px-3 py-1 text-xs font-bold ${passed ? 'bg-success-soft text-success' : 'bg-brand-50 text-brand-ink'}`}>{passed ? 'Đạt' : `Chưa đạt · cần từ ${passScore}`}</span>
-                        </>
-                    ) : (
-                        <span className="text-sm font-semibold text-muted-foreground">{status === 'grading' ? 'Đang chấm…' : status === 'error' ? 'Chưa chấm được' : 'Chưa chấm'}</span>
-                    )}
-                    <IconBtn label="Xóa ảnh" disabled={status === 'grading'} onClick={() => onDelete(shot)}>
-                        <Trash2 size={15} />
-                    </IconBtn>
+
+                <div className="flex min-h-0 flex-1 items-center justify-center">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-ink-foreground/5">
+                        <div className="absolute left-1/2 top-1/2 h-full max-w-full -translate-x-1/2 -translate-y-1/2" style={{ aspectRatio: Math.min(ratio, 16 / 9) }}>
+                            <img src={shot.image} alt="Ảnh đã chụp trong studio" onLoad={(e) => setRatio(e.currentTarget.naturalWidth / Math.max(1, e.currentTarget.naturalHeight))} className="block h-full w-full object-contain" />
+                            {grid && (
+                                <span
+                                    aria-hidden
+                                    className="pointer-events-none absolute inset-0"
+                                    style={{
+                                        backgroundImage:
+                                            'linear-gradient(90deg, transparent calc(33.3% - .5px), hsl(0 0% 100% / .3) 0 calc(33.3% + .5px), transparent 0 calc(66.6% - .5px), hsl(0 0% 100% / .3) 0 calc(66.6% + .5px), transparent 0), linear-gradient(0deg, transparent calc(33.3% - .5px), hsl(0 0% 100% / .3) 0 calc(33.3% + .5px), transparent 0 calc(66.6% - .5px), hsl(0 0% 100% / .3) 0 calc(66.6% + .5px), transparent 0)',
+                                    }}
+                                />
+                            )}
+                            {grading && (
+                                <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                                    <span className="studio-scanv absolute inset-x-0 top-0 block h-[30%] bg-gradient-to-b from-transparent via-brand-light/35 to-transparent" />
+                                </span>
+                            )}
+                            {graded && result && (
+                                <div className="pointer-events-none absolute inset-0">
+                                    {result.areas.map((a, i) => (
+                                        <span
+                                            key={i}
+                                            className={`studio-pop absolute rounded-[50%] border-2 transition ${active === i ? 'border-brand-light shadow-[0_0_0_6px_hsl(var(--brand-600)/0.3),0_0_0_2px_hsl(var(--brand-light))]' : 'border-brand-light/80'}`}
+                                            style={{ left: `${a.x * 100}%`, top: `${a.y * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%` }}
+                                        >
+                                            <button
+                                                type="button"
+                                                aria-label={`Lỗi ${i + 1}: ${a.title}`}
+                                                onClick={() => goIssue(i)}
+                                                onMouseEnter={() => setActive(i)}
+                                                onMouseLeave={() => setActive(null)}
+                                                className="pointer-events-auto absolute -left-3 -top-3 flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 font-mono text-xs font-bold text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground"
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-3.5">
+                    <div className="flex min-w-0 gap-2 overflow-x-auto p-0.5 [scrollbar-width:thin]" aria-label="Chuyển ảnh">
+                        {shots.map((s, i) => (
+                            <button
+                                key={s.id}
+                                type="button"
+                                aria-label={`Ảnh ${i + 1}`}
+                                aria-current={s.id === shot.id}
+                                onClick={() => useStudioSession.getState().select(s.id)}
+                                className={`aspect-[3/2] w-[72px] shrink-0 overflow-hidden rounded-lg border-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70 ${s.id === shot.id ? 'border-brand-600 opacity-100' : 'border-transparent opacity-60 hover:opacity-90'}`}
+                            >
+                                <img src={s.image} alt="" className="h-full w-full object-cover" />
+                            </button>
+                        ))}
+                    </div>
+                    <span className="ml-auto flex shrink-0 gap-3.5 pl-3 text-[12.5px] font-semibold">
+                        <button type="button" disabled={grading} onClick={() => onDelete(shot)} className="text-ink-foreground/85 transition hover:text-ink-foreground disabled:opacity-40">
+                            Xóa ảnh
+                        </button>
+                        <a href={shot.image} download={`studio-anh-${index + 1}.${ext === 'jpeg' ? 'jpg' : ext}`} className="text-ink-foreground/85 transition hover:text-ink-foreground">
+                            Tải về
+                        </a>
+                    </span>
                 </div>
             </div>
 
-            <div className="lesson-grid mt-6 items-start">
-                {/* Cột 8: ảnh lớn + thiết lập lúc chụp */}
-                <div className="min-w-0">
-                    <div className="relative overflow-hidden rounded-[20px] border border-border bg-ink shadow-card">
-                        <button
-                            type="button"
-                            onClick={() => useStudioSession.getState().setLightbox(true)}
-                            aria-label="Mở ảnh toàn màn hình"
-                            className="group block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                        >
-                            <img src={shot.image} alt="Ảnh đã chụp trong studio" className="block h-auto w-full" />
-                            <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-ink/60 text-ink-foreground opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                                <Maximize2 size={14} />
-                            </span>
-                        </button>
-                        {status === 'grading' && (
-                            <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-                                <span className="studio-scanv absolute inset-x-0 top-0 block h-[30%] bg-gradient-to-b from-transparent via-brand-light/35 to-transparent" />
-                            </span>
-                        )}
-                        {status === 'done' && result && (
-                            <div className="pointer-events-none absolute inset-0">
-                                {result.areas.map((a, i) => (
-                                    <span
-                                        key={i}
-                                        className={`studio-pop absolute rounded-[50%] border-2 transition ${active === i ? 'border-ink-foreground bg-ink-foreground/15 shadow-[0_0_0_3px_hsl(var(--brand-600)/0.7)]' : 'border-brand-light'}`}
-                                        style={{ left: `${a.x * 100}%`, top: `${a.y * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%` }}
-                                    >
-                                        <button
-                                            type="button"
-                                            aria-label={`Lỗi ${i + 1}: ${a.title}`}
-                                            onClick={() => goIssue(i)}
-                                            onMouseEnter={() => setActive(i)}
-                                            onMouseLeave={() => setActive(null)}
-                                            className="pointer-events-auto absolute -left-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 font-mono text-xs font-bold text-ink-foreground shadow-card ring-2 ring-ink-foreground focus-visible:outline-none focus-visible:ring-4"
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <section aria-label="Thiết lập lúc chụp" className="mt-6">
-                        <h3 className="mb-3 text-eyebrow uppercase text-muted-foreground">Thiết lập lúc chụp</h3>
-                        <dl className="grid grid-cols-4 gap-3">
-                            {rows
-                                .filter((r) => r.group !== 'env')
-                                .map((r) => (
-                                    <div key={r.key} className="rounded-card border border-border bg-card px-3.5 py-2.5">
-                                        <dt className="text-xs text-muted-foreground">{r.label}</dt>
-                                        <dd className="mt-0.5 font-mono text-sm font-bold text-strong">{r.value}</dd>
-                                    </div>
-                                ))}
-                            {rows
-                                .filter((r) => r.group === 'env')
-                                .map((r) => (
-                                    <div key={r.key} className="col-span-4 rounded-card border border-border bg-card px-3.5 py-2.5">
-                                        <dt className="text-xs text-muted-foreground">{r.label}</dt>
-                                        <dd className="mt-0.5 text-sm font-semibold text-strong">{r.value}</dd>
-                                        {shot.intent.prompt && shot.intent.explanation && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{shot.intent.explanation}</p>}
-                                    </div>
-                                ))}
-                        </dl>
-                        <button
-                            type="button"
-                            onClick={() => onReuse(shot)}
-                            className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold text-strong transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                        >
-                            <RotateCcw size={15} /> Áp lại thiết lập này vào studio
-                        </button>
-                    </section>
+            {/* Cột phải: chấm ảnh */}
+            <aside className="flex min-h-0 min-w-0 flex-col border-l border-border bg-card" aria-live="polite">
+                <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                    <span>
+                        <b id="shot-dialog-title" className="text-[15px] font-bold text-strong">
+                            {graded ? 'Kết quả AI chấm' : 'Chấm ảnh này'}
+                        </b>
+                        <small className="mt-0.5 block text-[12.5px] font-medium text-muted-foreground">
+                            Đề {briefIndex + 1}/{briefCount} · {brief.shortTitle}
+                        </small>
+                    </span>
+                    <button type="button" aria-label="Đóng" onClick={onClose} className="flex h-[34px] w-[34px] items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                        <X size={16} />
+                    </button>
                 </div>
 
-                {/* Cột 4 (sticky): điểm tiêu chí, điểm sáng tạo, lỗi */}
-                <aside className="min-w-0 lg:sticky lg:top-[calc(var(--nav-h)+16px)] lg:max-h-[calc(100svh-var(--nav-h)-32px)] lg:overflow-y-auto">
-                    {status === 'idle' && (
-                        <button
-                            type="button"
-                            onClick={() => void gradeShot(shot.id)}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-5 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                        >
-                            <Sparkles size={15} /> Chấm ảnh này
-                        </button>
-                    )}
-
-                    {status === 'grading' && (
-                        <div className="rounded-card border border-border bg-card p-5">
-                            <p className="text-[13px] leading-relaxed text-muted-foreground">Đang xem bố cục, ánh sáng và chủ thể… (khoảng 5–10 giây)</p>
-                            <div aria-hidden className="mt-3">
-                                <div className="studio-skel h-10 w-2/5 rounded-md" />
-                                <div className="studio-skel mt-3 h-3 rounded-md" />
-                                <div className="studio-skel mt-3 h-3 w-4/5 rounded-md" />
-                                <div className="studio-skel mt-3 h-3 w-3/5 rounded-md" />
-                            </div>
-                            <p className="mt-4 text-[13px] text-muted-foreground">Bạn vẫn có thể quay lại studio, chỉnh và chụp trong lúc chờ.</p>
-                        </div>
-                    )}
-
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-[18px]">
                     {status === 'error' && (
-                        <div role="alert" className="rounded-card border border-border bg-muted px-4 py-3">
+                        <div role="alert" className="mb-[18px] rounded-card bg-brand-50 px-4 py-3">
                             <p className="flex gap-2 text-sm text-foreground">
-                                <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden /> {shot.error}
+                                <AlertCircle size={16} className="mt-0.5 shrink-0 text-brand-ink" aria-hidden /> {shot.error ?? 'Chưa chấm được ảnh này. Bạn thử lại sau ít phút nhé.'}
                             </p>
-                            <button
-                                type="button"
-                                onClick={() => void gradeShot(shot.id)}
-                                className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-[13px] font-bold text-ink-foreground transition hover:bg-brand-700"
-                            >
+                            <button type="button" onClick={() => void gradeShot(shot.id)} className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-[13px] font-bold text-ink-foreground transition hover:bg-brand-700">
                                 <RotateCcw size={14} /> Thử chấm lại
                             </button>
                         </div>
                     )}
 
-                    {status === 'done' && result && (
-                        <div className="flex flex-col gap-5">
-                            <section className="rounded-card border border-border bg-card p-5 shadow-card">
-                                <h3 className="mb-3 text-eyebrow uppercase text-muted-foreground">Điểm theo tiêu chí</h3>
-                                <ul className="flex flex-col gap-4">
-                                    {result.criteria.map((c) => (
-                                        <li key={c.key}>
-                                            <Bar label={c.label} value={c.score} max={c.max} />
-                                            {c.comment && <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{c.comment}</p>}
-                                        </li>
-                                    ))}
-                                </ul>
-                                {result.creativityBonus > 0 && (
-                                    <p className="mt-4 rounded-card bg-success-soft px-3 py-2.5 text-[13px] leading-relaxed text-success">
-                                        <b className="font-bold">Cách tiếp cận khác nhưng hiệu quả · +{result.creativityBonus} điểm sáng tạo.</b>
-                                        {result.approachNote && <span className="text-foreground"> {result.approachNote}</span>}
-                                    </p>
-                                )}
-                            </section>
-
-                            {(result.areas.length > 0 || result.tips.length > 0) && (
-                                <section aria-label="Lỗi cần chỉnh">
-                                    <h3 className="mb-3 text-eyebrow uppercase text-muted-foreground">{result.areas.length > 0 ? 'Lỗi cần chỉnh' : 'Gợi ý chỉnh'}</h3>
-                                    <ol className="flex flex-col gap-4">
-                                        {result.areas.map((a, i) => (
-                                            <li
-                                                key={i}
-                                                ref={(el) => {
-                                                    issueRefs.current[i] = el
-                                                }}
-                                                onMouseEnter={() => setActive(i)}
-                                                onMouseLeave={() => setActive(null)}
-                                                className="scroll-mt-24"
-                                            >
-                                                <div className={`flex items-center gap-2.5 rounded-xl border-l-[3px] border-brand-600 bg-brand-soft px-3.5 py-2.5 transition ${active === i ? 'ring-2 ring-brand-600/40' : ''}`}>
-                                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600 font-mono text-xs font-bold text-ink-foreground">{i + 1}</span>
-                                                    <b className="text-[14.5px] font-bold text-strong">{a.title}</b>
-                                                </div>
-                                                {a.fixes.length > 0 && (
-                                                    <ul className="ml-7 mt-2 flex flex-col gap-2">
-                                                        {a.fixes.map((f, k) => (
-                                                            <li key={k} className="flex items-start gap-2 text-[13.5px] leading-snug text-foreground">
-                                                                <ArrowRight size={13} className="mt-1 shrink-0 text-muted-foreground" aria-hidden />
-                                                                <span className="min-w-0 flex-1">{f.text}</span>
-                                                                {f.change && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => onTry(f.change!)}
-                                                                        title={`Áp vào studio: ${describeChange(f.change)}`}
-                                                                        className="shrink-0 rounded-full border border-border bg-card px-2.5 py-0.5 text-xs font-bold text-strong transition hover:border-brand-300 hover:text-brand-ink"
-                                                                    >
-                                                                        Thử · {describeChange(f.change)}
-                                                                    </button>
-                                                                )}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ol>
-                                    {result.tips.length > 0 && (
-                                        <ul className="mt-4 flex flex-col gap-1.5">
-                                            {result.tips.map((t) => (
-                                                <li key={t} className="flex items-start gap-2 text-[13.5px] leading-snug text-muted-foreground">
-                                                    <ArrowRight size={13} className="mt-1 shrink-0" aria-hidden />
-                                                    {t}
+                    {!graded ? (
+                        <>
+                            <h4 className="mb-2.5 text-eyebrow uppercase text-muted-foreground">Sẽ chấm theo</h4>
+                            <div className="mb-[18px] flex flex-col gap-2">
+                                {brief.rubric.map((c) => {
+                                    const lv = c.key === 'composition' ? compositionHint(shot.setup).level : c.key === 'lighting' ? lightingHint(shot.setup).level : null
+                                    return (
+                                        <div key={c.key} className="flex items-center justify-between rounded-xl bg-muted px-3 py-2.5 text-sm font-semibold text-strong">
+                                            <span className="flex items-center gap-2">
+                                                <i aria-hidden className={`h-2 w-2 rounded-full ${lv ? DOT[lv] : 'bg-muted-foreground/40'}`} />
+                                                {c.label}
+                                            </span>
+                                            <em className="font-mono text-xs font-semibold not-italic text-muted-foreground">
+                                                {c.points}đ · {lv ? LEVEL_TEXT[lv] : 'AI đánh giá'}
+                                            </em>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                            <h4 className="mb-2.5 text-eyebrow uppercase text-muted-foreground">Thiết lập lúc chụp</h4>
+                            <dl className="grid grid-cols-2 gap-1.5">
+                                {rows.map((r) => (
+                                    <div key={r.key} className="flex justify-between gap-2 rounded-[9px] border border-border px-2.5 py-2 text-[12.5px] text-muted-foreground">
+                                        <dt>{r.label}</dt>
+                                        <dd className="font-mono text-xs font-bold text-strong">{r.value}</dd>
+                                    </div>
+                                ))}
+                            </dl>
+                            <p className="mt-3.5 text-[12.5px] leading-normal text-muted-foreground">AI chấm theo hiệu quả của bức ảnh so với đề, không bắt buộc đúng thông số.</p>
+                        </>
+                    ) : (
+                        result && (
+                            <>
+                                <div className="mb-4 flex items-center gap-3.5 border-b border-border pb-4">
+                                    <b className="font-mono text-[44px] font-extrabold leading-none text-brand-ink">
+                                        {result.overall}
+                                        <small className="text-lg font-bold text-muted-foreground">/100</small>
+                                    </b>
+                                    <span className={`rounded-full px-2.5 py-[5px] text-[12.5px] font-extrabold ${passed ? 'bg-success-soft text-success' : 'bg-brand-50 text-brand-ink'}`}>{passed ? 'Đạt' : 'Chưa đạt'}</span>
+                                    {result.creativityBonus > 0 && <span className="ml-auto text-right text-[12.5px] font-bold text-success">+{result.creativityBonus} điểm<br />sáng tạo</span>}
+                                </div>
+                                {result.creativityBonus > 0 && result.approachNote && <p className="mb-4 text-[13px] leading-normal text-muted-foreground">{result.approachNote}</p>}
+                                {result.criteria.map((c) => (
+                                    <div key={c.key} className="mb-3">
+                                        <div className="flex justify-between text-sm font-bold text-strong">
+                                            {c.label}
+                                            <em className="font-mono text-[12.5px] font-bold not-italic">
+                                                {c.score}/{c.max}
+                                            </em>
+                                        </div>
+                                        <div className="my-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                                            <div className="h-full rounded-full bg-brand-600" style={{ width: `${Math.max(0, Math.min(100, (c.score / Math.max(1, c.max)) * 100))}%` }} />
+                                        </div>
+                                        {c.comment && <p className="text-[13px] leading-normal text-muted-foreground">{c.comment}</p>}
+                                    </div>
+                                ))}
+                                {(result.areas.length > 0 || result.tips.length > 0) && (
+                                    <section aria-label="Lỗi cần chỉnh">
+                                        <h4 className="mb-2.5 mt-[18px] text-eyebrow uppercase text-muted-foreground">{result.areas.length > 0 ? 'Lỗi cần chỉnh' : 'Gợi ý chỉnh'}</h4>
+                                        <ol>
+                                            {result.areas.map((a, i) => (
+                                                <li
+                                                    key={i}
+                                                    ref={(el) => {
+                                                        issueRefs.current[i] = el
+                                                    }}
+                                                    onMouseEnter={() => setActive(i)}
+                                                    onMouseLeave={() => setActive(null)}
+                                                    className="mb-2.5 scroll-mt-4 overflow-hidden rounded-xl"
+                                                >
+                                                    <div className="flex items-center gap-2.5 bg-brand-50 px-3 py-2.5 text-sm font-bold text-strong shadow-[inset_3px_0_0_hsl(var(--brand-600))]">
+                                                        <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-brand-600 font-mono text-[11.5px] font-bold text-ink-foreground">{i + 1}</span>
+                                                        {a.title}
+                                                    </div>
+                                                    {a.fixes.map((f, k) => (
+                                                        <div key={k} className="flex items-start gap-2 pb-0.5 pl-11 pr-3 pt-2 text-[13px] leading-snug text-foreground">
+                                                            <span className="flex-1">
+                                                                {f.text}
+                                                                {f.change && <em className="not-italic text-muted-foreground"> {describeChange(f.change)}</em>}
+                                                            </span>
+                                                            {f.change && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => onTry(f.change!)}
+                                                                    title={`Áp vào studio: ${describeChange(f.change)}`}
+                                                                    className="shrink-0 rounded-[7px] border border-brand-200 px-2 py-[3px] text-xs font-extrabold text-brand-ink transition hover:bg-brand-50"
+                                                                >
+                                                                    Thử
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </li>
                                             ))}
-                                        </ul>
-                                    )}
-                                </section>
-                            )}
-                        </div>
+                                        </ol>
+                                        {result.tips.length > 0 && (
+                                            <ul className="mt-3 flex flex-col gap-1.5">
+                                                {result.tips.map((t) => (
+                                                    <li key={t} className="flex items-start gap-2 text-[13px] leading-snug text-muted-foreground">
+                                                        <ArrowRight size={13} className="mt-1 shrink-0" aria-hidden />
+                                                        {t}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </section>
+                                )}
+                            </>
+                        )
                     )}
-                </aside>
-            </div>
-        </div>
+                </div>
+
+                <div className="flex gap-2.5 border-t border-border p-4">
+                    <button
+                        type="button"
+                        onClick={() => onReuse(shot)}
+                        title="Áp thiết lập lúc chụp vào studio"
+                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-border px-4 py-3.5 text-[15px] font-extrabold text-strong transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    >
+                        <RotateCcw size={15} /> Áp lại
+                    </button>
+                    <button
+                        type="button"
+                        disabled={grading}
+                        onClick={() => void gradeShot(shot.id)}
+                        className="inline-flex bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 flex-1 items-center justify-center gap-2 rounded-[14px] px-4 py-3.5 text-[15.5px] font-extrabold text-ink-foreground shadow-brand transition hover:brightness-105 disabled:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    >
+                        {grading ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" /> Đang chấm…
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles size={16} /> {graded ? 'Chấm lại' : 'Chấm ảnh này'}
+                            </>
+                        )}
+                    </button>
+                </div>
+            </aside>
+        </motion.div>
     )
 }
 
-function IconBtn({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
+function NavBtn({ label, disabled, pressed, onClick, children }: { label: string; disabled?: boolean; pressed?: boolean; onClick: () => void; children: React.ReactNode }) {
     return (
         <button
             type="button"
             aria-label={label}
             title={label}
+            aria-pressed={pressed}
             disabled={disabled}
             onClick={onClick}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted text-foreground transition hover:bg-border disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className={`flex h-8 w-8 items-center justify-center rounded-full text-ink-foreground transition disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70 ${pressed ? 'bg-ink-foreground/30' : 'bg-ink-foreground/10 hover:bg-ink-foreground/20'}`}
         >
             {children}
         </button>
-    )
-}
-
-function Bar({ label, value, max }: { label: string; value: number; max: number }) {
-    return (
-        <div className="text-[13px]">
-            <div className="flex justify-between text-muted-foreground">
-                {label}
-                <span className="font-mono font-bold text-foreground">
-                    {value}
-                    <span className="font-medium text-muted-foreground">/{max}</span>
-                </span>
-            </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-brand-600 transition-[width] duration-slow ease-out" style={{ width: `${Math.max(0, Math.min(100, (value / Math.max(1, max)) * 100))}%` }} />
-            </div>
-        </div>
     )
 }

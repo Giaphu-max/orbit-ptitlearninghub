@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { AnimatePresence } from 'motion/react'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AlertCircle, Camera, Check, ChevronDown, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
@@ -11,12 +11,11 @@ import { useStudioHints } from '@/lib/studio-hints'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { gradeShot, SHOTS_MAX, useStudioSession, type StudioShot } from '@/store/useStudioSession'
 import { applyChange, describeChange } from '@/lib/studio-suggest'
+import { elevationLabel } from '@/lib/studio-snapshot'
 import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup } from '@/lib/studio-setup'
 import { BriefPicker } from '@/components/studio/brief-picker'
 import { GalleryPanel, ScoreBadge } from '@/components/studio/gallery-panel'
-import { Lightbox } from '@/components/studio/lightbox'
 import { ShotViewer } from '@/components/studio/shot-viewer'
-import { ViewerBoundary } from '@/components/studio/viewer-boundary'
 import { StudioRail, type RailTab } from '@/components/studio/studio-rail'
 import type { CaptureFn } from '@/components/studio/studio-scene'
 
@@ -58,7 +57,6 @@ export function OrbitStudioView() {
     const brief = resolveBrief(searchParams)
     const [pickerOpen, setPickerOpen] = useState(false)
     const hints = useStudioHints(setup)
-    const reduced = useReducedMotion()
     const [env, setEnv] = useState<EnvState>({ kind: 'idle' })
     const [envStep, setEnvStep] = useState(0)
     // Ý đồ ánh sáng đã áp dụng (giữ lại khi lần sau bị từ chối hoặc lỗi)
@@ -74,25 +72,20 @@ export function OrbitStudioView() {
     const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
     const tweenRaf = useRef(0)
     const loading = env.kind === 'loading'
-    // Đang xem ảnh: khu xem ảnh thay chỗ khung 3D + bảng (3D chỉ ẩn, vẫn mounted nên cảnh giữ nguyên trạng thái)
+    // Đang xem ảnh: popup nổi trên studio, studio 3D luôn mounted phía sau
     const viewing = drawerOpen && Boolean(selected)
-    const [studioHidden, setStudioHidden] = useState(false)
-    const hideStudio = viewing || studioHidden
-    useEffect(() => {
-        if (viewing) setStudioHidden(true)
-    }, [viewing])
+    const shotBriefIndex = Math.max(0, STUDIO_BRIEFS.findIndex((b) => b.id === selected?.briefId))
 
     const onReady = useCallback((fn: CaptureFn) => {
         captureRef.current = fn
     }, [])
 
-    // Esc đóng lớp trên cùng trước: lightbox → bảng lưới → ngăn Xem ảnh
+    // Esc đóng lớp trên cùng trước: bảng lưới → popup xem ảnh
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key !== 'Escape') return
             const st = useStudioSession.getState()
-            if (st.lightboxOpen) st.setLightbox(false)
-            else if (st.galleryOpen) st.setGallery(false)
+            if (st.galleryOpen) st.setGallery(false)
             else if (st.drawerOpen) st.openDrawer(false)
         }
         window.addEventListener('keydown', onKey)
@@ -332,8 +325,8 @@ export function OrbitStudioView() {
     ]
 
     return (
-        <div className={`w-full overflow-x-clip ${hideStudio ? '' : 'min-[980px]:h-[calc(100svh-var(--nav-h))]'}`}>
-            <div className={`container-wide flex flex-col py-4 ${hideStudio ? '' : 'min-[980px]:h-full'}`}>
+        <div className="w-full overflow-x-clip min-[980px]:h-[calc(100svh-var(--nav-h))]">
+            <div className="container-wide flex flex-col py-4 min-[980px]:h-full">
                 {/* Hàng đầu trang không khung: Cột 8 (đề bài + chip tiêu chí) | Cột 4 (stepper 3 bước) */}
                 <header className="lesson-grid items-end mb-6">
                     {/* Cột 8: eyebrow + chip chọn đề, tiêu đề ngắn, một dòng ý đồ */}
@@ -400,7 +393,7 @@ export function OrbitStudioView() {
                 </header>
 
                 {/* Khung 3D (Cột 8) + Bảng điều khiển (Cột 4), cùng lưới với hàng header */}
-                <div className={`lesson-grid min-h-0 flex-1 ${hideStudio ? 'hidden' : ''}`}>
+                <div className="lesson-grid min-h-0 flex-1">
                     <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Khung làm việc studio">
                         {/* Canvas 3D */}
                         <div ref={viewportRef} style={{ viewTransitionName: 'vt-studio-stage' }} className="relative h-[56vh] overflow-hidden rounded-panel bg-ink shadow-card min-[980px]:h-auto min-[980px]:min-h-0 min-[980px]:flex-1">
@@ -582,36 +575,29 @@ export function OrbitStudioView() {
                 </div>
             </div>
 
-            <AnimatePresence onExitComplete={() => setStudioHidden(false)}>
-                    {viewing && selected && (
-                        <motion.div
-                            key="viewer"
-                            initial={reduced ? false : { opacity: 0, y: 14 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: 14 }}
-                            transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }}
-                        >
-                            <ViewerBoundary key={selected.id} onBack={() => useStudioSession.getState().openDrawer(false)}>
-                            <ShotViewer
-                                shot={selected}
-                                index={selectedIndex}
-                                total={shots.length}
-                                passScore={brief.passScore}
-                                onClose={() => useStudioSession.getState().openDrawer(false)}
-                                onReuse={reuseSetup}
-                                onDelete={deleteShot}
-                                onTry={(change) => {
-                                    setSetup((cur) => applyChange(cur, change))
-                                    showToast(`Đã áp vào studio: ${describeChange(change)}. Quay lại studio để xem và chụp lại.`, undefined, 4500)
-                                }}
-                            />
-                            </ViewerBoundary>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+            <AnimatePresence>
+                {viewing && selected && (
+                    <ShotViewer
+                        key="viewer"
+                        shot={selected}
+                        index={selectedIndex}
+                        total={shots.length}
+                        brief={STUDIO_BRIEFS[shotBriefIndex] ?? brief}
+                        briefIndex={shotBriefIndex}
+                        briefCount={STUDIO_BRIEFS.length}
+                        onClose={() => useStudioSession.getState().openDrawer(false)}
+                        onReuse={reuseSetup}
+                        onDelete={deleteShot}
+                        onTry={(change) => {
+                            setSetup((cur) => applyChange(cur, change))
+                            useStudioSession.getState().openDrawer(false)
+                            showToast(`Đã áp vào studio: ${describeChange(change)}. Xem lại cảnh rồi chụp lại nhé.`, undefined, 4500)
+                        }}
+                    />
+                )}
+            </AnimatePresence>
         </div>
 
-        <Lightbox onReuse={reuseSetup} onDelete={deleteShot} />
         {pickerOpen && <BriefPicker briefs={STUDIO_BRIEFS} currentId={brief.id} best={briefBest} onPick={pickBrief} onClose={() => setPickerOpen(false)} />}
             {toast && (
                 <div role="status" className="fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink px-4 py-2.5 text-sm text-ink-foreground shadow-raised">
@@ -626,12 +612,6 @@ export function OrbitStudioView() {
         </div>
     )
 }
-
-function elevationLabel(deg: number) {
-    if (Math.abs(deg) <= 3) return 'ngang mắt'
-    return deg > 0 ? `góc cao ${deg}°` : `góc thấp ${Math.abs(deg)}°`
-}
-
 /** Lớp phủ trên canvas khi AI dựng ánh sáng (vệt quét, đèn nhấp nháy, 3 bước) và thẻ thông báo khi lỗi. */
 function EnvOverlay({ env, step, onRetry, onClose }: { env: EnvState; step: number; onRetry: () => void; onClose: () => void }) {
     if (env.kind === 'idle') return null

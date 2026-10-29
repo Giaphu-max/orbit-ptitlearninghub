@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Xem ảnh chụp</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#FAFAFC;
+  --teal:#2EC3A8;--ok:#1E7F55;--ok-50:#EAF7EF;--ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden;background:var(--bg)}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+.bgpage{position:fixed;inset:0;background:url(studio-bg.webp) center top/cover no-repeat}
+.scrim{position:fixed;inset:0;background:rgba(10,26,80,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:fi .25s var(--ease)}
+@keyframes fi{from{opacity:0}}
+.dlg{position:fixed;left:50%;top:50%;width:min(1240px,calc(100vw - 80px));max-height:calc(100vh - 80px);transform:translate(-50%,-50%);display:grid;grid-template-columns:minmax(0,1fr) 380px;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(10,26,80,.55);animation:pop .35s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-48%) scale(.97)}}
+/* left: photo */
+.ph{position:relative;background:#0B0E1C;display:flex;flex-direction:column}
+.ph .bar{display:flex;align-items:center;gap:10px;padding:14px 18px;color:#fff;font-size:13.5px}
+.ph .bar b{font:700 13px var(--mono)}
+.nb{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.1);color:#fff}
+.nb:hover{background:rgba(255,255,255,.2)}
+.ph .bar .sp{margin-left:auto;display:flex;gap:8px;align-items:center}
+.ph .bar .chip{font:600 12px var(--mono);padding:5px 9px;border-radius:7px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85)}
+.frame{position:relative;margin:0 18px;border-radius:14px;overflow:hidden;aspect-ratio:1200/709}
+.frame img{display:block;width:100%;height:100%;object-fit:cover}
+.frame .grid{position:absolute;inset:0;background:linear-gradient(90deg,transparent calc(33.3% - .5px),rgba(255,255,255,.22) 0 calc(33.3% + .5px),transparent 0 calc(66.6% - .5px),rgba(255,255,255,.22) 0 calc(66.6% + .5px),transparent 0),linear-gradient(0deg,transparent calc(33.3% - .5px),rgba(255,255,255,.22) 0 calc(33.3% + .5px),transparent 0 calc(66.6% - .5px),rgba(255,255,255,.22) 0 calc(66.6% + .5px),transparent 0);opacity:0;transition:opacity .2s}
+.frame.g .grid{opacity:1}
+.mark{position:absolute;border:2px solid #FF8A7A;border-radius:50%;opacity:0;transition:opacity .3s,box-shadow .2s}
+.mark i{position:absolute;left:-12px;top:-12px;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font:700 12px var(--mono);font-style:normal;display:grid;place-items:center}
+.graded .mark{opacity:1}
+.mark.hl{box-shadow:0 0 0 6px rgba(226,38,28,.25)}
+.strip{display:flex;gap:8px;padding:14px 18px 16px;align-items:center}
+.strip .t{width:72px;aspect-ratio:3/2;border-radius:8px;overflow:hidden;border:2px solid transparent;opacity:.6}
+.strip .t img{width:100%;height:100%;object-fit:cover}
+.strip .t.on{border-color:var(--red);opacity:1}
+.strip .gl{margin-left:auto;font-size:12.5px;color:rgba(255,255,255,.65);display:flex;gap:14px}
+.strip .gl button{color:rgba(255,255,255,.8);font-weight:600}
+.strip .gl button:hover{color:#fff}
+/* right: panel */
+.pn{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--line)}
+.pn .hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.pn .hd b{font-size:15px;color:var(--navy)}
+.pn .hd small{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-top:2px}
+.x{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.x:hover{background:var(--sunk);color:var(--navy)}
+.body{flex:1;overflow:auto;padding:18px 20px}
+.ft{padding:16px 20px;border-top:1px solid var(--line);display:flex;gap:10px}
+.btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;font-weight:800;font-size:15.5px}
+.btn.red{background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);color:#fff;box-shadow:0 12px 24px -12px rgba(226,38,28,.7)}
+.btn.ghost{flex:none;padding:14px 16px;border:1.5px solid var(--line);color:var(--navy)}
+/* pre-grade */
+.pre h4{margin:0 0 10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.rb{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.rb div{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:var(--sunk);font-size:14px;color:var(--navy);font-weight:600}
+.rb div span{display:flex;align-items:center;gap:8px}
+.rb div i{width:8px;height:8px;border-radius:50%;background:#F39531}
+.rb div i.g{background:var(--teal)}
+.rb div em{font:600 12px var(--mono);font-style:normal;color:var(--muted)}
+.set{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.set span{display:flex;justify-content:space-between;padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.set b{font:700 12px var(--mono);color:var(--navy)}
+.tip{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.5}
+/* graded */
+.post{display:none}
+.graded .pre{display:none}.graded .post{display:block}
+.score{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.score b{font:800 44px/1 var(--mono);color:var(--red-ink)}
+.score b small{font-size:18px;color:var(--muted)}
+.score .pass{padding:5px 10px;border-radius:999px;background:var(--ok-50);color:var(--ok);font-size:12.5px;font-weight:800}
+.score .bn{font-size:12.5px;color:var(--ok);font-weight:700;margin-left:auto;text-align:right}
+.cr{margin-bottom:12px}
+.cr .h{display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--navy)}
+.cr .h em{font:700 12.5px var(--mono);font-style:normal}
+.cr .b{height:6px;border-radius:3px;background:var(--sunk);margin:6px 0 6px;overflow:hidden}.cr .b i{display:block;height:100%;border-radius:3px;background:var(--red)}
+.cr p{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.cr details summary{list-style:none;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted)}
+.cr details summary::-webkit-details-marker{display:none}
+.iss h4{margin:18px 0 10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.is{border-radius:12px;overflow:hidden;margin-bottom:10px}
+.is .t{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--red-50);box-shadow:inset 3px 0 0 var(--red);font-size:14px;font-weight:700;color:var(--navy);cursor:pointer}
+.is .t i{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;font:700 11.5px var(--mono);font-style:normal;display:grid;place-items:center;flex:none}
+.is .s{display:flex;align-items:flex-start;gap:8px;padding:8px 12px 0 44px;font-size:13px;color:var(--ink);line-height:1.45}
+.is .s:last-child{padding-bottom:4px}
+.is .s span{flex:1}
+.is .s em{font-style:normal;color:var(--muted)}
+.is .s button{flex:none;font-size:12px;font-weight:800;color:var(--red-ink);padding:3px 8px;border-radius:7px;border:1px solid var(--red-100)}
+.toggle{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;border-radius:999px;background:#fff;box-shadow:0 10px 24px -10px rgba(10,26,80,.4);z-index:20}
+.toggle button{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted)}
+.toggle button.on{background:var(--navy);color:#fff}
+.loading .btn.red{opacity:.8;pointer-events:none}
+</style></head>
+<body>
+<div class="bgpage"></div><div class="scrim"></div>
+<section class="dlg" id="dlg" role="dialog" aria-label="Xem ảnh chụp">
+  <div class="ph">
+    <div class="bar"><button class="nb">‹</button><b>Ảnh 1/2</b><button class="nb">›</button>
+      <span class="sp"><span class="chip">50mm · góc cao 8°</span><button class="nb" id="gridBtn" title="Lưới 1/3">▦</button></span></div>
+    <div class="frame" id="frame"><img src="shot.webp" alt="Ảnh chụp từ studio"><span class="grid"></span>
+      <span class="mark" id="m1" style="left:56%;top:55%;width:15%;height:30%"><i>1</i></span>
+    </div>
+    <div class="strip"><span class="t on"><img src="shot.webp" alt=""></span><span class="t"><img src="shot.webp" alt="" style="filter:brightness(.8)"></span>
+      <span class="gl"><button>Xóa ảnh</button><button>Tải về</button></span></div>
+  </div>
+  <aside class="pn">
+    <div class="hd"><span><b id="pt">Chấm ảnh này</b><small>Đề 1/8 · Đèn chính tạo khối</small></span><button class="x" aria-label="Đóng">✕</button></div>
+    <div class="body">
+      <div class="pre">
+        <h4>Sẽ chấm theo</h4>
+        <div class="rb"><div><span><i class="g"></i>Bố cục</span><em>25đ · gần đạt</em></div><div><span><i></i>Ánh sáng</span><em>50đ · gần đạt</em></div><div><span><i class="g"></i>Ý đồ</span><em>25đ · AI đánh giá</em></div></div>
+        <h4>Thiết lập lúc chụp</h4>
+        <div class="set"><span>Tiêu cự<b>50mm</b></span><span>Xoay<b>0°</b></span><span>Độ cao<b>8°</b></span><span>Khoảng cách<b>6.0m</b></span><span>Đèn chính<b>85%</b></span><span>Đèn phụ<b>20%</b></span></div>
+        <p class="tip">AI chấm theo hiệu quả của bức ảnh so với đề, không bắt buộc đúng thông số. Mỗi lượt chấm mất khoảng 5 giây.</p>
+      </div>
+      <div class="post">
+        <div class="score"><b>86<small>/100</small></b><span class="pass">Đạt</span><span class="bn">+3 điểm<br>sáng tạo</span></div>
+        <div class="cr"><div class="h">Bố cục<em>22/25</em></div><div class="b"><i style="width:88%"></i></div><p>Chủ thể cân đối, có khoảng thở; hơi chính diện, chưa có điểm nhấn góc nhìn.</p></div>
+        <div class="cr"><div class="h">Ánh sáng<em>42/50</em></div><div class="b"><i style="width:84%"></i></div><p>Đèn chính lệch trái tạo khối rõ. Vùng tối bên phải còn gắt.</p></div>
+        <div class="cr"><div class="h">Ý đồ<em>22/25</em></div><div class="b"><i style="width:88%"></i></div><p>Hướng sáng rõ, tạo chiều sâu cho cả studio.</p></div>
+        <div class="iss"><h4>Lỗi cần chỉnh</h4>
+          <div class="is" id="is1"><div class="t"><i>1</i>Vùng tối quá gắt</div>
+            <div class="s"><span>Tăng đèn phụ để giảm tương phản. <em>Đèn phụ 20% → 35%</em></span><button>Thử</button></div>
+            <div class="s"><span>Hoặc lùi đèn chính ra sau một chút để bóng mềm hơn.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ft"><button class="btn ghost" title="Áp thiết lập lúc chụp vào studio">↺ Áp lại</button><button class="btn red" id="gradeBtn">✦ Chấm ảnh này</button></div>
+  </aside>
+</section>
+<div class="toggle"><button class="on" data-s="pre">Trước khi chấm</button><button data-s="post">Sau khi chấm</button></div>
+<script>
+const d=document.getElementById('dlg'),gb=document.getElementById('gradeBtn'),pt=document.getElementById('pt');
+function set(s){d.classList.toggle('graded',s==='post');document.querySelectorAll('.toggle button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  gb.innerHTML=s==='post'?'✦ Chấm lại':'✦ Chấm ảnh này';pt.textContent=s==='post'?'Kết quả AI chấm':'Chấm ảnh này';}
+document.querySelectorAll('.toggle button').forEach(b=>b.onclick=()=>set(b.dataset.s));
+gb.onclick=()=>{if(d.classList.contains('graded'))return;d.classList.add('loading');gb.textContent='Đang chấm…';setTimeout(()=>{d.classList.remove('loading');set('post')},1400)};
+document.getElementById('gridBtn').onclick=()=>document.getElementById('frame').classList.toggle('g');
+const is1=document.getElementById('is1'),m1=document.getElementById('m1');is1.onmouseenter=()=>m1.classList.add('hl');is1.onmouseleave=()=>m1.classList.remove('hl');
+</script>
+</body></html>

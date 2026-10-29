@@ -35,3 +35,9 @@ export function diffRows(a: StudioShot, b: StudioShot) {
     const rb = snapshotRows(b)
     return snapshotRows(a).flatMap((r, i) => (r.value !== rb[i].value ? [{ label: r.label, from: r.value, to: rb[i].value }] : []))
 }
+
+/** Độ cao máy dạng chữ: "ngang mắt", "góc cao 8°", "góc thấp 5°". */
+export function elevationLabel(deg: number) {
+    if (Math.abs(deg) <= 3) return 'ngang mắt'
+    return deg > 0 ? `góc cao ${deg}°` : `góc thấp ${Math.abs(deg)}°`
+}
