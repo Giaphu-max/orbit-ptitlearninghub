@@ -136,14 +136,20 @@ function Body({ shot, index, onReuse }: { shot: StudioShot; index: number; onReu
                         <span className="font-mono text-6xl font-bold leading-none tracking-tight text-brand-ink">{result.overall}</span>
                         <span className="text-sm text-muted-foreground">/100 · {result.overall >= DIRECTOR_MIN_SCORE ? 'Đạt mức nhận XP' : `Cần từ ${DIRECTOR_MIN_SCORE} để nhận XP`}</span>
                     </div>
-                    <div className="mt-4 grid gap-3">
-                        <Bar label="Bố cục" value={result.composition} />
-                        <Bar label="Ánh sáng" value={result.lighting} />
-                    </div>
-                    <div className="mt-4 space-y-3 text-sm leading-relaxed">
-                        <p><span className="font-bold text-foreground">Bố cục. </span><span className="text-muted-foreground">{result.compositionComment}</span></p>
-                        <p><span className="font-bold text-foreground">Ánh sáng. </span><span className="text-muted-foreground">{result.lightingComment}</span></p>
-                    </div>
+                    <ul className="mt-4 flex flex-col gap-3.5" aria-label="Điểm theo tiêu chí">
+                        {result.criteria.map((c) => (
+                            <li key={c.key}>
+                                <Bar label={c.label} value={c.score} max={c.max} />
+                                {c.comment && <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{c.comment}</p>}
+                            </li>
+                        ))}
+                    </ul>
+                    {result.creativityBonus > 0 && (
+                        <p className="mt-3 rounded-card bg-success-soft px-3 py-2.5 text-[13px] leading-relaxed text-success">
+                            <b className="font-bold">Cách tiếp cận khác nhưng hiệu quả · +{result.creativityBonus} điểm sáng tạo.</b>
+                            {result.approachNote && <span className="text-foreground"> {result.approachNote}</span>}
+                        </p>
+                    )}
                     {(result.areas.length > 0 || result.tips.length > 0) && (
                         <ol className="mt-4 flex flex-col gap-2" aria-label="Gợi ý chỉnh">
                             {result.areas.map((a, i) => (
@@ -184,15 +190,15 @@ function Body({ shot, index, onReuse }: { shot: StudioShot; index: number; onReu
     )
 }
 
-function Bar({ label, value }: { label: string; value: number }) {
+function Bar({ label, value, max }: { label: string; value: number; max: number }) {
     return (
         <div className="text-[13px]">
             <div className="flex justify-between text-muted-foreground">
                 {label}
-                <span className="font-mono font-bold text-foreground">{value}</span>
+                <span className="font-mono font-bold text-foreground">{value}<span className="font-medium text-muted-foreground">/{max}</span></span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-brand-600 transition-[width] duration-slow ease-out" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+                <div className="h-full rounded-full bg-brand-600 transition-[width] duration-slow ease-out" style={{ width: `${Math.max(0, Math.min(100, (value / Math.max(1, max)) * 100))}%` }} />
             </div>
         </div>
     )

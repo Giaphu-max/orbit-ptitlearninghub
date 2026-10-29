@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { DirectorSetup, GradePhotoResponse, LightingIntent } from '@/lib/api-types'
 import { ApiRequestError, gradePhoto } from '@/lib/api'
+import { getBriefById } from '@/data/studio-briefs'
 import { announceRewards } from '@/lib/gamification'
 import type { CameraSetup } from '@/lib/studio-setup'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -25,6 +26,8 @@ export interface StudioShot {
     /** Thông số máy và đèn lúc chụp, dùng khi chấm và khi "Áp gợi ý rồi chụp lại" */
     setup: CameraSetup
     intent: LightingIntent
+    /** Đề đang làm lúc chụp: chấm theo đúng đề này */
+    briefId: string
     status: ShotStatus
     result?: GradePhotoResponse
     error?: string
@@ -123,10 +126,16 @@ export async function gradeShot(id: number) {
     try {
         // Chỉ gửi thông số nhiếp ảnh; dịch khung đã thể hiện trong ảnh
         const { shiftX: _x, shiftY: _y, look: _look, ...director } = shot.setup
-        const result = await gradePhoto({ imageBase64: shot.base64, setup: director satisfies DirectorSetup, intent: shot.intent })
+        const brief = getBriefById(shot.briefId)
+        const result = await gradePhoto({
+            imageBase64: shot.base64,
+            setup: director satisfies DirectorSetup,
+            intent: shot.intent,
+            brief: brief && { goal: brief.goal, rubric: brief.rubric.map((r) => ({ key: r.key, label: r.label, points: r.points, description: r.description })) },
+        })
         patch(id, { status: 'done', result })
         const before = useOrbitStore.getState()
-        before.recordDirectorScore(result.overall)
+        before.recordDirectorScore(result.overall, shot.briefId)
         const after = useOrbitStore.getState()
         announceRewards(before, after, undefined, { source: 'studio', next: { label: 'Chụp lại theo gợi ý', onClick: () => {} } })
     } catch (err) {

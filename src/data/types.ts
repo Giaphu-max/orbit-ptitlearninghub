@@ -153,3 +153,31 @@ export interface ClassTestStats {
     /** Theo khái niệm: số lần được hỏi và số lần trả lời đúng trong test */
     concepts: Record<string, { asked: number; correct: number }>
 }
+
+/** Một tiêu chí của đề thực hành Studio 3D: tả định tính hiệu quả hình ảnh cần đạt, không ép thông số. */
+export interface StudioRubricCriterion {
+    /** composition | lighting | intent | ... (dùng để chọn gợi ý thời gian thực ở bảng Đề bài) */
+    key: 'composition' | 'lighting' | 'intent' | (string & {})
+    label: string
+    points: number
+    /** Mô tả định tính điều ảnh cần cho người xem thấy */
+    description: string
+    /** Gợi ý một cách đạt; chỉ là gợi ý, cách khác có hiệu quả vẫn được điểm */
+    hint: string
+}
+
+/** Màu nhấn của thumbnail đề (token --mm-*). */
+export type StudioThumbTone = 'orange' | 'blue' | 'pink' | 'yellow' | 'teal' | 'sky' | 'red'
+
+/** Đề "brief" của Studio 3D: ý đồ + tiêu chí, tổng điểm rubric = 100. */
+export interface StudioBrief {
+    id: string
+    shortTitle: string
+    /** Một câu ý đồ; cũng là mô tả gửi cho Prompt-to-Environment khi bấm "Gợi ý một cách dựng sáng" */
+    goal: string
+    difficulty: 1 | 2 | 3
+    conceptIds: string[]
+    thumbnail: { tone: StudioThumbTone }
+    rubric: StudioRubricCriterion[]
+    passScore: number
+}

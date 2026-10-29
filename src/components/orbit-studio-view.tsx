@@ -1,16 +1,16 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertCircle, Camera, Check, ChevronDown, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, Sun, Target, Trophy, X } from 'lucide-react'
+import { AlertCircle, Camera, Check, ChevronDown, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
 import type { LightingIntent } from '@/lib/api-types'
 import { ApiRequestError, generateEnvironment, isNotLightingError } from '@/lib/api'
 import { ENV_LIMITS } from '@/lib/environment'
-import { DIRECTOR_MIN_SCORE } from '@/lib/gamification'
 import { SFX } from '@/lib/sfx'
-import { DEFAULT_BRIEF, DEFAULT_SHORT_TITLE, getStudioBrief, STUDIO_BRIEFS } from '@/lib/studio-briefs'
-import { getConcept } from '@/data'
+import { resolveBrief, STUDIO_BRIEFS } from '@/lib/studio-briefs'
+import { useStudioHints } from '@/lib/studio-hints'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { gradeShot, SHOTS_MAX, useStudioSession, type StudioShot } from '@/store/useStudioSession'
 import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup } from '@/lib/studio-setup'
+import { BriefPicker } from '@/components/studio/brief-picker'
 import { GalleryPanel, ScoreBadge } from '@/components/studio/gallery-panel'
 import { Lightbox } from '@/components/studio/lightbox'
 import { ShotDrawer } from '@/components/studio/shot-drawer'
@@ -43,19 +43,18 @@ const glass = 'border border-ink-foreground/15 bg-ink/60 text-ink-foreground bac
 export function OrbitStudioView() {
     const [setup, setSetup] = useState<CameraSetup>(DEFAULT_SETUP)
     const [grid, setGrid] = useState(true)
-    const [tab, setTab] = useState<RailTab>('light')
+    const [tab, setTab] = useState<RailTab>('brief')
     const captureRef = useRef<CaptureFn | null>(null)
     const viewportRef = useRef<HTMLDivElement>(null)
     const stripRef = useRef<HTMLDivElement>(null)
     const flashRef = useRef<HTMLDivElement>(null)
-    const directorBest = useOrbitStore((s) => s.directorBest)
+    const briefBest = useOrbitStore((s) => s.briefBest)
     const [webgl] = useState(canRender3D)
     const [envPrompt, setEnvPrompt] = useState('')
     const [searchParams, setSearchParams] = useSearchParams()
-    const brief = getStudioBrief(searchParams.get('concept'))
-    const briefConcept = brief ? getConcept(brief.conceptId) : undefined
-    const [briefMenuOpen, setBriefMenuOpen] = useState(false)
-    const briefMenuRef = useRef<HTMLDivElement>(null)
+    const brief = resolveBrief(searchParams)
+    const [pickerOpen, setPickerOpen] = useState(false)
+    const hints = useStudioHints(setup)
     const [env, setEnv] = useState<EnvState>({ kind: 'idle' })
     const [envStep, setEnvStep] = useState(0)
     // Ý đồ ánh sáng đã áp dụng (giữ lại khi lần sau bị từ chối hoặc lỗi)
@@ -89,20 +88,10 @@ export function OrbitStudioView() {
         return () => window.removeEventListener('keydown', onKey)
     }, [])
 
-    // Đóng menu chọn đề khi bấm ngoài hoặc bấm Esc
+    // Vào trang hoặc đổi đề: mở sẵn tab Đề bài
     useEffect(() => {
-        if (!briefMenuOpen) return
-        const onDown = (e: PointerEvent) => {
-            if (!briefMenuRef.current?.contains(e.target as Node)) setBriefMenuOpen(false)
-        }
-        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setBriefMenuOpen(false)
-        document.addEventListener('pointerdown', onDown)
-        document.addEventListener('keydown', onKey)
-        return () => {
-            document.removeEventListener('pointerdown', onDown)
-            document.removeEventListener('keydown', onKey)
-        }
-    }, [briefMenuOpen])
+        setTab('brief')
+    }, [brief.id])
 
     useEffect(() => () => {
         clearTimeout(toastTimer.current)
@@ -172,7 +161,7 @@ export function OrbitStudioView() {
         }
         const { dataUrl, base64 } = capture()
         const intent = buildIntent(setup, applied)
-        const id = useStudioSession.getState().addShot({ image: dataUrl, base64, setup, intent })
+        const id = useStudioSession.getState().addShot({ image: dataUrl, base64, setup, intent, briefId: brief.id })
         if (id === null) return
         SFX.shutter()
         if (!reducedMotion()) {
@@ -261,15 +250,29 @@ export function OrbitStudioView() {
     const gradeLabel = !selected ? 'Chấm ảnh này' : selected.status === 'done' ? 'Đã chấm' : selected.status === 'grading' ? 'Đang chấm…' : 'Chấm ảnh này'
     const gradeDisabled = !selected || selected.status === 'done' || selected.status === 'grading'
 
-    const briefIndex = brief ? STUDIO_BRIEFS.findIndex((b) => b.conceptId === brief.conceptId) : -1
-    const fullTask = briefConcept && brief ? `${briefConcept.name}. ${brief.task}` : (brief?.task ?? DEFAULT_BRIEF)
-    const shortTitle = brief?.shortTitle ?? DEFAULT_SHORT_TITLE
+    const briefIndex = STUDIO_BRIEFS.findIndex((b) => b.id === brief.id)
 
+    /** Chọn đề khác: đưa cảnh về mặc định; hỏi trước nếu còn ảnh chụp chưa chấm. */
+    const pickBrief = (id: string) => {
+        setPickerOpen(false)
+        if (id === brief.id) return
+        const unsaved = useStudioSession.getState().shots.some((s) => s.status === 'idle' || s.status === 'error')
+        if (unsaved && !window.confirm('Bạn còn ảnh chụp chưa chấm. Đổi đề sẽ đặt lại cảnh về mặc định (ảnh đã chụp vẫn được giữ). Đổi đề chứ?')) return
+        cancelAnimationFrame(tweenRaf.current)
+        setSetup(DEFAULT_SETUP)
+        setApplied(null)
+        setEnvPrompt('')
+        setEnv({ kind: 'idle' })
+        setSearchParams({ brief: id }, { replace: true })
+    }
+
+    const tabForSteps = tab === 'brief' ? 'light' : tab
     const hasShots = shots.length > 0
     const hasGraded = shots.some((s) => s.status === 'done')
     const isGrading = shots.some((s) => s.status === 'grading')
 
     const getStepStatus = (index: number) => {
+        const tab = tabForSteps
         if (isGrading) {
             if (index === 0) return { on: false, done: true }
             if (index === 1) return { on: false, done: true }
@@ -322,85 +325,27 @@ export function OrbitStudioView() {
             <div className="container-wide flex flex-col py-4 min-[980px]:h-full">
                 {/* Hàng đầu trang không khung: Cột 8 (đề bài + chip tiêu chí) | Cột 4 (stepper 3 bước) */}
                 <header className="lesson-grid items-end mb-6">
-                    {/* Cột 8: eyebrow + menu chọn đề, tiêu đề ngắn, hàng chip tiêu chí */}
+                    {/* Cột 8: eyebrow + chip chọn đề, tiêu đề ngắn, một dòng ý đồ */}
                     <div className="min-w-0">
-                        <div ref={briefMenuRef} className="relative inline-block">
-                            <button
-                                type="button"
-                                aria-expanded={briefMenuOpen}
-                                aria-haspopup="menu"
-                                onClick={() => setBriefMenuOpen((v) => !v)}
-                                className="inline-flex items-center gap-2 rounded-lg py-1 pr-2.5 text-[13px] font-bold text-muted-foreground transition hover:text-strong"
-                            >
-                                <span>Studio 3D · Nhiếp ảnh & Ánh sáng</span>
-                                <em className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-[3px] font-mono text-[11.5px] font-bold not-italic text-brand-ink">
-                                    Đề {briefIndex >= 0 ? briefIndex + 1 : 1}/{STUDIO_BRIEFS.length}
-                                    <ChevronDown size={11} className={`transition-transform duration-fast ${briefMenuOpen ? 'rotate-180' : ''}`} aria-hidden />
-                                </em>
-                            </button>
-                            {briefMenuOpen && (
-                                <div
-                                    role="menu"
-                                    className="absolute left-0 top-[calc(100%+6px)] z-40 w-[380px] max-w-[calc(100vw-32px)] rounded-[14px] border border-border bg-card p-1.5 shadow-raised"
-                                >
-                                    {STUDIO_BRIEFS.map((b, i) => {
-                                        const cur = brief?.conceptId === b.conceptId
-                                        const concept = getConcept(b.conceptId)
-                                        return (
-                                            <button
-                                                key={b.conceptId}
-                                                type="button"
-                                                role="menuitem"
-                                                aria-current={cur ? 'true' : undefined}
-                                                onClick={() => {
-                                                    setSearchParams({ concept: b.conceptId }, { replace: true })
-                                                    setBriefMenuOpen(false)
-                                                }}
-                                                className={`grid w-full grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] p-2.5 text-left text-sm transition ${
-                                                    cur ? 'bg-brand-50' : 'hover:bg-muted'
-                                                }`}
-                                            >
-                                                <span className="font-mono text-xs font-bold text-muted-foreground">{String(i + 1).padStart(2, '0')}</span>
-                                                <div className="min-w-0">
-                                                    <b className={`block truncate font-bold ${cur ? 'text-brand-ink' : 'text-strong'}`}>
-                                                        {b.shortTitle}
-                                                    </b>
-                                                    <span className="block truncate text-xs text-muted-foreground">
-                                                        {concept?.name ?? b.conceptId}
-                                                    </span>
-                                                </div>
-                                                <small className="shrink-0 font-mono text-xs text-muted-foreground">
-                                                    {cur ? 'đang chọn' : '≥70đ'}
-                                                </small>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </div>
-
-                        <h1 title={fullTask} className="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-strong">
-                            {shortTitle}
+                        <button
+                            type="button"
+                            aria-haspopup="dialog"
+                            aria-expanded={pickerOpen}
+                            onClick={() => setPickerOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-lg py-1 pr-2.5 text-[13px] font-bold text-muted-foreground transition hover:text-strong"
+                        >
+                            <span>Studio 3D · Nhiếp ảnh & Ánh sáng</span>
+                            <em className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-[3px] font-mono text-[11.5px] font-bold not-italic text-brand-ink">
+                                Đề {briefIndex + 1}/{STUDIO_BRIEFS.length}
+                                <ChevronDown size={11} aria-hidden />
+                            </em>
+                        </button>
+                        <h1 title={brief.shortTitle} className="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-strong">
+                            {brief.shortTitle}
                         </h1>
-
-                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
-                                <Grid3x3 size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-                                <span>{brief?.compositionCriterion ?? 'Bố cục 1/3'}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
-                                <Sun size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-                                <span>{brief?.lightingCriterion ?? 'Ánh sáng theo ý đồ'}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
-                                <Target size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-                                <span>Đạt từ {brief?.targetScore ?? DIRECTOR_MIN_SCORE}</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
-                                <Trophy size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-                                <span>{directorBest > 0 ? `Kỷ lục ${directorBest} điểm` : 'Kỷ lục —/điểm'}</span>
-                            </span>
-                        </div>
+                        <p title={brief.goal} className="mt-1 truncate text-[15px] text-muted-foreground">
+                            {brief.goal}
+                        </p>
                     </div>
 
                     {/* Cột 4: stepper 3 bước rút gọn "Dựng sáng → Chụp ảnh → AI chấm" */}
@@ -618,7 +563,7 @@ export function OrbitStudioView() {
                         setup={setup}
                         onSetup={setSetup}
                         brief={brief}
-                        onPickConcept={(id) => setSearchParams({ concept: id }, { replace: true })}
+                        hints={hints}
                         envLoading={loading}
                         onApplyLighting={askLighting}
                         explanation={applied?.explanation ?? null}
@@ -637,6 +582,7 @@ export function OrbitStudioView() {
         </div>
 
         <Lightbox onReuse={reuseSetup} onDelete={deleteShot} />
+        {pickerOpen && <BriefPicker briefs={STUDIO_BRIEFS} currentId={brief.id} best={briefBest} onPick={pickBrief} onClose={() => setPickerOpen(false)} />}
             {toast && (
                 <div role="status" className="fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink px-4 py-2.5 text-sm text-ink-foreground shadow-raised">
                     {toast.message}

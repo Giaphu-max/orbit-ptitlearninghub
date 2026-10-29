@@ -2,15 +2,17 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, Sparkles } from 'lucide-react'
 import { getConcept, lessons } from '@/data'
-import { studioBriefsWithConcept, type StudioBrief } from '@/lib/studio-briefs'
+import type { StudioBrief } from '@/data/types'
+import type { StudioHint } from '@/lib/studio-hints'
+import { intentHint } from '@/lib/studio-hints'
 import { type CameraSetup } from '@/lib/studio-setup'
 
 export type RailTab = 'camera' | 'light' | 'brief'
 
 const TABS: { id: RailTab; label: string }[] = [
+    { id: 'brief', label: 'Đề bài' },
     { id: 'camera', label: 'Máy ảnh' },
     { id: 'light', label: 'Ánh sáng' },
-    { id: 'brief', label: 'Đề bài' },
 ]
 
 /** Preset ánh sáng chân dung kinh điển: đặt sẵn đèn chính, góc, đèn phụ, đèn viền (màu và nền giữ nguyên). */
@@ -21,30 +23,28 @@ const PRESETS = [
     { name: 'Rim', key: 35, keyAngleDeg: -30, fill: 15, rim: 90, keyElevationDeg: 30 },
 ] as const
 
-const BRIEF_GROUPS: { title: string; ids: string[] }[] = [
-    { title: 'Ánh sáng', ids: ['key-light', 'fill-light', 'back-light', 'practical-light'] },
-    { title: 'Màu sắc', ids: ['cac-thuat-ngu-mau-sac', 'tam-ly-hoc-mau-sac', 'phoi-hop-mau-sac'] },
-    { title: 'Ngôn ngữ hình ảnh', ids: ['ngon-ngu-thi-giac-dien-anh'] },
-]
+const LEVEL_LABEL = { unclear: 'Chưa rõ', near: 'Gần đạt', good: 'Tốt' } as const
+const LEVEL_DOT = { unclear: 'bg-muted-foreground/40', near: 'bg-mm-orange', good: 'bg-success' } as const
 
 interface Props {
     tab: RailTab
     onTab: (t: RailTab) => void
     setup: CameraSetup
     onSetup: (updater: (s: CameraSetup) => CameraSetup) => void
-    brief: StudioBrief | undefined
-    onPickConcept: (id: string) => void
+    brief: StudioBrief
+    hints: { composition: StudioHint; lighting: StudioHint }
     envLoading: boolean
     onApplyLighting: (text: string) => void
     explanation: string | null
 }
 
-/** Cột phải: ba tab Máy ảnh / Ánh sáng / Đề bài, nội dung cuộn trong cột. */
-export function StudioRail({ tab, onTab, setup, onSetup, brief, onPickConcept, envLoading, onApplyLighting, explanation }: Props) {
+/** Cột phải: ba tab Đề bài / Máy ảnh / Ánh sáng, nội dung cuộn trong cột. */
+export function StudioRail({ tab, onTab, setup, onSetup, brief, hints, envLoading, onApplyLighting, explanation }: Props) {
     const [advanced, setAdvanced] = useState(false)
     const set = <K extends keyof CameraSetup>(key: K) => (value: number) => onSetup((s) => ({ ...s, [key]: value }))
-    const briefConcept = brief ? getConcept(brief.conceptId) : undefined
-    const briefs = studioBriefsWithConcept()
+    const hintFor = (key: string): StudioHint | null => (key === 'composition' ? hints.composition : key === 'lighting' ? hints.lighting : key === 'intent' ? intentHint() : null)
+    const sourceConcept = getConcept(brief.conceptIds[0])
+    const sourceLesson = lessons.find((l) => l.concepts.some((c) => brief.conceptIds.includes(c.id)))
 
     return (
         <aside className="flex h-full min-h-[420px] min-w-0 flex-col overflow-hidden rounded-panel border border-border bg-card shadow-card min-[980px]:min-h-0">
@@ -181,48 +181,62 @@ export function StudioRail({ tab, onTab, setup, onSetup, brief, onPickConcept, e
                 )}
 
                 {tab === 'brief' && (
-                    <div className="flex flex-col gap-4">
-                        {brief && briefConcept ? (
-                            <div className="rounded-card border border-brand-100 bg-brand-50 px-4 py-3">
-                                <p className="text-eyebrow uppercase text-brand-ink">{briefConcept.name}</p>
-                                <p className="mt-1.5 text-sm leading-relaxed text-foreground">{brief.task}</p>
-                                <button
-                                    type="button"
-                                    disabled={envLoading}
-                                    onClick={() => onApplyLighting(brief.lighting)}
-                                    className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-[13px] font-bold text-ink-foreground transition hover:bg-brand-700 disabled:opacity-50"
-                                >
-                                    <Sparkles size={14} /> Tạo ánh sáng gợi ý
-                                </button>
-                                {(() => {
-                                    const src = lessons.find((l) => l.concepts.some((c) => c.id === brief.conceptId))
-                                    return src ? (
-                                        <Link to={`/lesson/${src.id}?t=${briefConcept.segment.start}`} className="mt-2 block text-xs font-semibold text-brand-ink hover:underline">
-                                            Xem lại đoạn giảng trong bài
-                                        </Link>
-                                    ) : null
-                                })()}
-                            </div>
-                        ) : (
-                            <p className="text-[13px] leading-relaxed text-muted-foreground">Chọn một khái niệm của khóa Nhiếp ảnh và ánh sáng để nhận đề bài và gợi ý ánh sáng.</p>
-                        )}
-                        {BRIEF_GROUPS.map((g) => {
-                            const items = g.ids.flatMap((id) => briefs.filter((b) => b.conceptId === id))
-                            if (items.length === 0) return null
-                            return (
-                                <Group key={g.title} title={g.title}>
-                                    <ul className="flex flex-wrap gap-1.5" aria-label={`Khái niệm ${g.title}`}>
-                                        {items.map((b) => (
-                                            <li key={b.conceptId}>
-                                                <Chip on={brief?.conceptId === b.conceptId} onClick={() => onPickConcept(b.conceptId)}>
-                                                    {b.conceptName}
-                                                </Chip>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </Group>
-                            )
-                        })}
+                    <div className="flex min-h-full flex-col gap-4">
+                        <div>
+                            <h3 className="text-[14px] font-extrabold text-strong">
+                                Tiêu chí chấm · <span className="font-mono">{brief.rubric.reduce((n, r) => n + r.points, 0)}</span> điểm · đạt từ <span className="font-mono">{brief.passScore}</span>
+                            </h3>
+                            <p className="mt-1 text-xs text-muted-foreground">Chấm dưới đây là gợi ý theo cảnh hiện tại, không phải điểm.</p>
+                        </div>
+                        <ul className="flex flex-col gap-3">
+                            {brief.rubric.map((r) => {
+                                const hint = hintFor(r.key)
+                                return (
+                                    <li key={r.key} className="rounded-card border border-border bg-card px-4 py-3">
+                                        <div className="flex items-baseline justify-between gap-3">
+                                            <b className="text-[14.5px] font-extrabold text-strong">{r.label}</b>
+                                            <span className="font-mono text-sm font-bold text-strong">{r.points}đ</span>
+                                        </div>
+                                        <p className="mt-1 text-[13.5px] leading-relaxed text-muted-foreground">{r.description}</p>
+                                        {hint && (
+                                            <p className="mt-2 flex items-start gap-2 text-[13px] leading-snug text-foreground">
+                                                <span
+                                                    role="img"
+                                                    aria-label={LEVEL_LABEL[hint.level]}
+                                                    title={LEVEL_LABEL[hint.level]}
+                                                    className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${LEVEL_DOT[hint.level]}`}
+                                                />
+                                                <span>
+                                                    <b className="font-bold">{LEVEL_LABEL[hint.level]}.</b> {hint.text}
+                                                </span>
+                                            </p>
+                                        )}
+                                        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">Một cách đạt: {r.hint}</p>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                        <div className="rounded-card bg-muted px-4 py-3">
+                            <p className="text-[13.5px] font-extrabold text-strong">Tự do sáng tạo</p>
+                            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                                Không bắt buộc thông số đèn hay tiêu cự. AI chấm theo hiệu quả của bức ảnh — có cách khác đạt cùng cảm giác vẫn được điểm, làm khác mà hiệu quả được thêm tối đa +10 điểm sáng tạo.
+                            </p>
+                        </div>
+                        <div className="mt-auto flex flex-col items-start gap-2 pt-1">
+                            <button
+                                type="button"
+                                disabled={envLoading}
+                                onClick={() => onApplyLighting(brief.goal)}
+                                className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-[13px] font-bold text-ink-foreground transition hover:bg-brand-700 disabled:opacity-50"
+                            >
+                                <Sparkles size={14} /> Gợi ý một cách dựng sáng
+                            </button>
+                            {sourceLesson && sourceConcept && (
+                                <Link to={`/lesson/${sourceLesson.id}?t=${Math.floor(sourceConcept.segment.start)}`} className="text-xs font-semibold text-brand-ink hover:underline">
+                                    Xem lại đoạn giảng
+                                </Link>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

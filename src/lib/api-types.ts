@@ -75,11 +75,23 @@ export interface LightingIntent {
 
 export const INTENT_LIMITS = { textMaxChars: 500 } as const
 
+/** Một tiêu chí của đề, gửi kèm để AI chấm theo mô tả (không theo thông số). */
+export interface GradeRubricItem {
+    key: string
+    label: string
+    points: number
+    description: string
+}
+
+export const RUBRIC_LIMITS = { maxItems: 6, textMaxChars: 400 } as const
+
 export interface GradePhotoRequest {
     /** JPEG base64, không kèm tiền tố data: */
     imageBase64: string
     setup: DirectorSetup
     intent?: LightingIntent
+    /** Đề đang làm: ý đồ + rubric. Thiếu thì chấm theo bố cục / ánh sáng mặc định */
+    brief?: { goal: string; rubric: GradeRubricItem[] }
 }
 
 /** Vùng cần chỉnh, toạ độ 0–1 so với khung ảnh (gốc ở góc trên trái). */
@@ -91,13 +103,22 @@ export interface FocusArea {
     note: string
 }
 
+export interface GradeCriterionResult {
+    key: string
+    label: string
+    score: number
+    max: number
+    comment: string
+}
+
 export interface GradePhotoResponse {
-    /** Điểm 0–100 */
-    composition: number
-    lighting: number
+    /** Tổng các tiêu chí + điểm sáng tạo (tối đa 100 + 10) */
     overall: number
-    compositionComment: string
-    lightingComment: string
+    criteria: GradeCriterionResult[]
+    /** 0–10, chỉ khi cách làm khác gợi ý nhưng vẫn đạt ý đồ của đề */
+    creativityBonus: number
+    /** Một câu mô tả cách tiếp cận khác (khi có điểm sáng tạo) */
+    approachNote?: string
     /** Việc nên chỉnh tiếp theo, ngắn gọn */
     tips: string[]
     areas: FocusArea[]

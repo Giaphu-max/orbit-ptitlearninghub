@@ -120,6 +120,8 @@ interface OrbitState {
     quizResults: Record<string, QuizResult>
     /** Điểm tổng cao nhất ở Virtual Director (0 = chưa chụp) */
     directorBest: number
+    /** Điểm cao nhất theo từng đề Studio (id đề → điểm) */
+    briefBest: Record<string, number>
     /** Test cuối chương theo khóa (id khóa → kết quả) */
     testRecords: Record<string, TestRecord>
     /** Trạng thái lúc bắt đầu từng chặng (id bài → ảnh chụp), để tổng kết chặng so trước/sau */
@@ -159,7 +161,7 @@ interface OrbitState {
     /** Nhận thưởng một nhiệm vụ đã xong; trả về XP được cộng (0 nếu chưa đủ hoặc đã nhận) */
     claimMission: (missionId: string) => number
     /** Ghi điểm một lần chụp ở Virtual Director; trả về XP được cộng (0 nếu chưa vượt kỷ lục hoặc dưới 70 điểm) */
-    recordDirectorScore: (score: number) => number
+    recordDirectorScore: (score: number, briefId?: string) => number
     /** Ghi kết quả test cuối chương, cập nhật mức nắm vững (bản đồ kỹ năng) và XP; trả về số XP được cộng */
     recordTestResult: (input: { courseId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
     /** Ghi kết quả test cuối chặng của một bài (cùng cách cập nhật mức nắm vững và XP như test cuối chương); trả về XP được cộng */
@@ -201,6 +203,7 @@ export function makeDemoProfile() {
         earnedBadgeIds: ['chuoi-7-ngay'],
         quizResults: {} as Record<string, QuizResult>,
         directorBest: 0,
+        briefBest: {} as Record<string, number>,
         testRecords: {} as Record<string, TestRecord>,
         // Đầu chặng 1: mức nắm vững thấp hơn hiện tại để tổng kết có số trước/sau; XP bằng hiện tại vì demo chưa có câu quiz nào được ghi
         stageStart: {
@@ -390,7 +393,8 @@ export const useOrbitStore = create<OrbitState>()(
                 return xp
             },
 
-            recordDirectorScore: (score) => {
+            recordDirectorScore: (score, briefId) => {
+                if (briefId && score > (get().briefBest[briefId] ?? 0)) set((s) => ({ briefBest: { ...s.briefBest, [briefId]: score } }))
                 const s0 = get()
                 const xp = directorXp(score, s0.directorBest)
                 if (score <= s0.directorBest) return 0
@@ -465,13 +469,13 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 7,
-            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions.
+            version: 8,
+            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio).
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {} } as OrbitState
+                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {} } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },
