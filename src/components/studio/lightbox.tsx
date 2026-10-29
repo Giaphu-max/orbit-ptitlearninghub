@@ -196,7 +196,7 @@ export function Lightbox({ onReuse, onDelete }: Props) {
                 </ul>
                 <div className="flex shrink-0 items-center gap-2">
                     {graded ? (
-                        <button type="button" className={action} onClick={() => { close(); useStudioSession.getState().select(cur.id) }}><Sparkles size={15} /> Xem kết quả</button>
+                        <button type="button" className={action} onClick={() => { close(); useStudioSession.getState().openShot(cur.id) }}><Sparkles size={15} /> Xem kết quả</button>
                     ) : (
                         <button
                             type="button"
@@ -204,7 +204,7 @@ export function Lightbox({ onReuse, onDelete }: Props) {
                             disabled={cur.status === 'grading'}
                             onClick={() => {
                                 close()
-                                useStudioSession.getState().select(cur.id)
+                                useStudioSession.getState().openShot(cur.id)
                                 void gradeShot(cur.id)
                             }}
                         >

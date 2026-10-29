@@ -71,7 +71,7 @@ export function GalleryPanel() {
                                         aria-label={`Ảnh ${shots.indexOf(shot) + 1}${shot.status === 'done' ? `, ${shot.result?.overall} điểm` : ', chưa chấm'}`}
                                         onClick={() => {
                                             if (compareMode) st().toggleCompare(shot.id)
-                                            else st().select(shot.id)
+                                            else st().openShot(shot.id)
                                         }}
                                         className={`relative block aspect-[3/2] w-full overflow-hidden rounded-xl border-2 bg-ink transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${active ? 'border-brand-600' : 'border-transparent hover:border-brand-300'}`}
                                     >

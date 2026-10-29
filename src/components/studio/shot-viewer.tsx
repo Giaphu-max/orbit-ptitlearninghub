@@ -20,7 +20,9 @@ interface Props {
 
 /** Khu xem ảnh / AI chấm rộng toàn chiều ngang, thay chỗ khung 3D + bảng bên. Lưới 8 | 4: ảnh + thiết lập | điểm và lỗi. */
 export function ShotViewer({ shot, index, total, passScore, onClose, onReuse, onDelete, onTry }: Props) {
-    const { status, result } = shot
+    const { status } = shot
+    // Dữ liệu chấm có thể thiếu trường (định dạng cũ/lỗi): đọc phòng thủ
+    const result = shot.result && { ...shot.result, criteria: shot.result.criteria ?? [], areas: (shot.result.areas ?? []).map((a) => ({ ...a, fixes: a.fixes ?? [] })), tips: shot.result.tips ?? [], creativityBonus: shot.result.creativityBonus ?? 0 }
     const [active, setActive] = useState<number | null>(null)
     const issueRefs = useRef<(HTMLLIElement | null)[]>([])
     const rows = snapshotRows(shot)

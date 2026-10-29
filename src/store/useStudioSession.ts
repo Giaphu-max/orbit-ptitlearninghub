@@ -48,6 +48,8 @@ interface StudioSessionState {
     addShot: (shot: Omit<StudioShot, 'id' | 'status' | 'at'>) => number | null
     /** Chọn ảnh và mở ngăn Xem ảnh */
     select: (id: number | null) => void
+    /** Mở khu xem ảnh cho một ảnh: chọn ảnh VÀ mở */
+    openShot: (id: number) => void
     openDrawer: (open: boolean) => void
     setLightbox: (open: boolean) => void
     setGallery: (open: boolean) => void
@@ -78,6 +80,7 @@ export const useStudioSession = create<StudioSessionState>()((set, get) => ({
         return id
     },
     select: (id) => set({ selectedId: id, drawerOpen: id !== null }),
+    openShot: (id) => set({ selectedId: id, drawerOpen: true }),
     openDrawer: (open) => set({ drawerOpen: open }),
     setLightbox: (open) => set({ lightboxOpen: open }),
     setGallery: (open) => set(open ? { galleryOpen: true } : { galleryOpen: false, compareMode: false, compareIds: [] }),
