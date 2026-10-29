@@ -1368,3 +1368,57 @@
     }
   }
 }
+
+/* Phản hồi thao tác trên video (kiểu YouTube): chỉ transform + opacity; giảm chuyển động thì bỏ scale, giữ fade ngắn */
+@keyframes yt-flash {
+  from {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+@keyframes yt-fade-out {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes yt-seekfx {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes yt-chip {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.yt-flash {
+  animation: yt-flash 0.5s ease-out forwards;
+}
+.yt-seekfx {
+  animation: yt-seekfx 0.6s ease-out forwards;
+}
+.yt-chip {
+  animation: yt-chip 1s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .yt-flash {
+    animation: yt-fade-out 0.3s ease-out forwards;
+  }
+}

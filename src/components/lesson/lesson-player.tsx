@@ -15,7 +15,8 @@ interface LessonPlayerProps {
 export function LessonPlayer({ containerRef, status, error, youtubeId, children }: LessonPlayerProps) {
     return (
         <div className="relative isolate aspect-video w-full overflow-hidden rounded-[20px] bg-ink shadow-raised">
-            <div ref={containerRef} className="absolute inset-0 [&_iframe]:h-full [&_iframe]:w-full" />
+            {/* Iframe cao hơn khung 120px: tiêu đề trên và dải logo dưới YouTube nằm ngoài vùng nhìn, phần thấy được vẫn đúng 16:9 */}
+            <div ref={containerRef} className="absolute inset-x-0 -top-[60px] h-[calc(100%+120px)] [&_iframe]:h-full [&_iframe]:w-full" />
 
             {status === 'loading' && (
                 <div className="absolute inset-0 flex items-center justify-center text-ink-foreground/70">

@@ -28,6 +28,9 @@ export function useYouTubePlayer(videoId: string, { startAt = 0, hideControls = 
     const [duration, setDuration] = useState(0)
     const [isPlaying, setIsPlaying] = useState(false)
     const [rate, setRateState] = useState(1)
+    const [isBuffering, setIsBuffering] = useState(false)
+    // Đã từng phát: trước đó pause screen dùng thumbnail để không lộ màn YouTube
+    const [started, setStarted] = useState(false)
 
     useEffect(() => {
         const container = containerRef.current
@@ -63,6 +66,8 @@ export function useYouTubePlayer(videoId: string, { startAt = 0, hideControls = 
                         },
                         onStateChange: (e) => {
                             setIsPlaying(e.data === YT_STATE.PLAYING)
+                            setIsBuffering(e.data === YT_STATE.BUFFERING)
+                            if (e.data === YT_STATE.PLAYING) setStarted(true)
                             setCurrentTime(e.target.getCurrentTime())
                         },
                         onError: (e) => {
@@ -114,5 +119,14 @@ export function useYouTubePlayer(videoId: string, { startAt = 0, hideControls = 
         setRateState(r)
     }, [])
 
-    return { containerRef, status, error, currentTime, duration, isPlaying, rate, seekTo, play, pause, setRate }
+    /** Đổi âm lượng theo bước (±10); trả về mức mới 0–100 */
+    const changeVolume = useCallback((delta: number) => {
+        const player = playerRef.current
+        if (!player) return 0
+        const next = Math.min(100, Math.max(0, Math.round((player.getVolume() + delta) / 10) * 10))
+        player.setVolume(next)
+        return next
+    }, [])
+
+    return { containerRef, status, error, currentTime, duration, isPlaying, isBuffering, started, rate, seekTo, play, pause, setRate, changeVolume }
 }

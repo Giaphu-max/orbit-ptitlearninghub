@@ -9,6 +9,8 @@ export interface YTPlayer {
     getDuration(): number
     getPlayerState(): number
     setPlaybackRate(rate: number): void
+    setVolume(volume: number): void
+    getVolume(): number
     destroy(): void
 }
 

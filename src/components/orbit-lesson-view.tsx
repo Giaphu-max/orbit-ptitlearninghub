@@ -18,7 +18,7 @@ import { LessonFootLeft, LessonNextLink } from '@/components/lesson/lesson-foot'
 import { LessonSidePanel } from '@/components/lesson/lesson-side-panel'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
 import { FocusBackdrop } from '@/components/lesson/focus-backdrop'
-import { PlayerControls } from '@/components/lesson/player-controls'
+import { PlayerControls, type PlayerFx } from '@/components/lesson/player-controls'
 import { QuizCard } from '@/components/lesson/quiz-card'
 import { QuizRewardToast } from '@/components/lesson/quiz-reward-toast'
 
@@ -92,6 +92,18 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
         if (quizOpen) playerAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, [quizOpen])
 
+    // Phản hồi trực quan dùng chung cho chuột và phím
+    const fxRef = useRef<PlayerFx>(null)
+    const togglePlay = () => {
+        fxRef.current?.flash(player.isPlaying ? 'pause' : 'play')
+        if (player.isPlaying) player.pause()
+        else player.play()
+    }
+    const seekBy = (delta: number) => {
+        seekTo(Math.min(lesson.durationSec, Math.max(0, timeRef.current + delta)), { play: player.isPlaying })
+        fxRef.current?.seek(delta)
+    }
+
     // Phím tắt (không khi đang gõ): Space/K phát-dừng, ←/→ tua 5s, F toàn màn hình, C phụ đề, B ẩn/hiện bảng, Esc thoát tập trung.
     // Handler đọc trạng thái mới nhất qua ref nên listener chỉ gắn một lần.
     const keysRef = useRef<(e: KeyboardEvent) => void>(() => {})
@@ -114,12 +126,18 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
             // Nút/link đang focus tự xử lý Space, tránh kích hoạt hai lần
             if (key === ' ' && el?.closest('button, a, summary, [role="tab"], [role="slider"]')) return
             e.preventDefault()
-            return player.isPlaying ? player.pause() : player.play()
+            return togglePlay()
         }
         if (key === 'arrowright' || key === 'arrowleft') {
             if (el?.closest('[role="tab"], [role="menuitemradio"]')) return
             e.preventDefault()
-            seekTo(Math.min(lesson.durationSec, Math.max(0, timeRef.current + (key === 'arrowright' ? 5 : -5))), { play: player.isPlaying })
+            seekBy(key === 'arrowright' ? 5 : -5)
+            return
+        }
+        if (key === 'arrowup' || key === 'arrowdown') {
+            if (el?.closest('[role="tab"], [role="menuitemradio"]')) return
+            e.preventDefault()
+            fxRef.current?.volume(player.changeVolume(key === 'arrowup' ? 10 : -10))
         }
     }
     useEffect(() => {
@@ -240,13 +258,19 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 results={quiz.results}
                                 captionsOn={captionsOn}
                                 panelHidden={panelHidden}
-                                onToggle={() => (player.isPlaying ? player.pause() : player.play())}
+                                onToggle={togglePlay}
                                 onSeek={handleSeek}
                                 onToggleCaptions={() => setCaptionsOn((v) => !v)}
                                 onRate={player.setRate}
                                 onFullscreen={toggleFullscreen}
                                 onTogglePanel={() => setPanelHidden((v) => !v)}
                                 interactive={canPlay}
+                                youtubeId={lesson.youtubeId}
+                                label={`${lessonIndex >= 0 ? `Bài ${lessonIndex + 1}/${courseLessons.length} · ` : ''}${lesson.title}`}
+                                isBuffering={player.isBuffering}
+                                started={player.started}
+                                onSeekBy={seekBy}
+                                fxRef={fxRef}
                                 onVisibleChange={setControlsVisible}
                                 pinned={quizOpen || phase.kind === 'reviewing'}
                             />
@@ -386,7 +410,7 @@ function ResumeToast({ from, onRestart }: { from: number; onRestart: () => void 
         <div
             onPointerEnter={() => setHover(true)}
             onPointerLeave={() => setHover(false)}
-            className="absolute left-3 top-3 z-30 flex items-center gap-2.5 rounded-[10px] bg-ink/75 px-3 py-2 text-[13px] font-semibold text-ink-foreground"
+            className="absolute left-3 top-12 z-30 flex items-center gap-2.5 rounded-[10px] bg-ink/75 px-3 py-2 text-[13px] font-semibold text-ink-foreground"
         >
             <span>
                 Tiếp tục từ <span className="font-mono font-bold">{formatTime(from)}</span>
