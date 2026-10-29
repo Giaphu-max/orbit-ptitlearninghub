@@ -138,6 +138,16 @@ export function PlayerControls(p: PlayerControlsProps) {
     key: number;
     kind: "play" | "pause";
   } | null>(null);
+  const flashTimer = useRef<number | undefined>(undefined);
+
+  const triggerFlash = useCallback((kind: "play" | "pause") => {
+    window.clearTimeout(flashTimer.current);
+    setFlash({ key: Date.now(), kind });
+    flashTimer.current = window.setTimeout(() => setFlash(null), 500);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(flashTimer.current), []);
+
   const [seekFx, setSeekFx] = useState<{
     key: number;
     side: "left" | "right";
@@ -149,7 +159,7 @@ export function PlayerControls(p: PlayerControlsProps) {
   useImperativeHandle(
     p.fxRef,
     () => ({
-      flash: (kind) => setFlash({ key: Date.now(), kind }),
+      flash: triggerFlash,
       seek: (delta) =>
         setSeekFx({
           key: Date.now(),
@@ -158,7 +168,7 @@ export function PlayerControls(p: PlayerControlsProps) {
         }),
       volume: (value) => setVolFx({ key: Date.now(), value }),
     }),
-    [],
+    [triggerFlash],
   );
 
   // Spinner đệm chỉ hiện sau 300ms để không nháy mỗi lần tua
@@ -172,8 +182,7 @@ export function PlayerControls(p: PlayerControlsProps) {
     return () => window.clearTimeout(t);
   }, [p.isBuffering]);
 
-  // Pause screen: lúc tạm dừng (che màn "Video khác"), hoặc khi mới tải/chưa phát (thumbnail làm nền)
-  const showPause = !isPlaying && (!p.started || !p.isBuffering);
+  // Thumbnail làm nền khi chưa từng phát video
   const [thumb, setThumb] = useState<"maxresdefault" | "hqdefault">(
     "maxresdefault",
   );
@@ -256,27 +265,32 @@ export function PlayerControls(p: PlayerControlsProps) {
     <>
       <span ref={sentinel} hidden />
 
-      {/* Pause screen: tạm dừng thì phủ toàn khung, mờ hết khi phát */}
-      {p.interactive && (
+      {/* Thumbnail nền khi chưa từng phát video */}
+      {p.interactive && !p.started && (
         <div
           aria-hidden
-          className={`pointer-events-none absolute inset-0 z-[5] transition-opacity duration-200 ${showPause ? "opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none absolute inset-0 z-[5] transition-opacity duration-200 ${
+            !isPlaying ? "opacity-100" : "opacity-0"
+          }`}
         >
-          {!p.started && (
-            <img
-              src={`https://i.ytimg.com/vi/${p.youtubeId}/${thumb}.jpg`}
-              alt=""
-              onError={() => setThumb("hqdefault")}
-              className="absolute inset-0 h-full w-full bg-ink object-cover"
-            />
-          )}
-          <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-b from-transparent to-ink/45" />
-          <span className="absolute left-4 top-4 max-w-[70%] truncate text-[13px] font-semibold text-ink-foreground/90 drop-shadow">
-            {p.label}
-          </span>
-          <span className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-ink/60 text-ink-foreground">
-            <Play size={30} className="ml-1 fill-current" />
-          </span>
+          <img
+            src={`https://i.ytimg.com/vi/${p.youtubeId}/${thumb}.jpg`}
+            alt=""
+            onError={() => setThumb("hqdefault")}
+            className="absolute inset-0 h-full w-full bg-ink object-cover"
+          />
+        </div>
+      )}
+
+      {/* Dòng tiêu đề nhỏ góc trên trái: CHỈ hiện trong CHẾ ĐỘ TẬP TRUNG, ẩn/hiện đồng bộ với controls */}
+      {p.panelHidden && (
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute left-4 top-4 z-20 max-w-[70%] truncate text-[13px] font-semibold text-ink-foreground/90 drop-shadow transition-opacity duration-200 motion-reduce:transition-none ${
+            visible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {p.label}
         </div>
       )}
 
@@ -291,23 +305,23 @@ export function PlayerControls(p: PlayerControlsProps) {
         />
       )}
 
-      {/* Phản hồi: icon bật giữa màn, vệt tua ±s, chip âm lượng, spinner đệm */}
+      {/* Nút Play tròn to giữa màn: CHỈ hiện khi tạm dừng + controlsVisible, mờ đi ngay khi phát */}
+      {p.interactive && (
+        <CenterPlay
+          visible={visible}
+          isPlaying={isPlaying}
+          isBuffering={p.isBuffering}
+        />
+      )}
+
+      {/* Flash icon khi bấm phát/dừng: 500ms rồi biến mất, không đọng lại */}
+      <FlashIcon flash={flash} onEnd={() => setFlash(null)} />
+
+      {/* Phản hồi: vệt tua ±s, chip âm lượng, spinner đệm */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-[12] overflow-hidden"
       >
-        {flash && (
-          <span
-            key={flash.key}
-            className="yt-flash absolute left-1/2 top-1/2 -ml-8 -mt-8 flex h-16 w-16 items-center justify-center rounded-full bg-ink/60 text-ink-foreground"
-          >
-            {flash.kind === "play" ? (
-              <Play size={26} className="ml-1 fill-current" />
-            ) : (
-              <Pause size={26} className="fill-current" />
-            )}
-          </span>
-        )}
         {seekFx && (
           <span
             key={seekFx.key}
@@ -523,3 +537,58 @@ export function PlayerControls(p: PlayerControlsProps) {
     </>
   );
 }
+
+/** Nút play tròn to giữa màn: CHỈ hiện khi video tạm dừng, ẩn/hiện đồng bộ với controlsVisible, mờ đi ngay khi phát. */
+export function CenterPlay({
+  visible,
+  isPlaying,
+  isBuffering,
+}: {
+  visible: boolean;
+  isPlaying: boolean;
+  isBuffering?: boolean;
+}) {
+  const show = !isPlaying && !isBuffering && visible;
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute left-1/2 top-1/2 z-[15] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-200 motion-reduce:transition-none ${
+        show ? "opacity-100" : "opacity-0"
+      }`}
+    >
+      <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-ink/60 text-ink-foreground shadow-raised backdrop-blur-sm transition-transform duration-150 hover:scale-105">
+        <Play size={32} className="ml-1 fill-current" />
+      </span>
+    </div>
+  );
+}
+
+/** Icon flash giữa màn (scale 0.6→1.1, opacity 0.9→0 trong 500ms) khi bấm phát/dừng: tự biến mất sau 500ms, không đọng lại. */
+export function FlashIcon({
+  flash,
+  onEnd,
+}: {
+  flash: { key: number; kind: "play" | "pause" } | null;
+  onEnd: () => void;
+}) {
+  if (!flash) return null;
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-[16] flex items-center justify-center overflow-hidden"
+    >
+      <span
+        key={flash.key}
+        onAnimationEnd={onEnd}
+        className="yt-flash flex h-16 w-16 items-center justify-center rounded-full bg-ink/60 text-ink-foreground shadow-raised"
+      >
+        {flash.kind === "play" ? (
+          <Play size={26} className="ml-1 fill-current" />
+        ) : (
+          <Pause size={26} className="fill-current" />
+        )}
+      </span>
+    </div>
+  );
+}
+

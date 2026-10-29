@@ -337,17 +337,6 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-
-                        {panelHidden && (
-                            <p
-                                className={`pointer-events-none absolute left-0 right-0 top-full mt-4 truncate text-center text-[13px] text-muted-foreground transition-opacity duration-[250ms] motion-reduce:transition-none ${
-                                    controlsVisible ? 'opacity-100' : 'opacity-0'
-                                }`}
-                            >
-                                {lessonIndex >= 0 && `Bài ${lessonIndex + 1}/${courseLessons.length} · `}
-                                {lesson.title}
-                            </p>
-                        )}
                     </div>
 
                     <aside aria-label="Công cụ học bài" inert={panelHidden} className="lesson-side flex flex-col rounded-[20px] border border-border bg-card shadow-card">
