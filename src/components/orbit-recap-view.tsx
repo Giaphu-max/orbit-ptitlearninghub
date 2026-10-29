@@ -1,22 +1,23 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowRight, Camera, Check, ChevronLeft, Flame, PlayCircle } from 'lucide-react'
+import { Award, Check, Play, X } from 'lucide-react'
 import { getLessonsOfCourse } from '@/data'
 import { useEffectiveLesson, useCourseLessons } from '@/lib/lesson-edits'
-import { buildRecap, type RecapBadge, type RecapConcept, type RecapData } from '@/lib/recap'
+import { buildRecap, type RecapConcept, type RecapData } from '@/lib/recap'
 import { LessonHeader } from '@/components/lesson/lesson-header'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
-import { TEST_PASS_RATIO, CHECKPOINT_QUESTION_COUNT } from '@/lib/final-test'
+import { CHECKPOINT_QUESTION_COUNT, TEST_PASS_RATIO } from '@/lib/final-test'
 import { QUIZ_XP } from '@/lib/quiz'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import './recap/recap.css'
 
-const RING_LEN = 194.8 // 2π · 31
+const RING_LEN = 131.95 // 2π · 21 (vòng % 52px của hàng khái niệm)
 const vi = (n: number) => Math.round(n).toLocaleString('vi-VN')
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const pct = (n: number) => Math.round(n * 100)
 
-/** /recap/:lessonId – tổng kết chặng: mức nắm vững từng khái niệm trước/sau, học từ lỗi sai, huy hiệu mới, ôn tiếp, chặng kế. */
+/** /recap/:lessonId – tổng kết chặng: hero "Chặng N.", mức nắm vững từng khái niệm trước/sau, học từ lỗi sai, huy hiệu gần đạt. */
 export function OrbitRecapView() {
     const { lessonId } = useParams()
     const lesson = useEffectiveLesson(lessonId)
@@ -29,7 +30,7 @@ export function OrbitRecapView() {
 }
 
 function Recap({ data }: { data: RecapData }) {
-    const { lesson, course, index, concepts, checkpoint, xp, video } = data
+    const { lesson, course, index, concepts, checkpoint, xp, video, weakest, next, stages } = data
     const markRecapSeen = useOrbitStore((s) => s.markRecapSeen)
     const totalXp = useOrbitStore((s) => s.xp)
     // Hiệu ứng chỉ chạy lần đầu mở màn tổng kết của chặng này
@@ -70,39 +71,14 @@ function Recap({ data }: { data: RecapData }) {
             later(() => (c.style.strokeDashoffset = c.dataset.final ?? '0'), 250)
         })
         q('count').forEach((n) => count(n, Number(n.dataset.to), Number(n.dataset.dur ?? 1200), Number(n.dataset.delay ?? 250)))
+        // Thanh mức nắm vững chạy từ 0 lên trong 1.2s, lần lượt từng khái niệm
         q('now').forEach((bar, i) => {
             bar.style.transition = 'none'
-            bar.style.width = bar.dataset.was ?? '0%'
+            bar.style.width = '0%'
             void bar.offsetWidth
             bar.style.transition = ''
-            later(() => (bar.style.width = bar.dataset.final ?? ''), 700 + i * 160)
+            later(() => (bar.style.width = bar.dataset.final ?? ''), 500 + i * 140)
         })
-        q('state').forEach((st, i) => {
-            st.style.opacity = '0'
-            later(() => {
-                st.style.opacity = ''
-                st.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.22,1,.36,1)' })
-            }, 1500 + i * 160)
-        })
-        const badge = q('badge')[0]
-        if (badge) {
-            badge.dataset.unlock = 'false'
-            later(() => {
-                badge.dataset.unlock = 'true'
-                later(() => {
-                    for (let i = 0; i < 14; i++) {
-                        const s = document.createElement('span')
-                        s.className = 'pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-ink-foreground'
-                        s.style.left = '56px'
-                        s.style.top = '92px'
-                        badge.appendChild(s)
-                        const a = Math.random() * Math.PI * 2
-                        const d = 50 + Math.random() * 70
-                        s.animate([{ opacity: 1, transform: 'translate(0,0) scale(1)' }, { opacity: 0, transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px) scale(.3)` }], { duration: 900 + Math.random() * 400, easing: 'cubic-bezier(.22,1,.36,1)' }).onfinish = () => s.remove()
-                    }
-                }, 450)
-            }, 1900)
-        }
         // XP chặng cộng vào chip trên thanh điều hướng
         later(() => window.dispatchEvent(new CustomEvent('orbit:xp-count', { detail: { from: Math.max(0, final.current.xp - final.current.gain), to: final.current.xp } })), 2700)
         return () => {
@@ -115,414 +91,298 @@ function Recap({ data }: { data: RecapData }) {
     }, [play])
 
     const rise = (n: number) => ({ ['--d' as string]: `${n * 0.08}s` }) as React.CSSProperties
-    const lessonConceptCount = concepts.length
+    const stageNo = index + 1
+    const nextNo = stageNo + 1
+    const videoRight = video.correct + video.corrected
+    const toMistake = (id: string) => document.getElementById(`mistake-${id}`)?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'center' })
+    const shownBadge = data.newBadges[0] ?? data.nearBadge
 
     return (
         <div ref={root} data-play={play} className="w-full">
-            <div className="container-wide py-8 lg:py-12">
-                <div className="mb-6">
-                    <LessonHeader lesson={lesson} currentStep="recap" />
-                </div>
-                <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-14">
-                    <div className="min-w-0">
-                        <div>
-                            <Link to={`/learning?course=${course.id}`} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
-                                <ChevronLeft size={16} /> {course.title}
+            <div className="container-wide py-6">
+                <LessonHeader lesson={lesson} currentStep="recap" doneSteps={checkpoint ? ['lesson', 'checkpoint'] : ['lesson']} />
+
+                {/* ── Hero: chữ display (8) | chặng tiếp theo (4) ── */}
+                <section className="lesson-grid mt-6 items-stretch">
+                    <div className="flex min-w-0 flex-col">
+                        <p style={rise(0)} className="rc-rise text-[13px] font-bold uppercase tracking-[0.16em] text-brand-ink">
+                            Tổng kết chặng {stageNo} · {stages.length} chặng
+                        </p>
+                        <p style={rise(1)} className="rc-rise mt-1.5 text-[clamp(96px,8.4vw,150px)] font-black leading-[0.92] tracking-[-0.055em] text-strong">
+                            Chặng {stageNo}.
+                        </p>
+                        <h2 style={rise(2)} className="rc-rise mt-3.5 text-[clamp(28px,2.4vw,40px)] font-extrabold leading-[1.15] tracking-[-0.025em] text-muted-foreground">
+                            Bạn đã vững{' '}
+                            <em className="not-italic text-brand-ink">
+                                {data.masteredCount}/{concepts.length}
+                            </em>{' '}
+                            khái niệm của bài.
+                        </h2>
+                        <p style={rise(3)} className="rc-rise mt-3.5 max-w-[62ch] text-base leading-relaxed text-muted-foreground">
+                            {checkpoint ? (
+                                <>
+                                    Đúng <b className="text-strong">{checkpoint.correct}/{checkpoint.total}</b> ở bài test · {checkpoint.passed ? 'đạt' : 'chưa đạt'} {pct(TEST_PASS_RATIO)}%.
+                                    {weakest && !checkpoint.passed && (
+                                        <>
+                                            {' '}Còn yếu nhất là <b className="text-strong">{weakest.name}</b>, xem lại đoạn đó rồi làm test lần nữa.
+                                        </>
+                                    )}
+                                </>
+                            ) : weakest ? (
+                                <>
+                                    Còn yếu nhất là <b className="text-strong">{weakest.name}</b>. Làm test {CHECKPOINT_QUESTION_COUNT} câu để chốt lại — đạt từ {pct(TEST_PASS_RATIO)}% là khái niệm sáng lên trong bản đồ kỹ năng.
+                                </>
+                            ) : (
+                                <>Bạn đã nắm chắc mọi khái niệm của bài. Làm test {CHECKPOINT_QUESTION_COUNT} câu để chốt lại — đạt từ {pct(TEST_PASS_RATIO)}% là khái niệm sáng lên trong bản đồ kỹ năng.</>
+                            )}
+                        </p>
+                        <div style={rise(4)} className="rc-rise mt-auto flex flex-wrap items-center pt-6">
+                            <Link
+                                to={checkpoint ? next.to : `/checkpoint/${lesson.id}`}
+                                className="tier-1-bob surface-red mr-7 inline-flex items-center gap-2 rounded-[14px] px-[22px] py-3.5 text-base font-extrabold text-ink-foreground shadow-brand"
+                            >
+                                {checkpoint ? (
+                                    `${next.label} →`
+                                ) : (
+                                    <>
+                                        <Play size={16} className="fill-current" /> Làm test {CHECKPOINT_QUESTION_COUNT} câu
+                                    </>
+                                )}
+                            </Link>
+                            <Kpi value={`+${xp.gain}`} fxTo={xp.gain} label="XP chặng này" />
+                            <Kpi value={`${videoRight}/${video.total}`} label="câu đúng trong video" />
+                            <Kpi value={checkpoint ? `${checkpoint.correct}/${checkpoint.total}` : '—'} label={checkpoint ? 'kết quả test' : 'test chưa làm'} />
+                        </div>
+                    </div>
+
+                    <aside className="flex min-w-0 flex-col rounded-[22px] border border-border bg-card p-6 shadow-card">
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">{next.lesson ? 'Chặng tiếp theo' : 'Cuối khóa'}</p>
+                        {next.lesson ? (
+                            <>
+                                <div className="relative mt-3 aspect-[16/8] overflow-hidden rounded-[14px] bg-gradient-to-br from-ink/80 to-ink">
+                                    {next.lesson.youtubeId && <img src={`https://i.ytimg.com/vi/${next.lesson.youtubeId}/hqdefault.jpg`} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                                    <span className="absolute bottom-2.5 right-2.5 rounded-md bg-ink/60 px-[7px] py-[3px] font-mono text-[11.5px] font-bold text-ink-foreground">{formatTime(next.lesson.durationSec)}</span>
+                                </div>
+                                <b className="mt-3.5 block text-[17px] font-extrabold leading-snug text-strong">
+                                    Chặng {nextNo} · {next.lesson.title}
+                                </b>
+                                <small className="mt-1 block text-[13px] text-muted-foreground">
+                                    {next.lesson.concepts.length} khái niệm · {data.completed ? 'sẵn sàng học' : 'mở khi xong chặng này'}
+                                </small>
+                                {next.unlocked.length > 0 && (
+                                    <small className="mt-1 block text-[13px] font-semibold text-success">Vừa mở trong bản đồ: {next.unlocked.map((u) => u.name).join(', ')}</small>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <b className="mt-3.5 block text-[17px] font-extrabold leading-snug text-strong">Test cuối chương · {course.title}</b>
+                                <small className="mt-1 block text-[13px] text-muted-foreground">Bạn đã đi hết các chặng. Làm test tổng hợp để chốt cả học phần.</small>
+                            </>
+                        )}
+                        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                            <Link to={next.to} className="inline-flex items-center gap-2 rounded-xl border-[1.5px] border-strong px-4 py-[11px] text-sm font-extrabold text-strong transition hover:bg-muted">
+                                {next.lesson ? `Bắt đầu chặng ${nextNo} →` : 'Làm test cuối chương →'}
+                            </Link>
+                            <Link to={`/learning?course=${course.id}`} className="text-[13px] font-bold text-muted-foreground hover:text-strong">
+                                Về học phần
                             </Link>
                         </div>
-                        <StageTrack data={data} />
+                    </aside>
+                </section>
 
-                        <div className="mt-9">
-                            <p className="rc-rise text-xs font-extrabold uppercase tracking-[0.12em] text-brand-ink">Tổng kết chặng {index + 1}</p>
-                            <h1 style={rise(1)} className="rc-rise mt-3.5 text-[clamp(2.75rem,6.4vw,5.25rem)] font-black leading-[0.98] tracking-[-0.045em] text-foreground [text-wrap:balance]">
-                                {data.completed ? `Xong chặng ${index + 1}.` : `Chặng ${index + 1}.`}
-                                <span className="mt-3 block text-[0.42em] font-extrabold leading-[1.2] tracking-[-0.025em] text-muted-foreground">
-                                    Bạn đã nắm {data.masteredCount}/{lessonConceptCount} khái niệm của bài “{lesson.title}”.
-                                </span>
-                            </h1>
-                            <p style={rise(2)} className="rc-rise mt-[18px] max-w-[60ch] text-[17px] leading-relaxed text-muted-foreground">
-                                <Lead data={data} />
-                            </p>
+                {/* ── Mức nắm vững từng khái niệm ── */}
+                <div className="mb-3.5 mt-9 flex flex-wrap items-baseline justify-between gap-3">
+                    <h3 className="text-xl font-black tracking-tight text-strong">Mức nắm vững từng khái niệm</h3>
+                    <small className="flex items-center gap-3.5 text-[13px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                            <i className="h-1.5 w-3.5 rounded-sm bg-muted-foreground/30" />
+                            Đầu chặng
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                            <i className="h-1.5 w-3.5 rounded-sm bg-brand-600" />
+                            Bây giờ
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                            <i className="h-3 w-0.5 rounded-sm bg-strong/60" />
+                            Mốc {pct(UNLOCK_THRESHOLD)}%
+                        </span>
+                    </small>
+                </div>
+                <section className="rounded-[22px] border border-border bg-card p-1.5 shadow-card">
+                    {concepts.map((c) => (
+                        <ConceptRow
+                            key={c.id}
+                            c={c}
+                            lessonId={lesson.id}
+                            weakest={weakest?.id === c.id}
+                            wrongIds={data.mistakes.filter((m) => m.root.conceptId === c.id).map((m) => m.root.id)}
+                            onWrong={toMistake}
+                        />
+                    ))}
+                </section>
+
+                {/* ── Học từ lỗi sai | huy hiệu ── */}
+                <section className="lesson-grid mt-6 items-start">
+                    <div className="flex flex-col gap-3 rounded-[22px] border border-border bg-card px-6 py-[22px] shadow-card">
+                        <div className="flex flex-wrap items-baseline justify-between gap-3">
+                            <h3 className="text-xl font-black tracking-tight text-strong">Học từ lỗi sai</h3>
+                            <small className="text-[13px] text-muted-foreground">Sửa đúng sau khi sai được XP gấp đôi</small>
                         </div>
-
-                        <div className="mt-8 grid grid-cols-2 border-y border-border">
-                            <div className="col-span-2 flex items-center gap-4 border-b border-border py-5">
-                                {checkpoint ? (
-                                    <>
-                                        <svg className="h-[76px] w-[76px] flex-none" viewBox="0 0 76 76" role="img" aria-label={`Test cuối chặng ${checkpoint.pct}%`}>
-                                            <circle cx="38" cy="38" r="31" fill="none" strokeWidth="7" className="stroke-foreground/15" />
-                                            <circle data-fx="ring" data-final={RING_LEN * (1 - checkpoint.correct / checkpoint.total)} className="rc-ring-fg stroke-brand-600" cx="38" cy="38" r="31" fill="none" strokeWidth="7" strokeLinecap="round" strokeDasharray={RING_LEN} style={{ strokeDashoffset: RING_LEN * (1 - checkpoint.correct / checkpoint.total), transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }} />
-                                            <text x="38" y="44" textAnchor="middle" className="fill-foreground font-mono text-[17px] font-bold">
-                                                {checkpoint.correct}/{checkpoint.total}
-                                            </text>
-                                        </svg>
-                                        <div className="flex flex-col gap-1">
-                                            <small className="text-xs font-semibold text-muted-foreground">Test cuối chặng</small>
-                                            <span className="font-mono text-3xl font-bold leading-tight tracking-tight">
-                                                <span data-fx="count" data-to={checkpoint.pct}>{checkpoint.pct}</span>%
-                                            </span>
-                                            <span className="text-[12.5px] text-muted-foreground">Ngưỡng đạt {Math.round(TEST_PASS_RATIO * 100)}%</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col gap-2">
-                                        <small className="text-xs font-semibold text-muted-foreground">Test cuối chặng</small>
-                                        <span className="text-[13px] text-muted-foreground">Chưa làm. {CHECKPOINT_QUESTION_COUNT} câu, mỗi khái niệm ít nhất một câu.</span>
-                                        <Link to={`/checkpoint/${lesson.id}`} className="inline-flex items-center gap-2 self-start rounded-full bg-brand-600 px-5 py-2.5 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700">
-                                            <PlayCircle size={16} /> Làm test {CHECKPOINT_QUESTION_COUNT} câu
+                        {data.mistakes.length === 0 ? (
+                            <p className="flex items-center gap-2 rounded-[14px] bg-success-soft px-4 py-3.5 text-sm font-bold text-success">
+                                <Check size={16} aria-hidden /> Không có câu sai trong chặng này
+                            </p>
+                        ) : (
+                            data.mistakes.map(({ root, outcome }) => {
+                                const canRetry = root.variants.length > 0
+                                const xpGain = outcome === 'missed' ? QUIZ_XP.corrected : 0
+                                return (
+                                    <div key={root.id} id={`mistake-${root.id}`} className="grid scroll-mt-24 grid-cols-[36px_1fr_auto] items-center gap-3.5 rounded-[14px] bg-muted px-4 py-3.5">
+                                        <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-brand-50 text-brand-ink">
+                                            <X size={16} strokeWidth={3} aria-hidden />
+                                        </span>
+                                        <span className="min-w-0">
+                                            <b className="block text-[14.5px] font-bold text-strong">“{root.prompt}”</b>
+                                            <small className="mt-0.5 block text-[13px] text-muted-foreground">
+                                                {outcome === 'missed' ? 'Bạn bỏ lỡ câu này' : 'Bạn sai rồi sửa được câu này'} ở <span className="font-mono">{formatTime(root.pauseAt)}</span> · đáp án ở{' '}
+                                                <span className="font-mono">
+                                                    {formatTime(root.answerSegment.start)}–{formatTime(root.answerSegment.end)}
+                                                </span>
+                                            </small>
+                                        </span>
+                                        <Link
+                                            to={canRetry ? `/lesson/${lesson.id}?retry=${root.id}` : `/lesson/${lesson.id}?t=${Math.floor(root.answerSegment.start)}`}
+                                            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[10px] bg-brand-600 px-3 py-2 text-[13px] font-extrabold text-ink-foreground transition hover:bg-brand-700"
+                                        >
+                                            <Play size={12} className="fill-current" aria-hidden />
+                                            {canRetry ? 'Làm lại câu này' : 'Xem đoạn đáp án'}
+                                            {canRetry && xpGain > 0 && <span className="font-mono"> · +{xpGain} XP</span>}
                                         </Link>
                                     </div>
-                                )}
-                            </div>
-                            <div className="flex min-w-0 flex-col gap-1 py-5 pr-4">
-                                <small className="text-xs font-semibold text-muted-foreground">XP chặng này</small>
-                                <span className="font-mono text-3xl font-bold leading-tight tracking-tight">
-                                    +<span data-fx="count" data-to={xp.gain} data-dur="1400" data-delay="400">{vi(xp.gain)}</span>
-                                </span>
-                                <span className="text-[12.5px] text-muted-foreground">{xpNote(data)}</span>
-                            </div>
-                            <div className="flex min-w-0 flex-col gap-1 border-l border-border py-5 pl-5">
-                                <small className="text-xs font-semibold text-muted-foreground">Câu trong video</small>
-                                <span className="font-mono text-3xl font-bold leading-tight tracking-tight">
-                                    {video.correct + video.corrected + video.missed}
-                                    <span className="text-[0.5em] font-medium text-muted-foreground">/{video.total} câu</span>
+                                )
+                            })
+                        )}
+                    </div>
+
+                    {shownBadge && (
+                        <aside className="flex items-center gap-4 rounded-[22px] border border-border bg-card px-6 py-[22px] shadow-card">
+                            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-mm-blue to-mm-teal text-white">
+                                <Award size={26} aria-hidden />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <small className="block text-[11.5px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                                    {data.newBadges[0] ? 'Huy hiệu mới trong chặng' : 'Huy hiệu gần đạt nhất'}
+                                </small>
+                                <b className="mt-1 block text-base font-extrabold text-strong">{shownBadge.badge.name}</b>
+                                <span className="my-2.5 block h-1.5 overflow-hidden rounded-sm bg-muted">
+                                    <i className="block h-full bg-mm-blue" style={{ width: `${Math.min(100, (shownBadge.current / Math.max(1, shownBadge.target)) * 100)}%` }} />
                                 </span>
                                 <span className="text-[12.5px] text-muted-foreground">
-                                    <b className="font-mono text-foreground">{video.correct}</b> đúng ngay · <b className="font-mono text-foreground">{video.corrected}</b> sửa được · <b className="font-mono text-foreground">{video.missed}</b> bỏ lỡ
+                                    <span className="font-mono">
+                                        {shownBadge.current}/{shownBadge.target}
+                                    </span>{' '}
+                                    · {shownBadge.badge.description}
                                 </span>
-                            </div>
-                        </div>
-
-                        <section className="mt-12" aria-labelledby="h-mastery">
-                            <div className="flex flex-wrap items-baseline justify-between gap-4">
-                                <h2 id="h-mastery" className="text-2xl font-extrabold tracking-[-0.025em] text-foreground">Mức nắm vững từng khái niệm</h2>
-                                <div className="flex items-center gap-3.5 text-xs text-muted-foreground">
-                                    <span><i className="mr-1.5 inline-block h-1.5 w-3.5 rounded-sm bg-foreground/15 align-middle" />Đầu chặng</span>
-                                    <span><i className="mr-1.5 inline-block h-1.5 w-3.5 rounded-sm bg-brand-600 align-middle" />Bây giờ</span>
-                                </div>
-                            </div>
-                            <ol className="mt-[18px] grid">
-                                {concepts.map((c, i) => (
-                                    <ConceptRow key={c.id} c={c} lessonId={lesson.id} first={i === 0} />
-                                ))}
-                            </ol>
-                        </section>
-
-                        <MistakeSection data={data} />
-                    </div>
-
-                    <aside className="grid gap-4 lg:sticky lg:top-[calc(var(--nav-h)+1.5rem)]">
-                        <BadgeCards data={data} />
-                        <ReviewCard data={data} />
-                        <NextCard data={data} />
-                    </aside>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-// ─── Thanh tiến độ khóa ────────────────────────────────────────────────────
-
-function StageTrack({ data }: { data: RecapData }) {
-    return (
-        <ol aria-label="Tiến độ khóa học" className="mt-8 flex flex-wrap items-center gap-2.5 text-[12.5px] text-muted-foreground">
-            {data.stages.map((st, i) => {
-                const here = i === data.index
-                return (
-                    <li key={st.lesson.id} className="contents">
-                        {i > 0 && (
-                            <span aria-hidden className="relative h-0.5 w-8 overflow-hidden rounded bg-foreground/15">
-                                {data.stages[i - 1].state === 'done' && <span className="rc-track-fill absolute inset-0 bg-brand-600" />}
                             </span>
-                        )}
-                        <span className={`flex items-center gap-2 ${st.state === 'done' ? 'font-semibold text-foreground' : ''} ${here ? 'text-foreground' : ''}`}>
-                            <span className={`grid h-[22px] w-[22px] place-items-center rounded-full border-[1.5px] font-mono text-[11px] font-bold ${st.state === 'done' ? 'border-brand-600 bg-brand-600 text-ink-foreground' : st.state === 'open' ? 'border-brand-600 text-brand-ink' : 'border-foreground/15'}`}>
-                                {st.state === 'done' ? <Check size={12} strokeWidth={3} /> : i + 1}
-                            </span>
-                            <span className={here ? '' : 'hidden sm:inline'}>
-                                {here || st.state !== 'todo' ? `Chặng ${i + 1} · ` : ''}
-                                {st.lesson.shortTitle ?? st.lesson.title}
-                            </span>
-                        </span>
-                    </li>
-                )
-            })}
-        </ol>
-    )
-}
-
-// ─── Câu tóm tắt dưới tiêu đề ──────────────────────────────────────────────
-
-function Lead({ data }: { data: RecapData }) {
-    const { checkpoint, weakest, review } = data
-    const test = checkpoint ? (
-        <>
-            Bài test cuối chặng đúng <b className="text-foreground">{checkpoint.correct}/{checkpoint.total} câu</b>, {checkpoint.passed ? 'vượt' : 'chưa tới'} ngưỡng {Math.round(TEST_PASS_RATIO * 100)}%.{' '}
-        </>
-    ) : (
-        <>Bạn chưa làm bài test cuối chặng; làm xong, số liệu ở đây sẽ đầy đủ hơn. </>
-    )
-    if (!weakest) return <>{test}Cả {data.concepts.length} khái niệm đều từ {Math.round(UNLOCK_THRESHOLD * 100)}% trở lên, không có chỗ hổng nào cần ôn.</>
-    return (
-        <>
-            {test}Khái niệm còn yếu là <b className="text-foreground">{weakest.name}</b>
-            {review?.daily ? ', hệ thống đã xếp nó vào bài đọc ngày mai.' : '. Xem lại đoạn video của nó trước khi sang chặng sau.'}
-        </>
-    )
-}
-
-function xpNote(data: RecapData) {
-    const { xp } = data
-    const parts = [xp.correct && `Đúng ngay ${xp.correct}`, xp.corrected && `Sửa được lỗi ${xp.corrected}`, xp.test && `Test ${xp.test}`, xp.other && `Khác ${xp.other}`].filter(Boolean)
-    return parts.length ? parts.join(' · ') : 'Chưa có XP trong chặng này'
-}
-
-// ─── Khái niệm ─────────────────────────────────────────────────────────────
-
-function TimeChip({ lessonId, start, end, play }: { lessonId: string; start: number; end?: number; play?: boolean }) {
-    return (
-        <Link to={`/lesson/${lessonId}?t=${Math.floor(start)}`} className="whitespace-nowrap rounded-full bg-brand-soft px-[9px] py-[3px] font-mono text-[11.5px] font-bold text-brand-ink transition hover:bg-brand-600 hover:text-ink-foreground">
-            {play && '▶ Xem lại '}
-            {formatTime(start)}
-            {end !== undefined && `–${formatTime(end)}`}
-        </Link>
-    )
-}
-
-function ConceptRow({ c, lessonId, first }: { c: RecapConcept; lessonId: string; first: boolean }) {
-    const now = Math.round(c.now * 100)
-    const was = Math.round(c.was * 100)
-    return (
-        <li className={`grid grid-cols-[minmax(0,1fr)_72px] items-center gap-x-3.5 gap-y-2.5 border-t border-border py-4 last:border-b sm:grid-cols-[minmax(0,1fr)_220px_96px] sm:gap-5`}>
-            <div className="min-w-0">
-                <div className="text-[15.5px] font-bold text-foreground">{c.name}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-2.5 text-[12.5px] text-muted-foreground">
-                    <TimeChip lessonId={lessonId} start={c.segment.start} end={c.segment.end} />
-                    <span data-fx="state" className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11.5px] font-bold ${c.mastered ? 'bg-success/15 text-success' : 'bg-warning/25 text-foreground'}`}>
-                        {c.mastered ? '✓ Nắm chắc' : 'Cần ôn'}
-                    </span>
-                    {c.note && <span>{c.note}</span>}
-                </div>
-            </div>
-            <div className="relative order-3 col-span-2 h-2.5 rounded-md bg-muted sm:order-none sm:col-span-1" role="img" aria-label={`Từ ${was}% lên ${now}%`}>
-                <span className="absolute inset-y-0 left-0 rounded-md bg-foreground/15" style={{ width: `${was}%` }} />
-                <span data-fx="now" data-was={`${was}%`} data-final={`${now}%`} className={`rc-now absolute inset-y-0 left-0 rounded-md ${c.mastered ? 'bg-brand-600' : 'bg-warning'}`} style={{ width: `${now}%` }} />
-                <span aria-hidden className="absolute -bottom-[5px] -top-[5px] left-[80%] w-0.5 rounded-sm bg-foreground/55">
-                    {first && <span className="absolute -top-[17px] left-1/2 -translate-x-1/2 font-mono text-[9.5px] text-muted-foreground">80%</span>}
-                </span>
-            </div>
-            <div className="text-right font-mono text-[13px] text-muted-foreground">
-                <b className="block text-xl text-foreground">{now}%</b>từ {was}%
-            </div>
-        </li>
-    )
-}
-
-// ─── Học từ lỗi sai ────────────────────────────────────────────────────────
-
-function MistakeSection({ data }: { data: RecapData }) {
-    const { mistake, video, lesson } = data
-    const answered = video.correct + video.corrected + video.missed
-    const head = (sub: string) => (
-        <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <h2 id="h-mistake" className="text-2xl font-extrabold tracking-[-0.025em] text-foreground">Học từ lỗi sai</h2>
-            <p className="text-[13px] text-muted-foreground">{sub}</p>
-        </div>
-    )
-    if (!mistake) {
-        const msg =
-            answered === 0
-                ? 'Bạn chưa làm câu quiz nào trong video của chặng này.'
-                : video.missed > 0
-                  ? `${video.missed} câu trong video chưa đúng, nên xem lại đoạn tương ứng.`
-                  : `Đúng ngay cả ${video.correct} câu trong video. Chưa có lỗi nào cần sửa, giữ phong độ này.`
-        return (
-            <section className="mt-[52px]" aria-labelledby="h-mistake">
-                {head('Sai rồi sửa đúng được XP gấp đôi')}
-                <p className="mt-[18px] flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-5 text-[15px] text-foreground">
-                    {video.missed === 0 && answered > 0 && <Check size={18} className="text-success" aria-hidden />}
-                    <span>{msg}</span>
-                    {answered === 0 && (
-                        <Link to={`/lesson/${lesson.id}`} className="font-bold text-brand-ink hover:underline">Vào học bài</Link>
+                        </aside>
                     )}
-                </p>
-            </section>
-        )
-    }
-    const { root, firstWrong, fixed, others, reviewCount } = mistake
-    return (
-        <section className="mt-[52px]" aria-labelledby="h-mistake">
-            {head(`${video.corrected} câu sai trong video đã được sửa đúng, mỗi câu nhận XP gấp đôi.`)}
-            <div className="mt-[18px] grid overflow-hidden rounded-2xl border border-border bg-card md:grid-cols-3">
-                <div className="flex min-w-0 flex-col gap-2 p-5">
-                    <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Lần đầu · {formatTime(root.pauseAt)}</span>
-                    <p className="text-sm text-foreground">{root.prompt}</p>
-                    {firstWrong && <span className="rounded-[10px] bg-brand-soft px-[11px] py-[9px] text-[13.5px] leading-snug text-foreground line-through decoration-brand-600 decoration-[1.5px]">{firstWrong}</span>}
-                </div>
-                <div className="flex min-w-0 flex-col gap-2 border-t border-border p-5 md:border-l md:border-t-0">
-                    <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Trợ giảng AI</span>
-                    <p className="text-sm text-foreground">
-                        Giải thích lỗi sai, rồi tua lại đoạn <TimeChip lessonId={lesson.id} start={root.answerSegment.start} end={root.answerSegment.end} /> chứa đáp án.
-                    </p>
-                </div>
-                <div className="flex min-w-0 flex-col gap-2 border-t border-border p-5 md:border-l md:border-t-0">
-                    <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Câu biến thể</span>
-                    {fixed && <span className="rounded-[10px] bg-success/15 px-[11px] py-[9px] text-[13.5px] leading-snug text-foreground">{fixed.options[fixed.correctIndex]}</span>}
-                    <span className="font-mono font-bold text-success">✓ +{QUIZ_XP.corrected} XP (×2)</span>
-                </div>
+                </section>
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-[13px] text-muted-foreground">
-                <span>
-                    {others.length > 0 ? (
-                        <>
-                            Câu còn lại: <b className="text-foreground">{others.map((o) => o.conceptName).join(', ')}</b>, sửa đúng ở lần thứ {others[0].attempts}.
-                        </>
-                    ) : (
-                        'Đây là câu sai duy nhất của chặng.'
-                    )}
-                </span>
-                <Link to={`/lesson/${lesson.id}?t=${Math.floor(root.answerSegment.start)}`} className="whitespace-nowrap rounded-full bg-brand-soft px-[9px] py-[3px] text-[11.5px] font-bold text-brand-ink transition hover:bg-brand-600 hover:text-ink-foreground">
-                    Xem lại {reviewCount} câu đã sai
-                </Link>
-            </div>
-        </section>
-    )
-}
-
-// ─── Cột phải ──────────────────────────────────────────────────────────────
-
-function Medal() {
-    return (
-        <svg className="rc-medal h-20 w-[72px] flex-none" viewBox="0 0 72 80" aria-hidden>
-            <path d="M36 2 68 20v40L36 78 4 60V20Z" className="fill-ink-foreground/15 stroke-ink-foreground/70" strokeWidth="2" />
-            <path d="M36 12 59 25v30L36 68 13 55V25Z" className="fill-ink-foreground" />
-            <rect x="21" y="29" width="18" height="6" rx="3" className="fill-brand-600" />
-            <rect x="29" y="38" width="22" height="6" rx="3" className="fill-brand-600/75" />
-            <rect x="24" y="47" width="14" height="6" rx="3" className="fill-brand-600/50" />
-            <rect x="43" y="25" width="2.4" height="32" rx="1.2" className="fill-ink" />
-        </svg>
-    )
-}
-
-function BadgeCards({ data }: { data: RecapData }) {
-    const fresh = data.newBadges[0]
-    const near = data.nearBadge
-    return (
-        <>
-            {fresh ? (
-                <div data-fx="badge" data-unlock="true" className="bg-reward relative overflow-hidden rounded-2xl p-[22px] shadow-raised">
-                    <span aria-hidden className="rc-shine pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_35%,hsl(var(--ink-foreground)/0.35)_50%,transparent_65%)]" />
-                    <div className="text-[11.5px] font-bold uppercase tracking-[0.1em] opacity-85">Huy hiệu mới{data.newBadges.length > 1 ? ` · +${data.newBadges.length - 1} huy hiệu khác` : ''}</div>
-                    <div className="mt-3.5 flex items-center gap-4">
-                        <Medal />
-                        <div>
-                            <h3 className="text-[22px] font-bold leading-tight tracking-tight">{fresh.badge.name}</h3>
-                            <p className="mt-1.5 text-[13px] opacity-90">{fresh.badge.description}</p>
-                        </div>
-                    </div>
-                    <div className="mt-4 grid gap-1.5 text-[12.5px]">
-                        {fresh.rows.map((r) => (
-                            <div key={r.label} className="flex justify-between gap-3 border-t border-ink-foreground/25 pt-1.5">
-                                <span>{r.label}</span>
-                                <span className="font-mono font-bold">{r.value}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            ) : (
-                near && <NearBadge b={near} big />
-            )}
-            {fresh && near && <NearBadge b={near} />}
-        </>
-    )
-}
-
-function NearBadge({ b, big }: { b: RecapBadge; big?: boolean }) {
-    const ratio = Math.round((b.current / b.target) * 100)
-    return (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            {big && <div className="text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">Huy hiệu gần đạt nhất</div>}
-            <div className={`flex items-center justify-between gap-3 text-[13px] ${big ? 'mt-2' : ''}`}>
-                <span className="font-bold text-foreground">{b.badge.name}</span>
-                <span className="font-mono text-xs text-muted-foreground">{b.current}/{b.target}</span>
-            </div>
-            <span className="mt-2 block h-1.5 overflow-hidden rounded bg-muted" role="progressbar" aria-valuenow={ratio} aria-valuemin={0} aria-valuemax={100} aria-label={`Tiến độ huy hiệu ${b.badge.name}`}>
-                <i className="block h-full rounded bg-brand-600" style={{ width: `${ratio}%` }} />
-            </span>
-            {big && <p className="mt-2.5 text-[13px] text-muted-foreground">{b.badge.description}</p>}
         </div>
     )
 }
 
-function ReviewCard({ data }: { data: RecapData }) {
-    const { review, lesson } = data
-    if (!review) {
-        return (
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-success"><Check size={14} /> Không còn gì cần ôn</div>
-                <p className="mt-2 text-[13.5px] text-muted-foreground">Cả {data.concepts.length} khái niệm của chặng đều từ {Math.round(UNLOCK_THRESHOLD * 100)}% trở lên.</p>
-            </div>
-        )
-    }
-    const { concept, daily, dailyQueued } = review
+function Kpi({ value, label, fxTo }: { value: string; label: string; fxTo?: number }) {
     return (
-        <div className="rounded-2xl border border-warning bg-warning/10 p-5">
-            <div className="text-xs font-bold text-foreground">Ôn tiếp · {Math.round(concept.now * 100)}%</div>
-            <h4 className="mt-1.5 text-base font-bold text-foreground">{concept.name}</h4>
-            <p className="mb-3 mt-1.5 text-[13.5px] text-muted-foreground">
-                {daily ? (
+        <span className="border-l border-border px-[22px]">
+            <b className="block font-mono text-[22px] font-extrabold leading-tight text-strong">
+                {fxTo !== undefined ? (
                     <>
-                        Bài đọc ngày mai sẽ ưu tiên <Link to={`/daily/${daily.id}`} className="font-semibold text-foreground underline-offset-2 hover:underline">“{daily.title}”</Link>, vì có khái niệm này. Muốn ôn luôn thì xem lại đoạn video gốc.
+                        +<span data-fx="count" data-to={fxTo} data-dur="1400" data-delay="400">{vi(fxTo)}</span>
                     </>
-                ) : dailyQueued ? (
-                    <>Bài đọc “{dailyQueued.title}” có khái niệm này nhưng chưa nằm trong 3 bài ưu tiên ngày mai. Xem lại đoạn video gốc để ôn ngay.</>
                 ) : (
-                    <>Chưa có bài đọc nào về khái niệm này, nên cách ôn tốt nhất là xem lại đoạn video gốc.</>
+                    value
                 )}
-            </p>
-            <TimeChip lessonId={lesson.id} start={concept.segment.start} end={concept.segment.end} play />
-        </div>
+            </b>
+            <small className="text-[12.5px] text-muted-foreground">{label}</small>
+        </span>
     )
 }
 
-function NextCard({ data }: { data: RecapData }) {
-    const { next, course, index, completed } = data
-    const lesson = next.lesson
+function ConceptRow({ c, lessonId, weakest, wrongIds, onWrong }: { c: RecapConcept; lessonId: string; weakest: boolean; wrongIds: string[]; onWrong: (id: string) => void }) {
+    const now = pct(c.now)
+    const was = pct(c.was)
+    const delta = now - was
+    const tone = c.now >= UNLOCK_THRESHOLD ? 'ok' : c.now >= 0.5 ? 'mid' : 'low'
+    const ring = { ok: 'stroke-success', mid: 'stroke-mm-orange', low: 'stroke-brand-600' }[tone]
+    const fill = { ok: 'bg-success', mid: 'bg-mm-orange', low: 'bg-brand-600' }[tone]
+    const seek = `/lesson/${lessonId}?t=${Math.floor(c.segment.start)}`
     return (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-success">
-                {completed ? <Check size={14} /> : <Flame size={14} />} {lesson ? (completed ? 'Chặng tiếp theo' : 'Chặng tiếp theo, sau khi xong chặng này') : 'Đích của khóa'}
-            </div>
-            <h4 className="mt-2 text-lg font-bold leading-snug tracking-tight text-foreground">{lesson ? `Chặng ${index + 2} · ${lesson.title}` : `Test cuối chương · ${course.title}`}</h4>
-            <p className="mt-1.5 text-[13px] text-muted-foreground">
-                {lesson ? `${lesson.concepts.length} khái niệm, 1 video ${formatTime(lesson.durationSec)}.` : 'Đây là chặng cuối của khóa. Test cuối chương gom kiến thức của cả khóa.'}
-                {next.unlocked.length > 0 && (
-                    <>
-                        {' '}
-                        Vừa mở trên bản đồ kỹ năng: <b className="text-foreground">{next.unlocked.map((u) => u.name).join(', ')}</b> (nhờ nắm {[...new Set(next.unlocked.map((u) => u.because))].join('; ')} từ {Math.round(UNLOCK_THRESHOLD * 100)}%).
-                    </>
-                )}
-            </p>
-            <Link to={next.to} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-[18px] py-3.5 text-[15px] font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700">
-                {next.label} <ArrowRight size={16} />
-            </Link>
-            {(course.id === 'nhiep-anh-va-anh-sang' || course.subject === 'Nhiếp ảnh') && (
-                <Link
-                    to="/studio"
-                    className="mt-3 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-brand-300 bg-brand-50/70 p-3.5 text-sm font-bold text-foreground shadow-sm transition hover:border-brand-500 hover:bg-brand-50"
-                >
-                    <span className="flex items-center gap-2.5 text-left">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-ink-foreground">
-                            <Camera size={16} />
+        <div className={`grid grid-cols-[52px_minmax(0,1.3fr)_minmax(0,1.6fr)_110px_170px] items-center gap-5 rounded-2xl px-[18px] py-4 [&+&]:border-t [&+&]:border-border ${weakest ? 'bg-brand-50' : ''}`}>
+            <span className="relative h-[52px] w-[52px]">
+                <svg width="52" height="52" viewBox="0 0 52 52" className="-rotate-90" aria-hidden>
+                    <circle cx="26" cy="26" r="21" fill="none" strokeWidth="6" className={weakest ? 'stroke-brand-100' : 'stroke-muted'} />
+                    <circle
+                        data-fx="ring"
+                        data-final={RING_LEN * (1 - c.now)}
+                        cx="26"
+                        cy="26"
+                        r="21"
+                        fill="none"
+                        strokeWidth="6"
+                        strokeLinecap="round"
+                        strokeDasharray={RING_LEN}
+                        strokeDashoffset={RING_LEN * (1 - c.now)}
+                        className={`rc-ring-fg ${ring}`}
+                    />
+                </svg>
+                <b className="absolute inset-0 grid place-items-center font-mono text-[13px] font-extrabold text-strong">{now}</b>
+            </span>
+            <span className="min-w-0">
+                <b className="block text-[15.5px] font-bold text-strong">{c.name}</b>
+                <span className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                    {tone === 'ok' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-[9px] py-[3px] font-bold text-success">
+                            <Check size={11} strokeWidth={3} aria-hidden /> Nắm chắc
                         </span>
-                        <span>Thực hành sắp đặt ánh sáng bài học này trong Studio 3D →</span>
+                    ) : weakest ? (
+                        <span className="rounded-full bg-brand-50 px-[9px] py-[3px] font-bold text-brand-ink ring-1 ring-brand-100">Yếu nhất · ôn trước</span>
+                    ) : (
+                        <span className="rounded-full bg-warning/15 px-[9px] py-[3px] font-bold text-foreground">Cần ôn</span>
+                    )}
+                    <span className="font-mono text-[11.5px] font-bold text-muted-foreground">
+                        {formatTime(c.segment.start)}–{formatTime(c.segment.end)}
                     </span>
-                </Link>
-            )}
-            <Link to={`/learning?course=${course.id}`} className="mt-2.5 block text-center text-[13.5px] font-semibold text-muted-foreground hover:text-foreground">
-                Về trang khóa học
-            </Link>
+                    {wrongIds.length > 0 && (
+                        <button type="button" onClick={() => onWrong(wrongIds[0])} className="rounded-full bg-brand-50 px-2 py-[2px] font-bold text-brand-ink transition hover:bg-brand-100">
+                            {wrongIds.length} câu sai ↓
+                        </button>
+                    )}
+                </span>
+            </span>
+            <span className="relative h-2.5 rounded-[5px] bg-muted">
+                <i className="absolute inset-y-0 left-0 rounded-[5px] bg-muted-foreground/30" style={{ width: `${was}%` }} />
+                <i data-fx="now" data-final={`${now}%`} className={`rc-now absolute inset-y-0 left-0 rounded-[5px] ${fill}`} style={{ width: `${now}%` }} />
+                <u className="absolute -top-[5px] h-5 w-0.5 rounded-sm bg-strong/60" style={{ left: `${pct(UNLOCK_THRESHOLD)}%` }} />
+            </span>
+            <span className="text-right">
+                <b className="block font-mono text-lg font-extrabold text-strong">{now}%</b>
+                <small className={`font-mono text-xs font-bold ${delta < 0 ? 'text-brand-ink' : delta > 0 ? 'text-success' : 'text-muted-foreground'}`}>
+                    {delta > 0 ? '+' : ''}
+                    {delta}%
+                </small>
+            </span>
+            <span className="text-right">
+                {weakest ? (
+                    <Link to={seek} className="inline-flex items-center gap-1.5 rounded-[10px] bg-brand-600 px-3 py-2 text-[13px] font-extrabold text-ink-foreground transition hover:bg-brand-700">
+                        <Play size={12} className="fill-current" aria-hidden /> Xem lại {formatTime(c.segment.start)}
+                    </Link>
+                ) : (
+                    <Link to={seek} className="inline-flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-[13px] font-semibold text-muted-foreground transition hover:text-strong">
+                        Xem lại {formatTime(c.segment.start)}
+                    </Link>
+                )}
+            </span>
         </div>
     )
 }

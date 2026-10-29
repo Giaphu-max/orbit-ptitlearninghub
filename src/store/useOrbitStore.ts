@@ -339,7 +339,9 @@ export const useOrbitStore = create<OrbitState>()(
                 }),
 
             recordQuizResult: ({ lessonId, conceptId, questionId, outcome, attempts, lessonQuestionIds, firstWrongOption, fixedByVariantId }) => {
-                if (get().quizResults[questionId]) return 0
+                // Câu đã làm không cộng lại; riêng câu bỏ lỡ (missed) mà nay sửa đúng ở câu biến thể thì được nâng lên 'corrected' và nhận XP sửa lỗi
+                const existing = get().quizResults[questionId]
+                if (existing && !(existing.outcome === 'missed' && outcome === 'corrected')) return 0
                 const xp = QUIZ_XP[outcome]
                 set((s) => {
                     const quizResults = {

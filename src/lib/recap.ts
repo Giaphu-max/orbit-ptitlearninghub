@@ -46,6 +46,12 @@ export interface RecapMistake {
     reviewCount: number
 }
 
+/** Một câu trong video chưa đúng ngay (sửa được sau khi sai hoặc bỏ lỡ), theo thứ tự trong video. */
+export interface RecapMistakeRow {
+    root: LessonQuizQuestion
+    outcome: 'corrected' | 'missed'
+}
+
 export interface RecapReview {
     concept: RecapConcept
     /** Bài Daily sẽ được ưu tiên ngày mai (có khái niệm này); undefined nếu không có bài nào */
@@ -75,6 +81,7 @@ export interface RecapData {
     xp: { gain: number; correct: number; corrected: number; test: number; other: number }
     video: { correct: number; corrected: number; missed: number; total: number }
     mistake?: RecapMistake
+    mistakes: RecapMistakeRow[]
     newBadges: RecapBadge[]
     nearBadge?: RecapBadge
     review?: RecapReview
@@ -154,6 +161,11 @@ export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapDa
           }
         : undefined
 
+    const mistakes: RecapMistakeRow[] = quizOf
+        .filter((x): x is typeof x & { r: { outcome: 'corrected' | 'missed' } } => x.r.outcome !== 'correct')
+        .map((x) => ({ root: x.q, outcome: x.r.outcome }))
+        .sort((a, b) => a.root.pauseAt - b.root.pauseAt)
+
     // Huy hiệu mới trong chặng và huy hiệu gần đạt nhất
     const startBadges = new Set(start?.badgeIds ?? s.earnedBadgeIds)
     const newBadges = s.earnedBadgeIds.filter((id) => !startBadges.has(id)).map((id) => badges.find((b) => b.id === id)).filter((b): b is Badge => Boolean(b)).map((b) => badgeInfo(b, s))
@@ -198,6 +210,7 @@ export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapDa
         xp,
         video,
         mistake,
+        mistakes,
         newBadges,
         nearBadge,
         review,

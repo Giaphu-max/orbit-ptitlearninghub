@@ -93,7 +93,8 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
     const finish = useCallback(
         (root: LessonQuizQuestion, outcome: QuizOutcome, attempts: number) => {
             const before = useOrbitStore.getState()
-            const repeat = !!before.quizResults[root.id]
+            const prev = before.quizResults[root.id]
+            const repeat = !!prev && !(prev.outcome === 'missed' && outcome === 'corrected')
             const wasDone = before.lessonProgress[lesson.id]?.completed ?? false
             const xp = recordQuizResult({
                 lessonId: lesson.id,
@@ -176,6 +177,21 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
         }
     }, [phase, pause])
 
+    /**
+     * Làm lại một câu đã sai (từ trang tổng kết chặng): phát lại đoạn chứa đáp án, hết đoạn tự hỏi câu biến thể đầu tiên.
+     * Cùng vòng củng cố như lúc sai trong video.
+     */
+    const retry = useCallback(
+        (root: LessonQuizQuestion) => {
+            const range = { start: root.answerSegment.start, end: root.answerSegment.end }
+            requestRef.current++
+            prevTimeRef.current = range.start
+            setPhase({ kind: 'reviewing', root, nextAttempt: 1, review: range })
+            seekTo(range.start, { play: true })
+        },
+        [seekTo],
+    )
+
     /** Xong câu: xem tiếp từ mốc câu hỏi. */
     const resume = useCallback(() => {
         if (phase.kind === 'idle') return
@@ -190,5 +206,5 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
         resumeRef.current = resume
     }, [resume])
 
-    return { phase, reward, open, answer, review, nextVariant, resume, results: quizResults }
+    return { phase, reward, open, answer, review, nextVariant, resume, retry, results: quizResults }
 }

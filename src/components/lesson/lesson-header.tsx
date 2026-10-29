@@ -102,13 +102,13 @@ const STEPS: { id: LessonStep; label: string; to: (lessonId: string) => string }
 ]
 
 /** 3 viên chia đều theo bề ngang cột 4; bước trước bước hiện tại là "đã xong" (✓, chữ success). */
-function LessonSteps({ lessonId, current }: { lessonId: string; current: LessonStep }) {
+function LessonSteps({ lessonId, current, doneSteps }: { lessonId: string; current: LessonStep; doneSteps?: LessonStep[] }) {
     const currentIndex = STEPS.findIndex((st) => st.id === current)
     return (
         <nav aria-label="Các bước của chặng" className="flex w-full items-center justify-between gap-1.5">
             {STEPS.map((st, i) => {
                 const on = i === currentIndex
-                const done = i < currentIndex
+                const done = doneSteps ? doneSteps.includes(st.id) && i !== currentIndex : i < currentIndex
                 return (
                     <span key={st.id} className="contents">
                         {i > 0 && (
@@ -144,11 +144,12 @@ function LessonSteps({ lessonId, current }: { lessonId: string; current: LessonS
 }
 
 /** Hàng đầu dùng chung /lesson, /checkpoint, /recap: lưới 8/4 gồm nút xổ học phần + tiêu đề bài | stepper 3 bước. */
-export function LessonHeader({ lesson, currentStep }: { lesson: Lesson; currentStep: LessonStep }) {
+/** `doneSteps`: ghi đè các bước hiện ✓ (mặc định mọi bước trước bước hiện tại). */
+export function LessonHeader({ lesson, currentStep, doneSteps }: { lesson: Lesson; currentStep: LessonStep; doneSteps?: LessonStep[] }) {
     return (
         <header className="lesson-grid items-end">
             <LessonTitleBlock course={getCourse(lesson.courseId)} lesson={lesson} courseLessons={getLessonsOfCourse(lesson.courseId)} />
-            <LessonSteps lessonId={lesson.id} current={currentStep} />
+            <LessonSteps lessonId={lesson.id} current={currentStep} doneSteps={doneSteps} />
         </header>
     )
 }

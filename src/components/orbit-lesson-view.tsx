@@ -79,6 +79,17 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     const canPlay = player.status === 'ready'
     const quiz = useLessonQuiz(lesson, { currentTime, isPlaying: player.isPlaying, canPlay, seekTo, pause: player.pause })
     const { phase } = quiz
+
+    // ?retry=<id câu>: từ trang tổng kết chặng, phát lại đoạn đáp án rồi hỏi câu biến thể (vòng củng cố sẵn có)
+    const retryId = searchParams.get('retry')
+    const retriedRef = useRef(false)
+    useEffect(() => {
+        if (!retryId || retriedRef.current || !canPlay) return
+        const q = lesson.quiz.find((x) => x.id === retryId)
+        if (!q || !q.variants.length) return
+        retriedRef.current = true
+        quiz.retry(q)
+    }, [retryId, canPlay, lesson.quiz, quiz])
     // Khái niệm có đề bài Studio: ưu tiên khái niệm đang giảng, không thì khái niệm đầu tiên có đề bài
     const practiceConcept =
         lesson.concepts.find((c) => currentTime >= c.segment.start && currentTime < c.segment.end && getStudioBrief(c.id)) ?? lesson.concepts.find((c) => getStudioBrief(c.id))
@@ -270,7 +281,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 onVisibleChange={setControlsVisible}
                                 pinned={quizOpen || phase.kind === 'reviewing'}
                             />
-                            {fromSavedPosition && (
+                            {fromSavedPosition && !retryId && (
                                 <ResumeToast from={resumeFrom} onRestart={() => handleSeek(0)} />
                             )}
                         </LessonPlayer>
@@ -323,7 +334,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                         lesson={lesson}
                                         phase={phase}
                                         canPlay={canPlay}
-                                        isRepeat={!!quiz.results[phase.root.id] && !(phase.kind === 'answered')}
+                                        isRepeat={!!quiz.results[phase.root.id] && quiz.results[phase.root.id].outcome !== 'missed' && !(phase.kind === 'answered')}
                                         reward={quiz.reward}
                                         onAnswer={quiz.answer}
                                         onReview={quiz.review}
