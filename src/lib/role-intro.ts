@@ -1,7 +1,8 @@
 // Intro sau khi chọn / đổi vai trò (theo docs/mockup/intro/ptit-intro-splash.html, dựng bằng Canvas 2D + WebGL).
-// Màn đỏ lan từ thẻ vừa bấm → iris trắng mở ra logo gốc của trường (vòng, P-T-I-T, sao, sách) → dòng chữ Học viện → màn "tan" như
-// màng nước trên kính: đổi vai + chuyển trang phía sau, lỗ thủng lộ trang thật. Bấm / Enter / Esc nhảy thẳng tới bước tan.
-// Một vòng rAF riêng, dừng khi intro đóng.
+// MỘT dòng chuyển động liền: sân khấu (nền trắng, mảng đỏ loang, quỹ đạo) lan từ thẻ vừa bấm → logo gốc của trường (vòng, P-T-I-T, sao, sách)
+// → dòng chữ Học viện → màn "tan" như màng nước trên kính, lộ trang thật. Đổi vai + chuyển trang diễn ra khi sân khấu vừa phủ kín.
+// Cảnh vẫn được vẽ lại mỗi khung (và upload lên texture) suốt bước tan. Một vòng rAF riêng, dừng khi intro đóng.
+// Bấm / Enter / Esc tua nhanh tới bước tan trong 250ms.
 
 import { INTRO_PARTS, META, type IntroPart } from '@/lib/intro-meta'
 
@@ -28,18 +29,24 @@ let abort: (() => void) | null = null
 export const bindIntro = (r: HTMLElement | null) => {
     if (!r) abort?.()
     root = r
-    if (r) void preloadImages()
+    if (r) {
+        void preloadImages()
+        warmUp()
+    }
 }
 export const introReady = () => root !== null
 /** Intro đang chạy: không chạy chồng hai lần, không cho đổi giao diện chen vào. */
 export const introPlaying = () => active
 
-/* ---------- hằng số mockup ---------- */
-// Mốc thời gian (giây) của mockup; t = 0 là lúc màn đỏ đã lan kín (chấm sáng bắt đầu).
-const T = { iris: [0.38, 1.15], ring: [0.85, 2.05], letters: 1.55, star: 2.05, book: 2.2, word: 2.4, sub: 2.7, greet: 2.95, sheen: [3.05, 3.75], splash: 4.0, water: 2.65 }
-/** Màn đỏ lan từ tâm thẻ vừa bấm trước khi vào timeline mockup */
-const SPREAD = 0.65
+/* ---------- hằng số ---------- */
+// Mốc thời gian (giây) tính từ lúc bấm; các bước gối lên nhau, không có khoảng trống.
+const T = { spread: 0.7, swap: 0.72, orbit: [0.25, 0.38, 0.5], ring: [0.45, 1.65], letters: 1.15, star: 1.65, book: 1.8, word: 2.0, sub: 2.3, greet: 2.55, sheen: [2.65, 3.35], tan: 3.2, water: 2.6 }
 const LANDED_AT = 1.2
+const SKIP_MS = 250
+/** Camera đẩy vào liên tục: 1,075 → 1,0 (đến lúc tan) rồi 1,0 → 0,985 hết lúc tan; vận tốc liền ở chỗ nối */
+const G0 = 1.075
+const G1 = 1.0
+const G2 = 0.985
 
 const SANS = '"Be Vietnam Pro", system-ui, sans-serif'
 const MONO = '"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace'
@@ -47,7 +54,6 @@ const MONO = '"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospa
 const cl = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x))
 const prog = (t: number, a: number, d: number) => cl((t - a) / d)
 const eoc = (x: number) => 1 - Math.pow(1 - x, 3)
-const eoq = (x: number) => 1 - Math.pow(1 - x, 4)
 const eox = (x: number) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x))
 const eio = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
 const back = (x: number) => {
@@ -128,13 +134,19 @@ void main(){
   gl_FragColor=vec4(col*m,m);
 }`
 
-interface GLState {
+/* ---------- WebGL dựng sẵn (compile shader trước khi cần) ---------- */
+interface GPU {
+    canvas: HTMLCanvasElement
     gl: WebGLRenderingContext
     tex: WebGLTexture
     uni: Record<'S' | 'R' | 't' | 'I', WebGLUniformLocation | null>
+    /** Kích thước texture hiện tại (để biết khi nào phải cấp phát lại) */
+    texW: number
+    texH: number
 }
+let gpu: GPU | null = null
 
-function initGL(glc: HTMLCanvasElement): GLState | null {
+function initGPU(glc: HTMLCanvasElement): GPU | null {
     let gl: WebGLRenderingContext | null = null
     try {
         gl = glc.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false })
@@ -171,14 +183,98 @@ function initGL(glc: HTMLCanvasElement): GLState | null {
     const uni = { S: gl.getUniformLocation(prg, 'S'), R: gl.getUniformLocation(prg, 'R'), t: gl.getUniformLocation(prg, 't'), I: gl.getUniformLocation(prg, 'I') }
     const tex = gl.createTexture()
     if (!tex) return null
+    gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, tex)
     ;[gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T].forEach((p) => gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE))
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    return { gl, tex, uni }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+    // Vẽ thử một khung 1×1 để driver compile xong shader
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
+    gl.viewport(0, 0, 1, 1)
+    gl.uniform1i(uni.S, 0)
+    gl.uniform2f(uni.R, 1, 1)
+    gl.uniform1f(uni.t, 0)
+    gl.uniform2f(uni.I, 0.5, 0.5)
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+    const g: GPU = { canvas: glc, gl, tex, uni, texW: 1, texH: 1 }
+    // Mất context: bỏ bản cũ, thay canvas bằng bản mới; lần chạy sau tạo lại
+    glc.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault()
+        if (gpu === g) gpu = null
+        if (!active && glc.isConnected) {
+            const fresh = glc.cloneNode(false) as HTMLCanvasElement
+            fresh.removeAttribute('width')
+            fresh.removeAttribute('height')
+            glc.replaceWith(fresh)
+        }
+    })
+    return g
+}
+
+function ensureGPU(): GPU | null {
+    const glc = root?.querySelector<HTMLCanvasElement>('[data-ri="gl"]')
+    if (!glc) return null
+    if (gpu && gpu.canvas === glc && !gpu.gl.isContextLost()) return gpu
+    gpu = initGPU(glc)
+    return gpu
+}
+
+/** Khởi tạo sớm lúc rảnh để lần bấm đầu tiên không phải compile shader */
+function warmUp() {
+    const run = () => {
+        if (root && !active) {
+            try {
+                ensureGPU()
+            } catch {
+                gpu = null
+            }
+        }
+    }
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
+    if (ric) ric(run)
+    else window.setTimeout(run, 300)
 }
 
 const IMPACT = [0.36, 0.62]
+
+/** cubic-bezier(x1,y1,x2,y2) như CSS */
+function bezier(x1: number, y1: number, x2: number, y2: number) {
+    const ax = 3 * x1 - 3 * x2 + 1
+    const bx = 3 * x2 - 6 * x1
+    const cx = 3 * x1
+    const ay = 3 * y1 - 3 * y2 + 1
+    const by = 3 * y2 - 6 * y1
+    const cy = 3 * y1
+    return (x: number) => {
+        let lo = 0
+        let hi = 1
+        let u = x
+        for (let i = 0; i < 20; i++) {
+            const bxu = ((ax * u + bx) * u + cx) * u
+            if (bxu < x) lo = u
+            else hi = u
+            u = (lo + hi) / 2
+        }
+        return ((ay * u + by) * u + cy) * u
+    }
+}
+const spreadEase = bezier(0.65, 0, 0.35, 1)
+
+/** Độ phóng của camera tại thời điểm t: một đường cong liền, vận tốc khớp ở mốc tan */
+function camera(t: number) {
+    const D1 = T.tan - T.ring[0]
+    const D2 = T.tan + T.water - T.tan
+    const d1 = G0 - G1
+    const d2 = G1 - G2
+    const c = (d2 / D2) * (D1 / d1) // hệ số để vận tốc cuối đoạn 1 = vận tốc đoạn 2
+    if (t <= T.ring[0]) return G0
+    if (t < T.tan) {
+        const u = (t - T.ring[0]) / D1
+        return G0 - d1 * (c * u + (1 - c) * (2 * u - u * u))
+    }
+    return G1 - d2 * Math.min(1, (t - T.tan) / D2)
+}
 
 /* ---------- phát intro ---------- */
 export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo, hooks: IntroHooks): Promise<void> {
@@ -188,32 +284,36 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         return Promise.resolve()
     }
     const sc = el.querySelector<HTMLCanvasElement>('[data-ri="scene"]')
-    const glSlot = el.querySelector<HTMLCanvasElement>('[data-ri="gl"]')
     const ctx = sc?.getContext('2d')
-    if (!sc || !glSlot || !ctx) {
+    if (!sc || !ctx) {
         hooks.swap()
         return Promise.resolve()
     }
-    let glc = glSlot
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const greeting = `${info.words.map((w) => w.text).join(' ').replace(/,\s*$/, '')} · ${info.loadText}`.toUpperCase()
 
     let W = 0
     let H = 0
     let DPR = 1
+    let Rmax = 0
     let swapped = false
     let finished = false
     let raf = 0
     let timer = 0
-    let phase: 'scene' | 'hold' | 'water' | 'fade' = 'scene'
-    let t0 = 0
-    let glState: GLState | null = null
+    let phase: 'scene' | 'water' | 'fade' | 'hold' = 'scene'
+    let vt = 0
+    let last = 0
+    let skipRate = 0
+    let g: GPU | null = null
     let L: Layers | null = null
     let resolve!: () => void
     const done = new Promise<void>((res) => (resolve = res))
     const lay = document.createElement('canvas')
     const lctx = lay.getContext('2d')
+    const bg = document.createElement('canvas')
+    const bgc = bg.getContext('2d')
     let landedSent = false
+    let fadeStart = 0
 
     const swap = () => {
         if (swapped) return
@@ -225,24 +325,58 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         }
     }
 
+    /** Nền trắng + 5 mảng đỏ loang + quầng trắng giữa: vẽ một lần ở 0,5× độ phân giải, dư 3% mỗi cạnh cho phần trôi */
+    function buildBg() {
+        if (!bgc) return
+        const M = Math.max(W, H)
+        bg.width = Math.max(1, Math.round(W * 1.06 * 0.5))
+        bg.height = Math.max(1, Math.round(H * 1.06 * 0.5))
+        bgc.setTransform(0.5, 0, 0, 0.5, W * 0.03 * 0.5, H * 0.03 * 0.5)
+        bgc.fillStyle = '#FFFFFF'
+        bgc.fillRect(-W, -H, W * 3, H * 3)
+        const blob = (x: number, y: number, r: number, col: string, a: number) => {
+            const gr = bgc.createRadialGradient(x, y, 0, x, y, r)
+            gr.addColorStop(0, 'rgba(' + col + ',' + a + ')')
+            gr.addColorStop(0.55, 'rgba(' + col + ',' + a * 0.35 + ')')
+            gr.addColorStop(1, 'rgba(' + col + ',0)')
+            bgc.fillStyle = gr
+            bgc.fillRect(-W, -H, W * 3, H * 3)
+        }
+        blob(W * 1.02, H * -0.05, M * 0.55, '226,38,28', 0.3)
+        blob(W * 0.86, H * 0.1, M * 0.26, '255,90,71', 0.18)
+        blob(W * -0.04, H * 1.06, M * 0.5, '200,27,18', 0.26)
+        blob(W * 0.14, H * 0.96, M * 0.22, '244,135,143', 0.2)
+        blob(W * 1.0, H * 1.02, M * 0.24, '226,38,28', 0.1)
+        blob(W / 2, H * 0.42, Math.min(W, H) * 0.42, '255,255,255', 0.9)
+    }
+
     const resize = () => {
         DPR = Math.min(2, window.devicePixelRatio || 1)
         W = window.innerWidth
         H = window.innerHeight
         sc.width = Math.round(W * DPR)
         sc.height = Math.round(H * DPR)
-        const gd = Math.min(DPR, 2, 2880 / W)
-        glc.width = Math.round(W * gd)
-        glc.height = Math.round(H * gd)
+        if (g) {
+            const gd = Math.min(DPR, 2, 2880 / W)
+            g.canvas.width = Math.round(W * gd)
+            g.canvas.height = Math.round(H * gd)
+            g.texW = 0
+        }
+        Rmax = Math.hypot(Math.max(origin.x, W - origin.x), Math.max(origin.y, H - origin.y)) + 20
+        buildBg()
+        // Lớp logo cấp phát một lần ở độ phóng lớn nhất; khung nào cũng chỉ vẽ lại vào đó
+        const LH = Math.min(H * 0.4, 380)
+        lay.width = Math.ceil(600 * (LH / 763) * DPR * G0)
+        lay.height = Math.ceil(763 * (LH / 763) * DPR * G0)
     }
 
     /* ----- vẽ cảnh (Canvas 2D) ----- */
     function orbits(c: CanvasRenderingContext2D, t: number, cx: number, cy: number) {
         const base = Math.min(W, H)
         const defs = [
-            [0.62, 0.3, 0.26, 0.95],
-            [0.82, 0.36, 0.16, 1.08],
-            [1.06, 0.42, 0.1, 1.2],
+            [0.62, 0.3, 0.26, T.orbit[0]],
+            [0.82, 0.36, 0.16, T.orbit[1]],
+            [1.06, 0.42, 0.1, T.orbit[2]],
         ]
         defs.forEach(([rx, ry, a, del], i) => {
             const p = eoc(prog(t, del, 1.3))
@@ -311,11 +445,11 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
                     const hx = (ox + Math.cos(a1) * r) * s
                     const hy = (oy + Math.sin(a1) * r) * s
                     const A = Math.sin(rp * Math.PI)
-                    const g = c.createRadialGradient(hx, hy, 0, hx, hy, 46 * s)
-                    g.addColorStop(0, 'rgba(255,255,255,' + 0.95 * A + ')')
-                    g.addColorStop(0.18, 'rgba(255,120,96,' + 0.85 * A + ')')
-                    g.addColorStop(1, 'rgba(226,38,28,0)')
-                    c.fillStyle = g
+                    const gr = c.createRadialGradient(hx, hy, 0, hx, hy, 46 * s)
+                    gr.addColorStop(0, 'rgba(255,255,255,' + 0.95 * A + ')')
+                    gr.addColorStop(0.18, 'rgba(255,120,96,' + 0.85 * A + ')')
+                    gr.addColorStop(1, 'rgba(226,38,28,0)')
+                    c.fillStyle = gr
                     c.beginPath()
                     c.arc(hx, hy, 46 * s, 0, 7)
                     c.fill()
@@ -393,165 +527,112 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         }
     }
 
-    /** Vẽ khung tại thời điểm t của mockup (t < 0: màn đỏ đang lan từ chỗ bấm). */
+    /** Vẽ khung tại thời điểm t (giây từ lúc bấm). Sân khấu lan ra từ chỗ bấm trong 0,7s đầu. */
     function draw(t: number) {
         const c = ctx!
         c.setTransform(DPR, 0, 0, DPR, 0, 0)
         c.clearRect(0, 0, W, H)
+        const p = spreadEase(cl(t / T.spread))
+        if (p <= 0) return
         const cx = W / 2
         const cy = H * 0.42
-        const diag = Math.hypot(W, H)
-        // nền đỏ
-        const rg = c.createRadialGradient(cx, cy, 0, cx, cy, diag * 0.7)
-        rg.addColorStop(0, '#F0392C')
-        rg.addColorStop(0.55, '#D41F16')
-        rg.addColorStop(1, '#9E120C')
-        c.fillStyle = rg
-        if (t < 0) {
-            const R = Math.hypot(Math.max(origin.x, W - origin.x), Math.max(origin.y, H - origin.y)) + 20
-            const p = eio(cl((t + SPREAD) / SPREAD))
+        const clipped = p < 1
+        if (clipped) {
             c.save()
             c.beginPath()
-            c.arc(origin.x, origin.y, p * R, 0, 7)
+            c.arc(origin.x, origin.y, p * Rmax, 0, 7)
             c.clip()
-            c.fillRect(0, 0, W, H)
-            c.restore()
-            return
         }
-        c.fillRect(0, 0, W, H)
-        // chấm sáng trước iris
-        const sp = prog(t, 0.08, 0.3)
-        if (t < T.iris[0] + 0.1) {
-            c.fillStyle = 'rgba(255,255,255,' + sp * 0.95 + ')'
-            c.beginPath()
-            c.arc(cx, cy, 2 + eoc(sp) * 7 + Math.sin(t * 30) * 0.6, 0, 7)
-            c.fill()
-            c.strokeStyle = 'rgba(255,255,255,' + 0.5 * (1 - sp) + ')'
-            c.lineWidth = 1.5
-            c.beginPath()
-            c.arc(cx, cy, 10 + sp * 60, 0, 7)
-            c.stroke()
-        }
-        // iris → nền trắng
-        const ip = eoq(prog(t, T.iris[0], T.iris[1] - T.iris[0]))
-        const R = ip * diag * 0.62
-        if (ip > 0) {
-            c.save()
-            c.beginPath()
-            c.arc(cx, cy, R, 0, 7)
-            c.clip()
-            c.fillStyle = '#FFFFFF'
-            c.fillRect(0, 0, W, H)
-            // mảng đỏ loang ở các góc; giữa vẫn trắng cho logo nổi bật
-            const blob = (x: number, y: number, r: number, col: string, a: number) => {
-                const g = c.createRadialGradient(x, y, 0, x, y, r)
-                g.addColorStop(0, 'rgba(' + col + ',' + a + ')')
-                g.addColorStop(0.55, 'rgba(' + col + ',' + a * 0.35 + ')')
-                g.addColorStop(1, 'rgba(' + col + ',0)')
-                c.fillStyle = g
-                c.fillRect(0, 0, W, H)
+        // nền: ảnh dựng sẵn, chỉ dịch nhẹ để mảng đỏ trôi
+        c.drawImage(bg, -W * 0.03 + Math.sin(t * 0.6) * W * 0.015, -H * 0.03 + Math.cos(t * 0.5) * H * 0.01, W * 1.06, H * 1.06)
+        orbits(c, t, cx, cy)
+        if (t >= T.ring[0] - 0.1) {
+            const LH = Math.min(H * 0.4, 380)
+            const gz = camera(t)
+            drawLogo(lctx!, t, lay.width / 600)
+            const dw = (lay.width / DPR) * (gz / G0)
+            const dh = (lay.height / DPR) * (gz / G0)
+            c.drawImage(lay, cx - dw / 2, cy - dh / 2, dw, dh)
+            // dòng chữ Học viện
+            const fs = Math.round(cl(W * 0.0165, 18, 30))
+            const wy = cy + (LH * gz) / 2 + fs * 2.0
+            const wp = prog(t, T.word, 0.9)
+            const we = eox(wp)
+            const setLS = (v: string) => {
+                try {
+                    c.letterSpacing = v
+                } catch {
+                    /* trình duyệt cũ không có letterSpacing */
+                }
             }
-            const dr = Math.sin(t * 0.6) * 0.015
-            const M = Math.max(W, H)
-            blob(W * (1.02 + dr), H * -0.05, M * 0.55, '226,38,28', 0.3)
-            blob(W * (0.86 - dr), H * 0.1, M * 0.26, '255,90,71', 0.18)
-            blob(W * -0.04, H * (1.06 + dr), M * 0.5, '200,27,18', 0.26)
-            blob(W * (0.14 + dr), H * 0.96, M * 0.22, '244,135,143', 0.2)
-            blob(W * 1.0, H * 1.02, M * 0.24, '226,38,28', 0.1)
-            blob(cx, cy, Math.min(W, H) * 0.42, '255,255,255', 0.9)
-            orbits(c, t, cx, cy)
-            c.restore()
-            if (ip < 1) {
-                c.strokeStyle = 'rgba(255,255,255,.9)'
-                c.lineWidth = 2
-                c.beginPath()
-                c.arc(cx, cy, R + 4, 0, 7)
-                c.stroke()
-                c.strokeStyle = 'rgba(255,255,255,' + 0.35 * (1 - ip) + ')'
-                c.lineWidth = 1
-                c.beginPath()
-                c.arc(cx, cy, R * 1.12 + 14, 0, 7)
-                c.stroke()
+            if (wp > 0) {
+                c.save()
+                c.textAlign = 'center'
+                c.textBaseline = 'alphabetic'
+                c.font = '800 ' + fs + 'px ' + SANS
+                c.fillStyle = '#D41F16'
+                setLS(Number((0.06 + 0.5 * (1 - we)).toFixed(3)) * fs + 'px')
+                c.globalAlpha = cl(wp * 2.2)
+                c.fillText('HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG', cx, wy + (1 - we) * 10)
+                const sp2 = prog(t, T.sub, 0.7)
+                c.globalAlpha = eoc(sp2) * 0.9
+                c.font = '500 ' + Math.round(fs * 0.56) + 'px ' + SANS
+                c.fillStyle = '#7A5A56'
+                setLS(0.04 * fs * 0.56 + 'px')
+                c.fillText('Posts and Telecommunications Institute of Technology', cx, wy + fs * 1.25 + (1 - eoc(sp2)) * 8)
+                // gạch đỏ mảnh dài dần
+                const dl = eoc(prog(t, T.sub, 0.8)) * fs * 3.2
+                c.globalAlpha = 0.55
+                c.fillStyle = '#E2261C'
+                c.fillRect(cx - dl, wy - fs * 1.25, dl * 2, 1.5)
+                c.restore()
             }
-        }
-        if (t < T.ring[0] - 0.1) return
-        // logo
-        const LH = Math.min(H * 0.4, 380)
-        const k = LH / 763
-        const g = 1.075 - 0.075 * eoc(prog(t, 0.85, 3.0))
-        const lw = Math.ceil(600 * k * DPR * g)
-        const lh = Math.ceil(763 * k * DPR * g)
-        if (lay.width !== lw || lay.height !== lh) {
-            lay.width = lw
-            lay.height = lh
-        }
-        drawLogo(lctx!, t, lw / 600)
-        c.drawImage(lay, cx - lw / DPR / 2, cy - lh / DPR / 2, lw / DPR, lh / DPR)
-        // dòng chữ Học viện
-        const fs = Math.round(cl(W * 0.0165, 18, 30))
-        const wy = cy + (LH * g) / 2 + fs * 2.0
-        const wp = prog(t, T.word, 0.9)
-        const we = eox(wp)
-        const setLS = (v: string) => {
-            try {
-                c.letterSpacing = v
-            } catch {
-                /* trình duyệt cũ không có letterSpacing */
+            // dòng mono + thanh tải ở đáy
+            const gp = prog(t, T.greet, 0.6)
+            if (gp > 0) {
+                c.save()
+                c.globalAlpha = eoc(gp)
+                c.textAlign = 'center'
+                c.font = '700 12.5px ' + MONO
+                c.fillStyle = '#8B5E58'
+                setLS('2.5px')
+                c.fillText(greeting, cx, H - 70)
+                const bw = 150
+                const bp = eio(prog(t, T.greet, T.tan - T.greet))
+                c.fillStyle = 'rgba(226,38,28,.15)'
+                c.fillRect(cx - bw / 2, H - 54, bw, 2)
+                c.fillStyle = '#E2261C'
+                c.fillRect(cx - bw / 2, H - 54, bw * bp, 2)
+                c.restore()
             }
         }
-        if (wp > 0) {
-            c.save()
-            c.textAlign = 'center'
-            c.textBaseline = 'alphabetic'
-            c.font = '800 ' + fs + 'px ' + SANS
-            c.fillStyle = '#D41F16'
-            setLS(Number((0.06 + 0.5 * (1 - we)).toFixed(3)) * fs + 'px')
-            c.globalAlpha = cl(wp * 2.2)
-            c.fillText('HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG', cx, wy + (1 - we) * 10)
-            const sp2 = prog(t, T.sub, 0.7)
-            c.globalAlpha = eoc(sp2) * 0.9
-            c.font = '500 ' + Math.round(fs * 0.56) + 'px ' + SANS
-            c.fillStyle = '#7A5A56'
-            setLS(0.04 * fs * 0.56 + 'px')
-            c.fillText('Posts and Telecommunications Institute of Technology', cx, wy + fs * 1.25 + (1 - eoc(sp2)) * 8)
-            // gạch đỏ mảnh dài dần
-            const dl = eoc(prog(t, T.sub, 0.8)) * fs * 3.2
-            c.globalAlpha = 0.55
-            c.fillStyle = '#E2261C'
-            c.fillRect(cx - dl, wy - fs * 1.25, dl * 2, 1.5)
-            c.restore()
-        }
-        // dòng mono + thanh tải ở đáy
-        const gp = prog(t, T.greet, 0.6)
-        if (gp > 0) {
-            c.save()
-            c.globalAlpha = eoc(gp)
-            c.textAlign = 'center'
-            c.font = '700 12.5px ' + MONO
-            c.fillStyle = '#8B5E58'
-            setLS('2.5px')
-            c.fillText(greeting, cx, H - 70)
-            const bw = 150
-            const bp = eio(prog(t, T.greet, T.splash - T.greet))
-            c.fillStyle = 'rgba(226,38,28,.15)'
-            c.fillRect(cx - bw / 2, H - 54, bw, 2)
-            c.fillStyle = '#E2261C'
-            c.fillRect(cx - bw / 2, H - 54, bw * bp, 2)
-            c.restore()
+        if (clipped) c.restore()
+    }
+
+    /** Upload khung scene hiện tại lên texture (cấp phát lần đầu / sau resize, các khung sau chỉ ghi đè) */
+    function uploadScene() {
+        const { gl, tex } = g!
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, tex)
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+        if (g!.texW !== sc!.width || g!.texH !== sc!.height) {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sc!)
+            g!.texW = sc!.width
+            g!.texH = sc!.height
+        } else {
+            gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, sc!)
         }
     }
 
     function drawWater(wt: number) {
-        const s = glState
-        if (!s) return
-        const { gl, uni } = s
-        gl.viewport(0, 0, glc.width, glc.height)
+        const { gl, uni, canvas } = g!
+        gl.viewport(0, 0, canvas.width, canvas.height)
         gl.clearColor(0, 0, 0, 0)
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.uniform1i(uni.S, 0)
-        gl.uniform2f(uni.R, glc.width, glc.height)
+        gl.uniform2f(uni.R, canvas.width, canvas.height)
         gl.uniform1f(uni.t, wt)
-        gl.uniform2f(uni.I, (IMPACT[0] * W) / H * 1.25, IMPACT[1])
+        gl.uniform2f(uni.I, ((IMPACT[0] * W) / H) * 1.25, IMPACT[1])
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }
 
@@ -564,22 +645,23 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         el!.removeEventListener('click', onSkip)
         window.removeEventListener('keydown', onKey, true)
         window.removeEventListener('resize', onResize)
+        // Giải phóng bộ nhớ texture/canvas nhưng giữ context + program cho lần sau
         try {
-            glState?.gl.getExtension('WEBGL_lose_context')?.loseContext()
+            if (g && !g.gl.isContextLost()) {
+                g.gl.bindTexture(g.gl.TEXTURE_2D, g.tex)
+                g.gl.texImage2D(g.gl.TEXTURE_2D, 0, g.gl.RGBA, 1, 1, 0, g.gl.RGBA, g.gl.UNSIGNED_BYTE, new Uint8Array(4))
+                g.texW = g.texH = 1
+                g.canvas.width = g.canvas.height = 1
+                g.canvas.style.display = 'none'
+            }
         } catch {
             /* bỏ qua */
         }
-        // Canvas đã mất context không dùng lại được: thay bằng canvas mới cho lần sau
-        const fresh = glc.cloneNode(false) as HTMLCanvasElement
-        fresh.removeAttribute('width')
-        fresh.removeAttribute('height')
-        fresh.style.display = 'none'
-        glc.replaceWith(fresh)
-        glState = null
         el!.classList.remove('on', 'water')
         el!.setAttribute('aria-hidden', 'true')
         sc!.style.cssText = ''
         sc!.width = sc!.height = 1
+        bg.width = bg.height = lay.width = lay.height = 1
         active = false
         abort = null
         resolve()
@@ -591,63 +673,45 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         finish()
     }
 
-    const waitRender = () =>
-        Promise.race([new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))), new Promise<void>((r) => setTimeout(r, 500))])
-
-    /** Bước tan: vẽ khung cuối, đổi vai + chuyển trang, rồi để lớp màng tan ra lộ trang thật. */
-    async function splash() {
-        phase = 'hold'
-        cancelAnimationFrame(raf)
-        try {
-            draw(T.splash)
-            swap()
-            el!.classList.add('water')
-            await waitRender()
-            if (finished) return
-            draw(T.splash)
-            if (glState) {
-                const { gl, tex } = glState
-                gl.activeTexture(gl.TEXTURE0)
-                gl.bindTexture(gl.TEXTURE_2D, tex)
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sc!)
-                glc.style.display = 'block'
-                sc!.style.visibility = 'hidden'
-                phase = 'water'
-                t0 = performance.now()
-                raf = requestAnimationFrame(tick)
-            } else {
-                phase = 'fade'
-                sc!.style.transition = 'opacity 600ms ease'
-                sc!.style.opacity = '0'
-                window.setTimeout(() => window.dispatchEvent(new Event('orbit:intro-landed')), 400)
-                timer = window.setTimeout(finish, 650)
-            }
-        } catch (e) {
-            fail(e)
-        }
-    }
-
     function tick(now: number) {
         if (finished) return
         try {
-            if (phase === 'scene') {
-                const t = (now - t0) / 1000 - SPREAD
-                if (t >= T.splash) {
-                    void splash()
-                    return
+            const dt = Math.min(0.1, (now - last) / 1000)
+            last = now
+            if (skipRate > 0 && vt < T.tan) vt = Math.min(T.tan, vt + dt * skipRate)
+            else vt += dt
+            if (!swapped && vt >= T.swap) swap()
+            draw(vt)
+            if (vt >= T.tan) {
+                if (phase === 'scene') {
+                    phase = g ? 'water' : 'fade'
+                    el!.classList.add('water')
+                    if (!g) {
+                        // Không có WebGL: cảnh mờ dần 600ms
+                        fadeStart = vt
+                        sc!.style.transition = 'opacity 600ms ease'
+                        sc!.style.opacity = '0'
+                    }
                 }
-                draw(t)
-            } else if (phase === 'water') {
-                const wt = (now - t0) / 1000
-                drawWater(wt)
-                if (!landedSent && wt >= LANDED_AT) {
+                const wt = vt - T.tan
+                if (phase === 'water') {
+                    uploadScene()
+                    drawWater(wt)
+                    if (g!.canvas.style.display !== 'block') {
+                        g!.canvas.style.display = 'block'
+                        sc!.style.visibility = 'hidden'
+                    }
+                    if (wt > T.water) return finish()
+                } else {
+                    if (!landedSent && vt - fadeStart >= 0.4) {
+                        landedSent = true
+                        window.dispatchEvent(new Event('orbit:intro-landed'))
+                    }
+                    if (vt - fadeStart >= 0.65) return finish()
+                }
+                if (phase === 'water' && !landedSent && wt >= LANDED_AT) {
                     landedSent = true
                     window.dispatchEvent(new Event('orbit:intro-landed'))
-                }
-                if (wt > T.water) {
-                    finish()
-                    return
                 }
             }
             raf = requestAnimationFrame(tick)
@@ -658,8 +722,9 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
 
     /* ----- bỏ qua + resize ----- */
     function onSkip() {
-        if (finished || phase !== 'scene') return
-        t0 = performance.now() - (SPREAD + T.splash) * 1000
+        if (finished || phase !== 'scene' || vt >= T.tan || skipRate > 0) return
+        skipRate = Math.max(1, (T.tan - vt) / (SKIP_MS / 1000))
+        swap()
     }
     function onKey(e: KeyboardEvent) {
         if (e.key === 'Enter' || e.key === 'Escape') {
@@ -670,7 +735,7 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
     }
     function onResize() {
         resize()
-        if (phase === 'hold' || phase === 'fade') draw(T.splash)
+        if (phase === 'hold') draw(T.tan)
     }
 
     /* ----- khởi động ----- */
@@ -678,7 +743,6 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
     abort = finish
     el.classList.add('on')
     el.setAttribute('aria-hidden', 'false')
-    resize()
     el.addEventListener('click', onSkip)
     window.addEventListener('keydown', onKey, true)
     window.addEventListener('resize', onResize)
@@ -691,24 +755,24 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
             ])
             if (finished) return
             L = layers
-            glState = reduce ? null : initGL(glc)
+            g = reduce ? null : ensureGPU()
+            resize()
             if (reduce) {
                 // Giảm chuyển động: khung cuối tĩnh ~900ms, đổi vai, mờ 600ms
                 phase = 'hold'
-                draw(T.splash)
+                draw(T.tan)
                 await new Promise((r) => setTimeout(r, 900))
                 if (finished) return
                 swap()
-                await waitRender()
+                await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
                 if (finished) return
-                phase = 'fade'
                 el.classList.add('water')
                 sc.style.transition = 'opacity 600ms ease'
                 sc.style.opacity = '0'
                 timer = window.setTimeout(finish, 650)
                 return
             }
-            t0 = performance.now()
+            last = performance.now()
             raf = requestAnimationFrame(tick)
         } catch (e) {
             fail(e)
