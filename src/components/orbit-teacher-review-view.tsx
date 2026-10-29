@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowRight, Image as ImageIcon, Info, X, ChevronDown } from 'lucide-react'
-import type { Lesson, LessonQuizQuestion } from '@/data/types'
+import type { ClassStats, Lesson, LessonQuizQuestion } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { CoverEditor } from '@/components/courses/cover-editor'
 import { StepPills, TitleBlock } from '@/components/lesson/lesson-header'
@@ -10,7 +10,7 @@ import { PlayerControls } from '@/components/lesson/player-controls'
 import { ItemActions, OptionRows, ReviewRow, VariantsBox, fieldCls, labelCls } from '@/components/teacher/review-fields'
 import { TRAP_NOTES } from '@/data/teacher-notes'
 import { ApiRequestError, rewriteContent } from '@/lib/api'
-import { conceptRate, defaultReviewId, HOT_RATE, itemKey, lessonsOriginal, useLessonReviews, validate, type LessonReview } from '@/lib/teacher'
+import { conceptRate, HOT_RATE, itemKey, lessonsOriginal, statsForCourse, useLessonReviews, useTeacherClass, validate, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
@@ -21,12 +21,12 @@ const NO_RESULTS = {}
 const tabOf = (key: string): Tab => (key === 'sum' ? 'sum' : key.startsWith('c:') ? 'con' : 'q')
 
 /** Khóa các mục của một tab theo thứ tự hiển thị: xếp theo % lớp sai lần đầu giảm dần. */
-function orderedKeys(tab: Tab, d: Pick<LessonEdits, 'concepts' | 'quiz'>): string[] {
+function orderedKeys(tab: Tab, d: Pick<LessonEdits, 'concepts' | 'quiz'>, stats: ClassStats): string[] {
     if (tab === 'sum') return ['sum']
     const rows =
         tab === 'con'
-            ? d.concepts.map((c, i) => ({ key: itemKey.concept(c.id), i, rate: conceptRate(c.id) ?? -1 }))
-            : d.quiz.map((q, i) => ({ key: itemKey.question(q.id), i, rate: conceptRate(q.conceptId) ?? -1 }))
+            ? d.concepts.map((c, i) => ({ key: itemKey.concept(c.id), i, rate: conceptRate(stats, c.id) ?? -1 }))
+            : d.quiz.map((q, i) => ({ key: itemKey.question(q.id), i, rate: conceptRate(stats, q.conceptId) ?? -1 }))
     return rows.sort((a, b) => b.rate - a.rate || a.i - b.i).map((r) => r.key)
 }
 
@@ -44,17 +44,18 @@ export function OrbitTeacherReviewView() {
     const { lessonId } = useParams()
     const reviews = useLessonReviews()
     if (role !== 'teacher') return <Navigate to="/" replace />
-    // Không có id: chốt vào URL bài đang dở để xuất bản xong không bị chuyển sang bài khác
-    const fallback = defaultReviewId(reviews)
-    if (!lessonId) return fallback ? <Navigate to={`/teacher/review/${fallback}${window.location.search}`} replace /> : <p className="p-12 text-center text-muted-foreground">Chưa có bài học nào.</p>
+    if (!lessonId) return <Navigate to="/teacher/library" replace />
     const review = reviews.find((r) => r.lesson.id === lessonId)
-    if (!review) return <Navigate to="/teacher/review" replace />
+    // Bài chưa tạo xong hoặc không có: về thư viện bài giảng
+    if (!review || review.state === 'generating') return <Navigate to="/teacher/library" replace />
     // key: đổi bài thì dựng lại trình phát và các trường sửa từ nội dung của bài đó
     return <ReviewPage key={review.lesson.id} review={review} reviews={reviews} />
 }
 
 function ReviewPage({ review, reviews }: { review: LessonReview; reviews: LessonReview[] }) {
     const { lesson, published, reviewed, total } = review
+    const { cls } = useTeacherClass()
+    const stats = statsForCourse(lesson.courseId, cls)
     const [searchParams] = useSearchParams()
     const savedEdits = useOrbitStore((s) => s.lessonEdits[lesson.id])
     const setReviewedItems = useOrbitStore((s) => s.setReviewedItems)
@@ -70,10 +71,10 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
     // Tab và dòng mở ban đầu: ?item= (từ Tổng quan / Lớp học), không thì mục chưa duyệt đầu tiên (ưu tiên Câu hỏi)
     const [start] = useState(() => {
         const item = searchParams.get('item')
-        const all = TAB_ORDER.flatMap((t) => orderedKeys(t, lesson))
+        const all = TAB_ORDER.flatMap((t) => orderedKeys(t, lesson, stats))
         if (item && all.includes(item)) return { tab: tabOf(item), open: item as string | null }
         for (const t of ['q', 'con', 'sum'] as Tab[]) {
-            const first = orderedKeys(t, lesson).find((k) => !reviewed.has(k))
+            const first = orderedKeys(t, lesson, stats).find((k) => !reviewed.has(k))
             if (first) return { tab: t, open: first as string | null }
         }
         return { tab: 'q' as Tab, open: null }
@@ -132,7 +133,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
         const next = new Set(reviewed).add(key)
         setReviewedItems(lesson.id, [...next])
         // Duyệt xong thì đóng mục này, mở mục chưa duyệt tiếp theo trong cùng tab
-        const nxt = orderedKeys(tabOf(key), draft).find((k) => !next.has(k))
+        const nxt = orderedKeys(tabOf(key), draft, stats).find((k) => !next.has(k))
         if (nxt) openItem(nxt)
         else setOpenKey(null)
     }
@@ -165,7 +166,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
 
     const onPublish = () => {
         if (left > 0) {
-            const first = TAB_ORDER.flatMap((t) => orderedKeys(t, draft).map((k) => [t, k] as const)).find(([, k]) => !reviewed.has(k))
+            const first = TAB_ORDER.flatMap((t) => orderedKeys(t, draft, stats).map((k) => [t, k] as const)).find(([, k]) => !reviewed.has(k))
             say('Còn mục chưa duyệt. Mở mục đầu tiên chưa duyệt.')
             if (first) {
                 setTab(first[0])
@@ -215,6 +216,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                         }))}
                         footer={{ icon: <ImageIcon size={14} className="text-brand-ink" aria-hidden />, title: 'Đổi bìa môn học', meta: '', onClick: () => setCoverOpen(true) }}
                         title={lesson.title}
+                        back={{ to: '/teacher/library', label: 'Bài giảng' }}
                     />
                     <StepPills
                         label="Các bước duyệt"
@@ -255,7 +257,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                 onSeekBy={(delta) => seekTo(Math.min(lesson.durationSec, Math.max(0, player.currentTime + delta)), { play: player.isPlaying })}
                                 quizMarker={(q) => {
                                     const ok = reviewed.has(itemKey.question(q.id))
-                                    const rate = conceptRate(q.conceptId)
+                                    const rate = conceptRate(stats, q.conceptId)
                                     const hot = !ok && rate !== null && rate >= HOT_RATE
                                     const at = formatTime(q.pauseAt)
                                     return {
@@ -347,10 +349,10 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
 
                             {tab === 'con' && (
                                 <div className="flex flex-col gap-1">
-                                    {orderedKeys('con', draft).map((key) => {
+                                    {orderedKeys('con', draft, stats).map((key) => {
                                         const i = draft.concepts.findIndex((c) => itemKey.concept(c.id) === key)
                                         const c = draft.concepts[i]
-                                        const rate = conceptRate(c.id)
+                                        const rate = conceptRate(stats, c.id)
                                         return (
                                             <ReviewRow
                                                 key={key}
@@ -391,10 +393,10 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
 
                             {tab === 'q' && (
                                 <div className="flex flex-col gap-1">
-                                    {orderedKeys('q', draft).map((key) => {
+                                    {orderedKeys('q', draft, stats).map((key) => {
                                         const i = draft.quiz.findIndex((q) => itemKey.question(q.id) === key)
                                         const q = draft.quiz[i]
-                                        const rate = conceptRate(q.conceptId)
+                                        const rate = conceptRate(stats, q.conceptId)
                                         const trapNote = TRAP_NOTES[q.id]
                                         return (
                                             <ReviewRow
@@ -413,7 +415,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                                 </label>
                                                 <textarea id={`${q.id}-prompt`} rows={2} value={q.prompt} onChange={(e) => patchQuestion(i, { ...q, prompt: e.target.value })} className={fieldCls} />
                                                 <span className={labelCls}>Đáp án · bấm để chọn đáp án đúng · % sinh viên chọn</span>
-                                                <OptionRows question={q} showPicks onChange={(next) => patchQuestion(i, { ...q, ...next })} />
+                                                <OptionRows question={q} stats={stats} onChange={(next) => patchQuestion(i, { ...q, ...next })} />
                                                 {trapNote && <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">{trapNote.note}</p>}
                                                 <label className={labelCls} htmlFor={`${q.id}-explain`}>
                                                     Giải thích khi sinh viên sai
@@ -486,7 +488,9 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                       : left > 0
                                         ? `Duyệt hết ${left} mục còn lại để xuất bản.`
                                         : 'Sinh viên sẽ thấy bài ngay sau khi xuất bản.'}{' '}
-                                <span className="font-semibold">· {lesson.origin === 'gemini' ? 'Nội dung do Gemini tạo' : 'Dữ liệu mẫu'}</span>
+                                <span className="font-semibold" title={lesson.origin === 'gemini' ? 'Bản demo: nội dung được Gemini tạo sẵn từ video, không gọi API khi bấm' : undefined}>
+                                    · {lesson.origin === 'gemini' ? 'Nội dung do Gemini tạo' : 'Dữ liệu mẫu'}
+                                </span>
                                 {hasEdits && (
                                     <>
                                         {' · '}

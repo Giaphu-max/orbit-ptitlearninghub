@@ -1437,3 +1437,19 @@
     grid-template-columns: calc((100% - 24px) * 2 / 3 + 24px) minmax(0, 1fr);
   }
 }
+
+/* Thẻ bài giảng đang được AI tạo (giả lập): vệt sáng chạy ngang, tắt khi giảm chuyển động */
+@layer components {
+  .gen-shimmer {
+    background-image: linear-gradient(100deg, transparent 20%, hsl(var(--card) / 0.55) 50%, transparent 80%);
+    background-size: 220% 100%;
+    animation: gen-shimmer 1.6s linear infinite;
+  }
+  @keyframes gen-shimmer {
+    from { background-position: 120% 0; }
+    to { background-position: -120% 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gen-shimmer { animation: none; }
+  }
+}

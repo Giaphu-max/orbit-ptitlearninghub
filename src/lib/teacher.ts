@@ -1,6 +1,8 @@
-import { useMemo } from 'react'
-import { classStats, courses, getCourse, lessons } from '@/data'
-import type { Concept, Course, Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
+import { useEffect, useMemo, useState } from 'react'
+import { getCourse, lessons } from '@/data'
+import { TEACHER_CLASSES, type TeacherClass } from '@/data/classes'
+import type { ClassStats, Concept, Course, Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
+import { getClassStats } from '@/lib/class-stats'
 import { WHY_WRONG } from '@/data/teacher-notes'
 import { lessonItemKeys, useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
@@ -15,7 +17,7 @@ export const TRAP_SHARE = 25
 /** Ngưỡng tô đỏ % lớp sai lần đầu. */
 export const HOT_RATE = 40
 
-export type LessonState = 'wait' | 'editing' | 'published'
+export type LessonState = 'generating' | 'wait' | 'editing' | 'published'
 
 export interface LessonReview {
     lesson: Lesson
@@ -28,6 +30,10 @@ export interface LessonReview {
     done: number
     total: number
     state: LessonState
+    /** Đang giả lập AI tạo nội dung: 0..1 và bước hiện tại */
+    progress?: number
+    step?: string
+    imported?: boolean
 }
 
 export const itemKey = {
@@ -36,14 +42,32 @@ export const itemKey = {
     question: (id: string) => `q:${id}`,
 }
 
+/** Các bước giả lập AI tạo nội dung, theo tiến độ. */
+const GEN_STEPS = ['Đọc phụ đề', 'Transcript có mốc thời gian', 'Khái niệm', 'Câu hỏi và câu biến thể']
+export const genStep = (p: number) => GEN_STEPS[Math.min(GEN_STEPS.length - 1, Math.floor(p * GEN_STEPS.length))]
+
 /** Bài sau khi áp chỉnh sửa, kèm trạng thái duyệt từng mục. Bài đã xuất bản mà chưa có bản ghi duyệt coi như duyệt hết. */
 export function useLessonReviews(): LessonReview[] {
     const edits = useOrbitStore((s) => s.lessonEdits)
     const review = useOrbitStore((s) => s.lessonReview)
     const items = useOrbitStore((s) => s.reviewedItems)
+    const imported = useOrbitStore((s) => s.importedLessons)
+    const importedCourses = useOrbitStore((s) => s.importedCourses)
+    const jobs = useOrbitStore((s) => s.importJobs)
+
+    // Còn bài đang giả lập thì tick để tiến độ chạy; xong hết thì dừng
+    const [now, setNow] = useState(() => Date.now())
+    const running = Object.values(jobs).some((j) => now < j.startedAt + j.durationMs)
+    useEffect(() => {
+        if (!running) return
+        const t = window.setInterval(() => setNow(Date.now()), 300)
+        return () => window.clearInterval(t)
+    }, [running])
+
     return useMemo(() => {
         const seen: Record<string, number> = {}
-        return lessons.map((base) => {
+        return [...lessons, ...imported].map((base) => {
+            const isImported = base.id.startsWith('imp-')
             const lesson = edits[base.id] ? { ...base, ...edits[base.id] } : base
             const published = (review[base.id] ?? base.status) === 'published'
             const keys = lessonItemKeys(lesson)
@@ -51,10 +75,31 @@ export function useLessonReviews(): LessonReview[] {
             const reviewed = new Set(entry ? entry.filter((k) => keys.includes(k)) : published ? keys : [])
             const done = reviewed.size
             const index = (seen[base.courseId] = (seen[base.courseId] ?? -1) + 1)
-            const state: LessonState = published ? 'published' : done > 0 ? 'editing' : 'wait'
-            return { lesson, course: getCourse(base.courseId), index, published, keys, reviewed, done, total: keys.length, state }
+            const job = jobs[base.id]
+            const progress = job ? Math.min(1, (now - job.startedAt) / job.durationMs) : 1
+            const generating = isImported && progress < 1
+            const state: LessonState = generating ? 'generating' : published ? 'published' : done > 0 ? 'editing' : 'wait'
+            const course = getCourse(base.courseId) ?? importedCourses.find((c) => c.id === base.courseId)
+            return { lesson, course, index, published, keys, reviewed, done, total: keys.length, state, progress: generating ? progress : undefined, step: generating ? genStep(progress) : undefined, imported: isImported }
         })
-    }, [edits, review, items])
+    }, [edits, review, items, imported, importedCourses, jobs, now])
+}
+
+/** Các lớp, lớp đang chọn và số liệu của lớp đó. */
+export function useTeacherClass() {
+    const id = useOrbitStore((s) => s.teacherClassId)
+    const importedClasses = useOrbitStore((s) => s.importedCourseClasses)
+    const cls = TEACHER_CLASSES.find((c) => c.id === id) ?? TEACHER_CLASSES[0]
+    return useMemo(() => {
+        const courseIdsOf = (c: TeacherClass) => [...c.courseIds, ...Object.entries(importedClasses).filter(([, cl]) => cl.includes(c.id)).map(([cid]) => cid)]
+        return { classes: TEACHER_CLASSES, cls, courseIds: courseIdsOf(cls), courseIdsOf, stats: getClassStats(cls.id) }
+    }, [cls, importedClasses])
+}
+
+/** Số liệu cho một khóa học: lớp đang chọn nếu có khóa đó, không thì lớp đầu tiên có khóa đó. */
+export function statsForCourse(courseId: string, selected: TeacherClass): ClassStats {
+    const cls = selected.courseIds.includes(courseId) ? selected : (TEACHER_CLASSES.find((c) => c.courseIds.includes(courseId)) ?? selected)
+    return getClassStats(cls.id)
 }
 
 /** Bài mở mặc định ở Duyệt nội dung: đang duyệt dở, rồi bài chờ duyệt, rồi bài đầu tiên. */
@@ -63,20 +108,20 @@ export function defaultReviewId(reviews: LessonReview[]): string | undefined {
 }
 
 /** % lớp sai ngay lần đầu của một khái niệm (null nếu chưa có dữ liệu). */
-export function conceptRate(conceptId: string): number | null {
-    const s = classStats.concepts[conceptId]
+export function conceptRate(stats: ClassStats, conceptId: string): number | null {
+    const s = stats.concepts[conceptId]
     return s && s.answered > 0 ? pct(s.wrongFirstTry, s.answered) : null
 }
 
 /** Số lượt chọn từng đáp án của một câu gốc (null nếu chưa có dữ liệu). */
-export function questionPicks(questionId: string): number[] | null {
-    const picks = classStats.questions[questionId]?.picks
+export function questionPicks(stats: ClassStats, questionId: string): number[] | null {
+    const picks = stats.questions[questionId]?.picks
     return picks && picks.reduce((a, b) => a + b, 0) > 0 ? picks : null
 }
 
 /** Đáp án sai được chọn nhiều nhất của một câu, theo % lớp. */
-export function topTrap(q: QuizChoiceQuestion & { id: string }): { index: number; share: number } | null {
-    const picks = questionPicks(q.id)
+export function topTrap(stats: ClassStats, q: QuizChoiceQuestion & { id: string }): { index: number; share: number } | null {
+    const picks = questionPicks(stats, q.id)
     if (!picks) return null
     const total = picks.reduce((a, b) => a + b, 0)
     let best: { index: number; share: number } | null = null
@@ -94,17 +139,18 @@ export type TeacherTask =
     | { kind: 'fix'; review: LessonReview; question: LessonQuizQuestion; share: number; minutes: number }
 
 /** Tối đa 3 việc, theo ưu tiên: duyệt tiếp bài dở, duyệt bài mới, sửa câu gây nhầm. */
-export function buildTasks(reviews: LessonReview[]): TeacherTask[] {
+export function buildTasks(reviews: LessonReview[], stats: ClassStats): TeacherTask[] {
     const tasks: TeacherTask[] = []
     const resume = reviews.find((r) => r.state === 'editing')
     if (resume) tasks.push({ kind: 'resume', review: resume, left: resume.total - resume.done, minutes: (resume.total - resume.done) * MIN_PER_ITEM })
     const fresh = reviews.find((r) => r.state === 'wait')
     if (fresh) tasks.push({ kind: 'new', review: fresh, minutes: fresh.total * MIN_PER_ITEM })
     let fix: Extract<TeacherTask, { kind: 'fix' }> | null = null
-    for (const r of reviews) {
+    // Bài chưa xuất bản đã nằm trong việc duyệt, nên chỉ xét câu của bài đã xuất bản
+    for (const r of reviews.filter((x) => x.state === 'published')) {
         for (const q of r.lesson.quiz) {
             if (r.reviewed.has(itemKey.question(q.id))) continue
-            const trap = topTrap(q)
+            const trap = topTrap(stats, q)
             if (trap && trap.share >= TRAP_SHARE && (!fix || trap.share > fix.share)) fix = { kind: 'fix', review: r, question: q, share: trap.share, minutes: 3 }
         }
     }
@@ -123,11 +169,11 @@ export interface Attention {
 }
 
 /** Khái niệm lớp sai nhiều nhất lần đầu (trong các bài `pool`), kèm câu hỏi tương ứng. */
-export function buildAttention(pool: LessonReview[]): Attention | null {
+export function buildAttention(pool: LessonReview[], stats: ClassStats): Attention | null {
     let best: Attention | null = null
     for (const r of pool) {
         for (const c of r.lesson.concepts) {
-            const s = classStats.concepts[c.id]
+            const s = stats.concepts[c.id]
             if (!s || s.answered === 0) continue
             const rate = pct(s.wrongFirstTry, s.answered)
             if (!best || rate > best.rate) {
@@ -139,17 +185,7 @@ export function buildAttention(pool: LessonReview[]): Attention | null {
     return best
 }
 
-/** Các khái niệm khác lớp cũng đang sai nhiều (≥ HOT_RATE), trừ khái niệm đang nêu. */
-export function otherWatch(pool: LessonReview[], exceptId: string) {
-    return pool
-        .flatMap((r) => r.lesson.concepts.map((c) => ({ id: c.id, name: c.name, rate: conceptRate(c.id) })))
-        .filter((c): c is { id: string; name: string; rate: number } => c.id !== exceptId && c.rate !== null && c.rate >= HOT_RATE)
-        .sort((a, b) => b.rate - a.rate)
-}
-
-export const courseTest = (courseId: string) => classStats.tests[courseId]
-
-export const allCourses = courses
+export const courseTest = (stats: ClassStats, courseId: string) => stats.tests[courseId]
 
 export function lessonsOriginal(id: string) {
     return lessons.find((l) => l.id === id)

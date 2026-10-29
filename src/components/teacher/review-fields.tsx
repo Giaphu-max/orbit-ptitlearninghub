@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { ChevronDown, Check, Loader2, Sparkles } from 'lucide-react'
-import type { QuizChoiceQuestion } from '@/data/types'
+import type { ClassStats, QuizChoiceQuestion } from '@/data/types'
 import { pct, questionPicks, topTrap } from '@/lib/teacher'
 
 export const fieldCls =
@@ -104,10 +104,10 @@ export function ItemActions({
 }
 
 /** 4 đáp án: bấm vòng tròn để chọn đáp án đúng, sửa chữ tại chỗ; có số liệu thì hiện % sinh viên chọn. */
-export function OptionRows({ question, onChange, showPicks = false }: { question: QuizChoiceQuestion & { id: string }; onChange: (next: QuizChoiceQuestion) => void; showPicks?: boolean }) {
-    const picks = showPicks ? questionPicks(question.id) : null
+export function OptionRows({ question, onChange, stats }: { question: QuizChoiceQuestion & { id: string }; onChange: (next: QuizChoiceQuestion) => void; stats?: ClassStats }) {
+    const picks = stats ? questionPicks(stats, question.id) : null
     const total = picks?.reduce((a, b) => a + b, 0) ?? 0
-    const trap = showPicks ? topTrap(question) : null
+    const trap = stats ? topTrap(stats, question) : null
     return (
         <div>
             {question.options.map((opt, i) => {

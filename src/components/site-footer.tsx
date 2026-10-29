@@ -25,7 +25,7 @@ export function SiteFooter() {
             title: 'Giảng viên',
             links: [
                 { label: 'Tổng quan', to: '/' },
-                { label: 'Duyệt nội dung', to: '/teacher/review' },
+                { label: 'Bài giảng', to: '/teacher/library' },
                 { label: 'Lớp học', to: '/teacher/class' },
             ],
         },

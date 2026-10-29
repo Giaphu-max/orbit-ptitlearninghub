@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { ChevronDown, Minus, Play, TrendingDown, TrendingUp } from 'lucide-react'
-import { classStats, courses, getConcept } from '@/data'
-import type { Course } from '@/data/types'
+import { courses as staticCourses, getConcept } from '@/data'
+import type { ClassStats, Course } from '@/data/types'
+import { ClassPicker } from '@/components/teacher/class-picker'
 import { TEACHER_PROFILE, WHY_WRONG } from '@/data/teacher-notes'
 import { TitleBlock } from '@/components/lesson/lesson-header'
 import { AnswerBars } from '@/components/teacher/answer-bars'
-import { courseTest, HOT_RATE, pct, useLessonReviews, type LessonReview } from '@/lib/teacher'
+import { courseTest, HOT_RATE, pct, useLessonReviews, useTeacherClass, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -14,6 +15,9 @@ interface ConceptRow {
     id: string
     name: string
     review: LessonReview
+    /** Số sinh viên sai ngay lần đầu / số sinh viên đã trả lời */
+    wrong: number
+    answered: number
     /** % sai lần đầu khi xem video */
     video: number | null
     /** % đúng khi làm test cuối chương */
@@ -22,19 +26,19 @@ interface ConceptRow {
     gap: number
 }
 
-function buildRows(course: Course, reviews: LessonReview[]): ConceptRow[] {
-    const t = courseTest(course.id)
+function buildRows(course: Course, reviews: LessonReview[], stats: ClassStats): ConceptRow[] {
+    const t = courseTest(stats, course.id)
     const rows: ConceptRow[] = []
     for (const r of reviews) {
         if (r.lesson.courseId !== course.id) continue
         for (const c of r.lesson.concepts) {
-            const s = classStats.concepts[c.id]
+            const s = stats.concepts[c.id]
             const video = s && s.answered > 0 ? pct(s.wrongFirstTry, s.answered) : null
             const tc = t?.concepts[c.id]
             const test = tc && tc.asked > 0 ? pct(tc.correct, tc.asked) : null
             if (video === null && test === null) continue
             const wrongs = [video, test === null ? null : 100 - test].filter((v): v is number => v !== null)
-            rows.push({ id: c.id, name: c.name, review: r, video, test, gap: wrongs.reduce((a, b) => a + b, 0) / wrongs.length })
+            rows.push({ id: c.id, name: c.name, review: r, wrong: s?.wrongFirstTry ?? 0, answered: s?.answered ?? 0, video, test, gap: wrongs.reduce((a, b) => a + b, 0) / wrongs.length })
         }
     }
     return rows.sort((a, b) => b.gap - a.gap)
@@ -45,14 +49,17 @@ const mmss = (sec: number) => formatTime(sec)
 /** /teacher/class – gộp thống kê lớp và kết quả test theo môn: dải số liệu, khối cần chú ý nhất, bảng khái niệm, phân bố điểm. */
 export function OrbitTeacherClassView() {
     const role = useOrbitStore((s) => s.role)
+    const importedCourses = useOrbitStore((s) => s.importedCourses)
     const reviews = useLessonReviews()
+    const { cls, stats, courseIds } = useTeacherClass()
     const [params] = useSearchParams()
-    const course = courses.find((c) => c.id === params.get('course')) ?? courses[0]
-    const rows = useMemo(() => (course ? buildRows(course, reviews) : []), [course, reviews])
+    const classCourses = [...staticCourses, ...importedCourses].filter((c) => courseIds.includes(c.id))
+    const course = classCourses.find((c) => c.id === params.get('course')) ?? classCourses[0]
+    const rows = useMemo(() => (course ? buildRows(course, reviews, stats) : []), [course, reviews, stats])
     if (role !== 'teacher') return <Navigate to="/" replace />
-    if (!course) return <p className="p-12 text-center text-muted-foreground">Chưa có học phần nào.</p>
+    if (!course) return <p className="p-12 text-center text-muted-foreground">Lớp này chưa có học phần nào.</p>
 
-    const test = courseTest(course.id)
+    const test = courseTest(stats, course.id)
     const worst = rows[0]
     const worstQuestion = worst?.review.lesson.quiz.find((q) => q.conceptId === worst.id)
     const maxBucket = Math.max(...(test?.scoreBuckets.map((b) => b.count) ?? [0]), 1)
@@ -67,7 +74,7 @@ export function OrbitTeacherClassView() {
                 <header className="lesson-grid items-end">
                     <TitleBlock
                         label={course.title}
-                        items={courses.map((c, i) => ({
+                        items={classCourses.map((c, i) => ({
                             key: c.id,
                             to: `/teacher/class?course=${c.id}`,
                             n: String(i + 1).padStart(2, '0'),
@@ -77,15 +84,18 @@ export function OrbitTeacherClassView() {
                         }))}
                         title="Lớp học"
                     />
-                    <p className="pb-1 text-right text-[13px] text-muted-foreground">
-                        Dữ liệu mẫu lớp <span className="font-mono font-bold text-strong">{classStats.classSize}</span> sinh viên · {TEACHER_PROFILE.fullName}
-                    </p>
+                    <div className="flex flex-col items-end gap-1.5">
+                        <ClassPicker />
+                        <p className="text-right text-[13px] text-muted-foreground">
+                            Dữ liệu mẫu lớp <span className="font-mono font-bold text-strong">{cls.size}</span> sinh viên · {TEACHER_PROFILE.fullName}
+                        </p>
+                    </div>
                 </header>
 
                 <div className="mt-6 flex flex-col gap-6">
                     {test ? (
                         <dl className="grid grid-cols-2 overflow-hidden rounded-[20px] border border-border bg-card shadow-card sm:grid-cols-4">
-                            <Stat label="Đã làm test" value={`${test.attempted}/${classStats.classSize}`} note={`${test.attempts} lượt, tính cả làm lại`} />
+                            <Stat label="Đã làm test" value={`${test.attempted}/${cls.size}`} note={`${test.attempts} lượt, tính cả làm lại`} />
                             <Stat label="Điểm trung bình" value={`${test.avgCorrectPct}%`} note="câu đúng" />
                             <Stat label="Đạt từ 80%" value={`${pct(test.passed, test.attempted)}%`} note={`${test.passed} sinh viên`} />
                             <Stat label="Thời gian TB" value={mmss(test.avgDurationSec)} note={`${test.timedOut} lượt hết giờ`} />
@@ -100,7 +110,7 @@ export function OrbitTeacherClassView() {
                                 <p className="text-xs font-bold uppercase tracking-[0.12em] opacity-90">Cần chú ý nhất</p>
                                 <p className="mt-1.5 text-2xl font-extrabold leading-snug">
                                     {worst.name}:{' '}
-                                    {worst.video !== null ? `${worst.video}% sinh viên sai ngay lần đầu` : `chỉ ${worst.test}% trả lời đúng trong test`}
+                                    {worst.video !== null ? `${worst.wrong}/${worst.answered} sinh viên sai ngay lần đầu` : `chỉ ${worst.test}% trả lời đúng trong test`}
                                 </p>
                                 <p className="mt-1.5 max-w-[70ch] text-sm leading-relaxed opacity-90">
                                     {WHY_WRONG[worst.id] ?? 'Nên xem lại cách giảng hoặc câu hỏi ở khái niệm này trên lớp.'}
@@ -121,7 +131,7 @@ export function OrbitTeacherClassView() {
 
                     <div className="lesson-grid items-start">
                         <section aria-label="Khái niệm" className="rounded-[20px] border border-border bg-card shadow-card">
-                            <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_120px_20px] gap-4 border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground max-md:hidden">
+                            <div className="grid grid-cols-[minmax(0,1fr)_150px_110px_120px_20px] gap-4 border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground max-md:hidden">
                                 <span>Khái niệm · sắp theo mức hổng</span>
                                 <span>Sai lần đầu</span>
                                 <span>Đúng trong test</span>
@@ -130,7 +140,7 @@ export function OrbitTeacherClassView() {
                             </div>
                             {rows.length === 0 && <p className="p-6 text-sm text-muted-foreground">Chưa có dữ liệu trả lời của lớp cho học phần này.</p>}
                             {rows.map((r) => (
-                                <ConceptLine key={r.id} row={r} to={reviewTo(r)} />
+                                <ConceptLine key={r.id} row={r} to={reviewTo(r)} stats={stats} />
                             ))}
                         </section>
 
@@ -168,7 +178,7 @@ function Stat({ label, value, note }: { label: string; value: string; note: stri
     )
 }
 
-function ConceptLine({ row, to }: { row: ConceptRow; to: string }) {
+function ConceptLine({ row, to, stats }: { row: ConceptRow; to: string; stats: ClassStats }) {
     const [open, setOpen] = useState(false)
     const { review } = row
     const question = review.lesson.quiz.find((q) => q.conceptId === row.id)
@@ -181,7 +191,7 @@ function ConceptLine({ row, to }: { row: ConceptRow; to: string }) {
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
-                className="grid w-full grid-cols-[minmax(0,1fr)_120px_120px_120px_20px] items-center gap-4 px-5 py-3.5 text-left transition hover:bg-muted max-md:grid-cols-[minmax(0,1fr)_auto_20px]"
+                className="grid w-full grid-cols-[minmax(0,1fr)_150px_110px_120px_20px] items-center gap-4 px-5 py-3.5 text-left transition hover:bg-muted max-md:grid-cols-[minmax(0,1fr)_auto_20px]"
             >
                 <span className="min-w-0">
                     <b className="block text-sm font-bold leading-snug text-strong">{row.name}</b>
@@ -192,7 +202,10 @@ function ConceptLine({ row, to }: { row: ConceptRow; to: string }) {
                         <span className="text-muted-foreground">—</span>
                     ) : (
                         <>
-                            <span className={hot ? 'text-brand-ink' : 'text-muted-foreground'}>{row.video}%</span>
+                            <span className={hot ? 'text-brand-ink' : 'text-muted-foreground'}>
+                                {row.wrong}/{row.answered} SV
+                            </span>
+                            <span className="ml-1 text-[11px] font-medium text-muted-foreground">{row.video}%</span>
                             <i className="mt-1.5 block h-[5px] overflow-hidden rounded-full bg-muted">
                                 <u className={`block h-full no-underline ${hot ? 'bg-brand-600' : 'bg-muted-foreground/40'}`} style={{ width: `${row.video}%` }} />
                             </i>
@@ -226,7 +239,7 @@ function ConceptLine({ row, to }: { row: ConceptRow; to: string }) {
                     {question ? (
                         <div className="max-w-[640px]">
                             <p className="mb-2 text-[13px] font-semibold leading-snug text-strong">{question.prompt}</p>
-                            <AnswerBars question={question} />
+                            <AnswerBars stats={stats} question={question} />
                         </div>
                     ) : (
                         <p className="text-sm text-muted-foreground">Khái niệm này chưa có câu hỏi trong video.</p>

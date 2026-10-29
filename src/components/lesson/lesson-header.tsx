@@ -33,10 +33,12 @@ interface TitleBlockProps {
     items: PickerItem[]
     footer?: PickerFooter
     title: string
+    /** Link nhỏ "‹ ..." đứng trước nút xổ */
+    back?: { to: string; label: string }
 }
 
 /** Dòng nhỏ "<học phần> [Bài n/N] ▾" mở menu danh sách, dưới là tiêu đề một dòng. Dùng chung trang học bài và các trang giảng viên. */
-export function TitleBlock({ label, badge, items, footer, title }: TitleBlockProps) {
+export function TitleBlock({ label, badge, items, footer, title, back }: TitleBlockProps) {
     const [open, setOpen] = useState(false)
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -57,7 +59,12 @@ export function TitleBlock({ label, badge, items, footer, title }: TitleBlockPro
     const footerCls = 'mt-1 grid w-full grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] border-t border-border p-2.5 text-left text-sm transition hover:bg-muted'
     return (
         <div className="min-w-0">
-            <div ref={rootRef} className="relative inline-block">
+            <div ref={rootRef} className="relative inline-flex items-center gap-2.5">
+                {back && (
+                    <Link to={back.to} className="py-1 text-[13px] font-bold text-muted-foreground transition hover:text-strong">
+                        ‹ {back.label}
+                    </Link>
+                )}
                 <button
                     type="button"
                     aria-expanded={open}
@@ -70,7 +77,7 @@ export function TitleBlock({ label, badge, items, footer, title }: TitleBlockPro
                     <ChevronDown size={13} className={`transition-transform duration-fast ${open ? 'rotate-180' : ''}`} aria-hidden />
                 </button>
                 {open && (
-                    <div role="menu" className="absolute left-0 top-[calc(100%+6px)] z-30 w-[360px] rounded-[14px] border border-border bg-card p-1.5 shadow-raised">
+                    <div role="menu" className="absolute right-auto top-[calc(100%+6px)] z-30 w-[360px] rounded-[14px] border border-border bg-card p-1.5 shadow-raised">
                         {items.map((it) => (
                             <Link
                                 key={it.key}

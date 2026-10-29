@@ -28,16 +28,16 @@ const BASE_ITEMS: NavItem[] = [
     { label: 'Tiến độ & Kỹ năng', to: '/journey', match: (p) => p.startsWith('/journey') },
 ]
 
-// Giảng viên: 3 mục (Tổng quan là route "/" của vai giảng viên)
+// Giảng viên: 3 mục (trang duyệt nằm dưới mục Bài giảng) (Tổng quan là route "/" của vai giảng viên)
 const TEACHER_ITEMS: NavItem[] = [
     { label: 'Tổng quan', to: '/', match: (p) => p === '/' },
-    { label: 'Duyệt nội dung', to: '/teacher/review', match: (p) => p.startsWith('/teacher/review') },
+    { label: 'Bài giảng', to: '/teacher/library', match: (p) => p.startsWith('/teacher/library') || p.startsWith('/teacher/review') },
     { label: 'Lớp học', to: '/teacher/class', match: (p) => p.startsWith('/teacher/class') },
 ]
 
 function getCurrentPageLabel(pathname: string, teacher: boolean): string {
     if (pathname === '/') return teacher ? 'Tổng quan' : 'Trang chủ'
-    if (pathname.startsWith('/teacher/review')) return 'Duyệt nội dung'
+    if (pathname.startsWith('/teacher/library') || pathname.startsWith('/teacher/review')) return 'Bài giảng'
     if (pathname.startsWith('/teacher/class')) return 'Lớp học'
     if (pathname.startsWith('/today') || pathname.startsWith('/daily')) return 'Ôn tập'
     if (pathname === '/learning') return 'Học phần'
