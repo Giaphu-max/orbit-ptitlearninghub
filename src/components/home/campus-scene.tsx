@@ -1457,6 +1457,7 @@ export interface CampusSceneProps {
 function FrameDriver({ kiosk, onReady }: { kiosk: KioskBridge; onReady?: () => void }) {
     const advance = useThree((s) => s.advance)
     const clock = useThree((s) => s.clock)
+    const gl = useThree((s) => s.gl)
     useEffect(() => {
         let prev = 0
         let drew = false
@@ -1471,6 +1472,17 @@ function FrameDriver({ kiosk, onReady }: { kiosk: KioskBridge; onReady?: () => v
             advance(clock.elapsedTime + dt)
             if (!ready) {
                 ready = true
+                // ?campussnap (dev): chụp khung vừa render ngay trong cùng khung (drawing buffer còn nguyên) làm ảnh tĩnh của trang chủ
+                if (FLAGS.campusSnap) {
+                    gl.domElement.toBlob(
+                        (blob) => {
+                            if (!blob) return
+                            void fetch('/__save-campus-still', { method: 'POST', body: blob }).then((r) => r.text()).then((f) => console.info('[campussnap] đã lưu', f, `${gl.domElement.width}×${gl.domElement.height}`))
+                        },
+                        'image/webp',
+                        0.9,
+                    )
+                }
                 onReady?.()
             }
             // Canvas đục đã có khung đầu: trời đã vẽ bằng WebGL, bỏ gradient CSS phía sau
@@ -1479,7 +1491,7 @@ function FrameDriver({ kiosk, onReady }: { kiosk: KioskBridge; onReady?: () => v
                 kiosk.stage.current?.classList.add('sky-gl')
             }
         }, 1)
-    }, [advance, clock, kiosk, onReady])
+    }, [advance, clock, gl, kiosk, onReady])
     return null
 }
 

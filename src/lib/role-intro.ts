@@ -5,6 +5,7 @@
 // Bấm / Enter / Esc tua nhanh tới bước tan trong 250ms.
 
 import { INTRO_PARTS, META, type IntroPart } from '@/lib/intro-meta'
+import { loadCampusStill } from '@/lib/campus-still'
 
 export interface IntroInfo {
     /** Các từ của lời chào; ghép lại thành dòng mono ở đáy màn */
@@ -74,6 +75,12 @@ export function introMark(name: string) {
 const T = { spread: 0.7, swap: 0.72, orbit: [0.25, 0.38, 0.5], ring: [0.45, 1.65], letters: 1.15, star: 1.65, book: 1.8, word: 2.0, sub: 2.3, greet: 2.55, sheen: [2.65, 3.35], tan: 3.2, water: 2.6 }
 const LANDED_AT = 1.2
 const SKIP_MS = 250
+/** Tối đa kéo dài pha cảnh sau mốc tan để chờ trang đích (giây) */
+const PAGE_WAIT = 1.0
+/** Quỹ đạo: hạt đi hết một vòng vẽ ở τ = 1,3s, vận tốc giảm mượt về ω chứ không về 0 */
+const ORB_K = 2.5
+const ORB_W = 0.9
+const ORB_A = (Math.PI * 2 - ORB_W * 1.3) / (1 - Math.exp(-ORB_K * 1.3))
 /** Camera đẩy vào liên tục: 1,075 → 1,0 (đến lúc tan) rồi 1,0 → 0,985 hết lúc tan; vận tốc liền ở chỗ nối */
 const G0 = 1.075
 const G1 = 1.0
@@ -255,6 +262,15 @@ function ensureGPU(): GPU | null {
 /** Khởi tạo sớm lúc rảnh để lần bấm đầu tiên không phải compile shader */
 function warmUp() {
     const run = () => {
+        // Tải sẵn code các trang có thể là đích sau khi chọn vai (chunk đã nằm trong cache lúc đổi trang) + ảnh tĩnh khuôn viên
+        for (const load of [
+            () => import('@/components/orbit-home-view'),
+            () => import('@/components/orbit-teacher-view'),
+            () => import('@/components/home/campus-stage'),
+            () => import('@/components/home/campus-scene'),
+        ])
+            void load().catch(() => undefined)
+        void loadCampusStill()
         void Promise.all([preloadImages(), preloadFonts()]).then(() => {
             if (!root || active) return
             try {
@@ -416,7 +432,8 @@ function camera(t: number) {
         const u = (t - T.ring[0]) / D1
         return G0 - d1 * (c * u + (1 - c) * (2 * u - u * u))
     }
-    return G1 - d2 * Math.min(1, (t - T.tan) / D2)
+    // Không chặn ở G2: nếu phải chờ trang đích, camera vẫn tiếp tục đẩy vào cùng vận tốc
+    return G1 - d2 * ((t - T.tan) / D2)
 }
 
 /* ---------- phát intro ---------- */
@@ -457,11 +474,23 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
     let landedSent = false
     let fadeStart = 0
     let uploaded = false
+    let waited = false
+    // Chờ trang đích sẵn sàng (orbit:page-ready) trước khi tan: kéo dài pha cảnh tối đa PAGE_WAIT giây
+    let expectPage = false
+    let pageReady = false
+    let tanAt = -1
+    const onPageReady = () => {
+        if (pageReady) return
+        pageReady = true
+        introMark('page-ready')
+    }
 
     const swap = () => {
         if (swapped) return
         swapped = true
         introMark('swap')
+        // Chỉ chờ khi trang đích sẽ được dựng mới (trang chủ chưa có trên màn); đã ở trang chủ rồi thì không có tín hiệu để chờ
+        expectPage = !document.getElementById('home-stage')
         try {
             hooks.swap()
         } catch (e) {
@@ -487,8 +516,13 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
             [1.06, 0.42, 0.1, T.orbit[2]],
         ]
         defs.forEach(([rx, ry, a, del], i) => {
-            const p = eoc(prog(t, del, 1.3))
-            if (p <= 0) return
+            const tau = t - del
+            if (tau < 0) return
+            // Góc hạt là MỘT hàm liên tục (không bao giờ dừng): θ(τ) = −π/2 + dir·(A(1 − e^(−kτ)) + ω·τ), vẽ xong đúng một vòng ở τ = 1,3
+            const dir = i === 1 ? -1 : 1
+            const swept = ORB_A * (1 - Math.exp(-ORB_K * tau)) + ORB_W * tau
+            const th = -Math.PI / 2 + dir * swept
+            const frac = cl(swept / (Math.PI * 2))
             const rot = ((-24 + i * 7) * Math.PI) / 180 + t * 0.03 * (i % 2 ? -1 : 1)
             c.save()
             c.translate(cx, cy)
@@ -496,25 +530,25 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
             c.strokeStyle = 'rgba(212,31,22,' + a + ')'
             c.lineWidth = i === 0 ? 1.6 : 1.2
             if (i === 1) c.setLineDash([2, 7])
+            const ex = base * rx
+            const ey = ((base * rx * ry) / 0.62) * 0.62
             c.beginPath()
-            c.ellipse(0, 0, base * rx, ((base * rx * ry) / 0.62) * 0.62, 0, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2)
+            if (frac >= 1) c.ellipse(0, 0, ex, ey, 0, 0, Math.PI * 2)
+            else c.ellipse(0, 0, ex, ey, 0, -Math.PI / 2, th, dir < 0)
             c.stroke()
-            // vệ tinh
-            if (p >= 1 || i === 0) {
-                const th = -Math.PI / 2 + p * Math.PI * 2 + (t - del - 1.3 > 0 ? (t - del - 1.3) * 0.9 : 0) * (i === 1 ? -1 : 1)
-                const x = Math.cos(th) * base * rx
-                const y = Math.sin(th) * base * rx * ry
-                c.setLineDash([])
-                c.fillStyle = 'rgba(226,38,28,' + (i === 0 ? 0.95 : 0.55) + ')'
+            // hạt bám đầu nét ngay từ lúc bắt đầu vẽ
+            const x = Math.cos(th) * ex
+            const y = Math.sin(th) * ey
+            c.setLineDash([])
+            c.fillStyle = 'rgba(226,38,28,' + (i === 0 ? 0.95 : 0.55) + ')'
+            c.beginPath()
+            c.arc(x, y, i === 0 ? 4 : 2.6, 0, 7)
+            c.fill()
+            if (i === 0) {
+                c.fillStyle = 'rgba(226,38,28,.18)'
                 c.beginPath()
-                c.arc(x, y, i === 0 ? 4 : 2.6, 0, 7)
+                c.arc(x, y, 10, 0, 7)
                 c.fill()
-                if (i === 0) {
-                    c.fillStyle = 'rgba(226,38,28,.18)'
-                    c.beginPath()
-                    c.arc(x, y, 10, 0, 7)
-                    c.fill()
-                }
             }
             c.restore()
         })
@@ -753,6 +787,7 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         el!.removeEventListener('click', onSkip)
         window.removeEventListener('keydown', onKey, true)
         window.removeEventListener('resize', onResize)
+        window.removeEventListener('orbit:page-ready', onPageReady)
         // Giữ context, program, texture và các canvas đã cấp phát cho lần sau; chỉ ẩn canvas GL
         if (g) g.canvas.style.display = 'none'
         el!.classList.remove('on', 'water')
@@ -805,11 +840,23 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
                 uploaded = true
                 introMark('upload đầu')
             }
-            if (g && uploaded && vt < T.tan) {
+            // Tới mốc tan: nếu trang đích chưa báo sẵn sàng thì giữ pha cảnh (camera, quỹ đạo vẫn chạy) tối đa PAGE_WAIT giây
+            if (tanAt < 0 && vt >= T.tan) {
+                if (swapped && expectPage && !pageReady && vt < T.tan + PAGE_WAIT) {
+                    if (!waited) {
+                        waited = true
+                        introMark('chờ page-ready')
+                    }
+                } else {
+                    tanAt = vt
+                    if (waited && !pageReady) introMark('hết hạn chờ page-ready, tan')
+                }
+            }
+            if (g && uploaded && tanAt < 0) {
                 uploadScene()
                 drawWater(-1)
             }
-            if (vt >= T.tan) {
+            if (tanAt >= 0) {
                 if (phase === 'scene') {
                     phase = g ? 'water' : 'fade'
                     el!.classList.add('water')
@@ -820,7 +867,7 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
                         sc!.style.opacity = '0'
                     }
                 }
-                const wt = vt - T.tan
+                const wt = vt - tanAt
                 if (phase === 'water') {
                     uploadScene()
                     drawWater(wt)
@@ -880,6 +927,7 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
     el.addEventListener('click', onSkip)
     window.addEventListener('keydown', onKey, true)
     window.addEventListener('resize', onResize)
+    window.addEventListener('orbit:page-ready', onPageReady)
 
     const begin = () => {
         L = layersOk

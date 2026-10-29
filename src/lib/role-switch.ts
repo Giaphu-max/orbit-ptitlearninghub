@@ -50,7 +50,8 @@ export async function enterRole(role: Role, { origin, navigate }: EnterRoleOptio
     const swap = () => {
         useOrbitStore.getState().setRole(role)
         navigate('/')
-        if (!reduce) {
+        // Có intro che phía trước thì trang mở thẳng ở trạng thái cuối (không chạy hiệu ứng trồi lên bên dưới)
+        if (!reduce && !introReady()) {
             const root = document.documentElement
             root.classList.add('role-entering')
             window.setTimeout(() => root.classList.remove('role-entering'), RISE_MS)

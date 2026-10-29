@@ -22,6 +22,30 @@ function restartOnTailwindConfig(): Plugin {
   }
 }
 
+// Chỉ dev: nhận ảnh chụp cảnh 3D (?campussnap) và ghi thành public/brand/campus-still.webp
+function saveCampusStill(): Plugin {
+  return {
+    name: 'orbit-save-campus-still',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/__save-campus-still', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          return res.end()
+        }
+        const chunks: Buffer[] = []
+        req.on('data', (c) => chunks.push(c))
+        req.on('end', async () => {
+          const fs = await import('node:fs/promises')
+          const file = path.resolve(process.cwd(), 'public/brand/campus-still.webp')
+          await fs.writeFile(file, Buffer.concat(chunks))
+          res.end(file)
+        })
+      })
+    },
+  }
+}
+
 function devApi(): Plugin {
   return {
     name: 'orbit-dev-api',
@@ -64,7 +88,7 @@ function devApi(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), devApi(), restartOnTailwindConfig()],
+  plugins: [react(), devApi(), saveCampusStill(), restartOnTailwindConfig()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),

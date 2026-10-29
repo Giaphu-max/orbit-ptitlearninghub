@@ -4,6 +4,7 @@ import { CAMPUS } from './campus-palette'
 import { useThemeStore } from '@/store/useThemeStore'
 import type { DailyLit } from '@/lib/daily-lit'
 import { introDone, introMark, introPlaying } from '@/lib/role-intro'
+import { loadCampusStill } from '@/lib/campus-still'
 
 // Phần 3D tải riêng (three.js + R3F nặng), chỉ kéo về khi hero được dựng.
 const CampusScene = lazy(() => import('./campus-scene'))
@@ -61,10 +62,25 @@ interface CampusStageProps {
 export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk }: CampusStageProps) {
     const night = useThemeStore((s) => s.theme === 'dark')
     const [enabled] = useState(canRender3D)
-    // Mở trang lúc intro đang chạy: chưa dựng Canvas R3F, hiện ảnh tĩnh; intro xong (lúc rảnh) mới dựng, rồi crossfade 400ms
+    // Mở trang lúc intro đang chạy: chưa dựng Canvas R3F, hiện ảnh tĩnh chụp từ chính cảnh 3D; intro xong (lúc rảnh) mới dựng Canvas,
+    // và chỉ crossfade 600ms sau khi R3F đã render khung đầu tiên
     const deferred = useRef(introPlaying())
     const [step, setStep] = useState<'wait' | 'mounted' | 'ready'>(() => (deferred.current ? 'wait' : 'ready'))
     const [stillGone, setStillGone] = useState(!deferred.current)
+    const [still, setStill] = useState<HTMLImageElement | null | undefined>(undefined)
+    useEffect(() => {
+        if (!deferred.current) return
+        let alive = true
+        // Báo trang đã sẵn sàng cho intro: ảnh tĩnh đã decode và nội dung đã được vẽ ra (2 khung sau lần render này)
+        void loadCampusStill().then((img) => {
+            if (!alive) return
+            setStill(img)
+            requestAnimationFrame(() => requestAnimationFrame(() => alive && window.dispatchEvent(new Event('orbit:page-ready'))))
+        })
+        return () => {
+            alive = false
+        }
+    }, [])
     useEffect(() => {
         if (step !== 'wait') return
         let alive = true
@@ -84,16 +100,19 @@ export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk }
     }, [step])
     useEffect(() => {
         if (step !== 'ready' || !deferred.current) return
-        const t = window.setTimeout(() => setStillGone(true), 420)
+        const t = window.setTimeout(() => setStillGone(true), 640)
         return () => clearTimeout(t)
     }, [step])
     const onReady = useCallback(() => {
         introMark('khung 3D đầu tiên')
         setStep('ready')
     }, [])
-    const fadeStyle = deferred.current ? { opacity: step === 'ready' ? 1 : 0, transition: 'opacity 400ms ease' } : undefined
-    const stillBlock = (
-        <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`} style={deferred.current ? { opacity: step === 'ready' ? 0 : 1, transition: 'opacity 400ms ease' } : undefined}>
+    const fadeStyle = deferred.current ? { opacity: step === 'ready' ? 1 : 0, transition: 'opacity 600ms ease' } : undefined
+    const stillFade = deferred.current ? { opacity: step === 'ready' ? 0 : 1, transition: 'opacity 600ms ease' } : undefined
+    const stillBlock = deferred.current && still ? (
+        <img src={still.src} alt="" aria-hidden draggable={false} className="absolute inset-0 h-full w-full select-none object-cover object-center" style={stillFade} />
+    ) : (
+        <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`} style={stillFade}>
             <StaticCampus />
         </div>
     )

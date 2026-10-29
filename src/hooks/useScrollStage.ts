@@ -3,6 +3,7 @@ import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
 import { setChapterScroller, setFlyingProbe, setJourneyChapter, setLenis, setPagedMode } from '@/lib/scroll'
 import { addFrame } from '@/lib/frame-loop'
+import { introDone, introPlaying } from '@/lib/role-intro'
 import { page } from '@/lib/page-metrics'
 import { benchState, FLAGS, timed } from '@/lib/perf'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
@@ -627,14 +628,23 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         window.addEventListener('touchend', onTouchEnd, { passive: true })
         window.addEventListener('keydown', onKey)
         // Lenis đã phát 'scroll' cho mọi cuộn (kể cả kéo thanh cuộn); resize thì đọc lại số đo
-        if (paged) setState(0)
-        else {
+        if (paged) {
+            setState(0)
+            // Mở trang lúc intro đang chạy (vòng frame-loop đang tạm dừng): chương đầu hiện thẳng ở trạng thái cuối, không transition
+            if (introPlaying()) {
+                const root = document.documentElement
+                root.classList.add('intro-still')
+                revealIfReady()
+                void introDone().then(() => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('intro-still'))))
+            }
+        } else {
             window.addEventListener('resize', readScroll)
             readScroll()
         }
         const stopFrame = addFrame(tick, 0)
         return () => {
             stopFrame()
+            document.documentElement.classList.remove('intro-still')
             window.clearTimeout(chromeTimer)
             if (pinSwap) {
                 pin.style.position = ''

@@ -24,6 +24,8 @@ export const FLAGS = {
     noLabels: q.has('nolabels'),
     noKiosk: q.has('nokiosk'),
     noReveal: q.has('noreveal'),
+    /** Dev: chụp khung 3D đầu tiên của trang chủ thành public/brand/campus-still.webp (xem campus-scene FrameDriver) */
+    campusSnap: q.has('campussnap'),
     noLenis: q.has('nolenis'),
     opaque: q.has('opaque'),
     smoothScroll: q.has('smoothscroll'),

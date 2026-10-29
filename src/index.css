@@ -337,6 +337,13 @@
     background-image: var(--canvas-glow);
   }
   /* Panel chương (useScrollStage đặt class on / past): chồng nhau trong một ô lưới, panel không `on` thì ẩn sau khi hiệu ứng ra xong */
+  /* Mở trang lúc intro đang chạy: nội dung ở trạng thái cuối ngay, không chạy hiệu ứng vào trang bên dưới */
+  .intro-still [data-panel],
+  .intro-still [data-panel] [data-s],
+  .intro-still main section {
+    transition: none !important;
+    animation: none !important;
+  }
   [data-panel] {
     visibility: hidden;
     transition: visibility 0s 0.6s;
