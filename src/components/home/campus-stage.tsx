@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import type { KioskBridge } from './kiosk-screen'
 import { CAMPUS } from './campus-palette'
 import { useThemeStore } from '@/store/useThemeStore'
 import type { DailyLit } from '@/lib/daily-lit'
+import { introDone, introMark, introPlaying } from '@/lib/role-intro'
 
 // Phần 3D tải riêng (three.js + R3F nặng), chỉ kéo về khi hero được dựng.
 const CampusScene = lazy(() => import('./campus-scene'))
@@ -60,18 +61,59 @@ interface CampusStageProps {
 export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk }: CampusStageProps) {
     const night = useThemeStore((s) => s.theme === 'dark')
     const [enabled] = useState(canRender3D)
+    // Mở trang lúc intro đang chạy: chưa dựng Canvas R3F, hiện ảnh tĩnh; intro xong (lúc rảnh) mới dựng, rồi crossfade 400ms
+    const deferred = useRef(introPlaying())
+    const [step, setStep] = useState<'wait' | 'mounted' | 'ready'>(() => (deferred.current ? 'wait' : 'ready'))
+    const [stillGone, setStillGone] = useState(!deferred.current)
+    useEffect(() => {
+        if (step !== 'wait') return
+        let alive = true
+        void introDone().then(() => {
+            const go = () => {
+                if (!alive) return
+                introMark('mount canvas 3D')
+                setStep('mounted')
+            }
+            const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
+            if (ric) ric(go)
+            else window.setTimeout(go, 200)
+        })
+        return () => {
+            alive = false
+        }
+    }, [step])
+    useEffect(() => {
+        if (step !== 'ready' || !deferred.current) return
+        const t = window.setTimeout(() => setStillGone(true), 420)
+        return () => clearTimeout(t)
+    }, [step])
+    const onReady = useCallback(() => {
+        introMark('khung 3D đầu tiên')
+        setStep('ready')
+    }, [])
+    const fadeStyle = deferred.current ? { opacity: step === 'ready' ? 1 : 0, transition: 'opacity 400ms ease' } : undefined
+    const stillBlock = (
+        <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`} style={deferred.current ? { opacity: step === 'ready' ? 0 : 1, transition: 'opacity 400ms ease' } : undefined}>
+            <StaticCampus />
+        </div>
+    )
 
     return (
         <div id="home-stage" ref={kiosk.stage} aria-hidden={!enabled} className={`stage-sky own-layer pointer-events-none fixed left-0 top-0 w-full ${staticMode ? 'z-20 h-[44svh] border-b border-border shadow-raised' : 'z-0 h-[100svh]'}`}>
             <div className="pointer-events-auto absolute inset-0">
                 {enabled ? (
-                    <Suspense fallback={null}>
-                        <CampusScene night={night} reduce={reduce} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} />
-                    </Suspense>
+                    <>
+                        {step !== 'wait' && (
+                            <div className="absolute inset-0" style={fadeStyle}>
+                                <Suspense fallback={null}>
+                                    <CampusScene night={night} reduce={reduce} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} onReady={onReady} />
+                                </Suspense>
+                            </div>
+                        )}
+                        {!stillGone && stillBlock}
+                    </>
                 ) : (
-                    <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`}>
-                        <StaticCampus />
-                    </div>
+                    stillBlock
                 )}
             </div>
         </div>

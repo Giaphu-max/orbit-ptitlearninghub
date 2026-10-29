@@ -1,4 +1,5 @@
 import { recordFrame } from '@/lib/perf'
+import { introPlaying } from '@/lib/role-intro'
 
 /**
  * MỘT vòng requestAnimationFrame cho cả trang chủ: Lenis + máy quay (useScrollStage) chạy trước, rồi canvas R3F (frameloop="never", advance).
@@ -17,6 +18,11 @@ export const setFrameObserver = (fn: ((gap: number, js: number) => void) | null)
 
 const loop = (t: number) => {
     raf = requestAnimationFrame(loop)
+    // Intro đang chạy: giữ vòng rAF nhưng không gọi subscriber nào (Lenis, máy quay, advance R3F) để nhường toàn bộ khung cho intro
+    if (introPlaying()) {
+        last = 0
+        return
+    }
     const t0 = performance.now()
     const first = !last
     const gap = first ? 16.7 : t0 - last

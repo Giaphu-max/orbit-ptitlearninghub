@@ -26,17 +26,48 @@ let root: HTMLElement | null = null
 let active = false
 let abort: (() => void) | null = null
 
+let unbindResize: (() => void) | null = null
+
 export const bindIntro = (r: HTMLElement | null) => {
     if (!r) abort?.()
+    unbindResize?.()
+    unbindResize = null
     root = r
     if (r) {
-        void preloadImages()
+        // Chuẩn bị sẵn lúc rảnh: ảnh, font, các canvas, WebGL; chuẩn bị lại sau resize (debounce 200ms)
         warmUp()
+        let t = 0
+        const onResize = () => {
+            if (active) return
+            clearTimeout(t)
+            t = window.setTimeout(() => !active && prepare(), 200)
+        }
+        window.addEventListener('resize', onResize)
+        unbindResize = () => {
+            clearTimeout(t)
+            window.removeEventListener('resize', onResize)
+        }
     }
 }
 export const introReady = () => root !== null
 /** Intro đang chạy: không chạy chồng hai lần, không cho đổi giao diện chen vào. */
 export const introPlaying = () => active
+
+const doneWaiters: (() => void)[] = []
+/** Resolve khi intro đóng (ngay lập tức nếu không có intro đang chạy). Sự kiện tương ứng: window 'orbit:intro-done'. */
+export const introDone = (): Promise<void> => (active ? new Promise<void>((res) => doneWaiters.push(res)) : Promise.resolve())
+
+/* ---------- công cụ đo ?introdebug ---------- */
+const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('introdebug')
+const dbg = { frames: [] as { vt: number; phase: string; gap: number; js: number }[], marks: [] as { vt: number; name: string }[], t0: 0 }
+if (DEBUG) (window as unknown as { __introDebug: typeof dbg }).__introDebug = dbg
+/** Ghi một mốc vào bảng đo (chỉ khi có ?introdebug); gọi được từ nơi khác (vd. lúc mount cảnh 3D) */
+export function introMark(name: string) {
+    if (!DEBUG) return
+    const at = performance.now()
+    console.info(`[introdebug] ${name} @${Math.round(at)}ms`)
+    if (active) dbg.marks.push({ vt: +((at - dbg.t0) / 1000).toFixed(3), name })
+}
 
 /* ---------- hằng số ---------- */
 // Mốc thời gian (giây) tính từ lúc bấm; các bước gối lên nhau, không có khoảng trống.
@@ -77,7 +108,7 @@ function preloadImages(): Promise<Layers> {
                 }),
         ),
     ).then((imgs) => Object.fromEntries(INTRO_PARTS.map((n, i) => [n, imgs[i]])) as Layers)
-    imagesP.catch(() => (imagesP = null))
+    imagesP.then((l) => (layersOk = l)).catch(() => (imagesP = null))
     return imagesP
 }
 
@@ -198,6 +229,7 @@ function initGPU(glc: HTMLCanvasElement): GPU | null {
     gl.uniform2f(uni.I, 0.5, 0.5)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     const g: GPU = { canvas: glc, gl, tex, uni, texW: 1, texH: 1 }
+    P.key = ''
     // Mất context: bỏ bản cũ, thay canvas bằng bản mới; lần chạy sau tạo lại
     glc.addEventListener('webglcontextlost', (e) => {
         e.preventDefault()
@@ -223,13 +255,14 @@ function ensureGPU(): GPU | null {
 /** Khởi tạo sớm lúc rảnh để lần bấm đầu tiên không phải compile shader */
 function warmUp() {
     const run = () => {
-        if (root && !active) {
+        void Promise.all([preloadImages(), preloadFonts()]).then(() => {
+            if (!root || active) return
             try {
-                ensureGPU()
+                prepare()
             } catch {
                 gpu = null
             }
-        }
+        })
     }
     const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
     if (ric) ric(run)
@@ -237,6 +270,116 @@ function warmUp() {
 }
 
 const IMPACT = [0.36, 0.62]
+
+/* ---------- chuẩn bị sẵn (ảnh, font, canvas, texture) ---------- */
+let fontsP: Promise<void> | null = null
+let fontsOk = false
+let layersOk: Layers | null = null
+function preloadFonts() {
+    fontsP ??= Promise.all([document.fonts.load('800 24px "Be Vietnam Pro"'), document.fonts.load('500 14px "Be Vietnam Pro"'), document.fonts.load('700 12px "JetBrains Mono Variable"')])
+        .catch(() => undefined)
+        .then(() => {
+            fontsOk = true
+        })
+    return fontsP
+}
+
+/** Kích thước và các canvas phụ dùng chung giữa các lần chạy */
+const P = { W: 0, H: 0, DPR: 1, key: '', bg: document.createElement('canvas'), lay: document.createElement('canvas') }
+
+/** Nền trắng + 5 mảng đỏ loang + quầng trắng giữa: vẽ một lần ở 0,5× độ phân giải, dư 3% mỗi cạnh cho phần trôi */
+function buildBg() {
+    const { W, H, bg } = P
+    const bgc = bg.getContext('2d')
+    if (!bgc) return
+    const M = Math.max(W, H)
+    bg.width = Math.max(1, Math.round(W * 1.06 * 0.5))
+    bg.height = Math.max(1, Math.round(H * 1.06 * 0.5))
+    bgc.setTransform(0.5, 0, 0, 0.5, W * 0.03 * 0.5, H * 0.03 * 0.5)
+    bgc.fillStyle = '#FFFFFF'
+    bgc.fillRect(-W, -H, W * 3, H * 3)
+    const blob = (x: number, y: number, r: number, col: string, a: number) => {
+        const gr = bgc.createRadialGradient(x, y, 0, x, y, r)
+        gr.addColorStop(0, 'rgba(' + col + ',' + a + ')')
+        gr.addColorStop(0.55, 'rgba(' + col + ',' + a * 0.35 + ')')
+        gr.addColorStop(1, 'rgba(' + col + ',0)')
+        bgc.fillStyle = gr
+        bgc.fillRect(-W, -H, W * 3, H * 3)
+    }
+    blob(W * 1.02, H * -0.05, M * 0.55, '226,38,28', 0.3)
+    blob(W * 0.86, H * 0.1, M * 0.26, '255,90,71', 0.18)
+    blob(W * -0.04, H * 1.06, M * 0.5, '200,27,18', 0.26)
+    blob(W * 0.14, H * 0.96, M * 0.22, '244,135,143', 0.2)
+    blob(W * 1.0, H * 1.02, M * 0.24, '226,38,28', 0.1)
+    blob(W / 2, H * 0.42, Math.min(W, H) * 0.42, '255,255,255', 0.9)
+}
+
+/** Vẽ một khung shader ở viewport thật (t = -1: chưa có lỗ nào) để driver chạy xong lần đầu */
+function warmDraw(g: GPU) {
+    const { gl, uni, canvas } = g
+    gl.viewport(0, 0, canvas.width, canvas.height)
+    gl.clearColor(0, 0, 0, 0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.uniform1i(uni.S, 0)
+    gl.uniform2f(uni.R, canvas.width, canvas.height)
+    gl.uniform1f(uni.t, -1)
+    gl.uniform2f(uni.I, 0.5, 0.5)
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+}
+
+/**
+ * Cấp phát sẵn mọi thứ theo viewport hiện tại: canvas scene, nền, lớp logo, canvas GL + texture (texImage2D null) và vẽ thử shader.
+ * Chỉ làm lại khi viewport đổi (hoặc force). Trả false nếu chưa có phần tử.
+ */
+function prepare(force = false): boolean {
+    const sc = root?.querySelector<HTMLCanvasElement>('[data-ri="scene"]')
+    if (!sc) return false
+    const DPR = Math.min(2, window.devicePixelRatio || 1)
+    const W = window.innerWidth
+    const H = window.innerHeight
+    const key = `${W}x${H}x${DPR}`
+    const reducedMq = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const g = reducedMq ? null : ensureGPU()
+    if (!force && key === P.key && (!g || g.texW === sc.width)) return true
+    P.W = W
+    P.H = H
+    P.DPR = DPR
+    sc.width = Math.round(W * DPR)
+    sc.height = Math.round(H * DPR)
+    buildBg()
+    // Lớp logo cấp phát một lần ở độ phóng lớn nhất; khung nào cũng chỉ vẽ lại vào đó
+    const LH = Math.min(H * 0.4, 380)
+    P.lay.width = Math.ceil(600 * (LH / 763) * DPR * G0)
+    P.lay.height = Math.ceil(763 * (LH / 763) * DPR * G0)
+    if (g) {
+        const gd = Math.min(DPR, 2, 2880 / W)
+        g.canvas.width = Math.round(W * gd)
+        g.canvas.height = Math.round(H * gd)
+        const { gl, tex } = g
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, tex)
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sc.width, sc.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+        g.texW = sc.width
+        g.texH = sc.height
+        warmDraw(g)
+    }
+    // Vẽ thử các dòng chữ ở đúng cỡ để trình duyệt dựng glyph trước (khung đầu tiên có chữ không bị chậm)
+    if (fontsOk) {
+        const wc = document.createElement('canvas').getContext('2d')
+        if (wc) {
+            const fs = Math.round(cl(W * 0.0165, 18, 30))
+            wc.font = '800 ' + fs + 'px ' + SANS
+            wc.fillText('HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG', 0, 20)
+            wc.font = '500 ' + Math.round(fs * 0.56) + 'px ' + SANS
+            wc.fillText('Posts and Telecommunications Institute of Technology', 0, 20)
+            wc.font = '700 12.5px ' + MONO
+            wc.fillText('CHÀO · ĐANG MỞ LỚP HỌC CỦA BẠN', 0, 20)
+        }
+    }
+    P.key = key
+    return true
+}
 
 /** cubic-bezier(x1,y1,x2,y2) như CSS */
 function bezier(x1: number, y1: number, x2: number, y2: number) {
@@ -308,16 +451,17 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
     let L: Layers | null = null
     let resolve!: () => void
     const done = new Promise<void>((res) => (resolve = res))
-    const lay = document.createElement('canvas')
+    const lay = P.lay
     const lctx = lay.getContext('2d')
-    const bg = document.createElement('canvas')
-    const bgc = bg.getContext('2d')
+    const bg = P.bg
     let landedSent = false
     let fadeStart = 0
+    let uploaded = false
 
     const swap = () => {
         if (swapped) return
         swapped = true
+        introMark('swap')
         try {
             hooks.swap()
         } catch (e) {
@@ -325,49 +469,13 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         }
     }
 
-    /** Nền trắng + 5 mảng đỏ loang + quầng trắng giữa: vẽ một lần ở 0,5× độ phân giải, dư 3% mỗi cạnh cho phần trôi */
-    function buildBg() {
-        if (!bgc) return
-        const M = Math.max(W, H)
-        bg.width = Math.max(1, Math.round(W * 1.06 * 0.5))
-        bg.height = Math.max(1, Math.round(H * 1.06 * 0.5))
-        bgc.setTransform(0.5, 0, 0, 0.5, W * 0.03 * 0.5, H * 0.03 * 0.5)
-        bgc.fillStyle = '#FFFFFF'
-        bgc.fillRect(-W, -H, W * 3, H * 3)
-        const blob = (x: number, y: number, r: number, col: string, a: number) => {
-            const gr = bgc.createRadialGradient(x, y, 0, x, y, r)
-            gr.addColorStop(0, 'rgba(' + col + ',' + a + ')')
-            gr.addColorStop(0.55, 'rgba(' + col + ',' + a * 0.35 + ')')
-            gr.addColorStop(1, 'rgba(' + col + ',0)')
-            bgc.fillStyle = gr
-            bgc.fillRect(-W, -H, W * 3, H * 3)
-        }
-        blob(W * 1.02, H * -0.05, M * 0.55, '226,38,28', 0.3)
-        blob(W * 0.86, H * 0.1, M * 0.26, '255,90,71', 0.18)
-        blob(W * -0.04, H * 1.06, M * 0.5, '200,27,18', 0.26)
-        blob(W * 0.14, H * 0.96, M * 0.22, '244,135,143', 0.2)
-        blob(W * 1.0, H * 1.02, M * 0.24, '226,38,28', 0.1)
-        blob(W / 2, H * 0.42, Math.min(W, H) * 0.42, '255,255,255', 0.9)
-    }
-
-    const resize = () => {
-        DPR = Math.min(2, window.devicePixelRatio || 1)
-        W = window.innerWidth
-        H = window.innerHeight
-        sc.width = Math.round(W * DPR)
-        sc.height = Math.round(H * DPR)
-        if (g) {
-            const gd = Math.min(DPR, 2, 2880 / W)
-            g.canvas.width = Math.round(W * gd)
-            g.canvas.height = Math.round(H * gd)
-            g.texW = 0
-        }
+    /** Lấy kích thước/canvas đã chuẩn bị (chỉ cấp phát lại nếu viewport đổi) */
+    const resize = (force = false) => {
+        prepare(force)
+        DPR = P.DPR
+        W = P.W
+        H = P.H
         Rmax = Math.hypot(Math.max(origin.x, W - origin.x), Math.max(origin.y, H - origin.y)) + 20
-        buildBg()
-        // Lớp logo cấp phát một lần ở độ phóng lớn nhất; khung nào cũng chỉ vẽ lại vào đó
-        const LH = Math.min(H * 0.4, 380)
-        lay.width = Math.ceil(600 * (LH / 763) * DPR * G0)
-        lay.height = Math.ceil(763 * (LH / 763) * DPR * G0)
     }
 
     /* ----- vẽ cảnh (Canvas 2D) ----- */
@@ -645,25 +753,17 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         el!.removeEventListener('click', onSkip)
         window.removeEventListener('keydown', onKey, true)
         window.removeEventListener('resize', onResize)
-        // Giải phóng bộ nhớ texture/canvas nhưng giữ context + program cho lần sau
-        try {
-            if (g && !g.gl.isContextLost()) {
-                g.gl.bindTexture(g.gl.TEXTURE_2D, g.tex)
-                g.gl.texImage2D(g.gl.TEXTURE_2D, 0, g.gl.RGBA, 1, 1, 0, g.gl.RGBA, g.gl.UNSIGNED_BYTE, new Uint8Array(4))
-                g.texW = g.texH = 1
-                g.canvas.width = g.canvas.height = 1
-                g.canvas.style.display = 'none'
-            }
-        } catch {
-            /* bỏ qua */
-        }
+        // Giữ context, program, texture và các canvas đã cấp phát cho lần sau; chỉ ẩn canvas GL
+        if (g) g.canvas.style.display = 'none'
         el!.classList.remove('on', 'water')
         el!.setAttribute('aria-hidden', 'true')
         sc!.style.cssText = ''
-        sc!.width = sc!.height = 1
-        bg.width = bg.height = lay.width = lay.height = 1
         active = false
         abort = null
+        introMark('finish')
+        if (DEBUG) report()
+        window.dispatchEvent(new Event('orbit:intro-done'))
+        doneWaiters.splice(0).forEach((r) => r())
         resolve()
     }
 
@@ -673,15 +773,42 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
         finish()
     }
 
+    /** ?introdebug: bảng các khung có khoảng cách > 20ms kèm mốc gần nhất, và tổng kết */
+    function report() {
+        const fr = dbg.frames
+        if (!fr.length) return
+        const slow = fr
+            .filter((f) => f.gap > 20)
+            .map((f) => {
+                const m = [...dbg.marks].reverse().find((x) => x.vt <= f.vt)
+                return { vt: f.vt, phase: f.phase, gap_ms: f.gap, js_ms: f.js, mốc_gần_nhất: m ? `${m.name} (+${(f.vt - m.vt).toFixed(3)}s)` : '-' }
+            })
+        const gaps = fr.slice(1).map((f) => f.gap)
+        console.info('[introdebug] mốc:', dbg.marks.map((m) => `${m.name}@${m.vt}s`).join(' · '))
+        if (slow.length) console.table(slow)
+        console.info(`[introdebug] ${fr.length} khung · gap TB ${(gaps.reduce((a, b) => a + b, 0) / Math.max(1, gaps.length)).toFixed(1)}ms · gap lớn nhất ${Math.max(0, ...gaps).toFixed(1)}ms · ${slow.length} khung > 20ms`)
+    }
+
     function tick(now: number) {
         if (finished) return
+        const j0 = DEBUG ? performance.now() : 0
         try {
-            const dt = Math.min(0.1, (now - last) / 1000)
+            const gap = (now - last) / 1000
+            const dt = Math.min(0.1, gap)
             last = now
             if (skipRate > 0 && vt < T.tan) vt = Math.min(T.tan, vt + dt * skipRate)
             else vt += dt
             if (!swapped && vt >= T.swap) swap()
             draw(vt)
+            // Upload texture bắt đầu 0,1s TRƯỚC mốc tan (GL còn ẩn) để khung đầu tiên hiện GL không phải khung upload đầu tiên
+            if (g && !uploaded && vt >= T.tan - 0.1) {
+                uploaded = true
+                introMark('upload đầu')
+            }
+            if (g && uploaded && vt < T.tan) {
+                uploadScene()
+                drawWater(-1)
+            }
             if (vt >= T.tan) {
                 if (phase === 'scene') {
                     phase = g ? 'water' : 'fade'
@@ -700,6 +827,7 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
                     if (g!.canvas.style.display !== 'block') {
                         g!.canvas.style.display = 'block'
                         sc!.style.visibility = 'hidden'
+                        introMark('hiện GL')
                     }
                     if (wt > T.water) return finish()
                 } else {
@@ -714,6 +842,7 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
                     window.dispatchEvent(new Event('orbit:intro-landed'))
                 }
             }
+            if (DEBUG) dbg.frames.push({ vt: +vt.toFixed(3), phase, gap: +(gap * 1000).toFixed(1), js: +(performance.now() - j0).toFixed(1) })
             raf = requestAnimationFrame(tick)
         } catch (e) {
             fail(e)
@@ -741,39 +870,56 @@ export function playRoleIntro(origin: { x: number; y: number }, info: IntroInfo,
     /* ----- khởi động ----- */
     active = true
     abort = finish
+    if (DEBUG) {
+        dbg.frames = []
+        dbg.marks = []
+        dbg.t0 = performance.now()
+    }
     el.classList.add('on')
     el.setAttribute('aria-hidden', 'false')
     el.addEventListener('click', onSkip)
     window.addEventListener('keydown', onKey, true)
     window.addEventListener('resize', onResize)
 
+    const begin = () => {
+        L = layersOk
+        g = reduce ? null : ensureGPU()
+        resize()
+        if (reduce) return false
+        // Khung đầu vẽ đồng bộ ngay trong lời gọi (ảnh/font đã sẵn) rồi mới vào rAF
+        draw(0.001)
+        last = performance.now()
+        raf = requestAnimationFrame(tick)
+        return true
+    }
+
+    if (layersOk && fontsOk && !reduce) {
+        try {
+            begin()
+        } catch (e) {
+            fail(e)
+        }
+        return done
+    }
+
     ;(async () => {
         try {
-            const [layers] = await Promise.all([
-                preloadImages(),
-                Promise.all([document.fonts.load('800 24px "Be Vietnam Pro"'), document.fonts.load('500 14px "Be Vietnam Pro"'), document.fonts.load('700 12px "JetBrains Mono Variable"')]).catch(() => undefined),
-            ])
+            const [layers] = await Promise.all([preloadImages(), preloadFonts()])
             if (finished) return
-            L = layers
-            g = reduce ? null : ensureGPU()
-            resize()
-            if (reduce) {
-                // Giảm chuyển động: khung cuối tĩnh ~900ms, đổi vai, mờ 600ms
-                phase = 'hold'
-                draw(T.tan)
-                await new Promise((r) => setTimeout(r, 900))
-                if (finished) return
-                swap()
-                await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
-                if (finished) return
-                el.classList.add('water')
-                sc.style.transition = 'opacity 600ms ease'
-                sc.style.opacity = '0'
-                timer = window.setTimeout(finish, 650)
-                return
-            }
-            last = performance.now()
-            raf = requestAnimationFrame(tick)
+            layersOk = layers
+            if (begin()) return
+            // Giảm chuyển động: khung cuối tĩnh ~900ms, đổi vai, mờ 600ms
+            phase = 'hold'
+            draw(T.tan)
+            await new Promise((r) => setTimeout(r, 900))
+            if (finished) return
+            swap()
+            await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+            if (finished) return
+            el.classList.add('water')
+            sc.style.transition = 'opacity 600ms ease'
+            sc.style.opacity = '0'
+            timer = window.setTimeout(finish, 650)
         } catch (e) {
             fail(e)
         }

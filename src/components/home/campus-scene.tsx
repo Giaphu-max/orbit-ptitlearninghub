@@ -1446,18 +1446,21 @@ export interface CampusSceneProps {
     stage: React.MutableRefObject<number>
     dailyLit: React.MutableRefObject<DailyLit>
     kiosk: KioskBridge
+    /** Gọi sau khung render đầu tiên của R3F (để trang crossfade từ ảnh tĩnh sang 3D) */
+    onReady?: () => void
 }
 
 /**
  * Vẽ canvas trong vòng rAF chung (lib/frame-loop), sau Lenis và máy quay: Canvas ở frameloop="never", ở đây gọi advance.
  * Không vẽ khi không ai thấy: tab ẩn, footer đã phủ kín màn (số đo từ page-metrics, không đọc layout), hoặc màn chuyển giao diện đang che.
  */
-function FrameDriver({ kiosk }: { kiosk: KioskBridge }) {
+function FrameDriver({ kiosk, onReady }: { kiosk: KioskBridge; onReady?: () => void }) {
     const advance = useThree((s) => s.advance)
     const clock = useThree((s) => s.clock)
     useEffect(() => {
         let prev = 0
         let drew = false
+        let ready = false
         return addFrame((t) => {
             // Delta tối đa 0,1s: khung bị treo lâu (tab ẩn) không tạo delta khổng lồ
             const dt = Math.min(prev ? (t - prev) / 1000 : 0.016, 0.1)
@@ -1466,17 +1469,21 @@ function FrameDriver({ kiosk }: { kiosk: KioskBridge }) {
             // Footer đã phủ quá 60% màn: dừng vẽ cảnh, giữ khung cuối (canvas đang mờ dần bằng opacity của lớp stage)
             if (document.hidden || useThemeStore.getState().frozen || footerCover() > (page.paged ? 0.999 : FOOTER_STOP)) return
             advance(clock.elapsedTime + dt)
+            if (!ready) {
+                ready = true
+                onReady?.()
+            }
             // Canvas đục đã có khung đầu: trời đã vẽ bằng WebGL, bỏ gradient CSS phía sau
             if (!drew && OPAQUE) {
                 drew = true
                 kiosk.stage.current?.classList.add('sky-gl')
             }
         }, 1)
-    }, [advance, clock, kiosk])
+    }, [advance, clock, kiosk, onReady])
     return null
 }
 
-export default function CampusScene({ night, reduce, staticMode, flat, stage, dailyLit, kiosk }: CampusSceneProps) {
+export default function CampusScene({ night, reduce, staticMode, flat, stage, dailyLit, kiosk, onReady }: CampusSceneProps) {
     const [fontsReady, setFontsReady] = useState(false)
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
@@ -1548,7 +1555,7 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
                     aria-label="Mô hình 3D khuôn viên PTIT, kéo để xoay"
                     role="img"
                 >
-                    <FrameDriver kiosk={kiosk} />
+                    <FrameDriver kiosk={kiosk} onReady={onReady} />
                     <Scene night={night} reduce={reduce} touch={touch} staticMode={staticMode} flat={flat} stage={stage} dailyLit={dailyLit} kiosk={kiosk} pointer={pointer} />
                 </Canvas>
             )}
