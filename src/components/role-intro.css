@@ -1,7 +1,6 @@
 /*
- * Intro sau khi chọn vai trò (điều khiển bởi src/lib/role-intro.ts, theo docs/mockup/ptit-login/ptit-role-select.html):
- * Học viện ở trên, lời chào là chữ to nhất, nền đỏ có lưới chấm và cột ký tự. Mount sẵn, ẩn bằng visibility;
- * chỉ animate transform / opacity / clip-path / mask.
+ * Intro sau khi chọn vai trò (điều khiển bởi src/lib/role-intro.ts, theo docs/mockup/intro/ptit-intro-splash.html):
+ * lớp phủ cố định chứa canvas cảnh (2D), canvas WebGL cho bước tan và nút Bỏ qua. Mount sẵn, ẩn bằng visibility.
  */
 .ri {
   --ri-navy: #0a1a50;
@@ -21,153 +20,20 @@
   pointer-events: auto;
   cursor: pointer;
 }
-.ri-red {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(38% 46% at 88% 18%, rgb(65 165 225 / 0.2), transparent 70%),
-    radial-gradient(34% 40% at 78% 86%, rgb(244 135 143 / 0.2), transparent 70%),
-    radial-gradient(30% 36% at 12% 90%, rgb(46 195 168 / 0.14), transparent 70%),
-    radial-gradient(30% 30% at 50% 0%, rgb(244 212 49 / 0.14), transparent 70%), #fbfbfd;
-  clip-path: circle(0px at 50% 50%);
+.ri.water {
+  pointer-events: none;
+  cursor: auto;
 }
-/* Màn đỏ mở bằng lỗ tròn từ tâm ô logo ở header (--hole là thuộc tính đã đăng ký trong index.css) */
-.ri-red.hole {
-  -webkit-mask-image: radial-gradient(circle at var(--hx) var(--hy), transparent var(--hole), #000 calc(var(--hole) + 1px));
-  mask-image: radial-gradient(circle at var(--hx) var(--hy), transparent var(--hole), #000 calc(var(--hole) + 1px));
-}
-.ri-bg {
+.ri-scene,
+.ri-gl {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0;
+  display: block;
 }
-.ri-rings {
-  position: absolute;
-  right: -22vw;
-  top: 50%;
-  width: min(120vw, 1500px);
-  aspect-ratio: 1.6;
-  transform: translateY(-50%) rotate(-24deg);
-  opacity: 0.9;
-}
-.ri-rings ellipse {
-  fill: none;
-  stroke: url(#ri-ribbon);
-  stroke-linecap: round;
-}
-.ri-ghost {
-  position: absolute;
-  right: -6vw;
-  bottom: -14vh;
-  width: min(42vw, 620px);
-  height: auto;
-  opacity: 0;
-  filter: blur(1.2px);
-}
-.ri-top {
-  position: absolute;
-  top: clamp(28px, 6vh, 64px);
-  left: 50%;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateX(-50%);
-}
-.ri-badge {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 52px;
-  height: 52px;
-  overflow: hidden;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 8px 24px -10px rgb(10 26 80 / 0.35), 0 0 0 1px rgb(10 26 80 / 0.06);
-}
-.ri-badge img {
-  width: 74%;
-  height: auto;
-}
-.ri-shine {
-  position: absolute;
-  inset: -30%;
-  background: linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 0.9) 50%, transparent 60%);
-  transform: translateX(-120%);
-}
-.ri-w1 {
-  font-weight: 800;
-  font-size: clamp(13px, 1.15vw, 17px);
-  letter-spacing: 0.06em;
-  line-height: 1.25;
-  color: #d41f16;
-}
-.ri-w2 {
-  font-size: clamp(11px, 0.9vw, 13px);
-  letter-spacing: 0.04em;
-  color: var(--ri-ink);
-  opacity: 0.85;
-}
-.ri-hero {
-  position: absolute;
-  left: max(28px, 8vw);
-  right: max(28px, 8vw);
-  top: 50%;
-  transform: translateY(-54%);
-}
-.ri-w3 {
-  margin: 0;
-  font-weight: 900;
-  font-size: clamp(72px, 12vw, 220px);
-  line-height: 0.92;
-  letter-spacing: -0.05em;
-}
-.ri-w3 .ch {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(0.5em);
-}
-.ri-w3 .nm .ch:not(.cm) {
-  color: transparent;
-  background-image: var(--mm-text-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  padding-bottom: 0.08em;
-}
-.ri-w3 .wd {
-  white-space: nowrap;
-}
-.ri-w4 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-top: clamp(18px, 3vh, 32px);
-  font-size: clamp(16px, 1.5vw, 24px);
-  font-weight: 600;
-  color: var(--ri-ink);
-  opacity: 0;
-}
-.ri-w4 .chip {
-  padding: 6px 12px;
-  font: 700 12px/16px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ri-navy);
-  background: #fff;
-  border: 1px solid var(--ri-line);
-  border-radius: 999px;
-}
-.ri-w4 b {
-  font-weight: 800;
-  color: transparent;
-  background-image: var(--mm-text-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
+.ri-gl {
+  display: none;
 }
 .ri-skip {
   position: absolute;
@@ -182,53 +48,19 @@
   opacity: 0;
   cursor: pointer;
 }
-.ri-load {
-  position: absolute;
-  left: max(28px, 8vw);
-  bottom: calc(26px + env(safe-area-inset-bottom, 0px));
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font: 600 12px/16px 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
-  letter-spacing: 0.08em;
-  color: #646880;
-  opacity: 0;
+.ri.on .ri-skip {
+  animation: ri-skip-in 0.4s ease 0.8s forwards;
 }
-.ri-load i {
-  display: block;
-  width: 140px;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #e6e8f0;
+.ri.water .ri-skip {
+  display: none;
 }
-.ri-bar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: var(--mm-ribbon);
-  transform-origin: left;
-  transform: scaleX(0);
+@keyframes ri-skip-in {
+  to {
+    opacity: 1;
+  }
 }
-@media (max-width: 700px) {
-  .ri-top {
-    width: calc(100% - 40px);
-    justify-content: center;
-    white-space: normal;
-  }
-  .ri-w1 {
-    font-size: 12px;
-  }
-  .ri-w2 {
-    display: none;
-  }
-  .ri-rings {
-    right: -60vw;
-  }
-  .ri-w3 {
-    font-size: clamp(52px, 16vw, 72px);
-  }
-  .ri-load span {
-    display: none;
+@media (prefers-reduced-motion: reduce) {
+  .ri.on .ri-skip {
+    animation-duration: 0.01s;
   }
 }
