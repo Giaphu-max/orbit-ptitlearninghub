@@ -94,13 +94,24 @@ export interface GradePhotoRequest {
     brief?: { goal: string; rubric: GradeRubricItem[] }
 }
 
-/** Vùng cần chỉnh, toạ độ 0–1 so với khung ảnh (gốc ở góc trên trái). */
+/** Thông số có thể áp thẳng vào studio khi bấm "Thử" ở một gợi ý khắc phục. */
+export const SUGGEST_PARAMS = ['key', 'fill', 'rim', 'keyAngleDeg', 'focalLengthMm', 'azimuthDeg', 'elevationDeg', 'shiftX', 'shiftY'] as const
+export type SuggestParam = (typeof SUGGEST_PARAMS)[number]
+
+export interface FixSuggestion {
+    text: string
+    /** Thay đổi tương đối nếu ánh xạ được vào một thanh trượt (vd đèn phụ +15) */
+    change?: { param: SuggestParam; delta: number }
+}
+
+/** Một lỗi AI chỉ ra: tên lỗi, vùng trên ảnh (toạ độ 0–1, gốc ở góc trên trái) và các cách khắc phục. */
 export interface FocusArea {
     x: number
     y: number
     w: number
     h: number
-    note: string
+    title: string
+    fixes: FixSuggestion[]
 }
 
 export interface GradeCriterionResult {

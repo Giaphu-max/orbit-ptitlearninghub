@@ -1,3 +1,4 @@
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AlertCircle, Camera, Check, ChevronDown, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
@@ -9,11 +10,12 @@ import { resolveBrief, STUDIO_BRIEFS } from '@/lib/studio-briefs'
 import { useStudioHints } from '@/lib/studio-hints'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { gradeShot, SHOTS_MAX, useStudioSession, type StudioShot } from '@/store/useStudioSession'
+import { applyChange, describeChange } from '@/lib/studio-suggest'
 import { DEFAULT_SETUP, setupFromEnvironment, type CameraSetup } from '@/lib/studio-setup'
 import { BriefPicker } from '@/components/studio/brief-picker'
 import { GalleryPanel, ScoreBadge } from '@/components/studio/gallery-panel'
 import { Lightbox } from '@/components/studio/lightbox'
-import { ShotDrawer } from '@/components/studio/shot-drawer'
+import { ShotViewer } from '@/components/studio/shot-viewer'
 import { StudioRail, type RailTab } from '@/components/studio/studio-rail'
 import type { CaptureFn } from '@/components/studio/studio-scene'
 
@@ -55,6 +57,7 @@ export function OrbitStudioView() {
     const brief = resolveBrief(searchParams)
     const [pickerOpen, setPickerOpen] = useState(false)
     const hints = useStudioHints(setup)
+    const reduced = useReducedMotion()
     const [env, setEnv] = useState<EnvState>({ kind: 'idle' })
     const [envStep, setEnvStep] = useState(0)
     // Ý đồ ánh sáng đã áp dụng (giữ lại khi lần sau bị từ chối hoặc lỗi)
@@ -70,6 +73,12 @@ export function OrbitStudioView() {
     const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
     const tweenRaf = useRef(0)
     const loading = env.kind === 'loading'
+    // Đang xem ảnh: khu xem ảnh thay chỗ khung 3D + bảng (3D chỉ ẩn, vẫn mounted nên cảnh giữ nguyên trạng thái)
+    const viewing = drawerOpen && Boolean(selected)
+    const [studioHidden, setStudioHidden] = useState(false)
+    useEffect(() => {
+        if (viewing) setStudioHidden(true)
+    }, [viewing])
 
     const onReady = useCallback((fn: CaptureFn) => {
         captureRef.current = fn
@@ -321,8 +330,8 @@ export function OrbitStudioView() {
     ]
 
     return (
-        <div className="w-full overflow-x-clip min-[980px]:h-[calc(100svh-var(--nav-h))]">
-            <div className="container-wide flex flex-col py-4 min-[980px]:h-full">
+        <div className={`w-full overflow-x-clip ${studioHidden ? '' : 'min-[980px]:h-[calc(100svh-var(--nav-h))]'}`}>
+            <div className={`container-wide flex flex-col py-4 ${studioHidden ? '' : 'min-[980px]:h-full'}`}>
                 {/* Hàng đầu trang không khung: Cột 8 (đề bài + chip tiêu chí) | Cột 4 (stepper 3 bước) */}
                 <header className="lesson-grid items-end mb-6">
                     {/* Cột 8: eyebrow + chip chọn đề, tiêu đề ngắn, một dòng ý đồ */}
@@ -389,7 +398,7 @@ export function OrbitStudioView() {
                 </header>
 
                 {/* Khung 3D (Cột 8) + Bảng điều khiển (Cột 4), cùng lưới với hàng header */}
-                <div className="lesson-grid min-h-0 flex-1">
+                <div className={`lesson-grid min-h-0 flex-1 ${studioHidden ? 'hidden' : ''}`}>
                     <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Khung làm việc studio">
                         {/* Canvas 3D */}
                         <div ref={viewportRef} style={{ viewTransitionName: 'vt-studio-stage' }} className="relative h-[56vh] overflow-hidden rounded-panel bg-ink shadow-card min-[980px]:h-auto min-[980px]:min-h-0 min-[980px]:flex-1">
@@ -568,16 +577,34 @@ export function OrbitStudioView() {
                         onApplyLighting={askLighting}
                         explanation={applied?.explanation ?? null}
                     />
-                    <ShotDrawer
-                        shot={selected}
-                        index={selectedIndex}
-                        total={shots.length}
-                        open={drawerOpen && Boolean(selected)}
-                        onClose={() => useStudioSession.getState().openDrawer(false)}
-                        onReuse={reuseSetup}
-                        onDelete={deleteShot}
-                    />
                 </div>
+
+                <AnimatePresence onExitComplete={() => setStudioHidden(false)}>
+                    {viewing && selected && (
+                        <motion.div
+                            key="viewer"
+                            initial={reduced ? false : { opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={reduced ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: 14 }}
+                            transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }}
+                        >
+                            <ShotViewer
+                                key={selected.id}
+                                shot={selected}
+                                index={selectedIndex}
+                                total={shots.length}
+                                passScore={brief.passScore}
+                                onClose={() => useStudioSession.getState().openDrawer(false)}
+                                onReuse={reuseSetup}
+                                onDelete={deleteShot}
+                                onTry={(change) => {
+                                    setSetup((cur) => applyChange(cur, change))
+                                    showToast(`Đã áp vào studio: ${describeChange(change)}. Quay lại studio để xem và chụp lại.`, undefined, 4500)
+                                }}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
 
