@@ -7,7 +7,7 @@ import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { useLessonQuiz } from '@/hooks/useLessonQuiz'
 import { useStoredFlag } from '@/hooks/useStoredFlag'
-import { peekNav, setFocusMode } from '@/lib/focus-mode'
+import { setFocusMode } from '@/lib/focus-mode'
 import { getStudioBrief } from '@/lib/studio-briefs'
 import { formatTime } from '@/lib/youtube'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
@@ -17,6 +17,7 @@ import { LessonTitleBlock } from '@/components/lesson/lesson-header'
 import { LessonFootLeft, LessonNextLink } from '@/components/lesson/lesson-foot'
 import { LessonSidePanel } from '@/components/lesson/lesson-side-panel'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
+import { FocusBackdrop } from '@/components/lesson/focus-backdrop'
 import { PlayerControls } from '@/components/lesson/player-controls'
 import { QuizCard } from '@/components/lesson/quiz-card'
 import { QuizRewardToast } from '@/components/lesson/quiz-reward-toast'
@@ -71,6 +72,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     // Toast "Tiếp tục từ…" chỉ cho vị trí đã lưu; vào từ link nguồn Daily hay lộ trình ôn (?t=) thì không phải "chỗ dừng lần trước"
     // Ẩn bảng bên và bật phụ đề: nhớ qua các lần mở bài
     const [panelHidden, setPanelHidden] = useStoredFlag('orbit-lesson-panel-hidden', false)
+    const [controlsVisible, setControlsVisible] = useState(true)
     const [captionsOn, setCaptionsOn] = useStoredFlag('orbit-lesson-captions', true)
 
     const player = useYouTubePlayer(lesson.youtubeId, { startAt: resumeFrom, hideControls: true })
@@ -182,14 +184,13 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
 
     return (
         <div className="lesson-page w-full" data-focus={panelHidden ? 'on' : 'off'}>
-            <div aria-hidden className="lesson-focus-bg" />
+            <FocusBackdrop />
             {panelHidden && (
                 <>
-                    <div aria-hidden className="fixed inset-x-0 top-0 z-[49] h-3" onPointerEnter={() => peekNav(true)} onPointerLeave={() => peekNav(false)} />
                     <button
                         type="button"
                         onClick={() => setPanelHidden(false)}
-                        className="fixed left-4 top-4 z-[48] inline-flex items-center gap-2 rounded-full bg-ink-foreground/10 px-3.5 py-2 text-[13px] font-bold text-ink-foreground/80 transition hover:bg-ink-foreground/20 hover:text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground"
+                        className={`fixed left-6 top-6 z-[70] inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-bold text-strong shadow-card transition-opacity duration-[250ms] hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 motion-reduce:transition-none ${controlsVisible ? 'opacity-100' : 'opacity-0'}`}
                     >
                         <ArrowLeft size={15} aria-hidden /> Thoát tập trung
                     </button>
@@ -246,6 +247,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 onFullscreen={toggleFullscreen}
                                 onTogglePanel={() => setPanelHidden((v) => !v)}
                                 interactive={canPlay}
+                                onVisibleChange={setControlsVisible}
                                 pinned={quizOpen || phase.kind === 'reviewing'}
                             />
                             {fromSavedPosition && (
@@ -295,7 +297,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="z-40 mt-4 flex justify-center md:absolute md:inset-x-0 md:top-0 md:mt-0 md:aspect-video md:items-center md:rounded-[20px] md:bg-ink/75 md:p-3 md:backdrop-blur-sm lg:p-5"
+                                    className="lesson-quiz-overlay z-40 mt-4 flex justify-center md:absolute md:inset-x-0 md:top-0 md:mt-0 md:aspect-video md:items-center md:rounded-[20px] md:bg-ink/75 md:p-3 md:backdrop-blur-sm lg:p-5"
                                 >
                                     <QuizCard
                                         lesson={lesson}
@@ -311,6 +313,17 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        {panelHidden && (
+                            <p
+                                className={`pointer-events-none absolute left-0 right-0 top-full mt-4 truncate text-center text-[13px] text-muted-foreground transition-opacity duration-[250ms] motion-reduce:transition-none ${
+                                    controlsVisible ? 'opacity-100' : 'opacity-0'
+                                }`}
+                            >
+                                {lessonIndex >= 0 && `Bài ${lessonIndex + 1}/${courseLessons.length} · `}
+                                {lesson.title}
+                            </p>
+                        )}
                     </div>
 
                     <aside aria-label="Công cụ học bài" inert={panelHidden} className="lesson-side flex flex-col rounded-[20px] border border-border bg-card shadow-card">

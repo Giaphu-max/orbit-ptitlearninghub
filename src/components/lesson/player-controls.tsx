@@ -25,6 +25,8 @@ interface PlayerControlsProps {
     interactive: boolean
     /** Quiz đang mở hoặc vòng củng cố đang chạy: thanh luôn hiện */
     pinned: boolean
+    /** Báo ra ngoài khi thanh ẩn/hiện (nút thoát tập trung và tên bài mờ theo) */
+    onVisibleChange?: (visible: boolean) => void
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -98,6 +100,8 @@ export function PlayerControls(p: PlayerControlsProps) {
     useEffect(() => () => window.clearTimeout(hideTimer.current), [])
 
     const visible = !isPlaying || p.pinned || recent || focusWithin || dragging || menuOpen
+    const { onVisibleChange } = p
+    useEffect(() => onVisibleChange?.(visible), [visible, onVisibleChange])
     const cursorHidden = !visible && isPlaying
 
     // Nhấp đơn = phát/dừng, nhấp đúp = toàn màn hình (hoãn nhấp đơn một nhịp để phân biệt)

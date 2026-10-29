@@ -42,8 +42,6 @@
     /* Nền tối cố định, không đổi theo giao diện */
     --ink: 24 10% 6%;
     --ink-foreground: 0 0% 100%;
-    /* Nền trang học bài ở chế độ tập trung (navy rất đậm) */
-    --focus-bg: 224 62% 6%;
     --info: 201 80% 32%;
 
     /* Màn nhận XP (và nền hero cũ .bg-hero): luôn nền tối/đỏ ở cả hai giao diện */
@@ -1269,8 +1267,25 @@
     border-width: 0;
   }
   .lesson-theater[data-wide='true'] .lesson-player-area {
-    width: min(100%, calc((100svh - 64px) * 16 / 9));
+    width: min(100%, 72vw, calc((100svh - 160px) * 16 / 9));
     justify-self: center;
+  }
+  .lesson-theater[data-wide='true'] .lesson-player-area > :first-child {
+    border-radius: 24px;
+    box-shadow: 0 40px 80px -40px hsl(var(--foreground-strong) / 0.35);
+  }
+  .lesson-theater[data-wide='true'] .lesson-quiz-overlay {
+    border-radius: 24px;
+  }
+  .focus-orbit-spin {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: focus-orbit 60s linear infinite;
+  }
+  @keyframes focus-orbit {
+    to {
+      transform: rotate(360deg);
+    }
   }
   /* Chế độ tập trung (ẩn bảng): nền tối, ẩn hai hàng chữ, player giữa 100svh; navbar do TopNav trượt lên qua focus-mode.ts */
   .lesson-page {
@@ -1295,7 +1310,7 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background: hsl(var(--focus-bg));
+    background: hsl(var(--background));
     opacity: 0;
     transition: opacity 0.45s ease;
   }
@@ -1347,6 +1362,9 @@
     .lesson-collapse,
     .lesson-focus-nav {
       transition: none;
+    }
+    .focus-orbit-spin {
+      animation: none;
     }
   }
 }

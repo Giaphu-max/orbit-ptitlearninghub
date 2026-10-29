@@ -1,4 +1,4 @@
-import { peekNav, useNavHidden } from '@/lib/focus-mode'
+import { useNavHidden } from '@/lib/focus-mode'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronDown, RotateCcw, Repeat, Volume2, VolumeX } from 'lucide-react'
@@ -232,8 +232,6 @@ export function TopNav() {
             style={{ viewTransitionName: 'site-nav' }}
             data-nav={state}
             data-focus-hidden={navHidden}
-            onPointerEnter={() => peekNav(true)}
-            onPointerLeave={() => peekNav(false)}
             className={`lesson-focus-nav own-layer pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center text-foreground ${onHome ? 'nav-over-3d' : ''}`}
         >
             <div ref={rootRef} className="nav-shell pointer-events-auto" data-state={state}>
