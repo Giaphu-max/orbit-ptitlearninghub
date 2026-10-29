@@ -5,6 +5,11 @@ import { useThemeStore } from '@/store/useThemeStore'
 import type { DailyLit } from '@/lib/daily-lit'
 import { introDone, introMark, introPlaying } from '@/lib/role-intro'
 import { loadCampusStill } from '@/lib/campus-still'
+import { getShot } from '@/lib/campus-shot'
+import stillMetaJson from '@/data/campus-still-meta.json'
+
+/** Hình chữ nhật bao của thân hero trong campus-still.webp (px ảnh), ghi bởi ?campussnap; null khi chưa chụp */
+const stillMeta = stillMetaJson as { w: number; h: number; body: { x0: number; y0: number; x1: number; y1: number } } | null
 
 // Phần 3D tải riêng (three.js + R3F nặng), chỉ kéo về khi hero được dựng.
 const CampusScene = lazy(() => import('./campus-scene'))
@@ -67,16 +72,48 @@ export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk }
     const deferred = useRef(introPlaying())
     const [step, setStep] = useState<'wait' | 'mounted' | 'ready'>(() => (deferred.current ? 'wait' : 'ready'))
     const [stillGone, setStillGone] = useState(!deferred.current)
-    const [still, setStill] = useState<HTMLImageElement | null | undefined>(undefined)
+    // Nguồn ảnh thay cảnh 3D: ảnh chụp lúc chạy (khớp từng pixel) > ảnh tĩnh đặt theo phép căn của camera > SVG minh họa
+    const [still, setStill] = useState<{ src: string; style: React.CSSProperties } | null>(null)
+    // Đọc kiosk/staticMode qua ref: effect chỉ chạy một lần lúc mount (kiosk có thể đổi danh tính mỗi lần render)
+    const live = useRef({ kiosk, staticMode })
+    live.current = { kiosk, staticMode }
     useEffect(() => {
         if (!deferred.current) return
         let alive = true
-        // Báo trang đã sẵn sàng cho intro: ảnh tĩnh đã decode và nội dung đã được vẽ ra (2 khung sau lần render này)
-        void loadCampusStill().then((img) => {
+        void (async () => {
+            let place: { src: string; style: React.CSSProperties } | null = null
+            try {
+                // Chunk cảnh 3D đã được bindIntro tải sẵn; nếu vẫn chưa xong sau 800ms thì không chờ (trang đích không bị giữ lại vì ảnh)
+                const [img, scene] = await Promise.all([Promise.race([loadCampusStill(), new Promise<null>((r) => setTimeout(() => r(null), 800))]), Promise.race([import('./campus-scene'), new Promise<null>((r) => setTimeout(() => r(null), 800))])])
+                const { kiosk: kk, staticMode: sm } = live.current
+                const stg = kk.stage.current
+                const w = stg?.clientWidth ?? window.innerWidth
+                const h = stg?.clientHeight ?? window.innerHeight
+                // Đo cân bố cục như lúc 3D thật mount (không thì tỉ lệ khung thân đổi khi mount và mô hình dịch chỗ)
+                if (scene && !sm) scene.primeHeroBalance(w, h)
+                const shot = getShot()
+                if (shot) {
+                    place = { src: shot, style: { left: 0, top: 0, width: '100%', height: '100%', objectFit: 'fill' } }
+                } else if (scene && img && !sm && stillMeta) {
+                    const r = scene.heroStillRect(w, h)
+                    if (r) {
+                        const k = (r.y1 - r.y0) / (stillMeta.body.y1 - stillMeta.body.y0)
+                        place = { src: img.src, style: { left: r.x0 - stillMeta.body.x0 * k, top: r.y0 - stillMeta.body.y0 * k, width: stillMeta.w * k, height: stillMeta.h * k } }
+                    }
+                }
+                if (place) {
+                    const probe = new Image()
+                    probe.src = place.src
+                    await Promise.race([probe.decode().catch(() => undefined), new Promise((r) => setTimeout(r, 800))])
+                }
+            } catch {
+                place = null
+            }
             if (!alive) return
-            setStill(img)
+            setStill(place)
+            // Báo trang đã sẵn sàng cho intro: ảnh thay thế đã decode và nội dung đã được vẽ ra (2 khung sau lần render này)
             requestAnimationFrame(() => requestAnimationFrame(() => alive && window.dispatchEvent(new Event('orbit:page-ready'))))
-        })
+        })()
         return () => {
             alive = false
         }
@@ -90,13 +127,19 @@ export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk }
                 introMark('mount canvas 3D')
                 setStep('mounted')
             }
-            const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
-            if (ric) ric(go)
+            const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback
+            if (ric) ric(go, { timeout: 500 })
             else window.setTimeout(go, 200)
         })
         return () => {
             alive = false
         }
+    }, [step])
+    // Chốt chặn: nếu cảnh 3D không báo khung đầu trong 2,5s thì vẫn crossfade (không để ảnh tĩnh che mãi)
+    useEffect(() => {
+        if (step !== 'mounted') return
+        const t = window.setTimeout(() => setStep('ready'), 2500)
+        return () => clearTimeout(t)
     }, [step])
     useEffect(() => {
         if (step !== 'ready' || !deferred.current) return
@@ -108,9 +151,9 @@ export function CampusStage({ stage, staticMode, reduce, flat, dailyLit, kiosk }
         setStep('ready')
     }, [])
     const fadeStyle = deferred.current ? { opacity: step === 'ready' ? 1 : 0, transition: 'opacity 600ms ease' } : undefined
-    const stillFade = deferred.current ? { opacity: step === 'ready' ? 0 : 1, transition: 'opacity 600ms ease' } : undefined
+    const stillFade: React.CSSProperties | undefined = deferred.current ? { opacity: step === 'ready' ? 0 : 1, transition: 'opacity 600ms ease' } : undefined
     const stillBlock = deferred.current && still ? (
-        <img src={still.src} alt="" aria-hidden draggable={false} className="absolute inset-0 h-full w-full select-none object-cover object-center" style={stillFade} />
+        <img src={still.src} alt="" aria-hidden draggable={false} className="absolute select-none" style={{ ...still.style, ...stillFade }} />
     ) : (
         <div className={`absolute ${staticMode ? 'inset-x-4 bottom-4 top-[20%]' : 'inset-y-[20%] left-[40%] right-[4%]'}`} style={stillFade}>
             <StaticCampus />

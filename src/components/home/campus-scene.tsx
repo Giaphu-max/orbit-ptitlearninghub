@@ -12,6 +12,7 @@ import { measureBalance } from '@/lib/hero-balance'
 import { PERF_ON, PerfHud } from './campus-perf'
 import { isWebKit } from '@/lib/browser'
 import { FLAGS } from '@/lib/perf'
+import { captureShot } from '@/lib/campus-shot'
 import { addFrame } from '@/lib/frame-loop'
 import { footerCover, page } from '@/lib/page-metrics'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
@@ -703,7 +704,51 @@ function naturalRect(i: number, heroDist: number, w: number, h: number): Rect4 {
     return r
 }
 /**
- * Khớp camera vào khung đích (page.body) của từng chương: giữ góc nhìn, chỉ đổi zoom (chiều cao thân khớp) và view offset (vị trí khớp).
+ * Hàm thuần: zoom + view offset để khung tự nhiên `n` (px, chưa zoom) của thân khớp vào khung đích `t` (chiều cao khớp, mép phải khớp, tâm dọc khớp).
+ * Ảnh sau zoom z và dịch s: px = w/2 + z·(p − w/2) + s. Dùng chung cho camera (fitStops) và cho đặt ảnh tĩnh (heroStillRect).
+ */
+function fitOne(n: Rect4, t: { x0: number; y0: number; x1: number; y1: number }, lo: number, hi: number, w: number, h: number) {
+    const nw = n.x1 - n.x0
+    const nh = n.y1 - n.y0
+    const z = THREE.MathUtils.clamp((t.y1 - t.y0) / nh, lo, hi)
+    const tcx = t.x1 - (z * nw) / 2
+    const tcy = (t.y0 + t.y1) / 2
+    const sx = tcx - (w / 2 + z * ((n.x0 + n.x1) / 2 - w / 2))
+    const sy = tcy - (h / 2 + z * ((n.y0 + n.y1) / 2 - h / 2))
+    return { zoom: z, sx: THREE.MathUtils.clamp(sx, -0.22 * w, 0.22 * w), sy: THREE.MathUtils.clamp(sy, -0.15 * h, 0.15 * h) }
+}
+
+/**
+ * Chuẩn bị cân bố cục cho trang chủ KHI CHƯA CÓ canvas (đang hoãn dựng 3D lúc intro): tính tỉ lệ khung thân từng chương và
+ * đo lại hero-balance, để khung đích page.body đúng như lúc cảnh 3D thật mount (nếu không, lúc mount mới đổi tỉ lệ rồi đo lại và mô hình dịch).
+ */
+export function primeHeroBalance(w: number, h: number) {
+    const dist = heroGeometry(w, h, false).distance
+    const aspects = [0, 1, 2, 3].map((i) => {
+        const r = naturalRect(i, dist, w, h)
+        return r.valid && r.y1 > r.y0 ? (r.x1 - r.x0) / (r.y1 - r.y0) : 1
+    })
+    if (aspects.some((a, i) => Math.abs(a - (page.aspect[i] ?? 0)) > 0.01)) page.aspect = aspects
+    measureBalance()
+}
+
+/**
+ * Hình chữ nhật (px trong khung w×h) mà thân của hero chiếm trên màn sau khi camera khớp, theo CÙNG phép căn với camera (fitOne trên page.body[0]).
+ * Null nếu chưa có số đo (màn hẹp, chưa đo hero-balance).
+ */
+export function heroStillRect(w: number, h: number) {
+    if (!page.body[0]) return null
+    const n = naturalRect(0, heroGeometry(w, h, false).distance, w, h)
+    if (!n.valid) return null
+    const f = fitOne(n, page.body[0], ZOOM_RANGE[0][0], ZOOM_RANGE[0][1], w, h)
+    const nw = n.x1 - n.x0
+    const nh = n.y1 - n.y0
+    const cx = w / 2 + f.zoom * ((n.x0 + n.x1) / 2 - w / 2) + f.sx
+    const cy = h / 2 + f.zoom * ((n.y0 + n.y1) / 2 - h / 2) + f.sy
+    return { x0: cx - (f.zoom * nw) / 2, y0: cy - (f.zoom * nh) / 2, x1: cx + (f.zoom * nw) / 2, y1: cy + (f.zoom * nh) / 2 }
+}
+
+/** Khớp camera vào khung đích (page.body) của từng chương: giữ góc nhìn, chỉ đổi zoom (chiều cao thân khớp) và view offset (vị trí khớp).
  * Ảnh sau zoom z và dịch s: px = w/2 + z·(p − w/2) + s. Chưa có số đo (màn < 1280px) thì dùng vùng 7 cột phải như cũ.
  */
 function fitStops(st: Stops, w: number, h: number) {
@@ -715,18 +760,10 @@ function fitStops(st: Stops, w: number, h: number) {
         const [lo, hi] = ZOOM_RANGE[i]
 
         if (n && n.valid && page.body[i]) {
-            const nw = n.x1 - n.x0
-            const nh = n.y1 - n.y0
-            const t = page.body[i]!
-            const ncy = (n.y0 + n.y1) / 2
-            const z = THREE.MathUtils.clamp((t.y1 - t.y0) / nh, lo, hi)
-            const tcx = t.x1 - (z * nw) / 2
-            const tcy = (t.y0 + t.y1) / 2
-            st.zoom[i] = z
-            const sx = tcx - (w / 2 + z * ((n.x0 + n.x1) / 2 - w / 2))
-            const sy = tcy - (h / 2 + z * (ncy - h / 2))
-            st.sx[i] = THREE.MathUtils.clamp(sx, -maxSx, maxSx)
-            st.sy[i] = THREE.MathUtils.clamp(sy, -maxSy, maxSy)
+            const f = fitOne(n, page.body[i]!, lo, hi, w, h)
+            st.zoom[i] = f.zoom
+            st.sx[i] = f.sx
+            st.sy[i] = f.sy
         } else {
             // Không khớp hoặc màn nhỏ (<1280px) chưa có số đo: dùng zoom 1 (hero tính riêng) và view offset cũ như trước hero-balance
             const region = gridSpan(w, i === 2 ? 6 : 5, i === 2 ? 6 : 7)
@@ -992,20 +1029,25 @@ interface SceneProps {
  * (nửa phải trên màn rộng) bằng view offset của camera; camera hero lùi đủ xa để khối cầu bao khuôn viên nằm gọn
  * trong vùng đó.
  */
+/** Khoảng cách máy quay ở hero và tỉ lệ vùng chữ, chỉ phụ thuộc kích thước khung (dùng cho camera và cho ảnh tĩnh) */
+function heroGeometry(w: number, h: number, staticMode: boolean) {
+    const region = gridSpan(w, 5, 7)
+    const regionW = staticMode ? w : region.x1 - region.x0
+    const ra = regionW / h
+    const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
+    // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang
+    const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * ra)
+    const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / tanHalf
+    return { region, ra, distance: Math.max(fitW, fitH) }
+}
+
 function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, staticMode: boolean, heroPos: React.MutableRefObject<THREE.Vector3>, heroDist: React.MutableRefObject<number>, fitScale: React.MutableRefObject<number>, stage: React.MutableRefObject<number>) {
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const size = useThree((s) => s.size)
 
     useEffect(() => {
         const { width: w, height: h } = size
-        const region = gridSpan(w, 5, 7)
-        const regionW = staticMode ? w : region.x1 - region.x0
-        const ra = regionW / h
-        const tanHalf = Math.tan(THREE.MathUtils.degToRad(FOV / 2))
-        // Tầm nhìn hiện có = 2·d·tanHalf theo chiều dọc và ·(w/h) theo chiều ngang
-        const fitW = (BOUND_RADIUS * FIT_MARGIN) / (tanHalf * ra)
-        const fitH = (BOUND_HALF_HEIGHT * FIT_MARGIN) / tanHalf
-        const distance = Math.max(fitW, fitH)
+        const { region, ra, distance } = heroGeometry(w, h, staticMode)
         heroDist.current = distance
         fitScale.current = Math.max(1, REF_ASPECT / ra)
 
@@ -1026,6 +1068,11 @@ function useStageFit(controls: React.RefObject<OrbitControlsImpl | null>, static
         return () => camera.clearViewOffset()
     }, [camera, size, controls, staticMode, heroPos, heroDist, fitScale, stage])
 }
+
+/** Trạng thái "đã khớp khung" của lần mount hiện tại (Scene ghi, FrameDriver đọc): chỉ báo sẵn sàng/chụp ảnh khi camera đã vào đúng vị trí cuối */
+const hero = { ok: false, frames: 0 }
+/** Số khung đầu tiên (sau khi đã khớp) camera vào THẲNG vị trí cuối, không damping; damping chỉ dành cho tương tác về sau */
+const SNAP_FRAMES = 30
 
 const _look = new THREE.Vector3()
 
@@ -1302,6 +1349,14 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
             if (st.natural.length && st.key !== page.balanceKey) fitStops(st, size.width, size.height)
             const sp = sampled.current
             if (st.natural.length) sampleStops(st, S, sp)
+            // Khung đầu sau khi mount: vào thẳng vị trí cuối (zoom + view offset), không trượt từ giá trị mặc định
+            const fitted = st.natural.length > 0 && st.natural.every((r, i) => r.valid || i > 0)
+            if (fitted && hero.frames < SNAP_FRAMES) {
+                av.zoom = sp.zoom
+                av.shift = sp.sx
+                av.drop = sp.sy
+                hero.frames++
+            }
             const kk = reduce ? 1 : 1 - Math.exp(-delta * 6)
             av.zoom += (sp.zoom - av.zoom) * kk
             av.shift += (sp.sx - av.shift) * kk
@@ -1312,6 +1367,12 @@ function Scene({ night, reduce, touch, staticMode, flat, stage, dailyLit, kiosk,
                 camera.zoom = av.zoom
                 camera.setViewOffset(size.width, size.height, ox, oy, size.width, size.height)
             }
+        }
+        // Khớp khung xong khi: kích thước canvas đúng bằng khung sân khấu (R3F đã đo) và đã có số đo cân bố cục
+        if (!hero.ok) {
+            const stg = kiosk.stage.current
+            const sizeOk = Boolean(stg) && Math.abs(size.width - stg!.clientWidth) < 1.5 && Math.abs(size.height - stg!.clientHeight) < 1.5
+            if (sizeOk && (staticMode || (stops.current.natural.length > 0 && hero.frames > 0))) hero.ok = true
         }
         camera.updateMatrixWorld()
         placeKiosk(kiosk, camera, size, S, !staticMode && !calmOn)
@@ -1451,6 +1512,66 @@ export interface CampusSceneProps {
 }
 
 /**
+ * ?campussnap (chỉ dev, canvas có alpha): ảnh tĩnh TRONG SUỐT cắt sát mô hình + metadata (kích thước ảnh và hình chữ nhật bao của thân hero,
+ * cùng định nghĩa với naturalRect: 8 góc của BODIES[0]) rồi POST cho middleware dev ghi public/brand/campus-still.webp và src/data/campus-still-meta.json.
+ * Mọi bước đọc canvas chạy đồng bộ trong khung vừa render.
+ */
+function snapStill(canvas: HTMLCanvasElement, camera: THREE.PerspectiveCamera, size: { width: number; height: number }) {
+    const W = canvas.width
+    const H = canvas.height
+    const probe = document.createElement('canvas')
+    probe.width = W
+    probe.height = H
+    const pc = probe.getContext('2d', { willReadFrequently: true })
+    if (!pc) return
+    pc.drawImage(canvas, 0, 0)
+    const px = pc.getImageData(0, 0, W, H).data
+    let x0 = W
+    let y0 = H
+    let x1 = -1
+    let y1 = -1
+    for (let y = 0; y < H; y++)
+        for (let x = 0; x < W; x++)
+            if (px[(y * W + x) * 4 + 3] > 8) {
+                if (x < x0) x0 = x
+                if (x > x1) x1 = x
+                if (y < y0) y0 = y
+                if (y > y1) y1 = y
+            }
+    if (x1 < 0) return console.warn('[campussnap] ảnh trống')
+    // Hình chữ nhật bao của thân hero qua camera hiện tại (đã gồm zoom + view offset), đổi sang px của canvas
+    camera.updateMatrixWorld()
+    const k = W / size.width
+    const r = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity }
+    for (const c of BODIES[0]) {
+        _pp.copy(c).project(camera)
+        const bx = ((_pp.x + 1) / 2) * size.width * k
+        const by = ((1 - _pp.y) / 2) * size.height * k
+        r.x0 = Math.min(r.x0, bx)
+        r.x1 = Math.max(r.x1, bx)
+        r.y0 = Math.min(r.y0, by)
+        r.y1 = Math.max(r.y1, by)
+    }
+    const cw = x1 - x0 + 1
+    const ch = y1 - y0 + 1
+    const out = document.createElement('canvas')
+    out.width = cw
+    out.height = ch
+    out.getContext('2d')?.drawImage(probe, x0, y0, cw, ch, 0, 0, cw, ch)
+    const meta = { w: cw, h: ch, body: { x0: +(r.x0 - x0).toFixed(1), y0: +(r.y0 - y0).toFixed(1), x1: +(r.x1 - x0).toFixed(1), y1: +(r.y1 - y0).toFixed(1) } }
+    out.toBlob(
+        (blob) => {
+            if (!blob) return
+            void fetch('/__save-campus-still', { method: 'POST', headers: { 'x-still-meta': JSON.stringify(meta) }, body: blob })
+                .then((res) => res.text())
+                .then((f) => console.info('[campussnap] đã lưu', f, JSON.stringify(meta)))
+        },
+        'image/webp',
+        0.9,
+    )
+}
+
+/**
  * Vẽ canvas trong vòng rAF chung (lib/frame-loop), sau Lenis và máy quay: Canvas ở frameloop="never", ở đây gọi advance.
  * Không vẽ khi không ai thấy: tab ẩn, footer đã phủ kín màn (số đo từ page-metrics, không đọc layout), hoặc màn chuyển giao diện đang che.
  */
@@ -1458,6 +1579,8 @@ function FrameDriver({ kiosk, onReady }: { kiosk: KioskBridge; onReady?: () => v
     const advance = useThree((s) => s.advance)
     const clock = useThree((s) => s.clock)
     const gl = useThree((s) => s.gl)
+    const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
+    const size = useThree((s) => s.size)
     useEffect(() => {
         let prev = 0
         let drew = false
@@ -1470,19 +1593,12 @@ function FrameDriver({ kiosk, onReady }: { kiosk: KioskBridge; onReady?: () => v
             // Footer đã phủ quá 60% màn: dừng vẽ cảnh, giữ khung cuối (canvas đang mờ dần bằng opacity của lớp stage)
             if (document.hidden || useThemeStore.getState().frozen || footerCover() > (page.paged ? 0.999 : FOOTER_STOP)) return
             advance(clock.elapsedTime + dt)
-            if (!ready) {
+            if (!ready && hero.ok) {
                 ready = true
-                // ?campussnap (dev): chụp khung vừa render ngay trong cùng khung (drawing buffer còn nguyên) làm ảnh tĩnh của trang chủ
-                if (FLAGS.campusSnap) {
-                    gl.domElement.toBlob(
-                        (blob) => {
-                            if (!blob) return
-                            void fetch('/__save-campus-still', { method: 'POST', body: blob }).then((r) => r.text()).then((f) => console.info('[campussnap] đã lưu', f, `${gl.domElement.width}×${gl.domElement.height}`))
-                        },
-                        'image/webp',
-                        0.9,
-                    )
-                }
+                // Chụp ngay trong khung vừa render (camera đã vào đúng vị trí cuối): ảnh giữ theo kích thước cửa sổ cho lần intro sau
+                captureShot(gl.domElement)
+                // ?campussnap (dev): xuất ảnh tĩnh trong suốt cắt sát mô hình + metadata cho trường hợp chưa có ảnh chụp lúc chạy
+                if (FLAGS.campusSnap) snapStill(gl.domElement, camera, size)
                 onReady?.()
             }
             // Canvas đục đã có khung đầu: trời đã vẽ bằng WebGL, bỏ gradient CSS phía sau
@@ -1491,7 +1607,7 @@ function FrameDriver({ kiosk, onReady }: { kiosk: KioskBridge; onReady?: () => v
                 kiosk.stage.current?.classList.add('sky-gl')
             }
         }, 1)
-    }, [advance, clock, gl, kiosk, onReady])
+    }, [advance, clock, gl, camera, size, kiosk, onReady])
     return null
 }
 
@@ -1500,6 +1616,10 @@ export default function CampusScene({ night, reduce, staticMode, flat, stage, da
     const [touch] = useState(() => window.matchMedia('(pointer: coarse)').matches)
     const pointer = useRef({ x: 0, y: 0, inside: false })
     const canvasWrap = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        hero.ok = false
+        hero.frames = 0
+    }, [])
 
     // Chờ font Be Vietnam Pro (tối đa 1,5 giây) để chữ trên biển hiệu không bị font dự phòng
     useEffect(() => {

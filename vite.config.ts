@@ -39,6 +39,8 @@ function saveCampusStill(): Plugin {
           const fs = await import('node:fs/promises')
           const file = path.resolve(process.cwd(), 'public/brand/campus-still.webp')
           await fs.writeFile(file, Buffer.concat(chunks))
+          const meta = req.headers['x-still-meta']
+          if (typeof meta === 'string') await fs.writeFile(path.resolve(process.cwd(), 'src/data/campus-still-meta.json'), JSON.stringify(JSON.parse(meta), null, 2) + '\n')
           res.end(file)
         })
       })

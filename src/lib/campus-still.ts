@@ -14,6 +14,8 @@ export function loadCampusStill(): Promise<HTMLImageElement | null> {
             () => resolve(img),
             () => resolve(null),
         )
+        // decode() có thể không bao giờ settle (file không phải ảnh, trình duyệt đang throttle): không để trang chờ mãi
+        setTimeout(() => resolve(null), 1500)
     })
     return p
 }
