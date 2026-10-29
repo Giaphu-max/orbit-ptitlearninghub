@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { AlertTriangle, ExternalLink, Film, Loader2 } from 'lucide-react'
 import type { PlayerStatus } from '@/hooks/useYouTubePlayer'
 
@@ -7,12 +7,14 @@ interface LessonPlayerProps {
     status: PlayerStatus
     error: string | null
     youtubeId: string
+    /** Lớp đè lên khung (phụ đề, thanh tua) */
+    children?: ReactNode
 }
 
 /** Khung 16:9 chứa iframe YouTube, kèm trạng thái đang tải / lỗi / chưa có video. */
-export function LessonPlayer({ containerRef, status, error, youtubeId }: LessonPlayerProps) {
+export function LessonPlayer({ containerRef, status, error, youtubeId, children }: LessonPlayerProps) {
     return (
-        <div className="relative aspect-video w-full overflow-hidden rounded-panel bg-ink shadow-raised">
+        <div className="relative isolate aspect-video w-full overflow-hidden rounded-[20px] bg-ink shadow-raised">
             <div ref={containerRef} className="absolute inset-0 [&_iframe]:h-full [&_iframe]:w-full" />
 
             {status === 'loading' && (
@@ -48,6 +50,8 @@ export function LessonPlayer({ containerRef, status, error, youtubeId }: LessonP
                     )}
                 </div>
             )}
+
+            {children}
         </div>
     )
 }

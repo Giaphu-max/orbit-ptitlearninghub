@@ -1,57 +1,58 @@
-import { CheckCircle2, CircleDashed, CircleDot, Wrench } from 'lucide-react'
+import { Check, CircleDot, Wrench } from 'lucide-react'
 import type { Lesson, LessonQuizQuestion } from '@/data/types'
 import { formatTime } from '@/lib/youtube'
+import { QUIZ_XP } from '@/lib/quiz'
 import type { QuizResult } from '@/store/useOrbitStore'
 
 const STATUS = {
-    correct: { icon: CheckCircle2, label: 'Đúng ngay', className: 'text-success' },
-    corrected: { icon: Wrench, label: 'Đã sửa được', className: 'text-success' },
-    missed: { icon: CircleDot, label: 'Cần ôn lại', className: 'text-brand-ink' },
+    correct: { label: 'đã đúng', className: 'bg-success text-ink-foreground', icon: Check },
+    corrected: { label: 'đã sửa được', className: 'bg-success text-ink-foreground', icon: Wrench },
+    missed: { label: 'cần ôn lại', className: 'bg-brand-600 text-ink-foreground', icon: CircleDot },
 } as const
 
 interface QuizListProps {
     lesson: Lesson
     results: Record<string, QuizResult>
     onOpen: (q: LessonQuizQuestion) => void
+    onSeek: (sec: number) => void
 }
 
-/** Danh sách câu hỏi trong bài kèm trạng thái; bấm để làm (hoặc ôn lại). */
-export function QuizList({ lesson, results, onOpen }: QuizListProps) {
-    if (!lesson.quiz.length) return null
-    const done = lesson.quiz.filter((q) => results[q.id]).length
+/** Tab Câu hỏi: vòng trạng thái, câu hỏi, trạng thái + XP; bấm câu để làm/ôn, bấm mốc để tua. */
+export function QuizList({ lesson, results, onOpen, onSeek }: QuizListProps) {
+    if (!lesson.quiz.length) return <p className="p-4 text-sm text-muted-foreground">Bài này chưa có câu hỏi trong video.</p>
 
     return (
-        <section className="rounded-card border border-border bg-card p-5 shadow-card">
-            <div className="flex items-baseline justify-between gap-2">
-                <h2 className="font-bold text-foreground">Câu hỏi trong bài</h2>
-                <span className="font-mono text-xs text-muted-foreground">
-                    {done}/{lesson.quiz.length}
-                </span>
-            </div>
-            <ol className="mt-3 space-y-1">
-                {lesson.quiz.map((q) => {
-                    const result = results[q.id]
-                    const status = result ? STATUS[result.outcome] : null
-                    const Icon = status?.icon ?? CircleDashed
-                    return (
-                        <li key={q.id}>
-                            <button
-                                type="button"
-                                onClick={() => onOpen(q)}
-                                className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm transition hover:bg-muted"
-                            >
-                                <Icon size={16} className={`mt-0.5 shrink-0 ${status?.className ?? 'text-muted-foreground'}`} />
-                                <span className="min-w-0 flex-1">
-                                    <span className="line-clamp-2 text-foreground">{q.prompt}</span>
-                                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                                        <span className="font-mono">{formatTime(q.pauseAt)}</span> · {status?.label ?? 'Chưa làm'}
-                                    </span>
-                                </span>
-                            </button>
-                        </li>
-                    )
-                })}
-            </ol>
-        </section>
+        <ol className="h-full min-h-0 overflow-y-auto overscroll-contain p-4">
+            {lesson.quiz.map((q) => {
+                const result = results[q.id]
+                const status = result ? STATUS[result.outcome] : null
+                const Icon = status?.icon
+                const xp = result ? QUIZ_XP[result.outcome] : 0
+                return (
+                    <li key={q.id} className="grid grid-cols-[22px_1fr_auto] items-start gap-2.5 rounded-xl px-2.5 py-3 transition hover:bg-muted [&+li]:border-t [&+li]:border-border">
+                        <span
+                            aria-hidden
+                            className={`mt-0.5 flex h-5 w-5 items-center justify-center rounded-full ${status ? status.className : 'border-2 border-dashed border-muted-foreground/50'}`}
+                        >
+                            {Icon && <Icon size={12} strokeWidth={3} />}
+                        </span>
+                        <button type="button" onClick={() => onOpen(q)} className="min-w-0 text-left">
+                            <span className="block text-sm font-semibold leading-snug text-strong">{q.prompt}</span>
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                                {status ? `${status.label}${xp ? ` · +${xp} XP` : ''}` : 'video dừng ở mốc này'}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onSeek(q.pauseAt)}
+                            title="Tua tới mốc câu hỏi"
+                            className="font-mono text-xs font-bold text-brand-ink hover:underline"
+                        >
+                            {formatTime(q.pauseAt)}
+                        </button>
+                    </li>
+                )
+            })}
+        </ol>
     )
 }

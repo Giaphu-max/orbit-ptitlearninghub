@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
-import { ArrowDown, Crosshair, MoreHorizontal, Play, Send, Sparkles } from 'lucide-react'
+import { ArrowDown, Camera, MoreHorizontal, Play, Send, Sparkles } from 'lucide-react'
 import type { Lesson } from '@/data/types'
 import { askTutor } from '@/lib/api'
 import { CHAT_LIMITS, type ChatCitation, type ChatTurn } from '@/lib/api-types'
@@ -19,9 +20,62 @@ interface TutorPanelProps {
     /** Đọc thời điểm đang xem lúc gửi câu hỏi (không cần render lại theo từng giây) */
     getCurrentTime: () => number
     onSeek: (sec: number) => void
+    /** Giây nguyên đang xem, chỉ để ghi nhãn gợi ý "Giải thích đoạn mm:ss" */
+    currentSec: number
+    /** Liên kết gợi ý sang Studio 3D (bài Nhiếp ảnh), thiếu thì không hiện */
+    studio?: { to: string; label: string }
 }
 
-export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) {
+const AiAvatar = () => (
+    <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-brand-50 text-brand-ink">
+        <Sparkles size={14} />
+    </span>
+)
+
+/** Danh sách tin nhắn: memo để khung chat không dựng lại markdown mỗi lần đồng hồ video nhích */
+const Messages = memo(function Messages({ messages, onSeek }: { messages: ChatMessage[]; onSeek: (sec: number) => void }) {
+    return (
+        <>
+            {messages.map((msg, idx) => (
+                <div key={idx} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                    {msg.role === 'ai' && <AiAvatar />}
+                    <div className={`flex min-w-0 flex-col gap-1.5 ${msg.role === 'user' ? 'items-end' : ''}`}>
+                        <div
+                            className={`prose prose-sm max-w-none break-words rounded-[14px] px-3.5 py-[11px] text-sm leading-[1.55] dark:prose-invert ${
+                                msg.role === 'user'
+                                    ? 'prose-invert bg-ink text-ink-foreground'
+                                    : msg.isError
+                                      ? 'border border-brand-100 bg-brand-50 text-brand-ink'
+                                      : 'bg-muted text-foreground'
+                            }`}
+                        >
+                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                        </div>
+                        {msg.citations && msg.citations.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                                {msg.citations.map((c) => (
+                                    <button
+                                        key={c.start}
+                                        type="button"
+                                        onClick={() => onSeek(c.start)}
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-card px-2.5 py-1 text-xs font-bold text-brand-ink transition duration-fast hover:bg-brand-50"
+                                        title="Tua video tới đoạn này"
+                                    >
+                                        <Play size={10} className="fill-current" />
+                                        <span className="font-mono">{formatTime(c.start)}</span>
+                                        <span className="font-sans font-semibold text-brand-ink/80">{c.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </>
+    )
+})
+
+export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio }: TutorPanelProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([
         {
             role: 'ai',
@@ -77,69 +131,18 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
         }
     }
 
-    return (
-        <aside className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-panel border border-border bg-card shadow-card">
-            <header className="flex shrink-0 items-center gap-3 border-b border-border bg-gradient-to-r from-brand-50 to-card px-5 py-4">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-100 text-brand-ink">
-                    <Sparkles size={18} />
-                </span>
-                <div>
-                    <h2 className="font-bold text-foreground">Trợ giảng AI</h2>
-                    <p className="text-xs text-muted-foreground">Trả lời theo bài giảng, có mốc để xem lại</p>
-                </div>
-            </header>
+    // Gợi ý theo khái niệm: khái niệm đang giảng trước, rồi tới các khái niệm còn lại
+    const activeId = lesson.concepts.find((c) => currentSec >= c.segment.start && currentSec < c.segment.end)?.id
+    const suggested = [...lesson.concepts].sort((a, b) => Number(b.id === activeId) - Number(a.id === activeId)).slice(0, 2)
 
-            <div
-                ref={listRef}
-                onScroll={handleScroll}
-                className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain bg-muted p-5"
-                aria-live="polite"
-            >
-                {messages.map((msg, idx) => (
-                    <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        {msg.role === 'ai' && (
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100">
-                                <Sparkles size={14} className="text-brand-ink" />
-                            </span>
-                        )}
-                        <div className={`flex min-w-0 flex-col gap-2 ${msg.role === 'user' ? 'items-end' : ''}`}>
-                            <div
-                                className={`prose prose-sm max-w-none break-words dark:prose-invert rounded-2xl p-3.5 text-sm leading-relaxed shadow-sm ${
-                                    msg.role === 'user'
-                                        ? 'prose-invert rounded-tr-sm bg-ink text-ink-foreground dark:border dark:border-border'
-                                        : msg.isError
-                                          ? 'rounded-tl-sm border border-brand-100 bg-brand-50 text-brand-ink'
-                                          : 'rounded-tl-sm border border-border bg-card text-muted-foreground'
-                                }`}
-                            >
-                                <ReactMarkdown>{msg.text}</ReactMarkdown>
-                            </div>
-                            {msg.citations && msg.citations.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {msg.citations.map((c) => (
-                                        <button
-                                            key={c.start}
-                                            type="button"
-                                            onClick={() => onSeek(c.start)}
-                                            className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-ink transition duration-fast hover:bg-brand-100"
-                                            title="Tua video tới đoạn này"
-                                        >
-                                            <Play size={10} className="fill-current" />
-                                            <span className="font-mono">{formatTime(c.start)}</span>
-                                            <span className="text-brand-ink/80">{c.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                ))}
+    return (
+        <div className="relative flex h-full min-h-0 flex-col">
+            <div ref={listRef} onScroll={handleScroll} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4" aria-live="polite">
+                <Messages messages={messages} onSeek={onSeek} />
                 {isTyping && (
-                    <div className="flex gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100">
-                            <Sparkles size={14} className="text-brand-ink" />
-                        </span>
-                        <div className="rounded-2xl rounded-tl-sm border border-border bg-card p-3.5 text-sm text-muted-foreground shadow-sm">
+                    <div className="flex gap-2.5">
+                        <AiAvatar />
+                        <div className="rounded-[14px] bg-muted px-3.5 py-[11px] text-sm text-muted-foreground">
                             <span className="animate-pulse">Đang xem lại bài giảng…</span>
                         </div>
                     </div>
@@ -154,20 +157,20 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                         setIsScrolledUp(false)
                         scrollToBottom()
                     }}
-                    className="absolute bottom-36 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-md backdrop-blur transition hover:bg-muted"
+                    className="absolute bottom-36 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md transition hover:bg-muted"
                     aria-label="Xuống tin mới nhất"
                 >
                     {isTyping ? <MoreHorizontal size={16} className="animate-pulse text-brand-500" /> : <ArrowDown size={16} />}
                 </button>
             )}
 
-            <div className="shrink-0 border-t border-border bg-card p-4">
+            <div className="shrink-0 border-t border-border p-4">
                 <form
-                    className="relative"
                     onSubmit={(e) => {
                         e.preventDefault()
                         send(inputValue)
                     }}
+                    className="flex h-11 items-center gap-2 rounded-full border border-border bg-card pl-3.5 pr-1.5 transition focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-100"
                 >
                     <input
                         ref={inputRef}
@@ -175,43 +178,46 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek }: TutorPanelProps) 
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         maxLength={CHAT_LIMITS.questionMaxChars}
-                        placeholder="Hỏi về bài giảng…"
+                        placeholder="Hỏi về đoạn đang xem…"
                         aria-label="Câu hỏi cho trợ giảng AI"
-                        className="w-full rounded-full border border-border bg-muted py-3 pl-5 pr-12 text-sm outline-none transition focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
+                        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                     />
                     <button
                         type="submit"
                         disabled={isTyping || !inputValue.trim()}
-                        className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-brand-600 text-ink-foreground transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-muted"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-ink-foreground transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
                         aria-label="Gửi câu hỏi"
                     >
                         <Send size={14} />
                     </button>
                 </form>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
                     <button
                         type="button"
                         disabled={isTyping}
                         onClick={() => send('Giải thích giúp mình đoạn đang xem.')}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-ink transition hover:bg-brand-100 disabled:opacity-50"
+                        className="rounded-full bg-brand-50 px-2.5 py-1 text-[12.5px] font-semibold text-brand-ink transition hover:bg-brand-100 disabled:opacity-50"
                     >
-                        <Crosshair size={12} /> Hỏi về đoạn đang xem
+                        Giải thích đoạn <span className="font-mono">{formatTime(currentSec)}</span>
                     </button>
-                    {lesson.concepts.map((c) => (
+                    {suggested.map((c) => (
                         <button
                             key={c.id}
                             type="button"
-                            onClick={() => {
-                                setInputValue(`${c.name} là gì?`)
-                                inputRef.current?.focus()
-                            }}
-                            className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground transition hover:bg-muted-foreground/20"
+                            disabled={isTyping}
+                            onClick={() => send(`${c.name} là gì?`)}
+                            className="rounded-full bg-muted px-2.5 py-1 text-[12.5px] font-semibold text-strong transition hover:bg-border disabled:opacity-50"
                         >
-                            {c.name}
+                            {c.name} là gì?
                         </button>
                     ))}
                 </div>
+                {studio && (
+                    <Link to={studio.to} className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-bold text-brand-ink hover:underline">
+                        <Camera size={14} /> {studio.label} →
+                    </Link>
+                )}
             </div>
-        </aside>
+        </div>
     )
 }

@@ -1227,3 +1227,66 @@
   .sk-ping { display: none; }
   .sk-tab { animation: none; }
 }
+
+/* Trang học bài /lesson: lưới 8/4 dùng chung cho hàng đầu, hàng video và hàng dưới; ẩn bảng bên thì cột phải co về 0 */
+@layer components {
+  .lesson-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 8fr) minmax(320px, 4fr);
+    column-gap: 24px;
+  }
+  .lesson-grid > * {
+    min-width: 0;
+  }
+  .lesson-theater {
+    align-items: start;
+    transition:
+      grid-template-columns 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      column-gap 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Bảng cao đúng bằng player: contain: size để bảng không tham gia tính chiều cao hàng (Safari: bảng cao hơn làm player 16:9 phình ngang lấn khoảng hở) */
+  .lesson-side {
+    contain: size;
+    height: 100%;
+    align-self: stretch;
+    overflow: hidden;
+    transition: opacity 0.25s;
+  }
+  .lesson-player-area {
+    align-self: start;
+    width: 100%;
+    transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .lesson-theater[data-wide='true'] {
+    grid-template-columns: minmax(0, 8fr) minmax(0, 0fr);
+    column-gap: 0;
+  }
+  .lesson-theater[data-wide='true'] .lesson-side {
+    opacity: 0;
+    pointer-events: none;
+    border-width: 0;
+  }
+  .lesson-theater[data-wide='true'] .lesson-player-area {
+    width: min(100%, calc((100vh - 230px) * 16 / 9));
+    justify-self: center;
+  }
+  .lesson-reopen {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translate(100%, -50%);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    writing-mode: vertical-rl;
+  }
+  .lesson-reopen[data-show='true'] {
+    transform: translate(0, -50%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lesson-theater,
+    .lesson-side,
+    .lesson-player-area,
+    .lesson-reopen {
+      transition: none;
+    }
+  }
+}

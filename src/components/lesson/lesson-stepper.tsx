@@ -83,3 +83,44 @@ export function LessonBreadcrumbStepper({
         </div>
     )
 }
+
+/** Bản gọn cho đầu trang /lesson: 3 viên chia đều theo bề ngang cột bảng bên. */
+export function LessonCompactSteps({ lessonId, currentStep }: { lessonId: string; currentStep: LessonStepperProps['currentStep'] }) {
+    const steps = [
+        { id: 'lesson', label: 'Xem bài & quiz', to: `/lesson/${lessonId}` },
+        { id: 'checkpoint', label: 'Kiểm tra nhanh', to: `/checkpoint/${lessonId}` },
+        { id: 'recap', label: 'Tổng kết', to: `/recap/${lessonId}` },
+    ] as const
+    return (
+        <nav aria-label="Các bước của chặng" className="flex w-full items-center justify-between gap-1.5">
+            {steps.map((st, i) => {
+                const on = currentStep === st.id
+                return (
+                    <span key={st.id} className="contents">
+                        {i > 0 && (
+                            <span aria-hidden className="flex-none text-muted-foreground/50">
+                                →
+                            </span>
+                        )}
+                        <Link
+                            to={st.to}
+                            aria-current={on ? 'step' : undefined}
+                            className={`flex flex-1 items-center justify-center gap-[7px] whitespace-nowrap rounded-full border px-2 py-[7px] text-[13px] font-bold transition duration-fast ${
+                                on ? 'border-brand-600 bg-brand-600 text-ink-foreground' : 'border-border bg-card text-muted-foreground hover:text-strong'
+                            }`}
+                        >
+                            <em
+                                className={`flex h-[18px] w-[18px] items-center justify-center rounded-full font-mono text-[10.5px] font-bold not-italic ${
+                                    on ? 'bg-ink-foreground/25' : 'bg-muted'
+                                }`}
+                            >
+                                {i + 1}
+                            </em>
+                            {st.label}
+                        </Link>
+                    </span>
+                )
+            })}
+        </nav>
+    )
+}

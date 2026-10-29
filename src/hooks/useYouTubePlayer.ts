@@ -6,6 +6,8 @@ export type PlayerStatus = 'loading' | 'ready' | 'error' | 'no-video'
 interface Options {
     /** Giây bắt đầu phát (tiếp tục từ lần xem trước) */
     startAt?: number
+    /** Ẩn thanh điều khiển của YouTube để trang tự dựng thanh tua riêng */
+    hideControls?: boolean
 }
 
 /**
@@ -14,16 +16,18 @@ interface Options {
  * currentTime, để transcript và chip mốc thời gian vẫn dùng được.
  * Component dùng hook nên được gắn key theo videoId để reset trạng thái khi đổi bài.
  */
-export function useYouTubePlayer(videoId: string, { startAt = 0 }: Options = {}) {
+export function useYouTubePlayer(videoId: string, { startAt = 0, hideControls = false }: Options = {}) {
     const containerRef = useRef<HTMLDivElement>(null)
     const playerRef = useRef<YTPlayer | null>(null)
     const startAtRef = useRef(startAt)
+    const hideControlsRef = useRef(hideControls)
 
     const [status, setStatus] = useState<PlayerStatus>(videoId ? 'loading' : 'no-video')
     const [error, setError] = useState<string | null>(null)
     const [currentTime, setCurrentTime] = useState(startAt)
     const [duration, setDuration] = useState(0)
     const [isPlaying, setIsPlaying] = useState(false)
+    const [rate, setRateState] = useState(1)
 
     useEffect(() => {
         const container = containerRef.current
@@ -49,6 +53,7 @@ export function useYouTubePlayer(videoId: string, { startAt = 0 }: Options = {})
                         hl: 'vi',
                         cc_lang_pref: 'vi',
                         origin: window.location.origin,
+                        ...(hideControlsRef.current ? { controls: 0, fs: 0, disablekb: 1, iv_load_policy: 3 } : {}),
                     },
                     events: {
                         onReady: (e) => {
@@ -104,5 +109,10 @@ export function useYouTubePlayer(videoId: string, { startAt = 0 }: Options = {})
     const play = useCallback(() => playerRef.current?.playVideo(), [])
     const pause = useCallback(() => playerRef.current?.pauseVideo(), [])
 
-    return { containerRef, status, error, currentTime, duration, isPlaying, seekTo, play, pause }
+    const setRate = useCallback((r: number) => {
+        playerRef.current?.setPlaybackRate(r)
+        setRateState(r)
+    }, [])
+
+    return { containerRef, status, error, currentTime, duration, isPlaying, rate, seekTo, play, pause, setRate }
 }
