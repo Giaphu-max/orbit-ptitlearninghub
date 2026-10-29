@@ -90,22 +90,41 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
         if (quizOpen) playerAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }, [quizOpen])
 
-    // Phím B ẩn/hiện bảng bên (không kích hoạt khi đang gõ hoặc bấm kèm phím bổ trợ)
-    useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (e.metaKey || e.ctrlKey || e.altKey) return
-            const el = e.target as HTMLElement | null
-            if (el?.closest('input, textarea, select, [contenteditable="true"]')) return
-            if (e.key === 'Escape') {
-                // Esc chỉ thoát tập trung, không đụng tới fullscreen của trình duyệt
-                if (!document.fullscreenElement) setPanelHidden(false)
-                return
-            }
-            if (e.key.toLowerCase() === 'b') setPanelHidden((v) => !v)
+    // Phím tắt (không khi đang gõ): Space/K phát-dừng, ←/→ tua 5s, F toàn màn hình, C phụ đề, B ẩn/hiện bảng, Esc thoát tập trung.
+    // Handler đọc trạng thái mới nhất qua ref nên listener chỉ gắn một lần.
+    const keysRef = useRef<(e: KeyboardEvent) => void>(() => {})
+    keysRef.current = (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return
+        const el = e.target as HTMLElement | null
+        if (el?.closest('input, textarea, select, [contenteditable="true"]')) return
+        const key = e.key.toLowerCase()
+        if (key === 'escape') {
+            // Esc chỉ thoát tập trung, không đụng tới fullscreen của trình duyệt
+            if (!document.fullscreenElement) setPanelHidden(false)
+            return
         }
+        if (key === 'b') return setPanelHidden((v) => !v)
+        if (key === 'c') return setCaptionsOn((v) => !v)
+        if (key === 'f') return toggleFullscreen()
+        // Đang làm quiz thì không điều khiển video phía sau
+        if (quizOpen || !canPlay) return
+        if (key === ' ' || key === 'k') {
+            // Nút/link đang focus tự xử lý Space, tránh kích hoạt hai lần
+            if (key === ' ' && el?.closest('button, a, summary, [role="tab"], [role="slider"]')) return
+            e.preventDefault()
+            return player.isPlaying ? player.pause() : player.play()
+        }
+        if (key === 'arrowright' || key === 'arrowleft') {
+            if (el?.closest('[role="tab"], [role="menuitemradio"]')) return
+            e.preventDefault()
+            seekTo(Math.min(lesson.durationSec, Math.max(0, timeRef.current + (key === 'arrowright' ? 5 : -5))), { play: player.isPlaying })
+        }
+    }
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => keysRef.current(e)
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
-    }, [setPanelHidden])
+    }, [])
 
     // Chế độ tập trung = bảng đang ẩn: báo navbar, khóa cuộn trang
     useEffect(() => {
@@ -226,6 +245,8 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 onRate={player.setRate}
                                 onFullscreen={toggleFullscreen}
                                 onTogglePanel={() => setPanelHidden((v) => !v)}
+                                interactive={canPlay}
+                                pinned={quizOpen || phase.kind === 'reviewing'}
                             />
                             {fromSavedPosition && (
                                 <ResumeToast from={resumeFrom} onRestart={() => handleSeek(0)} />

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Captions, Maximize, Pause, PanelRight, Play } from 'lucide-react'
 import type { Lesson } from '@/data/types'
 import { formatTime } from '@/lib/youtube'
@@ -21,6 +21,10 @@ interface PlayerControlsProps {
     onRate: (rate: number) => void
     onFullscreen: () => void
     onTogglePanel: () => void
+    /** Có trình phát thật: bật lớp bắt click (play/pause, nhấp đúp = toàn màn hình) */
+    interactive: boolean
+    /** Quiz đang mở hoặc vòng củng cố đang chạy: thanh luôn hiện */
+    pinned: boolean
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -51,6 +55,63 @@ export function PlayerControls(p: PlayerControlsProps) {
     const duration = Math.max(p.duration || lesson.durationSec, 1)
     const pct = (sec: number) => `${Math.min(100, Math.max(0, (sec / duration) * 100))}%`
 
+    // ── Tự ẩn như YouTube ──
+    const [recent, setRecent] = useState(true)
+    const [focusWithin, setFocusWithin] = useState(false)
+    const [dragging, setDragging] = useState(false)
+    const [menuOpen, setMenuOpen] = useState(false)
+    const [scrub, setScrub] = useState<number | null>(null)
+    const hideTimer = useRef<number | undefined>(undefined)
+
+    const poke = useCallback((delay: number) => {
+        window.clearTimeout(hideTimer.current)
+        setRecent(true)
+        hideTimer.current = window.setTimeout(() => setRecent(false), delay)
+    }, [])
+
+    // Lắng nghe chuột/focus trên khung player (phần tử cha của lớp này), không cần đụng tới LessonPlayer
+    const sentinel = useCallback(
+        (node: HTMLSpanElement | null) => {
+            const el = node?.parentElement
+            if (!el) return
+            const move = () => poke(2500)
+            const leave = () => poke(500)
+            const fin = () => setFocusWithin(true)
+            const fout = (e: FocusEvent) => {
+                if (!el.contains(e.relatedTarget as Node | null)) setFocusWithin(false)
+            }
+            el.addEventListener('pointermove', move)
+            el.addEventListener('pointerdown', move)
+            el.addEventListener('pointerleave', leave)
+            el.addEventListener('focusin', fin)
+            el.addEventListener('focusout', fout)
+            return () => {
+                el.removeEventListener('pointermove', move)
+                el.removeEventListener('pointerdown', move)
+                el.removeEventListener('pointerleave', leave)
+                el.removeEventListener('focusin', fin)
+                el.removeEventListener('focusout', fout)
+            }
+        },
+        [poke],
+    )
+    useEffect(() => () => window.clearTimeout(hideTimer.current), [])
+
+    const visible = !isPlaying || p.pinned || recent || focusWithin || dragging || menuOpen
+    const cursorHidden = !visible && isPlaying
+
+    // Nhấp đơn = phát/dừng, nhấp đúp = toàn màn hình (hoãn nhấp đơn một nhịp để phân biệt)
+    const clickTimer = useRef<number | undefined>(undefined)
+    const onLayerClick = () => {
+        window.clearTimeout(clickTimer.current)
+        clickTimer.current = window.setTimeout(p.onToggle, 220)
+    }
+    const onLayerDouble = () => {
+        window.clearTimeout(clickTimer.current)
+        p.onFullscreen()
+    }
+    useEffect(() => () => window.clearTimeout(clickTimer.current), [])
+
     // Mỗi đoạn một khái niệm theo mốc bắt đầu, đoạn cuối chạy tới hết video; phần trước khái niệm đầu là "Mở đầu"
     const chapters = useMemo(() => {
         const sorted = [...lesson.concepts].sort((a, b) => a.segment.start - b.segment.start)
@@ -62,36 +123,77 @@ export function PlayerControls(p: PlayerControlsProps) {
 
     const names = useMemo(() => lesson.concepts.map((c) => c.name).filter(Boolean), [lesson.concepts])
     const caption = lesson.transcript.find((s) => currentTime >= s.start && currentTime < s.end)
+    const shownTime = scrub ?? currentTime
 
-    const seekFromPointer = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Kéo thanh tua: đầu phát chạy theo con trỏ, tua thật khi thả
+    const timeFromPointer = (e: React.PointerEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect()
-        p.onSeek(((e.clientX - rect.left) / rect.width) * duration)
+        return Math.min(duration, Math.max(0, ((e.clientX - rect.left) / rect.width) * duration))
     }
-    const nextRate = PLAYBACK_RATES[(PLAYBACK_RATES.indexOf(rate as (typeof PLAYBACK_RATES)[number]) + 1) % PLAYBACK_RATES.length]
-
+    const onSeekDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setDragging(true)
+        setScrub(timeFromPointer(e))
+    }
+    const onSeekMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (dragging) setScrub(timeFromPointer(e))
+    }
+    const onSeekUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!dragging) return
+        setDragging(false)
+        setScrub(null)
+        p.onSeek(timeFromPointer(e))
+    }
     return (
         <>
+            <span ref={sentinel} hidden />
+            {p.interactive && (
+                <div
+                    onClick={onLayerClick}
+                    onDoubleClick={onLayerDouble}
+                    aria-hidden
+                    className={`absolute inset-x-0 bottom-0 top-14 z-10 flex items-center justify-center ${cursorHidden ? 'cursor-none' : ''}`}
+                >
+                    {!isPlaying && !p.pinned && (
+                        <span className="pointer-events-none flex h-[72px] w-[72px] items-center justify-center rounded-full bg-ink/60 text-ink-foreground">
+                            <Play size={30} className="ml-1 fill-current" />
+                        </span>
+                    )}
+                </div>
+            )}
+
             {p.captionsOn && caption && (
-                <div className="pointer-events-none absolute bottom-[76px] left-1/2 z-10 max-w-[70%] -translate-x-1/2 rounded-[10px] bg-ink/70 px-4 py-2 text-center text-base font-semibold leading-snug text-ink-foreground">
+                <div
+                    className={`pointer-events-none absolute left-1/2 z-10 max-w-[70%] -translate-x-1/2 rounded-[10px] bg-ink/70 px-4 py-2 text-center text-base font-semibold leading-snug text-ink-foreground transition-[bottom] duration-[250ms] motion-reduce:transition-none ${
+                        visible ? 'bottom-[76px]' : 'bottom-6'
+                    }`}
+                >
                     {highlight(caption.text, names)}
                 </div>
             )}
 
-            <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink/70 to-transparent px-[18px] pb-3.5 pt-8">
+            <div
+                inert={!visible}
+                className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink/70 to-transparent px-[18px] pb-3.5 pt-8 transition-[opacity,transform] duration-[250ms] motion-reduce:transition-none ${
+                    visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
+                }`}
+            >
                 <div
                     role="slider"
                     tabIndex={0}
                     aria-label="Thanh tua video"
                     aria-valuemin={0}
                     aria-valuemax={Math.floor(duration)}
-                    aria-valuenow={Math.floor(currentTime)}
-                    aria-valuetext={`${formatTime(currentTime)} trên ${formatTime(duration)}`}
-                    onClick={seekFromPointer}
-                    onKeyDown={(e) => {
-                        if (e.key === 'ArrowRight') p.onSeek(currentTime + 5)
-                        if (e.key === 'ArrowLeft') p.onSeek(currentTime - 5)
+                    aria-valuenow={Math.floor(shownTime)}
+                    aria-valuetext={`${formatTime(shownTime)} trên ${formatTime(duration)}`}
+                    onPointerDown={onSeekDown}
+                    onPointerMove={onSeekMove}
+                    onPointerUp={onSeekUp}
+                    onPointerCancel={() => {
+                        setDragging(false)
+                        setScrub(null)
                     }}
-                    className="group relative flex h-[22px] cursor-pointer items-center"
+                    className="group relative flex h-[22px] cursor-pointer touch-none items-center"
                 >
                     <div className="absolute inset-x-0 flex h-[5px] gap-[3px]">
                         {chapters.map((c) => (
@@ -103,13 +205,14 @@ export function PlayerControls(p: PlayerControlsProps) {
                             />
                         ))}
                     </div>
-                    <span className="pointer-events-none absolute left-0 z-[1] h-[5px] rounded-sm bg-brand-600" style={{ width: pct(currentTime) }} />
+                    <span className="pointer-events-none absolute left-0 z-[1] h-[5px] rounded-sm bg-brand-600" style={{ width: pct(shownTime) }} />
                     {lesson.quiz.map((q) => {
                         const done = !!results[q.id]
                         return (
                             <button
                                 key={q.id}
                                 type="button"
+                                onPointerDown={(e) => e.stopPropagation()}
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     p.onSeek(q.pauseAt)
@@ -125,7 +228,7 @@ export function PlayerControls(p: PlayerControlsProps) {
                     })}
                     <span
                         className="pointer-events-none absolute z-[2] -ml-[7px] h-3.5 w-3.5 rounded-full bg-ink-foreground ring-4 ring-brand-600/50"
-                        style={{ left: pct(currentTime) }}
+                        style={{ left: pct(shownTime) }}
                     />
                 </div>
 
@@ -139,15 +242,46 @@ export function PlayerControls(p: PlayerControlsProps) {
                         {isPlaying ? <Pause size={16} className="fill-current" /> : <Play size={16} className="ml-0.5 fill-current" />}
                     </button>
                     <span className="font-mono text-[13px] font-semibold">
-                        {formatTime(currentTime)} / {formatTime(duration)}
+                        {formatTime(shownTime)} / {formatTime(duration)}
                     </span>
                     <div className="ml-auto flex items-center gap-2">
                         <button type="button" aria-pressed={p.captionsOn} onClick={p.onToggleCaptions} className={`${btn} ${p.captionsOn ? btnOn : btnOff}`}>
                             <Captions size={15} /> Phụ đề
                         </button>
-                        <button type="button" onClick={() => p.onRate(nextRate)} aria-label={`Tốc độ phát ${rate}×, bấm để đổi`} className={`${btn} ${btnOff} font-mono`}>
-                            {rate}×
-                        </button>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                aria-haspopup="menu"
+                                aria-expanded={menuOpen}
+                                onClick={() => setMenuOpen((v) => !v)}
+                                onBlur={(e) => {
+                                    if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node | null)) setMenuOpen(false)
+                                }}
+                                aria-label={`Tốc độ phát ${rate}×`}
+                                className={`${btn} ${btnOff} font-mono`}
+                            >
+                                {rate}×
+                            </button>
+                            {menuOpen && (
+                                <div role="menu" className="absolute bottom-10 right-0 z-30 flex flex-col rounded-xl bg-ink/90 p-1 text-ink-foreground shadow-raised">
+                                    {PLAYBACK_RATES.map((r) => (
+                                        <button
+                                            key={r}
+                                            type="button"
+                                            role="menuitemradio"
+                                            aria-checked={r === rate}
+                                            onClick={() => {
+                                                p.onRate(r)
+                                                setMenuOpen(false)
+                                            }}
+                                            className={`rounded-lg px-4 py-1.5 text-left font-mono text-[13px] font-bold transition hover:bg-ink-foreground/15 ${r === rate ? 'text-brand-light' : ''}`}
+                                        >
+                                            {r}×
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                         <button type="button" onClick={p.onFullscreen} aria-label="Toàn màn hình" className={`${btn} ${btnOff} px-2.5`}>
                             <Maximize size={15} />
                         </button>
