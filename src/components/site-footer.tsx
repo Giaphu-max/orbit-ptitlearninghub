@@ -20,7 +20,17 @@ export function SiteFooter() {
     const navigate = useNavigate()
     const firstCourse = courses[0]
 
-    const groups: { title: string; links: FooterLink[] }[] = [
+    const teacherGroup: { title: string; links: FooterLink[] }[] = [
+        {
+            title: 'Giảng viên',
+            links: [
+                { label: 'Tổng quan', to: '/' },
+                { label: 'Duyệt nội dung', to: '/teacher/review' },
+                { label: 'Lớp học', to: '/teacher/class' },
+            ],
+        },
+    ]
+    const studentGroups: { title: string; links: FooterLink[] }[] = [
         {
             title: 'Học tập',
             links: [
@@ -35,9 +45,10 @@ export function SiteFooter() {
             links: [
                 { label: 'Studio 3D', to: '/studio' },
                 { label: 'Trợ giảng AI', to: lessons[0] ? `/lesson/${lessons[0].id}` : '/learning' },
-                ...(role === 'teacher' ? [{ label: 'Trang giảng viên', to: '/teacher' }] : []),
             ],
         },
+    ]
+    const aboutGroup: { title: string; links: FooterLink[] }[] = [
         {
             title: 'Về dự án',
             links: [
@@ -45,6 +56,7 @@ export function SiteFooter() {
             ],
         },
     ]
+    const groups = [...(role === 'teacher' ? teacherGroup : studentGroups), ...aboutGroup]
 
     // Đang ở trang chủ thì bấm link phần trên trang chủ cuộn mượt, không tải lại
     const onLink = (e: MouseEvent, to: string) => {
@@ -57,7 +69,7 @@ export function SiteFooter() {
     const linkClass = 'text-sm text-ink-foreground/85 transition hover:text-ink-foreground hover:underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground/70'
 
     return (
-        <footer className={`bg-footer text-ink-foreground ${pathname === '/' ? 'mt-0' : 'mt-16'}`}>
+        <footer className={`bg-footer text-ink-foreground ${pathname === '/' && role !== 'teacher' ? 'mt-0' : 'mt-16'}`}>
             <div className="container-wide py-12 lg:py-14">
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
                     <div>

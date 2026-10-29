@@ -44,6 +44,7 @@ Sản phẩm chưa đưa vào sử dụng thực tế, nên **không làm backen
   - **Hồ sơ demo mặc định** (`makeDemoProfile()` trong store): như đã học khoảng 2 tuần (chuỗi 12 ngày, cấp 7, 2.480 XP, đọc 1/3 bài Daily hôm nay, 1/3 nhiệm vụ xong, đang xem bài ở 46%, bản đồ kỹ năng 5 khái niệm với mức nắm vững khác nhau). Lần đầu mở và nút "Đặt lại dữ liệu demo" đều về hồ sơ này; ngày tính theo hôm nay. Công thức cấp: cấp n bắt đầu ở 60·(n−1)² XP.
   - activeTestSessions (store v7): lưu nháp bài test cuối chương, vào lại /test/:courseId có banner Làm tiếp / Làm lại bài mới; phiên quá 24 giờ bỏ.
 - **Vai trò**: màn chọn "Sinh viên / Giảng viên" thay cho đăng nhập (màn chọn vai trò dùng ảnh thầy Châu màu tĩnh, bỏ hiệu ứng collage xé giấy).
+  - **Vai giảng viên** (mockup `docs/mockup/ptit-teacher.html`): nav 3 mục Tổng quan (`/`, `teacher/teacher-overview.tsx`, không 3D) · Duyệt nội dung (`/teacher/review/:lessonId?`, `orbit-teacher-review-view.tsx`) · Lớp học (`/teacher/class`, `orbit-teacher-class-view.tsx`); `/teacher?tab=` redirect. Trạng thái duyệt từng mục lưu `reviewedItems` (store v9; khóa `sum` | `c:<id>` | `q:<id>`), hồ sơ demo có 2 bài Nhiếp ảnh chờ duyệt (một bài 6/9) nên sinh viên chỉ thấy bài sau khi xuất bản. Việc hôm nay và khối "Cần chú ý nhất" tính ở `src/lib/teacher.ts`; lý do sai/ghi chú đáp án nhiễu là dữ liệu mẫu ở `src/data/teacher-notes.ts`. Nút AI phụ (viết lại đáp án nhiễu, viết gọn, dễ hiểu hơn) gọi `api/rewrite.ts`.
 - Giao diện tiếng Việt, responsive. Không commit `.env*`.
 
 ## Ngôn ngữ thiết kế: PTIT

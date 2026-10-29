@@ -144,6 +144,190 @@
         17,
         2
       ]
+    },
+    "q-dung-tuyen-tinh-1": {
+      "picks": [
+        2,
+        2,
+        1,
+        27
+      ]
+    },
+    "q-dung-phi-tuyen-1": {
+      "picks": [
+        3,
+        23,
+        3,
+        2
+      ]
+    },
+    "q-tu-duy-dung-1": {
+      "picks": [
+        19,
+        2,
+        2,
+        3
+      ]
+    },
+    "q-vai-tro-nguoi-xem-1": {
+      "picks": [
+        2,
+        2,
+        19,
+        2
+      ]
+    },
+    "q-muc-tieu-giao-tiep-1": {
+      "picks": [
+        2,
+        3,
+        15,
+        2
+      ]
+    },
+    "q-tai-tri-tue-1": {
+      "picks": [
+        3,
+        3,
+        4,
+        8
+      ]
+    },
+    "q-cong-cu-dan-dat-chu-y-1": {
+      "picks": [
+        3,
+        3,
+        2,
+        12
+      ]
+    },
+    "q-nhip-hinh-1": {
+      "picks": [
+        1,
+        2,
+        17,
+        1
+      ]
+    },
+    "q-nhip-am-1": {
+      "picks": [
+        2,
+        2,
+        13,
+        2
+      ]
+    },
+    "q-thoi-luong-canh-1": {
+      "picks": [
+        12,
+        2,
+        2,
+        2
+      ]
+    },
+    "q-nen-va-keo-dai-thoi-gian-1": {
+      "picks": [
+        2,
+        3,
+        8,
+        2
+      ]
+    },
+    "q-key-light-1": {
+      "picks": [
+        25,
+        2,
+        1,
+        2
+      ]
+    },
+    "q-fill-light-1": {
+      "picks": [
+        21,
+        3,
+        3,
+        2
+      ]
+    },
+    "q-back-light-1": {
+      "picks": [
+        2,
+        19,
+        4,
+        3
+      ]
+    },
+    "q-practical-light-1": {
+      "picks": [
+        4,
+        15,
+        3,
+        4
+      ]
+    },
+    "q-cac-thuat-ngu-mau-sac-1": {
+      "picks": [
+        3,
+        2,
+        2,
+        17
+      ]
+    },
+    "q-he-mau-rgb-va-cmyk-1": {
+      "picks": [
+        12,
+        3,
+        4,
+        3
+      ]
+    },
+    "q-tam-ly-hoc-mau-sac-1": {
+      "picks": [
+        2,
+        15,
+        2,
+        2
+      ]
+    },
+    "q-phoi-hop-mau-sac-1": {
+      "picks": [
+        4,
+        3,
+        11,
+        2
+      ]
+    },
+    "q-dong-luc-nhiep-anh-noi-tai-1": {
+      "picks": [
+        1,
+        1,
+        14,
+        1
+      ]
+    },
+    "q-tu-duy-tai-tao-hinh-anh-1": {
+      "picks": [
+        2,
+        9,
+        2,
+        2
+      ]
+    },
+    "q-ngon-ngu-thi-giac-dien-anh-1": {
+      "picks": [
+        3,
+        2,
+        7,
+        2
+      ]
+    },
+    "q-kho-du-lieu-tiem-thuc-1": {
+      "picks": [
+        1,
+        2,
+        2,
+        7
+      ]
     }
   },
   "tests": {

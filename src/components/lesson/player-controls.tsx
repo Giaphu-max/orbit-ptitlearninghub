@@ -45,6 +45,11 @@ interface PlayerControlsProps {
   /** Tua tương đối (±10s khi nhấp đúp hai bên); giữ nguyên trạng thái phát/dừng */
   onSeekBy: (delta: number) => void;
   fxRef?: Ref<PlayerFx>;
+  /** Trang duyệt của giảng viên: trạng thái mốc câu hỏi (mặc định theo kết quả làm bài của sinh viên) */
+  quizMarker?: (q: Lesson["quiz"][number]) => { state: "approved" | "pending" | "hot"; hint: string; current?: boolean };
+  /** Bấm mốc câu hỏi (mặc định: tua tới mốc) */
+  onMarkerClick?: (q: Lesson["quiz"][number]) => void;
+  hidePanelToggle?: boolean;
 }
 
 /** Hiệu ứng phản hồi gọi từ ngoài (phím tắt) để dùng chung với thao tác chuột. */
@@ -403,7 +408,18 @@ export function PlayerControls(p: PlayerControlsProps) {
             />
           </div>
           {lesson.quiz.map((q) => {
-            const done = !!results[q.id];
+            const review = p.quizMarker?.(q);
+            const done = review ? review.state === "approved" : !!results[q.id];
+            const tone = review
+              ? review.state === "approved"
+                ? "border-mm-teal bg-mm-teal"
+                : review.state === "hot"
+                  ? "border-ink-foreground bg-brand-600"
+                  : "border-ink bg-ink-foreground"
+              : done
+                ? "border-success bg-success"
+                : "border-ink bg-ink-foreground";
+            const hint = review ? review.hint : `Quiz ${formatTime(q.pauseAt)}${done ? " · đã làm" : ""}`;
             return (
               <button
                 key={q.id}
@@ -411,16 +427,13 @@ export function PlayerControls(p: PlayerControlsProps) {
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  p.onSeek(q.pauseAt);
+                  if (p.onMarkerClick) p.onMarkerClick(q);
+                  else p.onSeek(q.pauseAt);
                 }}
-                aria-label={`Tua tới quiz ${formatTime(q.pauseAt)}${done ? ", đã làm" : ""}`}
-                data-t={`Quiz ${formatTime(q.pauseAt)}${done ? " · đã làm" : ""}`}
+                aria-label={review ? hint : `Tua tới quiz ${formatTime(q.pauseAt)}${done ? ", đã làm" : ""}`}
+                data-t={hint}
                 style={{ left: pct(q.pauseAt) }}
-                className={`absolute top-1/2 z-[2] -ml-1.5 -mt-1.5 h-3 w-3 rotate-45 rounded-[2px] border-2 p-0 after:pointer-events-none after:absolute after:bottom-4 after:left-1/2 after:-translate-x-1/2 after:-rotate-45 after:whitespace-nowrap after:rounded-md after:bg-ink after:px-2 after:py-1 after:text-[11.5px] after:font-semibold after:text-ink-foreground after:opacity-0 after:content-[attr(data-t)] hover:after:opacity-100 ${
-                  done
-                    ? "border-success bg-success"
-                    : "border-ink bg-ink-foreground"
-                }`}
+                className={`absolute top-1/2 z-[2] -ml-1.5 -mt-1.5 h-3 w-3 rotate-45 rounded-[2px] border-2 p-0 after:pointer-events-none after:absolute after:bottom-4 after:left-1/2 after:-translate-x-1/2 after:-rotate-45 after:whitespace-nowrap after:rounded-md after:bg-ink after:px-2 after:py-1 after:text-[11.5px] after:font-semibold after:text-ink-foreground after:opacity-0 after:content-[attr(data-t)] hover:after:opacity-100 ${tone} ${review?.current ? "ring-4 ring-ink-foreground/45" : ""}`}
               />
             );
           })}
@@ -522,6 +535,7 @@ export function PlayerControls(p: PlayerControlsProps) {
             >
               <Maximize size={15} />
             </button>
+            {!p.hidePanelToggle && (
             <button
               type="button"
               aria-pressed={!p.panelHidden}
@@ -531,6 +545,7 @@ export function PlayerControls(p: PlayerControlsProps) {
             >
               <PanelRight size={15} /> {p.panelHidden ? "Hiện bảng" : "Ẩn bảng"}
             </button>
+            )}
           </div>
         </div>
       </div>

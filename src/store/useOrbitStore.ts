@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import { dailyArticles, getLesson } from '@/data'
+import { dailyArticles, getLesson, lessons as allLessons } from '@/data'
 import type { Lesson, ReviewStatus, Seconds } from '@/data/types'
 import type { CourseCoverSpec } from '@/lib/cover-kinds'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
@@ -84,7 +84,7 @@ export interface TestRecord {
 }
 
 /** Phần nội dung AI tạo mà giảng viên được sửa; lưu cả khối để thay thế bản gốc. */
-export type LessonEdits = Pick<Lesson, 'summary' | 'concepts' | 'quiz'>
+export type LessonEdits = Pick<Lesson, 'summary' | 'concepts' | 'quiz'> & { transcript?: Lesson['transcript'] }
 
 /** Bìa khóa học do giảng viên chọn: kiểu/họa tiết/seed tự sinh, hoặc ảnh tải lên (dataURL JPEG, ưu tiên hơn bìa tự sinh) */
 export interface CourseCoverOverride extends CourseCoverSpec {
@@ -134,6 +134,8 @@ interface OrbitState {
     daily: DailyState
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
     lessonReview: Record<string, ReviewStatus>
+    /** Mục nội dung giảng viên đã duyệt theo bài (khóa 'sum' | 'c:<khái niệm>' | 'q:<câu>'); chưa có thì bài xuất bản coi như duyệt hết */
+    reviewedItems: Record<string, string[]>
     /** Bản chỉnh sửa của giảng viên theo bài; chưa có thì dùng nội dung AI trong JSON */
     lessonEdits: Record<string, LessonEdits>
     /** Bìa khóa học do giảng viên chỉnh (id khóa → lựa chọn); chưa có thì dùng cover trong courses.json */
@@ -152,6 +154,7 @@ interface OrbitState {
     claimLights: () => number
     saveLessonPosition: (lessonId: string, positionSec: Seconds) => void
     setLessonReview: (lessonId: string, status: ReviewStatus) => void
+    setReviewedItems: (lessonId: string, keys: string[]) => void
     /** patch = null: bỏ chỉnh sửa bìa, quay về bìa mặc định */
     setCourseCover: (courseId: string, patch: CourseCoverOverride | null) => void
     /** edits = null: bỏ chỉnh sửa, quay về bản AI tạo */
@@ -184,6 +187,23 @@ export const DEFAULT_LEARNER_NAME = 'Phú'
  * đọc 1/3 bài Daily hôm nay, 1/3 nhiệm vụ xong, đang xem bài ở 46%). Ngày tính theo hôm nay để
  * chuỗi ngày luôn còn "sống" lúc mở demo. Lần đầu mở và nút "Đặt lại dữ liệu demo" đều trả về hồ sơ này.
  */
+/** Mọi khóa nội dung của một bài: tóm tắt, từng khái niệm, từng câu hỏi trong video. */
+export function lessonItemKeys(l: Pick<Lesson, 'concepts' | 'quiz'>): string[] {
+    return ['sum', ...l.concepts.map((c) => `c:${c.id}`), ...l.quiz.map((q) => `q:${q.id}`)]
+}
+
+/** Hồ sơ giảng viên mặc định: hai bài Nhiếp ảnh mới tạo còn chờ duyệt (một bài duyệt dở 6/9), các bài khác đã duyệt hết trừ một câu có đáp án nhiễu bị chọn nhiều. */
+function makeTeacherDemo() {
+    const lessonReview: Record<string, ReviewStatus> = { 'nguyen-ly-mau-sac': 'draft', 'tu-duy-nhiep-anh': 'draft' }
+    const reviewedItems: Record<string, string[]> = {}
+    for (const l of allLessons) reviewedItems[l.id] = lessonItemKeys(l)
+    const partial = getLesson('nguyen-ly-mau-sac')
+    if (partial) reviewedItems[partial.id] = lessonItemKeys(partial).slice(0, 4).concat(lessonItemKeys(partial).slice(5, 7))
+    reviewedItems['tu-duy-nhiep-anh'] = []
+    reviewedItems['ban-chat-dung-phi-tuyen'] = (reviewedItems['ban-chat-dung-phi-tuyen'] ?? []).filter((k) => k !== 'q:q-tinh-phi-huy-hoai-1')
+    return { lessonReview, reviewedItems }
+}
+
 export function makeDemoProfile() {
     const today = localDate()
     return {
@@ -217,7 +237,7 @@ export function makeDemoProfile() {
         checkpoints: {} as Record<string, TestRecord>,
         recapSeen: {} as Record<string, boolean>,
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
-        lessonReview: {} as Record<string, ReviewStatus>,
+        ...makeTeacherDemo(),
         lessonEdits: {} as Record<string, LessonEdits>,
         courseCovers: {} as Record<string, CourseCoverOverride>,
         activeTestSessions: {} as Record<string, ActiveTestSession>,
@@ -334,6 +354,8 @@ export const useOrbitStore = create<OrbitState>()(
 
             setLessonReview: (lessonId, status) =>
                 set((s) => ({ lessonReview: { ...s.lessonReview, [lessonId]: status } })),
+
+            setReviewedItems: (lessonId, keys) => set((s) => ({ reviewedItems: { ...s.reviewedItems, [lessonId]: keys } })),
 
             setLessonEdits: (lessonId, edits) =>
                 set((s) => {
@@ -469,13 +491,13 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 8,
-            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio).
+            version: 9,
+            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio); v9 thêm reviewedItems và hồ sơ giảng viên mặc định (2 bài chờ duyệt) nếu chưa có thay đổi nào.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {} } as OrbitState
+                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },

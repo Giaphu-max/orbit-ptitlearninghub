@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, ChevronDown, Star } from 'lucide-react'
 import { getCourse, getLessonsOfCourse } from '@/data'
@@ -8,19 +8,37 @@ import { useOrbitStore } from '@/store/useOrbitStore'
 
 export type LessonStep = 'lesson' | 'checkpoint' | 'recap'
 
-interface LessonTitleBlockProps {
-    course?: Course
-    lesson: Lesson
-    courseLessons: Lesson[]
+export interface PickerItem {
+    key: string
+    to: string
+    n: string
+    title: string
+    meta: string
+    current?: boolean
 }
 
-/** Dòng nhỏ "<học phần> [Bài n/N] ▾" mở menu danh sách bài + test cuối chương, dưới là tiêu đề bài một dòng. */
-function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleBlockProps) {
+export interface PickerFooter {
+    title: string
+    meta: string
+    icon: ReactNode
+    to?: string
+    onClick?: () => void
+}
+
+interface TitleBlockProps {
+    /** Chữ của nút xổ: tên học phần */
+    label: string
+    /** Chip "Bài n/N" cạnh nhãn */
+    badge?: string
+    items: PickerItem[]
+    footer?: PickerFooter
+    title: string
+}
+
+/** Dòng nhỏ "<học phần> [Bài n/N] ▾" mở menu danh sách, dưới là tiêu đề một dòng. Dùng chung trang học bài và các trang giảng viên. */
+export function TitleBlock({ label, badge, items, footer, title }: TitleBlockProps) {
     const [open, setOpen] = useState(false)
     const rootRef = useRef<HTMLDivElement>(null)
-    const progress = useOrbitStore((s) => s.lessonProgress)
-    const index = courseLessons.findIndex((l) => l.id === lesson.id)
-    const doneCount = courseLessons.filter((l) => progress[l.id]?.completed).length
 
     useEffect(() => {
         if (!open) return
@@ -36,6 +54,7 @@ function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleBlockPro
         }
     }, [open])
 
+    const footerCls = 'mt-1 grid w-full grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] border-t border-border p-2.5 text-left text-sm transition hover:bg-muted'
     return (
         <div className="min-w-0">
             <div ref={rootRef} className="relative inline-block">
@@ -46,52 +65,88 @@ function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleBlockPro
                     onClick={() => setOpen((v) => !v)}
                     className="inline-flex items-center gap-2 rounded-lg py-1 pr-2.5 text-[13px] font-bold text-muted-foreground transition hover:text-strong"
                 >
-                    <span>{course?.title ?? 'Học phần'}</span>
-                    {index >= 0 && (
-                        <em className="rounded-md bg-brand-50 px-2 py-[3px] font-mono text-[11.5px] font-bold not-italic text-brand-ink">
-                            Bài {index + 1}/{courseLessons.length}
-                        </em>
-                    )}
+                    <span>{label}</span>
+                    {badge && <em className="rounded-md bg-brand-50 px-2 py-[3px] font-mono text-[11.5px] font-bold not-italic text-brand-ink">{badge}</em>}
                     <ChevronDown size={13} className={`transition-transform duration-fast ${open ? 'rotate-180' : ''}`} aria-hidden />
                 </button>
                 {open && (
                     <div role="menu" className="absolute left-0 top-[calc(100%+6px)] z-30 w-[360px] rounded-[14px] border border-border bg-card p-1.5 shadow-raised">
-                        {courseLessons.map((l, i) => {
-                            const cur = l.id === lesson.id
-                            return (
-                                <Link
-                                    key={l.id}
-                                    to={`/lesson/${l.id}`}
-                                    role="menuitem"
-                                    aria-current={cur ? 'page' : undefined}
-                                    onClick={() => setOpen(false)}
-                                    className={`grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] p-2.5 text-sm transition ${cur ? 'bg-brand-50' : 'hover:bg-muted'}`}
-                                >
-                                    <span className="font-mono text-xs font-bold text-muted-foreground">{String(i + 1).padStart(2, '0')}</span>
-                                    <b className={`font-bold ${cur ? 'text-brand-ink' : 'text-strong'}`}>{l.shortTitle ?? l.title}</b>
-                                    <small className="font-mono text-xs text-muted-foreground">{cur ? 'đang học' : formatTime(l.durationSec)}</small>
+                        {items.map((it) => (
+                            <Link
+                                key={it.key}
+                                to={it.to}
+                                role="menuitem"
+                                aria-current={it.current ? 'page' : undefined}
+                                onClick={() => setOpen(false)}
+                                className={`grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] p-2.5 text-sm transition ${it.current ? 'bg-brand-50' : 'hover:bg-muted'}`}
+                            >
+                                <span className="font-mono text-xs font-bold text-muted-foreground">{it.n}</span>
+                                <b className={`font-bold ${it.current ? 'text-brand-ink' : 'text-strong'}`}>{it.title}</b>
+                                <small className="font-mono text-xs text-muted-foreground">{it.meta}</small>
+                            </Link>
+                        ))}
+                        {footer &&
+                            (footer.to ? (
+                                <Link to={footer.to} role="menuitem" onClick={() => setOpen(false)} className={footerCls}>
+                                    {footer.icon}
+                                    <b className="font-bold text-strong">{footer.title}</b>
+                                    <small className="font-mono text-xs text-muted-foreground">{footer.meta}</small>
                                 </Link>
-                            )
-                        })}
-                        <Link
-                            to={`/test/${lesson.courseId}`}
-                            role="menuitem"
-                            onClick={() => setOpen(false)}
-                            className="mt-1 grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] border-t border-border p-2.5 text-sm transition hover:bg-muted"
-                        >
-                            <Star size={14} className="text-brand-ink" aria-hidden />
-                            <b className="font-bold text-strong">Test cuối chương</b>
-                            <small className="font-mono text-xs text-muted-foreground">
-                                {doneCount >= courseLessons.length ? 'sẵn sàng' : `xong ${doneCount}/${courseLessons.length} bài`}
-                            </small>
-                        </Link>
+                            ) : (
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={() => {
+                                        setOpen(false)
+                                        footer.onClick?.()
+                                    }}
+                                    className={footerCls}
+                                >
+                                    {footer.icon}
+                                    <b className="font-bold text-strong">{footer.title}</b>
+                                    <small className="font-mono text-xs text-muted-foreground">{footer.meta}</small>
+                                </button>
+                            ))}
                     </div>
                 )}
             </div>
-            <h1 title={lesson.title} className="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-strong">
-                {lesson.title}
+            <h1 title={title} className="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-strong">
+                {title}
             </h1>
         </div>
+    )
+}
+
+interface LessonTitleBlockProps {
+    course?: Course
+    lesson: Lesson
+    courseLessons: Lesson[]
+}
+
+function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleBlockProps) {
+    const progress = useOrbitStore((s) => s.lessonProgress)
+    const index = courseLessons.findIndex((l) => l.id === lesson.id)
+    const doneCount = courseLessons.filter((l) => progress[l.id]?.completed).length
+    return (
+        <TitleBlock
+            label={course?.title ?? 'Học phần'}
+            badge={index >= 0 ? `Bài ${index + 1}/${courseLessons.length}` : undefined}
+            items={courseLessons.map((l, i) => ({
+                key: l.id,
+                to: `/lesson/${l.id}`,
+                n: String(i + 1).padStart(2, '0'),
+                title: l.shortTitle ?? l.title,
+                meta: l.id === lesson.id ? 'đang học' : formatTime(l.durationSec),
+                current: l.id === lesson.id,
+            }))}
+            footer={{
+                to: `/test/${lesson.courseId}`,
+                icon: <Star size={14} className="text-brand-ink" aria-hidden />,
+                title: 'Test cuối chương',
+                meta: doneCount >= courseLessons.length ? 'sẵn sàng' : `xong ${doneCount}/${courseLessons.length} bài`,
+            }}
+            title={lesson.title}
+        />
     )
 }
 
@@ -101,14 +156,38 @@ const STEPS: { id: LessonStep; label: string; to: (lessonId: string) => string }
     { id: 'recap', label: 'Tổng kết', to: (id) => `/recap/${id}` },
 ]
 
-/** 3 viên chia đều theo bề ngang cột 4; bước trước bước hiện tại là "đã xong" (✓, chữ success). */
-function LessonSteps({ lessonId, current, doneSteps }: { lessonId: string; current: LessonStep; doneSteps?: LessonStep[] }) {
-    const currentIndex = STEPS.findIndex((st) => st.id === current)
+export interface StepPill {
+    id: string
+    label: string
+    to?: string
+    done?: boolean
+    current?: boolean
+}
+
+/** Các viên bước chia đều theo bề ngang cột 4; bước xong hiện ✓ chữ success, bước hiện tại nền đỏ. */
+export function StepPills({ steps, label }: { steps: StepPill[]; label: string }) {
     return (
-        <nav aria-label="Các bước của chặng" className="flex w-full items-center justify-between gap-1.5">
-            {STEPS.map((st, i) => {
-                const on = i === currentIndex
-                const done = doneSteps ? doneSteps.includes(st.id) && i !== currentIndex : i < currentIndex
+        <nav aria-label={label} className="flex w-full items-center justify-between gap-1.5">
+            {steps.map((st, i) => {
+                const cls = `flex flex-1 items-center justify-center gap-[7px] whitespace-nowrap rounded-full border px-2 py-[7px] text-[13px] font-bold transition duration-fast ${
+                    st.current
+                        ? 'border-brand-600 bg-brand-600 text-ink-foreground'
+                        : st.done
+                          ? 'border-border bg-card text-success'
+                          : 'border-border bg-card text-muted-foreground' + (st.to ? ' hover:text-strong' : '')
+                }`
+                const inner = (
+                    <>
+                        <em
+                            className={`flex h-[18px] w-[18px] items-center justify-center rounded-full font-mono text-[10.5px] font-bold not-italic ${
+                                st.current ? 'bg-ink-foreground/25' : st.done ? 'bg-success/15' : 'bg-muted'
+                            }`}
+                        >
+                            {st.done ? <Check size={11} strokeWidth={3} aria-label="đã xong" /> : i + 1}
+                        </em>
+                        {st.label}
+                    </>
+                )
                 return (
                     <span key={st.id} className="contents">
                         {i > 0 && (
@@ -116,30 +195,35 @@ function LessonSteps({ lessonId, current, doneSteps }: { lessonId: string; curre
                                 →
                             </span>
                         )}
-                        <Link
-                            to={st.to(lessonId)}
-                            aria-current={on ? 'step' : undefined}
-                            className={`flex flex-1 items-center justify-center gap-[7px] whitespace-nowrap rounded-full border px-2 py-[7px] text-[13px] font-bold transition duration-fast ${
-                                on
-                                    ? 'border-brand-600 bg-brand-600 text-ink-foreground'
-                                    : done
-                                      ? 'border-border bg-card text-success'
-                                      : 'border-border bg-card text-muted-foreground hover:text-strong'
-                            }`}
-                        >
-                            <em
-                                className={`flex h-[18px] w-[18px] items-center justify-center rounded-full font-mono text-[10.5px] font-bold not-italic ${
-                                    on ? 'bg-ink-foreground/25' : done ? 'bg-success/15' : 'bg-muted'
-                                }`}
-                            >
-                                {done ? <Check size={11} strokeWidth={3} aria-label="đã xong" /> : i + 1}
-                            </em>
-                            {st.label}
-                        </Link>
+                        {st.to ? (
+                            <Link to={st.to} aria-current={st.current ? 'step' : undefined} className={cls}>
+                                {inner}
+                            </Link>
+                        ) : (
+                            <span aria-current={st.current ? 'step' : undefined} className={cls}>
+                                {inner}
+                            </span>
+                        )}
                     </span>
                 )
             })}
         </nav>
+    )
+}
+
+function LessonSteps({ lessonId, current, doneSteps }: { lessonId: string; current: LessonStep; doneSteps?: LessonStep[] }) {
+    const currentIndex = STEPS.findIndex((st) => st.id === current)
+    return (
+        <StepPills
+            label="Các bước của chặng"
+            steps={STEPS.map((st, i) => ({
+                id: st.id,
+                label: st.label,
+                to: st.to(lessonId),
+                current: i === currentIndex,
+                done: doneSteps ? doneSteps.includes(st.id) && i !== currentIndex : i < currentIndex,
+            }))}
+        />
     )
 }
 

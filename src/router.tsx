@@ -6,10 +6,12 @@ import { installViewTransitions } from '@/lib/view-transition'
 // Router dạng "data router" vì viewTransition của react-router 7 chỉ hoạt động với RouterProvider.
 // Mỗi trang một chunk (route.lazy): chunk tải xong rồi mới đổi trang, nên view transition luôn thấy trang đích đã dựng, không thấy màn chờ.
 const pages = {
-    home: () => import('@/components/orbit-home-view').then((m) => m.OrbitHomeView),
+    home: () => import('@/components/orbit-home-route').then((m) => m.OrbitHomeRoute),
     learning: () => import('@/components/orbit-learning-view').then((m) => m.OrbitLearningView),
     lesson: () => import('@/components/orbit-lesson-view').then((m) => m.OrbitLessonView),
-    teacher: () => import('@/components/orbit-teacher-view').then((m) => m.OrbitTeacherView),
+    teacherReview: () => import('@/components/orbit-teacher-review-view').then((m) => m.OrbitTeacherReviewView),
+    teacherClass: () => import('@/components/orbit-teacher-class-view').then((m) => m.OrbitTeacherClassView),
+    teacherRedirect: () => import('@/components/teacher/teacher-redirect').then((m) => m.OrbitTeacherRedirect),
     journey: () => import('@/components/orbit-journey-view').then((m) => m.OrbitJourneyView),
     today: () => import('@/components/orbit-today-view').then((m) => m.OrbitTodayView),
     daily: () => import('@/components/orbit-daily-view').then((m) => m.OrbitDailyView),
@@ -37,7 +39,9 @@ export const router = createBrowserRouter([
             { path: '/checkpoint/:lessonId', lazy: page('checkpoint') },
             { path: '/recap/:lessonId', lazy: page('recap') },
             { path: '/studio', lazy: page('studio') },
-            { path: '/teacher', lazy: page('teacher') },
+            { path: '/teacher', lazy: page('teacherRedirect') },
+            { path: '/teacher/review/:lessonId?', lazy: page('teacherReview') },
+            { path: '/teacher/class', lazy: page('teacherClass') },
             { path: '*', element: <Navigate to="/" replace /> },
         ],
     },

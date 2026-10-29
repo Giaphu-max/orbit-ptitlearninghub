@@ -1,7 +1,7 @@
 import { useNavHidden } from '@/lib/focus-mode'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, RotateCcw, Repeat, Volume2, VolumeX } from 'lucide-react'
+import { ChevronDown, Eye, RotateCcw, Repeat, Volume2, VolumeX } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
 import { StatsPill } from '@/components/stats-pill'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -18,8 +18,6 @@ interface NavItem {
     to: string
     /** Mục đang chọn khi ở các trang khác trang chủ */
     match: (pathname: string) => boolean
-    /** Mục của trang giảng viên (?tab=) */
-    tab?: 'review' | 'stats' | 'tests'
 }
 
 const BASE_ITEMS: NavItem[] = [
@@ -30,18 +28,17 @@ const BASE_ITEMS: NavItem[] = [
     { label: 'Tiến độ & Kỹ năng', to: '/journey', match: (p) => p.startsWith('/journey') },
 ]
 
-// Giảng viên: nav dẫn tới các mục của trang giảng viên (?tab=) thay cho các phần học tập của sinh viên
-const teacherTab = (tab: string | null, id: 'review' | 'stats' | 'tests') => (id === 'review' ? tab !== 'stats' && tab !== 'tests' : tab === id)
+// Giảng viên: 3 mục (Tổng quan là route "/" của vai giảng viên)
 const TEACHER_ITEMS: NavItem[] = [
-    { label: 'Trang chủ', to: '/', match: (p) => p === '/' },
-    { label: 'Duyệt nội dung', to: '/teacher', match: () => false, tab: 'review' },
-    { label: 'Thống kê lớp', to: '/teacher?tab=stats', match: () => false, tab: 'stats' },
-    { label: 'Kết quả test', to: '/teacher?tab=tests', match: () => false, tab: 'tests' },
-    { label: 'Học phần', to: '/learning', match: (p) => p === '/learning' },
+    { label: 'Tổng quan', to: '/', match: (p) => p === '/' },
+    { label: 'Duyệt nội dung', to: '/teacher/review', match: (p) => p.startsWith('/teacher/review') },
+    { label: 'Lớp học', to: '/teacher/class', match: (p) => p.startsWith('/teacher/class') },
 ]
 
-function getCurrentPageLabel(pathname: string): string {
-    if (pathname === '/') return 'Trang chủ'
+function getCurrentPageLabel(pathname: string, teacher: boolean): string {
+    if (pathname === '/') return teacher ? 'Tổng quan' : 'Trang chủ'
+    if (pathname.startsWith('/teacher/review')) return 'Duyệt nội dung'
+    if (pathname.startsWith('/teacher/class')) return 'Lớp học'
     if (pathname.startsWith('/today') || pathname.startsWith('/daily')) return 'Ôn tập'
     if (pathname === '/learning') return 'Học phần'
     if (pathname.startsWith('/lesson')) return 'Bài giảng'
@@ -109,19 +106,19 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabin
  * Điều kiện thu gọn: trang thường cuộn >60px; trang chủ paged (không cuộn tài liệu) khi chương ≥ 1; màn <860px luôn thu gọn.
  */
 export function TopNav() {
-    const { pathname, hash, search } = useLocation()
+    const { pathname, hash } = useLocation()
     const [navOpen, setNavOpen] = useState(false)
     const [accountOpen, setAccountOpen] = useState(false)
-    const onHome = pathname === '/'
+    const role = useOrbitStore((s) => s.role)
+    // Giảng viên có trang Tổng quan riêng ở "/" (không có cảnh 3D): nav thường như các trang con
+    const onHome = pathname === '/' && role !== 'teacher'
     const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
     // Trang chủ hành trình: chỉ đọc chương đã chốt (không đọc scrollY); các trang khác và trang chủ giảm chuyển động (chapter = -1) đọc scrollY
     const scrolled = useScrolledPast(!onHome || chapter < 0, 60)
     const narrow = useNarrow()
     const collapsed = narrow || (onHome && chapter >= 0 ? chapter >= 1 : scrolled)
-    const tabParam = new URLSearchParams(search).get('tab')
-    const isActive = (it: NavItem) => (it.tab ? pathname === '/teacher' && teacherTab(tabParam, it.tab) : it.match(pathname))
-    const pageLabel = getCurrentPageLabel(pathname)
-    const role = useOrbitStore((s) => s.role)
+    const isActive = (it: NavItem) => it.match(pathname)
+    const pageLabel = getCurrentPageLabel(pathname, role === 'teacher')
     useOrbitStore((s) => s.lessonProgress)
 
     const items = role === 'teacher' ? TEACHER_ITEMS : BASE_ITEMS
@@ -215,12 +212,13 @@ export function TopNav() {
         }
     }, [navOpen, accountOpen, closeAll])
 
-    // Giảng viên không có chuỗi ngày/XP
-    const chips = role === 'teacher' ? null : (
-        <>
+    // Giảng viên không có chuỗi ngày/XP: chip vai trò thay vào đó
+    const chips =
+        role === 'teacher' ? (
+            <span className="rounded-full border border-border bg-card px-3 py-[7px] font-mono text-[11.5px] font-bold tracking-[0.08em] text-muted-foreground">GIẢNG VIÊN</span>
+        ) : (
             <StatsPill tooltip={!collapsed} />
-        </>
-    )
+        )
 
     const state = collapsed ? 'pill' : 'wide'
     const linkCls = 'whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70'
@@ -265,7 +263,7 @@ export function TopNav() {
                     </nav>
                     <div className="ml-auto flex items-center gap-2.5">
                         {chips}
-                        {FLAGS.darkMode && <ThemeToggle tone="hero" />}
+                        {FLAGS.darkMode && role !== 'teacher' && <ThemeToggle tone="hero" />}
                         <AccountMenu />
                     </div>
                 </div>
@@ -459,6 +457,18 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
             >
                 <Repeat size={16} /> Chuyển sang vai {other === 'teacher' ? 'giảng viên' : 'sinh viên'}
             </button>
+            {role === 'teacher' && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        onClose?.()
+                        navigate('/learning')
+                    }}
+                    className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
+                >
+                    <Eye size={16} /> Xem như sinh viên
+                </button>
+            )}
             <button
                 type="button"
                 onClick={() => window.confirm('Xóa toàn bộ XP, tiến độ và nội dung đã duyệt trên trình duyệt này?') && resetDemo()}

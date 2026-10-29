@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { TopNav } from '@/components/top-nav'
 import { OrbitRoleSelect } from '@/components/orbit-role-select'
@@ -10,8 +10,9 @@ import { useOrbitStore } from '@/store/useOrbitStore'
 // Các route toàn màn hình hoặc có footer riêng không hiển thị layout footer
 const HIDE_FOOTER_PREFIXES = ['/lesson', '/test', '/checkpoint', '/studio']
 
-function shouldShowFooter(pathname: string): boolean {
-    if (pathname === '/') return false
+function shouldShowFooter(pathname: string, teacher: boolean): boolean {
+    // Trang chủ sinh viên có tấm footer trượt riêng; Tổng quan của giảng viên dùng footer thường
+    if (pathname === '/') return teacher
     return !HIDE_FOOTER_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'))
 }
 
@@ -21,8 +22,11 @@ export function MainLayout() {
     const role = useOrbitStore((s) => s.role)
 
     // Thanh điều hướng cố định ở đầu mọi trang; trên trang chủ nó đè lên hero, các trang khác chừa chỗ bằng --nav-h
-    const isHome = location.pathname === '/'
-    const showFooter = shouldShowFooter(location.pathname)
+    const isTeacher = role === 'teacher'
+    const isHome = location.pathname === '/' && !isTeacher
+    const showFooter = shouldShowFooter(location.pathname, isTeacher)
+    // Giảng viên đang xem các trang của sinh viên (menu avatar → Xem như sinh viên)
+    const viewingAsStudent = isTeacher && location.pathname !== '/' && !location.pathname.startsWith('/teacher')
 
     if (!role) return <OrbitRoleSelect />
 
@@ -50,6 +54,16 @@ export function MainLayout() {
                             </div>
                         }
                     >
+                        {viewingAsStudent && (
+                            <div className="container-wide pt-3">
+                                <p className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-muted-foreground shadow-card">
+                                    <span>Bạn đang xem giao diện của sinh viên (vẫn là vai giảng viên).</span>
+                                    <Link to="/" className="font-bold text-brand-ink hover:underline">
+                                        Về Tổng quan
+                                    </Link>
+                                </p>
+                            </div>
+                        )}
                         <Outlet />
                         {showFooter && <SiteFooter />}
                     </Suspense>
