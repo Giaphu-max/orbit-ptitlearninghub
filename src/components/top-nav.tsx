@@ -1,3 +1,4 @@
+import { peekNav, useNavHidden } from '@/lib/focus-mode'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronDown, RotateCcw, Repeat, Volume2, VolumeX } from 'lucide-react'
@@ -224,12 +225,16 @@ export function TopNav() {
     const state = collapsed ? 'pill' : 'wide'
     const linkCls = 'whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70'
     const name = useOrbitStore((s) => s.learnerName)
+    const navHidden = useNavHidden()
 
     return (
         <header
             style={{ viewTransitionName: 'site-nav' }}
             data-nav={state}
-            className={`own-layer pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center text-foreground ${onHome ? 'nav-over-3d' : ''}`}
+            data-focus-hidden={navHidden}
+            onPointerEnter={() => peekNav(true)}
+            onPointerLeave={() => peekNav(false)}
+            className={`lesson-focus-nav own-layer pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center text-foreground ${onHome ? 'nav-over-3d' : ''}`}
         >
             <div ref={rootRef} className="nav-shell pointer-events-auto" data-state={state}>
                 {/* Đường ribbon mảnh 2px (bộ màu logo khoa) dưới viên kính thu gọn: điểm nhấn chữ ký */}

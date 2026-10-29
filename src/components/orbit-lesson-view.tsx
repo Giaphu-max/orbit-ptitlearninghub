@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { PanelRight, RotateCcw, SkipForward } from 'lucide-react'
+import { ArrowLeft, PanelRight, RotateCcw, SkipForward } from 'lucide-react'
 import { getCourse, getLessonsOfCourse, lessons } from '@/data'
 import type { Lesson } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { useLessonQuiz } from '@/hooks/useLessonQuiz'
 import { useStoredFlag } from '@/hooks/useStoredFlag'
+import { peekNav, setFocusMode } from '@/lib/focus-mode'
 import { getStudioBrief } from '@/lib/studio-briefs'
 import { formatTime } from '@/lib/youtube'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
@@ -67,8 +68,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
         const ok = saved >= RESUME_MIN_SEC && saved < lesson.durationSec - RESUME_TAIL_SEC
         return { resumeFrom: ok ? Math.floor(saved) : 0, fromSavedPosition: ok }
     })
-    // Banner chỉ cho vị trí đã lưu; vào từ link nguồn Daily hay lộ trình ôn (?t=) thì không phải "chỗ dừng lần trước"
-    const [showResume, setShowResume] = useState(fromSavedPosition)
+    // Toast "Tiếp tục từ…" chỉ cho vị trí đã lưu; vào từ link nguồn Daily hay lộ trình ôn (?t=) thì không phải "chỗ dừng lần trước"
     // Ẩn bảng bên và bật phụ đề: nhớ qua các lần mở bài
     const [panelHidden, setPanelHidden] = useStoredFlag('orbit-lesson-panel-hidden', false)
     const [captionsOn, setCaptionsOn] = useStoredFlag('orbit-lesson-captions', true)
@@ -93,14 +93,31 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     // Phím B ẩn/hiện bảng bên (không kích hoạt khi đang gõ hoặc bấm kèm phím bổ trợ)
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() !== 'b' || e.metaKey || e.ctrlKey || e.altKey) return
+            if (e.metaKey || e.ctrlKey || e.altKey) return
             const el = e.target as HTMLElement | null
             if (el?.closest('input, textarea, select, [contenteditable="true"]')) return
-            setPanelHidden((v) => !v)
+            if (e.key === 'Escape') {
+                // Esc chỉ thoát tập trung, không đụng tới fullscreen của trình duyệt
+                if (!document.fullscreenElement) setPanelHidden(false)
+                return
+            }
+            if (e.key.toLowerCase() === 'b') setPanelHidden((v) => !v)
         }
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
     }, [setPanelHidden])
+
+    // Chế độ tập trung = bảng đang ẩn: báo navbar, khóa cuộn trang
+    useEffect(() => {
+        setFocusMode(panelHidden)
+        if (!panelHidden) return
+        const prev = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        return () => {
+            document.body.style.overflow = prev
+        }
+    }, [panelHidden])
+    useEffect(() => () => setFocusMode(false), [])
 
     // Bản sao thời điểm đang xem cho các handler (trợ giảng, lưu khi rời trang)
     const timeRef = useRef(currentTime)
@@ -128,7 +145,6 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
 
     const handleSeek = useCallback(
         (sec: number) => {
-            setShowResume(false)
             // Đang làm quiz thì chỉ tua, không phát video dưới thẻ câu hỏi
             seekTo(sec, { play: !quizOpen })
         },
@@ -146,18 +162,31 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
     const fromDaily = searchParams.get('fromDaily')
 
     return (
-        <div className="w-full">
-            <div className="container-wide py-4 lg:py-6">
-                {/* ── Hàng đầu: tên học phần + tiêu đề | 3 bước ── */}
-                <header className="lesson-grid items-end">
-                    <LessonTitleBlock course={course} lesson={lesson} courseLessons={courseLessons} />
-                    <LessonCompactSteps lessonId={lesson.id} currentStep="lesson" />
-                </header>
+        <div className="lesson-page w-full" data-focus={panelHidden ? 'on' : 'off'}>
+            <div aria-hidden className="lesson-focus-bg" />
+            {panelHidden && (
+                <>
+                    <div aria-hidden className="fixed inset-x-0 top-0 z-[49] h-3" onPointerEnter={() => peekNav(true)} onPointerLeave={() => peekNav(false)} />
+                    <button
+                        type="button"
+                        onClick={() => setPanelHidden(false)}
+                        className="fixed left-4 top-4 z-[48] inline-flex items-center gap-2 rounded-full bg-ink-foreground/10 px-3.5 py-2 text-[13px] font-bold text-ink-foreground/80 transition hover:bg-ink-foreground/20 hover:text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground"
+                    >
+                        <ArrowLeft size={15} aria-hidden /> Thoát tập trung
+                    </button>
+                </>
+            )}
+            <div className="container-wide lesson-body py-4 lg:py-6">
+                {/* ── Hàng đầu: tên học phần + tiêu đề | 3 bước (thu lại khi tập trung) ── */}
+                <div className="lesson-collapse" aria-hidden={panelHidden}>
+                    <div>
+                        <header className="lesson-grid items-end">
+                            <LessonTitleBlock course={course} lesson={lesson} courseLessons={courseLessons} />
+                            <LessonCompactSteps lessonId={lesson.id} currentStep="lesson" />
+                        </header>
 
-                {(fromDaily || showResume) && (
-                    <div className="lesson-grid mt-4">
-                        <div className="flex flex-col gap-2">
-                            {fromDaily && (
+                        {fromDaily && (
+                            <div className="lesson-grid mt-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-300 bg-brand-50/90 p-3.5 text-sm text-brand-ink shadow-sm">
                                     <span className="flex items-center gap-2 font-medium text-foreground">
                                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-600 font-mono text-xs font-bold text-ink-foreground">
@@ -172,23 +201,14 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                         ← Quay lại hoàn thành bài đọc
                                     </Link>
                                 </div>
-                            )}
-                            {showResume && (
-                                <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-brand-100 bg-brand-50 px-4 py-2.5 text-sm">
-                                    <span className="text-brand-ink">
-                                        Đang tiếp tục từ <span className="font-mono font-bold">{formatTime(resumeFrom)}</span>, chỗ bạn dừng lần trước.
-                                    </span>
-                                    <button type="button" onClick={() => handleSeek(0)} className="inline-flex items-center gap-1.5 font-semibold text-brand-ink hover:underline">
-                                        <RotateCcw size={14} /> Xem từ đầu
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
+                        <div className="h-6" />
                     </div>
-                )}
+                </div>
 
                 {/* ── Hàng video: player 8 | bảng bên 4 (cao đúng bằng player) ── */}
-                <section className="lesson-grid lesson-theater mt-6" data-wide={panelHidden}>
+                <section className="lesson-grid lesson-theater" data-wide={panelHidden}>
                     <div ref={playerAreaRef} style={{ viewTransitionName: `vt-lesson-${lesson.id}` }} className="lesson-player-area relative scroll-mt-6 [&:fullscreen]:flex [&:fullscreen]:bg-ink [&:fullscreen]:items-center">
                         <LessonPlayer containerRef={player.containerRef} status={player.status} error={player.error} youtubeId={lesson.youtubeId}>
                             <PlayerControls
@@ -207,6 +227,9 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                                 onFullscreen={toggleFullscreen}
                                 onTogglePanel={() => setPanelHidden((v) => !v)}
                             />
+                            {fromSavedPosition && (
+                                <ResumeToast from={resumeFrom} onRestart={() => handleSeek(0)} />
+                            )}
                         </LessonPlayer>
 
                         {/* Vòng củng cố: thanh báo đang phát lại đoạn chứa đáp án, đè lên mép trên video */}
@@ -287,11 +310,15 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                     </aside>
                 </section>
 
-                {/* ── Hàng dưới: giới thiệu bài | bài tiếp ── */}
-                <div className="lesson-grid mt-6 items-start">
-                    <LessonFootLeft lesson={lesson} onSeek={handleSeek} />
-                    <div className="justify-self-end">
-                        <LessonNextLink lesson={lesson} nextLesson={nextLesson} />
+                {/* ── Hàng dưới: giới thiệu bài | bài tiếp (thu lại khi tập trung) ── */}
+                <div className="lesson-collapse" aria-hidden={panelHidden}>
+                    <div>
+                        <div className="lesson-grid items-start pt-6">
+                            <LessonFootLeft lesson={lesson} onSeek={handleSeek} />
+                            <div className="justify-self-end">
+                                <LessonNextLink lesson={lesson} nextLesson={nextLesson} />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -302,11 +329,47 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                 onClick={() => setPanelHidden(false)}
                 data-show={panelHidden}
                 inert={!panelHidden}
-                className="lesson-reopen z-30 flex items-center gap-2 rounded-l-[14px] bg-ink px-2.5 py-3.5 text-[12.5px] font-bold text-ink-foreground shadow-raised"
+                className="lesson-reopen z-[48] flex items-center gap-2 rounded-l-[14px] bg-ink px-2.5 py-3.5 text-[12.5px] font-bold text-ink-foreground shadow-raised"
             >
                 <PanelRight size={15} aria-hidden /> Trợ giảng AI · Transcript · Câu hỏi
             </button>
             <QuizRewardToast reward={quiz.reward} />
+        </div>
+    )
+}
+
+/** Toast nhỏ trong khung player: tự ẩn sau 4 giây, rê chuột vào thì giữ lại. */
+function ResumeToast({ from, onRestart }: { from: number; onRestart: () => void }) {
+    const [visible, setVisible] = useState(true)
+    const [hover, setHover] = useState(false)
+    useEffect(() => {
+        if (!visible || hover) return
+        const t = window.setTimeout(() => setVisible(false), 4000)
+        return () => window.clearTimeout(t)
+    }, [visible, hover])
+    if (!visible) return null
+    return (
+        <div
+            onPointerEnter={() => setHover(true)}
+            onPointerLeave={() => setHover(false)}
+            className="absolute left-3 top-3 z-30 flex items-center gap-2.5 rounded-[10px] bg-ink/75 px-3 py-2 text-[13px] font-semibold text-ink-foreground"
+        >
+            <span>
+                Tiếp tục từ <span className="font-mono font-bold">{formatTime(from)}</span>
+            </span>
+            <span aria-hidden className="text-ink-foreground/40">
+                ·
+            </span>
+            <button
+                type="button"
+                onClick={() => {
+                    onRestart()
+                    setVisible(false)
+                }}
+                className="font-bold text-brand-light hover:underline"
+            >
+                Xem từ đầu
+            </button>
         </div>
     )
 }
