@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
-import { ChevronDown, Minus, Play, TrendingDown, TrendingUp } from 'lucide-react'
-import { courses as staticCourses, getConcept } from '@/data'
+import { Link, Navigate } from 'react-router-dom'
+import { ChevronDown, Play } from 'lucide-react'
+import { getConcept, staticCourses } from '@/data'
 import type { ClassStats, Course } from '@/data/types'
 import { ClassPicker } from '@/components/teacher/class-picker'
-import { TEACHER_PROFILE, WHY_WRONG } from '@/data/teacher-notes'
-import { TitleBlock } from '@/components/lesson/lesson-header'
+import { WHY_WRONG } from '@/data/teacher-notes'
 import { AnswerBars } from '@/components/teacher/answer-bars'
-import { courseTest, HOT_RATE, pct, useLessonReviews, useTeacherClass, type LessonReview } from '@/lib/teacher'
+import { courseTest, HOT_RATE, pct, questionPicks, useLessonReviews, useTeacherClass, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -49,12 +48,9 @@ const mmss = (sec: number) => formatTime(sec)
 /** /teacher/class – gộp thống kê lớp và kết quả test theo môn: dải số liệu, khối cần chú ý nhất, bảng khái niệm, phân bố điểm. */
 export function OrbitTeacherClassView() {
     const role = useOrbitStore((s) => s.role)
-    const importedCourses = useOrbitStore((s) => s.importedCourses)
     const reviews = useLessonReviews()
     const { cls, stats, courseIds } = useTeacherClass()
-    const [params] = useSearchParams()
-    const classCourses = [...staticCourses, ...importedCourses].filter((c) => courseIds.includes(c.id))
-    const course = classCourses.find((c) => c.id === params.get('course')) ?? classCourses[0]
+    const course = staticCourses.find((c) => courseIds.includes(c.id))
     const rows = useMemo(() => (course ? buildRows(course, reviews, stats) : []), [course, reviews, stats])
     if (role !== 'teacher') return <Navigate to="/" replace />
     if (!course) return <p className="p-12 text-center text-muted-foreground">Lớp này chưa có học phần nào.</p>
@@ -70,29 +66,17 @@ export function OrbitTeacherClassView() {
 
     return (
         <div className="w-full">
-            <div className="container-wide py-4 lg:py-6">
-                <header className="lesson-grid items-end">
-                    <TitleBlock
-                        label={course.title}
-                        items={classCourses.map((c, i) => ({
-                            key: c.id,
-                            to: `/teacher/class?course=${c.id}`,
-                            n: String(i + 1).padStart(2, '0'),
-                            title: c.title,
-                            meta: `${reviews.filter((r) => r.lesson.courseId === c.id).length} bài`,
-                            current: c.id === course.id,
-                        }))}
-                        title="Lớp học"
-                    />
-                    <div className="flex flex-col items-end gap-1.5">
-                        <ClassPicker />
-                        <p className="text-right text-[13px] text-muted-foreground">
-                            Dữ liệu mẫu lớp <span className="font-mono font-bold text-strong">{cls.size}</span> sinh viên · {TEACHER_PROFILE.fullName}
-                        </p>
+            <div className="pb-8">
+                <header className="flex flex-wrap items-end justify-between gap-6">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">Lớp học</p>
+                        <h1 className="mt-2 text-4xl font-black tracking-[-0.03em] text-strong">Kết quả theo lớp</h1>
+                        <p className="mt-2 max-w-[70ch] text-[15px] text-muted-foreground">Chọn lớp thầy đang đứng để xem sinh viên hổng ở đâu. Số liệu là dữ liệu mẫu của {cls.subject}.</p>
                     </div>
+                    <ClassPicker />
                 </header>
 
-                <div className="mt-6 flex flex-col gap-6">
+                <div className="mt-7 flex flex-col gap-6">
                     {test ? (
                         <dl className="grid grid-cols-2 overflow-hidden rounded-[20px] border border-border bg-card shadow-card sm:grid-cols-4">
                             <Stat label="Đã làm test" value={`${test.attempted}/${cls.size}`} note={`${test.attempts} lượt, tính cả làm lại`} />
@@ -131,11 +115,9 @@ export function OrbitTeacherClassView() {
 
                     <div className="lesson-grid items-start">
                         <section aria-label="Khái niệm" className="rounded-[20px] border border-border bg-card shadow-card">
-                            <div className="grid grid-cols-[minmax(0,1fr)_150px_110px_120px_20px] gap-4 border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground max-md:hidden">
+                            <div className="grid grid-cols-[minmax(0,1fr)_200px_20px] gap-4 border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground max-md:hidden">
                                 <span>Khái niệm · sắp theo mức hổng</span>
-                                <span>Sai lần đầu</span>
-                                <span>Đúng trong test</span>
-                                <span>Xu hướng</span>
+                                <span>Sai lần đầu trong video</span>
                                 <span />
                             </div>
                             {rows.length === 0 && <p className="p-6 text-sm text-muted-foreground">Chưa có dữ liệu trả lời của lớp cho học phần này.</p>}
@@ -182,8 +164,7 @@ function ConceptLine({ row, to, stats }: { row: ConceptRow; to: string; stats: C
     const [open, setOpen] = useState(false)
     const { review } = row
     const question = review.lesson.quiz.find((q) => q.conceptId === row.id)
-    const testWrong = row.test === null ? null : 100 - row.test
-    const delta = row.video !== null && testWrong !== null ? row.video - testWrong : null
+    const hasPicks = !!question && !!questionPicks(stats, question.id)
     const hot = row.video !== null && row.video >= HOT_RATE
     return (
         <div className="border-b border-border last:border-b-0">
@@ -191,7 +172,7 @@ function ConceptLine({ row, to, stats }: { row: ConceptRow; to: string; stats: C
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
-                className="grid w-full grid-cols-[minmax(0,1fr)_150px_110px_120px_20px] items-center gap-4 px-5 py-3.5 text-left transition hover:bg-muted max-md:grid-cols-[minmax(0,1fr)_auto_20px]"
+                className="grid w-full grid-cols-[minmax(0,1fr)_200px_20px] items-center gap-4 px-5 py-3.5 text-left transition hover:bg-muted max-md:grid-cols-[minmax(0,1fr)_auto_20px]"
             >
                 <span className="min-w-0">
                     <b className="block text-sm font-bold leading-snug text-strong">{row.name}</b>
@@ -205,52 +186,32 @@ function ConceptLine({ row, to, stats }: { row: ConceptRow; to: string; stats: C
                             <span className={hot ? 'text-brand-ink' : 'text-muted-foreground'}>
                                 {row.wrong}/{row.answered} SV
                             </span>
-                            <span className="ml-1 text-[11px] font-medium text-muted-foreground">{row.video}%</span>
                             <i className="mt-1.5 block h-[5px] overflow-hidden rounded-full bg-muted">
                                 <u className={`block h-full no-underline ${hot ? 'bg-brand-600' : 'bg-muted-foreground/40'}`} style={{ width: `${row.video}%` }} />
                             </i>
                         </>
                     )}
-                </span>
-                <span className="font-mono text-sm font-extrabold max-md:hidden">
-                    {row.test === null ? <span className="text-muted-foreground">—</span> : <span className={row.test < 60 ? 'text-brand-ink' : 'text-success'}>{row.test}%</span>}
-                </span>
-                <span className="text-[13px] font-semibold max-md:hidden">
-                    {delta === null ? (
-                        <span className="text-muted-foreground">Chưa đủ dữ liệu</span>
-                    ) : delta > 5 ? (
-                        <span className="inline-flex items-center gap-1 text-success">
-                            <TrendingDown size={14} aria-hidden /> Giảm {delta} điểm
-                        </span>
-                    ) : delta < -5 ? (
-                        <span className="inline-flex items-center gap-1 text-brand-ink">
-                            <TrendingUp size={14} aria-hidden /> Tăng {-delta} điểm
-                        </span>
-                    ) : (
-                        <span className="inline-flex items-center gap-1 text-muted-foreground">
-                            <Minus size={14} aria-hidden /> Ổn định
-                        </span>
-                    )}
+                    {row.test !== null && <small className="mt-1 block font-sans text-[11px] font-medium text-muted-foreground">{row.test}% đúng trong test</small>}
                 </span>
                 <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-fast ${open ? 'rotate-180' : ''}`} aria-hidden />
             </button>
             {open && (
                 <div className="border-t border-border bg-muted/50 px-5 pb-4 pt-3.5">
-                    {question ? (
+                    {question && hasPicks && (
                         <div className="max-w-[640px]">
                             <p className="mb-2 text-[13px] font-semibold leading-snug text-strong">{question.prompt}</p>
                             <AnswerBars stats={stats} question={question} />
                         </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">Khái niệm này chưa có câu hỏi trong video.</p>
                     )}
-                    <div className="mt-3.5 flex flex-wrap gap-2">
+                    <div className={`flex flex-wrap gap-2 ${question && hasPicks ? 'mt-3.5' : ''}`}>
                         <Link to={to} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-50 px-4 text-sm font-bold text-brand-ink transition hover:bg-brand-100">
                             <Play size={13} className="fill-current" aria-hidden /> Xem đoạn <span className="font-mono">{mmss(question?.pauseAt ?? getConcept(row.id)?.segment.start ?? 0)}</span>
                         </Link>
-                        <Link to={to} className="inline-flex h-9 items-center rounded-full border border-border bg-card px-4 text-sm font-bold text-strong transition hover:bg-muted">
-                            Sửa câu hỏi
-                        </Link>
+                        {question && (
+                            <Link to={to} className="inline-flex h-9 items-center rounded-full border border-border bg-card px-4 text-sm font-bold text-strong transition hover:bg-muted">
+                                Sửa câu hỏi
+                            </Link>
+                        )}
                     </div>
                 </div>
             )}

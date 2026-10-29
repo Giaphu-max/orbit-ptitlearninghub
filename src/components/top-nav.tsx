@@ -1,7 +1,7 @@
 import { useNavHidden } from '@/lib/focus-mode'
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, Eye, RotateCcw, Repeat, Volume2, VolumeX } from 'lucide-react'
+import { ChevronDown, RotateCcw, Repeat, Volume2, VolumeX } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
 import { StatsPill } from '@/components/stats-pill'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -28,17 +28,8 @@ const BASE_ITEMS: NavItem[] = [
     { label: 'Tiến độ & Kỹ năng', to: '/journey', match: (p) => p.startsWith('/journey') },
 ]
 
-// Giảng viên: 3 mục (trang duyệt nằm dưới mục Bài giảng) (Tổng quan là route "/" của vai giảng viên)
-const TEACHER_ITEMS: NavItem[] = [
-    { label: 'Tổng quan', to: '/', match: (p) => p === '/' },
-    { label: 'Bài giảng', to: '/teacher/library', match: (p) => p.startsWith('/teacher/library') || p.startsWith('/teacher/review') },
-    { label: 'Lớp học', to: '/teacher/class', match: (p) => p.startsWith('/teacher/class') },
-]
-
-function getCurrentPageLabel(pathname: string, teacher: boolean): string {
-    if (pathname === '/') return teacher ? 'Tổng quan' : 'Trang chủ'
-    if (pathname.startsWith('/teacher/library') || pathname.startsWith('/teacher/review')) return 'Bài giảng'
-    if (pathname.startsWith('/teacher/class')) return 'Lớp học'
+function getCurrentPageLabel(pathname: string): string {
+    if (pathname === '/') return 'Trang chủ'
     if (pathname.startsWith('/today') || pathname.startsWith('/daily')) return 'Ôn tập'
     if (pathname === '/learning') return 'Học phần'
     if (pathname.startsWith('/lesson')) return 'Bài giảng'
@@ -47,7 +38,6 @@ function getCurrentPageLabel(pathname: string, teacher: boolean): string {
     if (pathname.startsWith('/test')) return 'Bài test'
     if (pathname.startsWith('/studio')) return 'Studio 3D'
     if (pathname.startsWith('/journey')) return 'Tiến độ & Kỹ năng'
-    if (pathname.startsWith('/teacher')) return 'Giảng viên'
     return 'PTIT'
 }
 
@@ -110,18 +100,17 @@ export function TopNav() {
     const [navOpen, setNavOpen] = useState(false)
     const [accountOpen, setAccountOpen] = useState(false)
     const role = useOrbitStore((s) => s.role)
-    // Giảng viên có trang Tổng quan riêng ở "/" (không có cảnh 3D): nav thường như các trang con
-    const onHome = pathname === '/' && role !== 'teacher'
+    const onHome = pathname === '/'
     const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
     // Trang chủ hành trình: chỉ đọc chương đã chốt (không đọc scrollY); các trang khác và trang chủ giảm chuyển động (chapter = -1) đọc scrollY
     const scrolled = useScrolledPast(!onHome || chapter < 0, 60)
     const narrow = useNarrow()
     const collapsed = narrow || (onHome && chapter >= 0 ? chapter >= 1 : scrolled)
     const isActive = (it: NavItem) => it.match(pathname)
-    const pageLabel = getCurrentPageLabel(pathname, role === 'teacher')
+    const pageLabel = getCurrentPageLabel(pathname)
     useOrbitStore((s) => s.lessonProgress)
 
-    const items = role === 'teacher' ? TEACHER_ITEMS : BASE_ITEMS
+    const items = BASE_ITEMS
     
     const rootRef = useRef<HTMLDivElement>(null)
     const pageBtnRef = useRef<HTMLButtonElement>(null)
@@ -212,13 +201,7 @@ export function TopNav() {
         }
     }, [navOpen, accountOpen, closeAll])
 
-    // Giảng viên không có chuỗi ngày/XP: chip vai trò thay vào đó
-    const chips =
-        role === 'teacher' ? (
-            <span className="rounded-full border border-border bg-card px-3 py-[7px] font-mono text-[11.5px] font-bold tracking-[0.08em] text-muted-foreground">GIẢNG VIÊN</span>
-        ) : (
-            <StatsPill tooltip={!collapsed} />
-        )
+    const chips = <StatsPill tooltip={!collapsed} />
 
     const state = collapsed ? 'pill' : 'wide'
     const linkCls = 'whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70'
@@ -457,18 +440,6 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
             >
                 <Repeat size={16} /> Chuyển sang vai {other === 'teacher' ? 'giảng viên' : 'sinh viên'}
             </button>
-            {role === 'teacher' && (
-                <button
-                    type="button"
-                    onClick={() => {
-                        onClose?.()
-                        navigate('/learning')
-                    }}
-                    className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
-                >
-                    <Eye size={16} /> Xem như sinh viên
-                </button>
-            )}
             <button
                 type="button"
                 onClick={() => window.confirm('Xóa toàn bộ XP, tiến độ và nội dung đã duyệt trên trình duyệt này?') && resetDemo()}

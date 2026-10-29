@@ -10,7 +10,7 @@ import { PlayerControls } from '@/components/lesson/player-controls'
 import { ItemActions, OptionRows, ReviewRow, VariantsBox, fieldCls, labelCls } from '@/components/teacher/review-fields'
 import { TRAP_NOTES } from '@/data/teacher-notes'
 import { ApiRequestError, rewriteContent } from '@/lib/api'
-import { conceptRate, HOT_RATE, itemKey, lessonsOriginal, statsForCourse, useLessonReviews, useTeacherClass, validate, type LessonReview } from '@/lib/teacher'
+import { conceptRate, HOT_RATE, itemKey, lessonsOriginal, useAllStats, useLessonReviews, validate, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
@@ -54,12 +54,12 @@ export function OrbitTeacherReviewView() {
 
 function ReviewPage({ review, reviews }: { review: LessonReview; reviews: LessonReview[] }) {
     const { lesson, published, reviewed, total } = review
-    const { cls } = useTeacherClass()
-    const stats = statsForCourse(lesson.courseId, cls)
+    const stats = useAllStats()
     const [searchParams] = useSearchParams()
     const savedEdits = useOrbitStore((s) => s.lessonEdits[lesson.id])
     const setReviewedItems = useOrbitStore((s) => s.setReviewedItems)
     const setLessonReview = useOrbitStore((s) => s.setLessonReview)
+    const courseOpen = useOrbitStore((s) => s.courseOpen[lesson.courseId] !== false)
     const setLessonEdits = useOrbitStore((s) => s.setLessonEdits)
 
     const [draft, setDraft] = useState<LessonEdits>(() => ({ summary: lesson.summary, concepts: lesson.concepts, quiz: lesson.quiz }))
@@ -176,7 +176,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
         }
         if (dirty && !persistDraft()) return say(problems[0])
         setLessonReview(lesson.id, 'published')
-        say('Đã xuất bản · lớp mẫu 32 sinh viên thấy bài ngay')
+        say(courseOpen ? 'Đã xuất bản · sinh viên thấy bài ngay' : 'Đã xuất bản · khóa đang khóa nên sinh viên chưa thấy, hãy mở khóa ở trang Bài giảng')
     }
     const onUnpublish = () => {
         setReviewedItems(lesson.id, [...reviewed])
@@ -201,7 +201,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
 
     return (
         <div className="lesson-page w-full" data-focus="off">
-            <div className="container-wide lesson-body py-4 lg:py-6">
+            <div className="lesson-body pb-6">
                 <header className="lesson-grid items-end">
                     <TitleBlock
                         label={review.course?.title ?? 'Học phần'}

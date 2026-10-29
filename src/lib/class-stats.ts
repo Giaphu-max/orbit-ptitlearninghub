@@ -55,3 +55,22 @@ export function getClassStats(classId: string): ClassStats {
     }
     return s
 }
+
+/** Số liệu gộp mọi lớp mẫu: cộng số sinh viên, số lượt trả lời và lượt chọn từng đáp án (phần test để nguyên của lớp đầu tiên, Tổng quan không dùng). */
+export function getAllStats(): ClassStats {
+    const all = TEACHER_CLASSES.map((c) => getClassStats(c.id))
+    const base = all[0]
+    const concepts: ClassStats['concepts'] = {}
+    const questions: ClassStats['questions'] = {}
+    for (const s of all) {
+        for (const [k, c] of Object.entries(s.concepts)) {
+            const cur = concepts[k] ?? { answered: 0, wrongFirstTry: 0, corrected: 0 }
+            concepts[k] = { answered: cur.answered + c.answered, wrongFirstTry: cur.wrongFirstTry + c.wrongFirstTry, corrected: cur.corrected + c.corrected }
+        }
+        for (const [k, q] of Object.entries(s.questions)) {
+            const cur = questions[k]?.picks ?? q.picks.map(() => 0)
+            questions[k] = { picks: q.picks.map((p, i) => p + (cur[i] ?? 0)) }
+        }
+    }
+    return { note: base.note, classSize: all.reduce((n, s) => n + s.classSize, 0), concepts, questions, tests: base.tests }
+}

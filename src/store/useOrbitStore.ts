@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import { dailyArticles, getLesson, lessons as allLessons } from '@/data'
+import { applyCatalog, dailyArticles, getLesson, staticLessons as allLessons } from '@/data'
 import type { Course, Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { DEFAULT_CLASS_ID } from '@/data/classes'
 import type { CourseCoverSpec } from '@/lib/cover-kinds'
@@ -137,14 +137,14 @@ interface OrbitState {
     lessonReview: Record<string, ReviewStatus>
     /** Mục nội dung giảng viên đã duyệt theo bài (khóa 'sum' | 'c:<khái niệm>' | 'q:<câu>'); chưa có thì bài xuất bản coi như duyệt hết */
     reviewedItems: Record<string, string[]>
-    /** Lớp đang chọn ở Tổng quan và Lớp học của giảng viên */
+    /** Khóa đang mở cho sinh viên (id khóa → mở); chưa có thì coi là mở. Khóa khóa thì sinh viên không thấy bài nào của khóa đó */
+    courseOpen: Record<string, boolean>
+    /** Lớp đang chọn ở trang Lớp học của giảng viên (chỉ để xem thống kê) */
     teacherClassId: string
     /** Bài giảng giảng viên vừa thêm từ YouTube (bản demo: nội dung tạo sẵn, giả lập tiến độ AI) */
     importedLessons: Lesson[]
     /** Khóa học tạo mới từ danh sách phát khi thêm bài */
     importedCourses: Course[]
-    /** Lớp gắn với khóa học tạo mới (id khóa → mã lớp) */
-    importedCourseClasses: Record<string, string[]>
     /** Bài đang giả lập AI tạo nội dung: id bài → lúc bắt đầu và thời lượng giả lập (ms) */
     importJobs: Record<string, { startedAt: number; durationMs: number }>
     /** Bản chỉnh sửa của giảng viên theo bài; chưa có thì dùng nội dung AI trong JSON */
@@ -167,8 +167,9 @@ interface OrbitState {
     setLessonReview: (lessonId: string, status: ReviewStatus) => void
     setReviewedItems: (lessonId: string, keys: string[]) => void
     setTeacherClass: (classId: string) => void
+    setCourseOpen: (courseId: string, open: boolean) => void
     /** Thêm bài (và khóa mới nếu có) từ hộp "Thêm từ YouTube"; mỗi bài bắt đầu một lượt giả lập AI tạo nội dung */
-    addImport: (input: { course?: Course; classIds: string[]; lessons: Lesson[] }) => void
+    addImport: (input: { course?: Course; lessons: Lesson[] }) => void
     /** patch = null: bỏ chỉnh sửa bìa, quay về bìa mặc định */
     setCourseCover: (courseId: string, patch: CourseCoverOverride | null) => void
     /** edits = null: bỏ chỉnh sửa, quay về bản AI tạo */
@@ -211,7 +212,7 @@ function makeTeacherDemo() {
     const lessonReview: Record<string, ReviewStatus> = { 'nguyen-ly-mau-sac': 'draft', 'tu-duy-nhiep-anh': 'draft' }
     const reviewedItems: Record<string, string[]> = {}
     for (const l of allLessons) reviewedItems[l.id] = lessonItemKeys(l)
-    const partial = getLesson('nguyen-ly-mau-sac')
+    const partial = allLessons.find((l) => l.id === 'nguyen-ly-mau-sac')
     if (partial) reviewedItems[partial.id] = lessonItemKeys(partial).slice(0, 4).concat(lessonItemKeys(partial).slice(5, 7))
     reviewedItems['tu-duy-nhiep-anh'] = []
     reviewedItems['ban-chat-dung-phi-tuyen'] = (reviewedItems['ban-chat-dung-phi-tuyen'] ?? []).filter((k) => k !== 'q:q-tinh-phi-huy-hoai-1')
@@ -252,10 +253,10 @@ export function makeDemoProfile() {
         recapSeen: {} as Record<string, boolean>,
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
         ...makeTeacherDemo(),
+        courseOpen: {} as Record<string, boolean>,
         teacherClassId: DEFAULT_CLASS_ID,
         importedLessons: [] as Lesson[],
         importedCourses: [] as Course[],
-        importedCourseClasses: {} as Record<string, string[]>,
         importJobs: {} as Record<string, { startedAt: number; durationMs: number }>,
         lessonEdits: {} as Record<string, LessonEdits>,
         courseCovers: {} as Record<string, CourseCoverOverride>,
@@ -376,7 +377,9 @@ export const useOrbitStore = create<OrbitState>()(
 
             setTeacherClass: (classId) => set({ teacherClassId: classId }),
 
-            addImport: ({ course, classIds, lessons: added }) =>
+            setCourseOpen: (courseId, open) => set((s) => ({ courseOpen: { ...s.courseOpen, [courseId]: open } })),
+
+            addImport: ({ course, lessons: added }) =>
                 set((s) => {
                     const now = Date.now()
                     const jobs = { ...s.importJobs }
@@ -390,7 +393,6 @@ export const useOrbitStore = create<OrbitState>()(
                         lessonEdits: drop(s.lessonEdits),
                         importedLessons: [...s.importedLessons.filter((x) => !added.some((a) => a.id === x.id)), ...added],
                         importedCourses: course ? [...s.importedCourses.filter((c) => c.id !== course.id), course] : s.importedCourses,
-                        importedCourseClasses: course ? { ...s.importedCourseClasses, [course.id]: classIds } : s.importedCourseClasses,
                         importJobs: jobs,
                     }
                 }),
@@ -531,15 +533,23 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 10,
+            version: 11,
             // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio); v10 thêm lớp đang chọn và bài nhập từ YouTube; v9 thêm reviewedItems và hồ sơ giảng viên mặc định (2 bài chờ duyệt) nếu chưa có thay đổi nào.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importedCourseClasses: old.importedCourseClasses ?? {}, importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
+                return { ...old, courseOpen: old.courseOpen ?? {}, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },
     ),
 )
+
+// Nội dung sinh viên thấy (khóa mở + bài đã xuất bản) dẫn xuất từ trạng thái giảng viên; đồng bộ ngay khi nạp và mỗi khi các phần liên quan đổi,
+// nên mọi trang sinh viên mở sau đó đều đọc đúng danh mục.
+const syncCatalog = (s: OrbitState) => applyCatalog({ importedCourses: s.importedCourses, importedLessons: s.importedLessons, lessonReview: s.lessonReview, courseOpen: s.courseOpen ?? {} })
+syncCatalog(useOrbitStore.getState())
+useOrbitStore.subscribe((s, prev) => {
+    if (s.importedCourses !== prev.importedCourses || s.importedLessons !== prev.importedLessons || s.lessonReview !== prev.lessonReview || s.courseOpen !== prev.courseOpen) syncCatalog(s)
+})

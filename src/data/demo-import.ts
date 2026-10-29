@@ -3,7 +3,7 @@
 // TODO: nội dung dưới đây tạm lấy từ ba bài đã có (transcript, tóm tắt, khái niệm, câu hỏi + biến thể), đổi id để không trùng số liệu lớp.
 // Khi có danh sách phát thật của khoa: thêm video vào scripts/content.config.json, chạy `npx tsx scripts/generate-content.ts --out <thư mục>`
 // (cần GEMINI_API_KEY trong .env.local), rồi thay `template` bằng bài sinh ra, điền videoId/tên/thời lượng thật.
-import { getLesson } from '@/data'
+import { staticLessons } from '@/data'
 import type { Course, Lesson } from '@/data/types'
 
 export interface SampleVideo {
@@ -27,7 +27,7 @@ export interface SampleItem {
 
 export function sampleItems(): SampleItem[] {
     return SAMPLE_PLAYLIST.videos.flatMap((v) => {
-        const l = getLesson(v.template)
+        const l = staticLessons.find((x) => x.id === v.template)
         return l ? [{ key: v.template, videoId: l.youtubeId, title: l.title, durationSec: l.durationSec }] : []
     })
 }
@@ -59,7 +59,7 @@ export function parseYoutubeLink(raw: string): ParsedLink | null {
 
 /** Bài nhập từ YouTube: nội dung đã tạo sẵn (xem TODO), trạng thái nháp để giảng viên duyệt. */
 export function buildImportedLesson(item: SampleItem, courseId: string): Lesson | null {
-    const tpl = getLesson(item.key)
+    const tpl = staticLessons.find((x) => x.id === item.key)
     if (!tpl) return null
     let json = JSON.stringify(tpl)
     const ids = [...tpl.concepts.map((c) => c.id), ...tpl.quiz.flatMap((q) => [q.id, ...q.variants.map((v) => v.id)])]

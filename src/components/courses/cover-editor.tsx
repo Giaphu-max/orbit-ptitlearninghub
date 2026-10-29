@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { ImagePlus, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { CourseArt } from '@/components/courses/course-cover'
-import { courses } from '@/data'
 import type { Course } from '@/data/types'
 import { COVER_MOTIFS, deriveCover, MOTIF_LABELS, type CoverMotif } from '@/lib/cover-kinds'
+import { useTeacherCourses } from '@/lib/teacher'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 const MAX_EDGE = 1280
@@ -25,6 +25,7 @@ async function compressToJpeg(file: File): Promise<string> {
 
 /** Tab "Bìa khóa học" của giảng viên: xem trước, đổi kiểu (tăng seed), chọn họa tiết, tải ảnh lên (ưu tiên hơn bìa tự sinh). */
 export function CoverEditor() {
+    const courses = useTeacherCourses()
     return (
         <div className="grid gap-6 md:grid-cols-2">
             {courses.map((c) => (

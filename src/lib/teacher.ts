@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getCourse, lessons } from '@/data'
+import { staticCourses, staticLessons } from '@/data'
 import { TEACHER_CLASSES, type TeacherClass } from '@/data/classes'
 import type { ClassStats, Concept, Course, Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
-import { getClassStats } from '@/lib/class-stats'
+import { getAllStats, getClassStats } from '@/lib/class-stats'
 import { WHY_WRONG } from '@/data/teacher-notes'
 import { lessonItemKeys, useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
@@ -66,7 +66,7 @@ export function useLessonReviews(): LessonReview[] {
 
     return useMemo(() => {
         const seen: Record<string, number> = {}
-        return [...lessons, ...imported].map((base) => {
+        return [...staticLessons, ...imported].map((base) => {
             const isImported = base.id.startsWith('imp-')
             const lesson = edits[base.id] ? { ...base, ...edits[base.id] } : base
             const published = (review[base.id] ?? base.status) === 'published'
@@ -79,22 +79,33 @@ export function useLessonReviews(): LessonReview[] {
             const progress = job ? Math.min(1, (now - job.startedAt) / job.durationMs) : 1
             const generating = isImported && progress < 1
             const state: LessonState = generating ? 'generating' : published ? 'published' : done > 0 ? 'editing' : 'wait'
-            const course = getCourse(base.courseId) ?? importedCourses.find((c) => c.id === base.courseId)
+            const course = [...staticCourses, ...importedCourses].find((c) => c.id === base.courseId)
             return { lesson, course, index, published, keys, reviewed, done, total: keys.length, state, progress: generating ? progress : undefined, step: generating ? genStep(progress) : undefined, imported: isImported }
         })
     }, [edits, review, items, imported, importedCourses, jobs, now])
 }
 
-/** Các lớp, lớp đang chọn và số liệu của lớp đó. */
+/** Các lớp mẫu và lớp đang chọn (chỉ dùng cho thống kê ở trang Lớp học). */
 export function useTeacherClass() {
     const id = useOrbitStore((s) => s.teacherClassId)
-    const importedClasses = useOrbitStore((s) => s.importedCourseClasses)
     const cls = TEACHER_CLASSES.find((c) => c.id === id) ?? TEACHER_CLASSES[0]
-    return useMemo(() => {
-        const courseIdsOf = (c: TeacherClass) => [...c.courseIds, ...Object.entries(importedClasses).filter(([, cl]) => cl.includes(c.id)).map(([cid]) => cid)]
-        return { classes: TEACHER_CLASSES, cls, courseIds: courseIdsOf(cls), courseIdsOf, stats: getClassStats(cls.id) }
-    }, [cls, importedClasses])
+    return useMemo(() => ({ classes: TEACHER_CLASSES, cls, courseIds: cls.courseIds, stats: getClassStats(cls.id) }), [cls])
 }
+
+/** Số liệu gộp toàn bộ sinh viên đã học, không theo lớp (Tổng quan). */
+export function useAllStats(): ClassStats {
+    return useMemo(() => getAllStats(), [])
+}
+
+/** Kho khóa học của giảng viên: khóa có sẵn và khóa tạo từ danh sách phát YouTube, kèm trạng thái mở cho sinh viên. */
+export function useTeacherCourses(): (Course & { open: boolean })[] {
+    const importedCourses = useOrbitStore((s) => s.importedCourses)
+    const open = useOrbitStore((s) => s.courseOpen)
+    return useMemo(() => [...staticCourses, ...importedCourses].map((c) => ({ ...c, open: open[c.id] !== false })), [importedCourses, open])
+}
+
+/** Số sinh viên đang học một khóa (tổng sĩ số các lớp mẫu học khóa đó). */
+export const studentsOfCourse = (courseId: string) => TEACHER_CLASSES.filter((c) => c.courseIds.includes(courseId)).reduce((n, c) => n + c.size, 0)
 
 /** Số liệu cho một khóa học: lớp đang chọn nếu có khóa đó, không thì lớp đầu tiên có khóa đó. */
 export function statsForCourse(courseId: string, selected: TeacherClass): ClassStats {
@@ -188,7 +199,7 @@ export function buildAttention(pool: LessonReview[], stats: ClassStats): Attenti
 export const courseTest = (stats: ClassStats, courseId: string) => stats.tests[courseId]
 
 export function lessonsOriginal(id: string) {
-    return lessons.find((l) => l.id === id)
+    return staticLessons.find((l) => l.id === id)
 }
 
 export function validate(d: LessonEdits): string[] {

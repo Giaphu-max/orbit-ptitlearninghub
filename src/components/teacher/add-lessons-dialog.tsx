@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check } from 'lucide-react'
-import { courses } from '@/data'
-import { TEACHER_CLASSES } from '@/data/classes'
 import { buildImportedCourse, buildImportedLesson, parseYoutubeLink, sampleItems, SAMPLE_PLAYLIST } from '@/data/demo-import'
 import type { Lesson } from '@/data/types'
-import { useTeacherClass } from '@/lib/teacher'
+import { useTeacherCourses } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -19,23 +16,19 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; courseId?: string }) {
     const navigate = useNavigate()
     const addImport = useOrbitStore((s) => s.addImport)
-    const importedCourses = useOrbitStore((s) => s.importedCourses)
-    const { cls } = useTeacherClass()
+    const allCourses = useTeacherCourses()
     const items = useMemo(() => sampleItems(), [])
     const [link, setLink] = useState('')
     const [picked, setPicked] = useState<Set<string>>(() => new Set(items.map((i) => i.key)))
     const [target, setTarget] = useState(courseId ?? NEW_COURSE)
-    const [classIds, setClassIds] = useState<string[]>([cls.id])
     const rootRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
     const parsed = useMemo(() => (link.trim() ? parseYoutubeLink(link) : null), [link])
     const invalid = link.trim() !== '' && !parsed
     const isSample = parsed ? (parsed.kind === 'playlist' ? parsed.listId === SAMPLE_PLAYLIST.listId : items.some((i) => i.videoId === parsed.videoId)) : false
-    const allCourses = [...courses, ...importedCourses]
     const existing = target !== NEW_COURSE ? allCourses.find((c) => c.id === target) : undefined
-    const lockedClasses = existing ? TEACHER_CLASSES.filter((c) => c.courseIds.includes(existing.id)).map((c) => c.id) : null
-    const chipClasses = lockedClasses ?? classIds
+    const targetOpen = existing ? existing.open : true
 
     // Focus trap + Esc, trả focus về nút đã mở hộp
     useEffect(() => {
@@ -63,7 +56,7 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
         const cid = newCourse?.id ?? target
         const lessons = items.filter((i) => picked.has(i.key)).flatMap((i) => buildImportedLesson(i, cid) ?? []) as Lesson[]
         if (!lessons.length) return
-        addImport({ course: newCourse, classIds: classIds.length ? classIds : [cls.id], lessons })
+        addImport({ course: newCourse, lessons })
         onClose()
         navigate('/teacher/library')
     }
@@ -138,27 +131,12 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
                             ))}
                         </select>
 
-                        <p className="mb-1.5 mt-4 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Lớp học khóa này</p>
-                        <div className="flex flex-wrap gap-2">
-                            {TEACHER_CLASSES.map((c) => {
-                                const on = chipClasses.includes(c.id)
-                                return (
-                                    <button
-                                        key={c.id}
-                                        type="button"
-                                        aria-pressed={on}
-                                        disabled={!!lockedClasses}
-                                        onClick={() => setClassIds((cur) => (cur.includes(c.id) ? cur.filter((x) => x !== c.id) : [...cur, c.id]))}
-                                        className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-3 font-mono text-xs font-bold transition disabled:cursor-default ${
-                                            on ? 'border-brand-600 bg-brand-50 text-brand-ink' : 'border-border text-muted-foreground hover:bg-muted'
-                                        }`}
-                                    >
-                                        {on && <Check size={12} strokeWidth={3} aria-hidden />}
-                                        {c.id}
-                                    </button>
-                                )
-                            })}
-                        </div>
+                        <p className="mb-1.5 mt-4 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Ai thấy bài này</p>
+                        <p className="text-[13px] leading-relaxed text-muted-foreground">
+                            {targetOpen
+                                ? 'Sinh viên của khóa đang mở, sau khi thầy cô duyệt và xuất bản.'
+                                : 'Khóa này đang khóa: sinh viên chưa thấy bài nào cho tới khi thầy cô mở khóa ở trang Bài giảng.'}
+                        </p>
 
                         <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground">
                             AI sẽ đọc phụ đề, tạo transcript có mốc thời gian, tóm tắt, khái niệm và câu hỏi kèm câu biến thể. Mọi thứ ở trạng thái chờ duyệt, sinh viên chưa thấy cho tới khi thầy cô xuất bản.

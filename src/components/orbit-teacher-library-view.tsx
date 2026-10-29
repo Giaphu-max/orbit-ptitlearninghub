@@ -1,25 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { courses } from '@/data'
 import type { Course } from '@/data/types'
-import { AddLessonsDialog } from '@/components/teacher/add-lessons-dialog'
-import { ClassPicker } from '@/components/teacher/class-picker'
-import { TEACHER_CLASSES } from '@/data/classes'
-import { useLessonReviews, useTeacherClass, type LessonReview } from '@/lib/teacher'
+import { useAddDialog } from '@/components/teacher/add-dialog-state'
+import { studentsOfCourse, useLessonReviews, useTeacherCourses, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 const RANK: Record<LessonReview['state'], number> = { editing: 0, wait: 1, generating: 2, published: 3 }
 
-/** /teacher/library – mỗi khóa là một danh sách phát YouTube; thẻ video cho biết bài nào cần duyệt. */
+/** /teacher/library – kho bài giảng của giảng viên; mỗi khóa mở/khóa cho sinh viên, thẻ video cho biết bài nào cần duyệt. Không giao theo lớp. */
 export function OrbitTeacherLibraryView() {
     const role = useOrbitStore((s) => s.role)
-    const importedCourses = useOrbitStore((s) => s.importedCourses)
     const reviews = useLessonReviews()
-    const { courseIdsOf } = useTeacherClass()
-    const [classFilter, setClassFilter] = useState<string | null>(null)
-    const [adding, setAdding] = useState<{ courseId?: string } | null>(null)
+    const allCourses = useTeacherCourses()
+    const showAdd = useAddDialog((s) => s.show)
+    const setCourseOpen = useOrbitStore((s) => s.setCourseOpen)
     const [toast, setToast] = useState<string | null>(null)
+    const toastTimer = useRef<number | undefined>(undefined)
+    const say = (msg: string, ms = 3200) => {
+        setToast(msg)
+        window.clearTimeout(toastTimer.current)
+        toastTimer.current = window.setTimeout(() => setToast(null), ms)
+    }
+    useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
     // Báo khi một bài vừa tạo xong nội dung
     const prevGenerating = useRef<Set<string>>(new Set())
@@ -28,45 +31,44 @@ export function OrbitTeacherLibraryView() {
         const finished = reviews.filter((r) => prevGenerating.current.has(r.lesson.id) && !now.has(r.lesson.id))
         prevGenerating.current = now
         if (!finished.length) return
-        setToast(finished.length === 1 ? `Đã tạo xong nội dung · ${finished[0].lesson.title} đang chờ thầy cô duyệt` : `Đã tạo xong nội dung cho ${finished.length} video · chờ thầy cô duyệt`)
-        const t = window.setTimeout(() => setToast(null), 3200)
-        return () => window.clearTimeout(t)
+        say(finished.length === 1 ? `Đã tạo xong nội dung · ${finished[0].lesson.title} đang chờ thầy cô duyệt` : `Đã tạo xong nội dung cho ${finished.length} video · chờ thầy cô duyệt`)
     }, [reviews])
 
-    const sections = useMemo(() => {
-        const allowed = classFilter ? courseIdsOf(TEACHER_CLASSES.find((c) => c.id === classFilter)!) : null
-        return [...courses, ...importedCourses]
-            .filter((c) => !allowed || allowed.includes(c.id))
-            .map((course) => ({ course, items: reviews.filter((r) => r.lesson.courseId === course.id).sort((a, b) => RANK[a.state] - RANK[b.state] || a.index - b.index) }))
-            .filter((s) => s.items.length > 0)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [classFilter, reviews, importedCourses])
+    const sections = useMemo(
+        () =>
+            allCourses
+                .map((course) => ({ course, items: reviews.filter((r) => r.lesson.courseId === course.id).sort((a, b) => RANK[a.state] - RANK[b.state] || a.index - b.index) }))
+                .filter((s) => s.items.length > 0),
+        [allCourses, reviews],
+    )
 
     if (role !== 'teacher') return <Navigate to="/" replace />
 
-    return (
-        <div className="w-full">
-            <div className="container-wide pb-10 pt-6">
-                <header className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">Bài giảng</p>
-                        <h1 className="mt-2.5 text-[clamp(30px,2.6vw,40px)] font-black leading-tight tracking-[-0.03em] text-strong">Khóa học của thầy</h1>
-                        <p className="mt-2 text-[15px] text-muted-foreground">Mỗi khóa là một danh sách phát YouTube; AI tạo nội dung, thầy cô duyệt rồi xuất bản.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <ClassPicker allowAll value={classFilter} onChange={setClassFilter} />
-                        <button type="button" onClick={() => setAdding({})} className="surface-red h-10 rounded-full px-5 text-sm font-extrabold text-ink-foreground shadow-brand">
-                            + Thêm từ YouTube
-                        </button>
-                    </div>
-                </header>
+    const toggle = (course: Course, open: boolean) => {
+        setCourseOpen(course.id, open)
+        say(open ? 'Đã mở khóa học: sinh viên thấy các bài đã xuất bản' : 'Đã khóa: sinh viên tạm không thấy khóa này', 2400)
+    }
 
-                <div className="mt-8 flex flex-col gap-10">
-                    {sections.length === 0 && <p className="text-sm text-muted-foreground">Chưa có khóa học nào cho lớp này.</p>}
-                    {sections.map(({ course, items }) => (
-                        <CourseSection key={course.id} course={course} items={items} onAdd={() => setAdding({ courseId: course.id })} />
-                    ))}
+    return (
+        <div className="w-full pb-8">
+            <header className="flex flex-wrap items-end justify-between gap-6">
+                <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">Bài giảng</p>
+                    <h1 className="mt-2 text-4xl font-black tracking-[-0.03em] text-strong">Khóa học của thầy</h1>
+                    <p className="mt-2 max-w-[70ch] text-[15px] text-muted-foreground">
+                        Kho bài giảng của thầy. Khóa đang mở thì mọi sinh viên đều học được các bài đã xuất bản, không cần giao cho từng lớp.
+                    </p>
                 </div>
+                <button type="button" onClick={() => showAdd()} className="surface-red h-11 rounded-xl px-[18px] text-[14.5px] font-extrabold text-ink-foreground shadow-brand">
+                    + Thêm từ YouTube
+                </button>
+            </header>
+
+            <div className="mt-8 flex flex-col gap-8">
+                {sections.length === 0 && <p className="text-sm text-muted-foreground">Chưa có khóa học nào.</p>}
+                {sections.map(({ course, items }) => (
+                    <CourseSection key={course.id} course={course} open={course.open} items={items} onAdd={() => showAdd(course.id)} onToggle={(v) => toggle(course, v)} />
+                ))}
             </div>
             <div
                 role="status"
@@ -74,36 +76,41 @@ export function OrbitTeacherLibraryView() {
             >
                 {toast}
             </div>
-            {adding && <AddLessonsDialog courseId={adding.courseId} onClose={() => setAdding(null)} />}
         </div>
     )
 }
 
-function CourseSection({ course, items, onAdd }: { course: Course; items: LessonReview[]; onAdd: () => void }) {
-    const importedClasses = useOrbitStore((s) => s.importedCourseClasses)
+function CourseSection({ course, open, items, onAdd, onToggle }: { course: Course; open: boolean; items: LessonReview[]; onAdd: () => void; onToggle: (open: boolean) => void }) {
     const published = items.filter((r) => r.state === 'published').length
-    const classes = [...TEACHER_CLASSES.filter((c) => c.courseIds.includes(course.id)).map((c) => c.id), ...(importedClasses[course.id] ?? [])]
+    const students = studentsOfCourse(course.id)
     const accent = course.cover?.accent ?? 'default'
-    // Khóa mẫu chưa lưu id danh sách phát thật: mở video đầu tiên trên YouTube
-    const playlistHref = `https://www.youtube.com/watch?v=${items[0].lesson.youtubeId}`
     return (
         <section aria-label={course.title}>
-            <div className="flex flex-wrap items-center gap-4">
-                <span aria-hidden className="h-11 w-11 shrink-0 rounded-xl" style={{ background: `hsl(var(--subject-${accent}))` }} />
-                <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-lg font-extrabold text-strong">{course.title}</h2>
-                    <p className="text-[13px] text-muted-foreground">
-                        {items.length} video · {published} đã xuất bản · lớp {classes.join(', ') || 'chưa gắn lớp'}
+            <div className="mb-3 flex flex-wrap items-center gap-3.5">
+                <span aria-hidden className="h-10 w-10 shrink-0 rounded-[10px]" style={{ background: `hsl(var(--subject-${accent}))` }} />
+                <div className="min-w-0">
+                    <h2 className="truncate text-[17px] font-extrabold text-strong">{course.title}</h2>
+                    <p className="mt-0.5 text-[13px] text-muted-foreground">
+                        {items.length} video · {published} đã xuất bản{students > 0 && ` · ${students} sinh viên đang học`}
                     </p>
                 </div>
-                <a href={playlistHref} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-muted-foreground transition hover:text-strong">
-                    Danh sách phát ↗
-                </a>
-                <button type="button" onClick={onAdd} className="h-9 rounded-full border border-border bg-card px-4 text-sm font-bold text-strong transition hover:bg-muted">
+                <button
+                    type="button"
+                    role="switch"
+                    aria-checked={open}
+                    onClick={() => onToggle(!open)}
+                    className={`ml-auto inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[13px] font-bold transition ${open ? 'border-success-soft-border bg-success-soft text-success' : 'border-border bg-card text-muted-foreground'}`}
+                >
+                    <i aria-hidden className={`relative h-[18px] w-[30px] rounded-full transition ${open ? 'bg-success-bright' : 'bg-border'}`}>
+                        <span className={`absolute top-0.5 h-3.5 w-3.5 rounded-full bg-ink-foreground transition-all ${open ? 'left-3.5' : 'left-0.5'}`} />
+                    </i>
+                    {open ? 'Đang mở cho sinh viên' : 'Đang khóa · chỉ thầy cô thấy'}
+                </button>
+                <button type="button" onClick={onAdd} className="rounded-lg px-2.5 py-1.5 text-[13px] font-bold text-muted-foreground transition hover:bg-muted hover:text-strong">
                     + Thêm video
                 </button>
             </div>
-            <ul className="mt-4 grid grid-cols-2 gap-5 lg:grid-cols-4">
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-[18px]">
                 {items.map((r) => (
                     <li key={r.lesson.id}>
                         <VideoCard review={r} />
