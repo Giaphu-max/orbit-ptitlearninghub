@@ -1,4 +1,4 @@
-import { AnimatePresence } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AlertCircle, Camera, Check, ChevronDown, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
@@ -64,6 +64,13 @@ export function OrbitStudioView() {
     const envBusy = useRef(false)
     const lastEnvAt = useRef(0)
     const lastPrompt = useRef('')
+    const reduced = useReducedMotion()
+    // Thanh "AI dựng sáng" thu gọn mặc định; nội dung gõ dở (envPrompt) giữ nguyên khi thu lại
+    const [aiOpen, setAiOpen] = useState(false)
+    const aiOpenRef = useRef(false)
+    aiOpenRef.current = aiOpen
+    const aiRef = useRef<HTMLDivElement>(null)
+    const aiInputRef = useRef<HTMLInputElement>(null)
 
     const { shots, selectedId, drawerOpen, galleryOpen } = useStudioSession()
     const selected = shots.find((s) => s.id === selectedId)
@@ -84,6 +91,11 @@ export function OrbitStudioView() {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key !== 'Escape') return
+            // Thanh AI đang mở: Esc chỉ thu thanh này, không đóng lớp khác
+            if (aiOpenRef.current) {
+                setAiOpen(false)
+                return
+            }
             const st = useStudioSession.getState()
             if (st.galleryOpen) st.setGallery(false)
             else if (st.drawerOpen) st.openDrawer(false)
@@ -91,6 +103,20 @@ export function OrbitStudioView() {
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
     }, [])
+
+    // Thanh AI: focus vào ô nhập khi mở; bấm ra ngoài cụm thì thu lại
+    useEffect(() => {
+        if (!aiOpen) return
+        aiInputRef.current?.focus()
+        const onDown = (e: PointerEvent) => {
+            const t = e.target as Node
+            if (aiRef.current?.contains(t)) return
+            if ((t as HTMLElement).closest?.('[data-ai-toggle]')) return
+            setAiOpen(false)
+        }
+        document.addEventListener('pointerdown', onDown)
+        return () => document.removeEventListener('pointerdown', onDown)
+    }, [aiOpen])
 
     // Vào trang hoặc đổi đề: mở sẵn tab Đề bài
     useEffect(() => {
@@ -208,6 +234,7 @@ export function OrbitStudioView() {
     }
 
     const askLighting = (text: string) => {
+        setAiOpen(false)
         setEnvPrompt(text)
         void applyEnvironment(text)
     }
@@ -325,8 +352,8 @@ export function OrbitStudioView() {
     ]
 
     return (
-        <div className="w-full overflow-x-clip min-[980px]:h-[calc(100svh-var(--nav-h))]">
-            <div className="container-wide flex flex-col py-4 min-[980px]:h-full">
+        <div className="w-full overflow-x-clip">
+            <div className="container-wide py-4 lg:py-6">
                 {/* Hàng đầu trang không khung: Cột 8 (đề bài + chip tiêu chí) | Cột 4 (stepper 3 bước) */}
                 <header className="lesson-grid items-end mb-6">
                     {/* Cột 8: eyebrow + chip chọn đề, tiêu đề ngắn, một dòng ý đồ */}
@@ -347,9 +374,6 @@ export function OrbitStudioView() {
                         <h1 title={brief.shortTitle} className="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-strong">
                             {brief.shortTitle}
                         </h1>
-                        <p title={brief.goal} className="mt-1 truncate text-[15px] text-muted-foreground">
-                            {brief.goal}
-                        </p>
                     </div>
 
                     {/* Cột 4: stepper 3 bước rút gọn "Dựng sáng → Chụp ảnh → AI chấm" */}
@@ -393,10 +417,10 @@ export function OrbitStudioView() {
                 </header>
 
                 {/* Khung 3D (Cột 8) + Bảng điều khiển (Cột 4), cùng lưới với hàng header */}
-                <div className="lesson-grid min-h-0 flex-1">
-                    <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Khung làm việc studio">
-                        {/* Canvas 3D */}
-                        <div ref={viewportRef} style={{ viewTransitionName: 'vt-studio-stage' }} className="relative h-[56vh] overflow-hidden rounded-panel bg-ink shadow-card min-[980px]:h-auto min-[980px]:min-h-0 min-[980px]:flex-1">
+                <div className="lesson-grid lesson-theater">
+                    <section className="lesson-player-area min-w-0" aria-label="Khung làm việc studio">
+                        {/* Canvas 3D: 16:9 như player bài học */}
+                        <div ref={viewportRef} style={{ viewTransitionName: 'vt-studio-stage' }} className="relative isolate aspect-video w-full overflow-hidden rounded-[20px] bg-ink shadow-raised">
                         {webgl ? (
                             <div className="absolute inset-0">
                                 <Suspense fallback={<div className="flex h-full items-center justify-center text-ink-foreground"><Loader2 className="animate-spin" /></div>}>
@@ -443,124 +467,83 @@ export function OrbitStudioView() {
                             </button>
                         </div>
 
-                        {/* Gợi ý và thanh AI Prompt-to-Environment; mờ đi và khóa khi AI đang dựng đèn */}
-                        <div className={`absolute inset-x-3 bottom-4 mx-auto flex max-w-[680px] flex-col gap-2 transition-opacity duration-base ${loading ? 'pointer-events-none opacity-55' : ''}`} aria-busy={loading}>
-                            <ul className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible" aria-label="Gợi ý ánh sáng nhanh">
-                                {ENV_SUGGESTIONS.map((t) => (
-                                    <li key={t} className="shrink-0">
-                                        <button
-                                            type="button"
-                                            disabled={loading}
-                                            onClick={() => askLighting(t)}
-                                            className={`rounded-full px-3 py-1.5 text-xs font-bold transition hover:bg-ink/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${glass}`}
-                                        >
-                                            {t}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                            <form
-                                className={`flex items-center gap-2 rounded-2xl p-2 ${glass}`}
-                                onSubmit={(e) => {
-                                    e.preventDefault()
-                                    void applyEnvironment(envPrompt)
-                                }}
+                        {/* Thanh AI Prompt-to-Environment: thu gọn thành một nút, bấm để mở cụm gợi ý + ô nhập */}
+                        {!aiOpen && (
+                            <button
+                                type="button"
+                                data-ai-toggle
+                                aria-expanded={false}
+                                disabled={loading}
+                                onClick={() => setAiOpen(true)}
+                                className={`absolute bottom-4 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition hover:bg-ink/80 disabled:opacity-55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${glass}`}
                             >
-                                <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-ink-foreground">
-                                    <Sparkles size={16} />
-                                </span>
-                                <input
-                                    value={envPrompt}
-                                    onChange={(e) => setEnvPrompt(e.target.value)}
-                                    maxLength={ENV_LIMITS.promptMaxChars}
-                                    disabled={loading}
-                                    aria-label="Mô tả ánh sáng"
-                                    placeholder="Mô tả ánh sáng bạn muốn, AI sẽ đặt đèn…"
-                                    className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[15px] text-ink-foreground placeholder:text-ink-foreground/60 focus-visible:outline-none"
-                                />
-                                <button
-                                    type="submit"
-                                    disabled={loading || !envPrompt.trim()}
-                                    className="shrink-0 rounded-xl bg-ink-foreground px-4 py-2.5 text-sm font-extrabold text-brand-800 transition hover:opacity-90 disabled:opacity-50"
+                                <Sparkles size={13} /> AI dựng sáng
+                            </button>
+                        )}
+                        {aiOpen && (
+                            <motion.div
+                                ref={aiRef}
+                                initial={reduced ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: reduced ? 0 : 0.2, ease: 'easeOut' }}
+                                className={`absolute inset-x-3 bottom-4 mx-auto flex max-w-[680px] flex-col gap-2 transition-opacity duration-base ${loading ? 'pointer-events-none opacity-55' : ''}`}
+                                aria-busy={loading}
+                            >
+                                <ul className="flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] sm:flex-wrap sm:justify-center sm:overflow-visible" aria-label="Gợi ý ánh sáng nhanh">
+                                    {ENV_SUGGESTIONS.map((t) => (
+                                        <li key={t} className="shrink-0">
+                                            <button
+                                                type="button"
+                                                disabled={loading}
+                                                onClick={() => askLighting(t)}
+                                                className={`rounded-full px-3 py-1.5 text-xs font-bold transition hover:bg-ink/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${glass}`}
+                                            >
+                                                {t}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <form
+                                    className={`flex items-center gap-2 rounded-2xl p-2 ${glass}`}
+                                    onSubmit={(e) => {
+                                        e.preventDefault()
+                                        setAiOpen(false)
+                                        void applyEnvironment(envPrompt)
+                                    }}
                                 >
-                                    Tạo
-                                </button>
-                            </form>
-                        </div>
+                                    <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-ink-foreground">
+                                        <Sparkles size={16} />
+                                    </span>
+                                    <input
+                                        ref={aiInputRef}
+                                        value={envPrompt}
+                                        onChange={(e) => setEnvPrompt(e.target.value)}
+                                        maxLength={ENV_LIMITS.promptMaxChars}
+                                        disabled={loading}
+                                        aria-label="Mô tả ánh sáng"
+                                        placeholder="Mô tả ánh sáng bạn muốn, AI sẽ đặt đèn…"
+                                        className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[15px] text-ink-foreground placeholder:text-ink-foreground/60 focus-visible:outline-none"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !envPrompt.trim()}
+                                        className="shrink-0 rounded-xl bg-ink-foreground px-4 py-2.5 text-sm font-extrabold text-brand-800 transition hover:opacity-90 disabled:opacity-50"
+                                    >
+                                        Tạo
+                                    </button>
+                                </form>
+                            </motion.div>
+                        )}
 
                         {galleryOpen && <GalleryPanel />}
                         <EnvOverlay env={env} step={envStep} onRetry={() => void applyEnvironment(lastPrompt.current, true)} onClose={() => setEnv({ kind: 'idle' })} />
                         <div ref={flashRef} aria-hidden className="pointer-events-none absolute inset-0 bg-ink-foreground opacity-0" />
                     </div>
 
-                    {/* Thanh dưới: Chụp / dải phim / Chấm */}
-                    <div className="flex flex-wrap items-center gap-3 rounded-panel border border-border bg-card p-2.5 shadow-card sm:flex-nowrap">
-                        <button
-                            type="button"
-                            onClick={shoot}
-                            disabled={!webgl}
-                            className="inline-flex shrink-0 items-center gap-2.5 rounded-xl bg-brand-600 px-6 py-3.5 text-base font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ring-2 ring-brand-500/30"
-                        >
-                            <Camera size={18} /> Chụp ảnh
-                        </button>
-                        <p className="hidden shrink-0 font-mono text-xs text-muted-foreground sm:block" aria-live="polite">{shots.length} ảnh</p>
-                        <div
-                            ref={stripRef}
-                            aria-label={`Ảnh đã chụp, ${shots.length} ảnh`}
-                            className="order-last flex min-w-0 basis-full gap-2 overflow-x-auto p-0.5 [scrollbar-width:thin] sm:order-none sm:basis-0 sm:flex-1"
-                        >
-                            {shots.length === 0 && <div className="flex aspect-[3/2] h-16 items-center justify-center rounded-xl border-[1.5px] border-dashed border-border px-3 text-xs text-muted-foreground">Chưa có ảnh nào</div>}
-                            {shots.map((shot, i) => {
-                                const sel = shot.id === selectedId
-                                return (
-                                    <button
-                                        key={shot.id}
-                                        type="button"
-                                        data-shot-id={shot.id}
-                                        aria-pressed={sel}
-                                        aria-label={`Ảnh ${i + 1}${shot.status === 'done' ? `, ${shot.result?.overall} điểm` : shot.status === 'grading' ? ', đang chấm' : ', chưa chấm'}`}
-                                        onClick={() => useStudioSession.getState().openShot(shot.id)}
-                                        className={`relative aspect-[3/2] w-24 shrink-0 overflow-hidden rounded-xl border-2 bg-ink p-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${sel ? 'border-brand-600' : 'border-transparent hover:border-brand-300'}`}
-                                    >
-                                        <img src={shot.image} alt="" className="h-full w-full object-cover" />
-                                        <span className="absolute left-1 top-1 rounded-md bg-ink/70 px-1.5 py-0.5 font-mono text-[10px] text-ink-foreground">{i + 1}</span>
-                                        <ScoreBadge shot={shot} className="absolute bottom-1 right-1" />
-                                        {shot.status === 'grading' && (
-                                            <span className="absolute inset-0 flex items-center justify-center bg-ink/50 text-ink-foreground"><Loader2 size={16} className="animate-spin" /></span>
-                                        )}
-                                        {shot.status === 'error' && (
-                                            <span className="absolute bottom-1 right-1 rounded-md bg-ink/70 p-1 text-ink-foreground"><AlertCircle size={12} /></span>
-                                        )}
-                                    </button>
-                                )
-                            })}
-                            {shots.length > 0 && (
-                                <button
-                                    type="button"
-                                    aria-pressed={galleryOpen}
-                                    onClick={() => useStudioSession.getState().setGallery(!galleryOpen)}
-                                    className="flex aspect-[3/2] w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-xs font-bold text-foreground transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                                >
-                                    <Images size={16} /> Xem tất cả
-                                </button>
-                            )}
-                        </div>
-                        <button
-                            type="button"
-                            disabled={gradeDisabled}
-                            onClick={() => selected && void gradeShot(selected.id)}
-                            className={`ml-auto inline-flex shrink-0 items-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 sm:ml-0 ${
-                                gradeDisabled
-                                    ? 'border border-border bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50'
-                                    : 'border-2 border-brand-500/60 bg-brand-50 text-brand-ink shadow-sm hover:bg-brand-100 hover:border-brand-600 dark:bg-brand-950/40'
-                            }`}
-                        >
-                            <Sparkles size={16} className={!gradeDisabled ? 'text-brand-600 animate-pulse' : ''} /> {gradeLabel}
-                        </button>
-                    </div>
                 </section>
 
-                <div className="relative min-h-0 min-w-0">
+                {/* Bảng bên cao đúng bằng khung 3D (contain: size, như trang học bài) */}
+                <div className="lesson-side">
                     <StudioRail
                         tab={tab}
                         onTab={setTab}
@@ -572,6 +555,68 @@ export function OrbitStudioView() {
                         onApplyLighting={askLighting}
                         explanation={applied?.explanation ?? null}
                     />
+                </div>
+                </div>
+
+                {/* Hàng chụp ảnh: mỏng, không khung, nằm trong cột 8 */}
+                <div className="lesson-grid mt-4">
+                    <div className="flex h-14 min-w-0 items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={shoot}
+                            disabled={!webgl}
+                            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-extrabold text-ink-foreground shadow-brand transition hover:bg-brand-700 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                        >
+                            <Camera size={16} /> Chụp ảnh
+                        </button>
+                        <p className="shrink-0 font-mono text-xs text-muted-foreground" aria-live="polite">{shots.length} ảnh</p>
+                        <div ref={stripRef} aria-label={`Ảnh đã chụp, ${shots.length} ảnh`} className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto p-0.5 [scrollbar-width:thin]">
+                            {shots.length === 0 && <span className="text-sm text-muted-foreground">Chưa có ảnh nào</span>}
+                            {shots.map((shot, i) => {
+                                const sel = shot.id === selectedId
+                                return (
+                                    <button
+                                        key={shot.id}
+                                        type="button"
+                                        data-shot-id={shot.id}
+                                        aria-pressed={sel}
+                                        aria-label={`Ảnh ${i + 1}${shot.status === 'done' ? `, ${shot.result?.overall} điểm` : shot.status === 'grading' ? ', đang chấm' : ', chưa chấm'}`}
+                                        onClick={() => useStudioSession.getState().openShot(shot.id)}
+                                        className={`relative aspect-[3/2] h-10 shrink-0 overflow-hidden rounded-lg border-2 bg-ink p-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ${sel ? 'border-brand-600' : 'border-transparent hover:border-brand-300'}`}
+                                    >
+                                        <img src={shot.image} alt="" className="h-full w-full object-cover" />
+                                        <ScoreBadge shot={shot} className="absolute bottom-0.5 right-0.5" />
+                                        {shot.status === 'grading' && (
+                                            <span className="absolute inset-0 flex items-center justify-center bg-ink/50 text-ink-foreground"><Loader2 size={14} className="animate-spin" /></span>
+                                        )}
+                                        {shot.status === 'error' && (
+                                            <span className="absolute bottom-0.5 right-0.5 rounded-md bg-ink/70 p-0.5 text-ink-foreground"><AlertCircle size={11} /></span>
+                                        )}
+                                    </button>
+                                )
+                            })}
+                            {shots.length > 0 && (
+                                <button
+                                    type="button"
+                                    aria-pressed={galleryOpen}
+                                    onClick={() => useStudioSession.getState().setGallery(!galleryOpen)}
+                                    className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-muted-foreground transition hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                                >
+                                    <Images size={14} /> Xem tất cả
+                                </button>
+                            )}
+                        </div>
+                        {shots.length > 0 && (
+                            <button
+                                type="button"
+                                disabled={gradeDisabled}
+                                onClick={() => selected && void gradeShot(selected.id)}
+                                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-brand-200 px-4 text-sm font-bold text-brand-ink transition hover:bg-brand-50 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                            >
+                                <Sparkles size={15} /> {gradeLabel}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -596,9 +641,8 @@ export function OrbitStudioView() {
                     />
                 )}
             </AnimatePresence>
-        </div>
 
-        {pickerOpen && <BriefPicker briefs={STUDIO_BRIEFS} currentId={brief.id} best={briefBest} onPick={pickBrief} onClose={() => setPickerOpen(false)} />}
+            {pickerOpen && <BriefPicker briefs={STUDIO_BRIEFS} currentId={brief.id} best={briefBest} onPick={pickBrief} onClose={() => setPickerOpen(false)} />}
             {toast && (
                 <div role="status" className="fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink px-4 py-2.5 text-sm text-ink-foreground shadow-raised">
                     {toast.message}
