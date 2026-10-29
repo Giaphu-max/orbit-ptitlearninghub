@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { BookOpen, ChevronLeft, Clock, PlayCircle, Target } from 'lucide-react'
-import { getCourse } from '@/data'
+import { ChevronLeft, Play } from 'lucide-react'
 import { buildQuestionBank, CHECKPOINT_QUESTION_COUNT, pickCheckpointQuestions, seenQuestionIds, testTimeLimit, TEST_PASS_BONUS_XP, TEST_PASS_RATIO, TEST_XP_PER_CORRECT, type TestQuestion } from '@/lib/final-test'
+import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { useEffectiveLesson } from '@/lib/lesson-edits'
 import { useOrbitStore } from '@/store/useOrbitStore'
-import { clock, Fact, Running } from '@/components/orbit-test-view'
-import { LessonBreadcrumbStepper } from '@/components/lesson/lesson-stepper'
+import { clock, Running } from '@/components/orbit-test-view'
+import { LessonHeader } from '@/components/lesson/lesson-header'
 
 type Phase = { kind: 'intro' } | { kind: 'running'; questions: TestQuestion[]; deadline: number }
 
@@ -21,17 +21,22 @@ export function OrbitCheckpointView() {
     const record = useOrbitStore((s) => (lessonId ? s.checkpoints[lessonId] : undefined))
     const recordCheckpointResult = useOrbitStore((s) => s.recordCheckpointResult)
     const bank = useMemo(() => (lesson ? buildQuestionBank([lesson]) : []), [lesson])
+    const mastery = useOrbitStore((s) => s.conceptMastery)
     const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
+    // Bộ câu của lượt sắp làm: chọn sẵn để màn bắt đầu hiện đúng số câu theo từng khái niệm, bấm "Bắt đầu" dùng đúng bộ này
+    const [planned, setPlanned] = useState<TestQuestion[]>(() =>
+        lesson ? pickCheckpointQuestions(bank, seenQuestionIds(lesson, useOrbitStore.getState().quizResults)) : [],
+    )
     if (!lesson || !lessonId) return <Navigate to="/learning" replace />
 
-    const course = getCourse(lesson.courseId)
     const count = Math.min(CHECKPOINT_QUESTION_COUNT, bank.length)
     const enough = bank.length >= 3
 
     const start = () => {
-        const seen = seenQuestionIds(lesson, useOrbitStore.getState().quizResults)
-        const questions = pickCheckpointQuestions(bank, seen)
+        const questions = planned
         setPhase({ kind: 'running', questions, deadline: Date.now() + testTimeLimit(questions.length) * 1000 })
+        // Lượt sau (làm lại) sẽ bốc bộ câu mới
+        setPlanned(pickCheckpointQuestions(bank, seenQuestionIds(lesson, useOrbitStore.getState().quizResults)))
         window.scrollTo(0, 0)
     }
 
@@ -46,59 +51,101 @@ export function OrbitCheckpointView() {
     if (phase.kind === 'running') {
         return (
             <div className="w-full">
-                <div className="container-wide py-8 lg:py-12"><div className="mx-auto max-w-3xl">
-                    <LessonBreadcrumbStepper
-                        courseTitle={course?.title ?? 'Học phần'}
-                        lessonTitle={lesson.title}
-                        lessonId={lessonId}
-                        currentStep="checkpoint"
-                        courseId={lesson.courseId}
-                    />
+                <div className="container-wide py-6">
+                    <LessonHeader lesson={lesson} currentStep="checkpoint" />
                     <div className="mt-6">
-                        <Running key={phase.deadline} phase={{ ...phase }} onSubmit={submit} onQuit={() => setPhase({ kind: 'intro' })} />
+                        <Running key={phase.deadline} split phase={{ ...phase }} onSubmit={submit} onQuit={() => setPhase({ kind: 'intro' })} />
                     </div>
-                </div>
                 </div>
             </div>
         )
     }
 
+    // Khái niệm sẽ được hỏi, theo số câu trong bộ đã chọn
+    const asked = lesson.concepts
+        .map((c) => ({ concept: c, questions: planned.filter((q) => q.conceptId === c.id).length, level: mastery[c.id] ?? 0 }))
+        .filter((k) => k.questions > 0)
+    const passPct = Math.round(TEST_PASS_RATIO * 100)
+
     return (
         <div className="w-full">
-            <div className="container-wide py-8 lg:py-12"><div className="mx-auto max-w-3xl">
-                <LessonBreadcrumbStepper
-                    courseTitle={course?.title ?? 'Học phần'}
-                    lessonTitle={lesson.title}
-                    lessonId={lessonId}
-                    currentStep="checkpoint"
-                    courseId={lesson.courseId}
-                />
-                <div className="mt-6">
-                    <Link to={`/lesson/${lessonId}`} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
-                        <ChevronLeft size={16} /> Quay lại bài giảng
-                    </Link>
-                </div>
-                <p className="mt-6 text-eyebrow uppercase text-brand-ink">Test cuối chặng</p>
-                <h1 className="mt-3 text-headline text-foreground">{lesson.title}</h1>
-                <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">Sáu câu ngắn về đúng bài vừa học, ưu tiên những câu bạn chưa gặp trong video. Xong là có bản tổng kết chặng.</p>
+            <div className="container-wide py-6">
+                <LessonHeader lesson={lesson} currentStep="checkpoint" />
 
-                <dl className="mt-8 grid gap-4 sm:grid-cols-3">
-                    <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`Mỗi khái niệm của bài ít nhất một câu, từ ngân hàng ${bank.length} câu`} />
-                    <Fact icon={<Clock size={18} />} label="Thời gian" value={clock(testTimeLimit(count))} note="Hết giờ bài tự nộp" />
-                    <Fact icon={<BookOpen size={18} />} label="Phần thưởng" value={`+${TEST_XP_PER_CORRECT} XP/câu`} note={`Mỗi câu đúng vượt kỷ lục. Thêm ${TEST_PASS_BONUS_XP} XP khi đạt ${Math.round(TEST_PASS_RATIO * 100)}%`} />
-                </dl>
+                {/* Thẻ lớn: cột trái rộng đúng bằng cột 8 + khoảng hở của header, nên vạch chia thẳng dưới mép trái stepper */}
+                <section className="checkpoint-card mt-6 overflow-hidden rounded-[24px] border border-border bg-card shadow-[0_30px_60px_-40px_hsl(var(--foreground-strong)/0.35)]">
+                    <div className="flex flex-col px-11 py-10">
+                        <Link to={`/lesson/${lessonId}`} className="inline-flex w-fit items-center gap-1 text-[13.5px] font-semibold text-muted-foreground transition hover:text-strong">
+                            <ChevronLeft size={15} /> Quay lại bài giảng
+                        </Link>
+                        <p className="mt-7 text-xs font-bold uppercase tracking-[0.14em] text-brand-ink">Kiểm tra nhanh · cuối chặng</p>
+                        <h2 className="mt-3 text-[40px] font-black leading-[1.1] tracking-tight text-strong">{count} câu để chốt lại bài vừa học</h2>
+                        <p className="mt-3.5 max-w-[46ch] text-base leading-relaxed text-muted-foreground">
+                            Ưu tiên những câu bạn chưa gặp trong video. Đạt từ {passPct}% là khái niệm sáng lên trong bản đồ kỹ năng.
+                        </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-3">
-                    <button type="button" onClick={start} disabled={!enough} className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-7 py-3.5 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50">
-                        <PlayCircle size={18} /> {record ? 'Làm lại' : 'Bắt đầu làm bài'}
-                    </button>
-                    <Link to={`/recap/${lessonId}`} className="rounded-full border border-border bg-card px-5 py-3 text-sm font-bold text-foreground transition hover:bg-muted">
-                        {record ? `Xem tổng kết (lần trước ${record.last.correct}/${record.last.total})` : 'Bỏ qua, xem tổng kết'}
-                    </Link>
-                </div>
-                {!enough && <p className="mt-4 text-sm text-muted-foreground">Bài này chưa đủ câu hỏi để làm test cuối chặng.</p>}
+                        <dl className="mt-7 flex w-fit overflow-hidden rounded-2xl border border-border">
+                            <Fact value={String(count)} unit="câu" note={`từ ngân hàng ${bank.length} câu`} />
+                            <Fact value={clock(testTimeLimit(count))} note="hết giờ tự nộp" divided />
+                            <Fact value={`+${TEST_XP_PER_CORRECT}`} unit="XP/câu" note={`+${TEST_PASS_BONUS_XP} khi đạt ${passPct}%`} divided />
+                        </dl>
+
+                        <div className="mt-auto flex flex-wrap items-center gap-[18px] pt-8">
+                            <button
+                                type="button"
+                                onClick={start}
+                                disabled={!enough}
+                                className="tier-1-bob surface-red inline-flex items-center gap-2.5 rounded-[14px] px-6 py-4 text-[17px] font-extrabold text-ink-foreground shadow-brand disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <Play size={17} className="fill-current" /> {record ? 'Làm lại' : 'Bắt đầu làm bài'}
+                            </button>
+                            <Link to={`/recap/${lessonId}`} className="text-sm font-bold text-muted-foreground hover:text-strong hover:underline">
+                                {record ? `Xem tổng kết (lần trước ${record.last.correct}/${record.last.total})` : 'Bỏ qua, xem tổng kết'}
+                            </Link>
+                        </div>
+                        {!enough && <p className="mt-4 text-sm text-muted-foreground">Bài này chưa đủ câu hỏi để làm test cuối chặng.</p>}
+                    </div>
+
+                    <aside className="flex flex-col border-l border-border bg-muted px-7 py-[34px]">
+                        <h3 className="flex items-baseline justify-between text-sm font-extrabold text-strong">
+                            Sẽ hỏi về <small className="font-mono text-xs font-semibold text-muted-foreground">{asked.length} khái niệm</small>
+                        </h3>
+                        <ul className="mt-3.5 flex flex-col gap-2.5">
+                            {asked.map(({ concept, questions, level }) => {
+                                const strong = level >= UNLOCK_THRESHOLD
+                                const weak = level < 0.5
+                                return (
+                                    <li key={concept.id} className={`grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 rounded-[14px] border px-4 py-3.5 ${weak ? 'border-brand-100 bg-brand-50' : 'border-border bg-card'}`}>
+                                        <b className="text-[14.5px] font-bold text-strong">{concept.name}</b>
+                                        <span className={`font-mono text-xs ${weak ? 'font-bold text-brand-ink' : 'font-semibold text-muted-foreground'}`}>
+                                            {questions} câu · {strong ? 'đã vững' : weak ? 'còn yếu' : `${Math.round(level * 100)}%`}
+                                        </span>
+                                        <span className="relative col-span-full h-1.5 rounded-sm bg-muted">
+                                            <i className={`absolute inset-y-0 left-0 rounded-sm ${strong ? 'bg-success' : 'bg-brand-600'}`} style={{ width: `${Math.round(level * 100)}%` }} />
+                                            <u className="absolute -top-[3px] h-3 w-0.5 bg-strong/50 no-underline" style={{ left: `${passPct}%` }} />
+                                        </span>
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                        <p className="mt-auto pt-[18px] text-[13px] leading-normal text-muted-foreground">
+                            Câu sai sẽ được AI giải thích và tua về <b className="text-strong">đúng đoạn video</b> chứa đáp án trong phần tổng kết.
+                        </p>
+                    </aside>
+                </section>
             </div>
-            </div>
+        </div>
+    )
+}
+
+function Fact({ value, unit, note, divided }: { value: string; unit?: string; note: string; divided?: boolean }) {
+    return (
+        <div className={`px-[22px] py-3.5 text-[13px] text-muted-foreground ${divided ? 'border-l border-border' : ''}`}>
+            <dt className="mb-0.5 font-mono text-[22px] font-extrabold text-strong">
+                {value}
+                {unit && <em className="ml-[3px] text-[13px] font-semibold not-italic text-muted-foreground">{unit}</em>}
+            </dt>
+            <dd>{note}</dd>
         </div>
     )
 }

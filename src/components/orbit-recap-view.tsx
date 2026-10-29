@@ -4,7 +4,7 @@ import { ArrowRight, Camera, Check, ChevronLeft, Flame, PlayCircle } from 'lucid
 import { getLessonsOfCourse } from '@/data'
 import { useEffectiveLesson, useCourseLessons } from '@/lib/lesson-edits'
 import { buildRecap, type RecapBadge, type RecapConcept, type RecapData } from '@/lib/recap'
-import { LessonBreadcrumbStepper } from '@/components/lesson/lesson-stepper'
+import { LessonHeader } from '@/components/lesson/lesson-header'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { TEST_PASS_RATIO, CHECKPOINT_QUESTION_COUNT } from '@/lib/final-test'
 import { QUIZ_XP } from '@/lib/quiz'
@@ -120,16 +120,12 @@ function Recap({ data }: { data: RecapData }) {
     return (
         <div ref={root} data-play={play} className="w-full">
             <div className="container-wide py-8 lg:py-12">
+                <div className="mb-6">
+                    <LessonHeader lesson={lesson} currentStep="recap" />
+                </div>
                 <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-14">
                     <div className="min-w-0">
-                        <LessonBreadcrumbStepper
-                            courseTitle={course.title}
-                            lessonTitle={lesson.title}
-                            lessonId={lesson.id}
-                            currentStep="recap"
-                            courseId={course.id}
-                        />
-                        <div className="mt-4">
+                        <div>
                             <Link to={`/learning?course=${course.id}`} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
                                 <ChevronLeft size={16} /> {course.title}
                             </Link>

@@ -1422,3 +1422,11 @@
     animation: yt-fade-out 0.3s ease-out forwards;
   }
 }
+
+/* Thẻ bắt đầu Kiểm tra nhanh: cột trái = cột 8 + khoảng hở của lưới header (calc((100% − 24px)·2/3 + 24px)), vạch chia thẳng dưới mép trái stepper */
+@layer components {
+  .checkpoint-card {
+    display: grid;
+    grid-template-columns: calc((100% - 24px) * 2 / 3 + 24px) minmax(0, 1fr);
+  }
+}

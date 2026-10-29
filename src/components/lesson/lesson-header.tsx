@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, Star } from 'lucide-react'
+import { Check, ChevronDown, Star } from 'lucide-react'
+import { getCourse, getLessonsOfCourse } from '@/data'
 import type { Course, Lesson } from '@/data/types'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
+
+export type LessonStep = 'lesson' | 'checkpoint' | 'recap'
 
 interface LessonTitleBlockProps {
     course?: Course
@@ -12,7 +15,7 @@ interface LessonTitleBlockProps {
 }
 
 /** Dòng nhỏ "<học phần> [Bài n/N] ▾" mở menu danh sách bài + test cuối chương, dưới là tiêu đề bài một dòng. */
-export function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleBlockProps) {
+function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleBlockProps) {
     const [open, setOpen] = useState(false)
     const rootRef = useRef<HTMLDivElement>(null)
     const progress = useOrbitStore((s) => s.lessonProgress)
@@ -89,5 +92,63 @@ export function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleB
                 {lesson.title}
             </h1>
         </div>
+    )
+}
+
+const STEPS: { id: LessonStep; label: string; to: (lessonId: string) => string }[] = [
+    { id: 'lesson', label: 'Xem bài & quiz', to: (id) => `/lesson/${id}` },
+    { id: 'checkpoint', label: 'Kiểm tra nhanh', to: (id) => `/checkpoint/${id}` },
+    { id: 'recap', label: 'Tổng kết', to: (id) => `/recap/${id}` },
+]
+
+/** 3 viên chia đều theo bề ngang cột 4; bước trước bước hiện tại là "đã xong" (✓, chữ success). */
+function LessonSteps({ lessonId, current }: { lessonId: string; current: LessonStep }) {
+    const currentIndex = STEPS.findIndex((st) => st.id === current)
+    return (
+        <nav aria-label="Các bước của chặng" className="flex w-full items-center justify-between gap-1.5">
+            {STEPS.map((st, i) => {
+                const on = i === currentIndex
+                const done = i < currentIndex
+                return (
+                    <span key={st.id} className="contents">
+                        {i > 0 && (
+                            <span aria-hidden className="flex-none text-muted-foreground/50">
+                                →
+                            </span>
+                        )}
+                        <Link
+                            to={st.to(lessonId)}
+                            aria-current={on ? 'step' : undefined}
+                            className={`flex flex-1 items-center justify-center gap-[7px] whitespace-nowrap rounded-full border px-2 py-[7px] text-[13px] font-bold transition duration-fast ${
+                                on
+                                    ? 'border-brand-600 bg-brand-600 text-ink-foreground'
+                                    : done
+                                      ? 'border-border bg-card text-success'
+                                      : 'border-border bg-card text-muted-foreground hover:text-strong'
+                            }`}
+                        >
+                            <em
+                                className={`flex h-[18px] w-[18px] items-center justify-center rounded-full font-mono text-[10.5px] font-bold not-italic ${
+                                    on ? 'bg-ink-foreground/25' : done ? 'bg-success/15' : 'bg-muted'
+                                }`}
+                            >
+                                {done ? <Check size={11} strokeWidth={3} aria-label="đã xong" /> : i + 1}
+                            </em>
+                            {st.label}
+                        </Link>
+                    </span>
+                )
+            })}
+        </nav>
+    )
+}
+
+/** Hàng đầu dùng chung /lesson, /checkpoint, /recap: lưới 8/4 gồm nút xổ học phần + tiêu đề bài | stepper 3 bước. */
+export function LessonHeader({ lesson, currentStep }: { lesson: Lesson; currentStep: LessonStep }) {
+    return (
+        <header className="lesson-grid items-end">
+            <LessonTitleBlock course={getCourse(lesson.courseId)} lesson={lesson} courseLessons={getLessonsOfCourse(lesson.courseId)} />
+            <LessonSteps lessonId={lesson.id} current={currentStep} />
+        </header>
     )
 }

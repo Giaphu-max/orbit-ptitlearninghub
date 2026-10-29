@@ -293,7 +293,10 @@ export function Running({
     onSubmit,
     onQuit,
     onAutoSave,
+    split = false,
 }: {
+    /** Bố cục lưới 8/4 (checkpoint): câu hỏi cột 8, đồng hồ + danh sách câu + nút nộp cột 4. Mặc định: một cột cũ của test cuối chương */
+    split?: boolean
     phase: Extract<Phase, { kind: 'running' }>
     onSubmit: (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => void
     onQuit: () => void
@@ -403,94 +406,143 @@ export function Running({
         return () => window.removeEventListener('keydown', onKey)
     }, [q])
 
+    const timer = (
+        <p role="timer" aria-label={`Còn lại ${clock(left)}`} className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-lg font-bold ${low ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-foreground'}`}>
+            <Clock size={16} /> {clock(left)}
+        </p>
+    )
+    const progress = (
+        <p className="text-sm font-semibold text-muted-foreground">
+            Câu <span className="font-mono font-bold text-foreground">{index + 1}</span>/{questions.length} · đã trả lời <span className="font-mono font-bold text-foreground">{answered}</span>
+        </p>
+    )
+    const question = (
+        <div key={q.id}>
+            <p className="text-eyebrow uppercase text-brand-ink">{getConcept(q.conceptId)?.name ?? 'Câu hỏi'}</p>
+            <h2 className="mt-3 text-title text-foreground">{q.prompt}</h2>
+            <ul className="mt-6 flex flex-col gap-3">
+                {q.options.map((opt, i) => {
+                    const on = picks[q.id] === i
+                    return (
+                        <li key={i}>
+                            <button
+                                type="button"
+                                aria-pressed={on}
+                                onClick={() => setPicks((p) => ({ ...p, [q.id]: i }))}
+                                className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left text-[15px] transition duration-fast ${
+                                    on ? 'border-brand-600 bg-brand-50 text-foreground' : 'border-border bg-card text-foreground hover:border-brand-300'
+                                }`}
+                            >
+                                <span className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold ${on ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-muted-foreground'}`}>{LETTERS[i]}</span>
+                                {opt}
+                            </button>
+                        </li>
+                    )
+                })}
+            </ul>
+        </div>
+    )
+    const prevButton = (
+        <button type="button" disabled={index === 0} onClick={() => setIndex((i) => i - 1)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted disabled:opacity-40">
+            <ArrowLeft size={15} /> Câu trước
+        </button>
+    )
+    const nextButton =
+        index < questions.length - 1 ? (
+            <button type="button" onClick={() => setIndex((i) => i + 1)} className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background transition hover:opacity-90">
+                Câu sau <ArrowRight size={15} />
+            </button>
+        ) : (
+            <span className="w-[116px]" />
+        )
+    const numbers = (
+        <nav aria-label="Chọn câu" className="flex flex-wrap justify-center gap-1.5">
+            {questions.map((x, i) => (
+                <button
+                    key={x.id}
+                    type="button"
+                    aria-label={`Câu ${i + 1}${picks[x.id] !== undefined ? ', đã trả lời' : ', chưa trả lời'}`}
+                    aria-current={i === index ? 'step' : undefined}
+                    onClick={() => setIndex(i)}
+                    className={`h-8 w-8 rounded-full font-mono text-xs font-bold transition ${
+                        i === index ? 'bg-brand-600 text-ink-foreground' : picks[x.id] !== undefined ? 'bg-brand-100 text-brand-ink' : 'bg-muted text-muted-foreground hover:bg-border'
+                    }`}
+                >
+                    {i + 1}
+                </button>
+            ))}
+        </nav>
+    )
+    const submitButton = (
+        <button
+            type="button"
+            onClick={() => {
+                isSubmittedRef.current = true
+                onSubmit(questions, picks, deadline, false)
+            }}
+            className="rounded-full bg-brand-600 px-7 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700"
+        >
+            Nộp bài{unanswered > 0 ? ` (còn ${unanswered} câu chưa trả lời)` : ''}
+        </button>
+    )
+    const quitButton = (
+        <button
+            type="button"
+            onClick={() => {
+                if (answered === 0 || window.confirm('Thoát giữa chừng sẽ mất bài đang làm và không tính kết quả. Bạn chắc chứ?')) {
+                    isSubmittedRef.current = true
+                    onQuit()
+                }
+            }}
+            className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
+        >
+            Thoát, không tính kết quả
+        </button>
+    )
+
+    if (split) {
+        return (
+            <div className="lesson-grid items-start">
+                <section className="rounded-[24px] border border-border bg-card p-8 shadow-card">
+                    {question}
+                    <div className="mt-8 flex items-center justify-between gap-3">
+                        {prevButton}
+                        {nextButton}
+                    </div>
+                </section>
+                <aside className="flex flex-col gap-5 rounded-[24px] border border-border bg-card p-6 shadow-card">
+                    <div className="flex items-center justify-between gap-3">
+                        {progress}
+                        {timer}
+                    </div>
+                    {numbers}
+                    <div className="flex flex-col items-start gap-4 border-t border-border pt-5">
+                        {submitButton}
+                        {quitButton}
+                    </div>
+                </aside>
+            </div>
+        )
+    }
+
     return (
         <>
             <div className="sticky top-[var(--nav-h)] z-10 -mx-5 flex items-center justify-between gap-4 border-b border-border bg-background/90 px-5 py-3 backdrop-blur">
-                <p className="text-sm font-semibold text-muted-foreground">
-                    Câu <span className="font-mono font-bold text-foreground">{index + 1}</span>/{questions.length} · đã trả lời <span className="font-mono font-bold text-foreground">{answered}</span>
-                </p>
-                <p role="timer" aria-label={`Còn lại ${clock(left)}`} className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 font-mono text-lg font-bold ${low ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-foreground'}`}>
-                    <Clock size={16} /> {clock(left)}
-                </p>
+                {progress}
+                {timer}
             </div>
 
-            <div className="mt-8" key={q.id}>
-                <p className="text-eyebrow uppercase text-brand-ink">{getConcept(q.conceptId)?.name ?? 'Câu hỏi'}</p>
-                <h2 className="mt-3 text-title text-foreground">{q.prompt}</h2>
-                <ul className="mt-6 flex flex-col gap-3">
-                    {q.options.map((opt, i) => {
-                        const on = picks[q.id] === i
-                        return (
-                            <li key={i}>
-                                <button
-                                    type="button"
-                                    aria-pressed={on}
-                                    onClick={() => setPicks((p) => ({ ...p, [q.id]: i }))}
-                                    className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left text-[15px] transition duration-fast ${
-                                        on ? 'border-brand-600 bg-brand-50 text-foreground' : 'border-border bg-card text-foreground hover:border-brand-300'
-                                    }`}
-                                >
-                                    <span className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold ${on ? 'bg-brand-600 text-ink-foreground' : 'bg-muted text-muted-foreground'}`}>{LETTERS[i]}</span>
-                                    {opt}
-                                </button>
-                            </li>
-                        )
-                    })}
-                </ul>
-            </div>
+            <div className="mt-8">{question}</div>
 
             <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-                <button type="button" disabled={index === 0} onClick={() => setIndex((i) => i - 1)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground transition hover:bg-muted disabled:opacity-40">
-                    <ArrowLeft size={15} /> Câu trước
-                </button>
-                <nav aria-label="Chọn câu" className="flex flex-wrap justify-center gap-1.5">
-                    {questions.map((x, i) => (
-                        <button
-                            key={x.id}
-                            type="button"
-                            aria-label={`Câu ${i + 1}${picks[x.id] !== undefined ? ', đã trả lời' : ', chưa trả lời'}`}
-                            aria-current={i === index ? 'step' : undefined}
-                            onClick={() => setIndex(i)}
-                            className={`h-8 w-8 rounded-full font-mono text-xs font-bold transition ${
-                                i === index ? 'bg-brand-600 text-ink-foreground' : picks[x.id] !== undefined ? 'bg-brand-100 text-brand-ink' : 'bg-muted text-muted-foreground hover:bg-border'
-                            }`}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
-                </nav>
-                {index < questions.length - 1 ? (
-                    <button type="button" onClick={() => setIndex((i) => i + 1)} className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background transition hover:opacity-90">
-                        Câu sau <ArrowRight size={15} />
-                    </button>
-                ) : (
-                    <span className="w-[116px]" />
-                )}
+                {prevButton}
+                {numbers}
+                {nextButton}
             </div>
 
             <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-border pt-6">
-                <button
-                    type="button"
-                    onClick={() => {
-                        isSubmittedRef.current = true
-                        onSubmit(questions, picks, deadline, false)
-                    }}
-                    className="rounded-full bg-brand-600 px-7 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700"
-                >
-                    Nộp bài{unanswered > 0 ? ` (còn ${unanswered} câu chưa trả lời)` : ''}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (answered === 0 || window.confirm('Thoát giữa chừng sẽ mất bài đang làm và không tính kết quả. Bạn chắc chứ?')) {
-                            isSubmittedRef.current = true
-                            onQuit()
-                        }
-                    }}
-                    className="text-sm font-semibold text-muted-foreground hover:text-foreground hover:underline"
-                >
-                    Thoát, không tính kết quả
-                </button>
+                {submitButton}
+                {quitButton}
             </div>
         </>
     )

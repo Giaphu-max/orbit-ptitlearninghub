@@ -12,8 +12,7 @@ import { getStudioBrief } from '@/lib/studio-briefs'
 import { formatTime } from '@/lib/youtube'
 import { useEffectiveLesson, useReviewStatus } from '@/lib/lesson-edits'
 import { useOrbitStore } from '@/store/useOrbitStore'
-import { LessonCompactSteps } from '@/components/lesson/lesson-stepper'
-import { LessonTitleBlock } from '@/components/lesson/lesson-header'
+import { LessonHeader } from '@/components/lesson/lesson-header'
 import { LessonFootLeft, LessonNextLink } from '@/components/lesson/lesson-foot'
 import { LessonSidePanel } from '@/components/lesson/lesson-side-panel'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
@@ -218,10 +217,7 @@ function LessonPage({ lesson }: { lesson: Lesson }) {
                 {/* ── Hàng đầu: tên học phần + tiêu đề | 3 bước (thu lại khi tập trung) ── */}
                 <div className="lesson-collapse" aria-hidden={panelHidden}>
                     <div>
-                        <header className="lesson-grid items-end">
-                            <LessonTitleBlock course={course} lesson={lesson} courseLessons={courseLessons} />
-                            <LessonCompactSteps lessonId={lesson.id} currentStep="lesson" />
-                        </header>
+                        <LessonHeader lesson={lesson} currentStep="lesson" />
 
                         {fromDaily && (
                             <div className="lesson-grid mt-4">
