@@ -135,7 +135,7 @@ UI là điểm mạnh nhất của sản phẩm (nhóm học khoa thiết kế),
    - **Cấp độ + chuỗi ngày học (streak)**, có 1 lần "đóng băng streak"/tuần.
    - **Bản đồ kỹ năng**: khái niệm sáng dần theo mức nắm vững; khái niệm nâng cao mở khi khái niệm nền đạt 80%.
    - **Nhiệm vụ hằng ngày**, **huy hiệu** gắn năng lực cụ thể, **bảng xếp hạng lớp** (dữ liệu mẫu, có thể ẩn tên).
-8. **Virtual Director**: studio 3D đơn giản (phông, vật thể, 2–3 đèn), chỉnh tiêu cự/góc máy/đèn, lưới 1/3; chụp canvas → `api/grade-photo.ts` chấm bố cục & ánh sáng, khoanh vùng cần chỉnh.
+8. **Virtual Director (`/studio`)**: studio 3D (phông, chủ thể, hệ thống đèn key/fill/rim/practical/color), chỉnh máy ảnh, lưới 1/3, Prompt-to-Environment (AI gợi ý đặt đèn); dải phim + chụp canvas → `api/grade-photo.ts` chấm điểm bố cục & ánh sáng. Header không khung trên lưới `.lesson-grid` 8/4: Cột 8 gồm dòng nhỏ "Studio 3D · Nhiếp ảnh & Ánh sáng" + chip mono đỏ-50 "Đề x/y ▾" mở menu chọn đề, tiêu đề ngắn 24px/900 navy (`shortTitle`), hàng chip tiêu chí 12.5px bo full ([Bố cục 1/3], [Ánh sáng theo ý đồ], [Đạt từ 70], [Kỷ lục —/điểm]); Cột 4 gồm stepper 3 bước rút gọn "Dựng sáng → Chụp ảnh → AI chấm" đáy thẳng hàng chip, bước hiện tại nền đỏ, bước xong ✓ success; khoảng cách 24px từ header xuống khung 3D.
 
 9. **Test cuối chặng + màn tổng kết chặng** (chặng = một bài trong khóa):
    - **Test cuối chặng** `/checkpoint/:lessonId`: 6 câu từ ngân hàng câu hỏi của bài (mỗi khái niệm ít nhất 1 câu, ưu tiên câu chưa gặp trong video), dùng lại giao diện làm bài của test cuối chương (60s/câu, đạt từ 80%, XP theo `final-test.ts`), cập nhật mức nắm vững; nộp xong sang `/recap/:lessonId`. Màn thưởng khi xong bài: nút chính "Làm test cuối chặng · 6 câu", nút phụ "Xem tổng kết".

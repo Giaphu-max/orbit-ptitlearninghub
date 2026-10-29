@@ -1,12 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertCircle, Camera, Check, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, X } from 'lucide-react'
+import { AlertCircle, Camera, Check, ChevronDown, Grid3x3, Images, Info, Loader2, RotateCcw, Sparkles, Sun, Target, Trophy, X } from 'lucide-react'
 import type { LightingIntent } from '@/lib/api-types'
 import { ApiRequestError, generateEnvironment, isNotLightingError } from '@/lib/api'
 import { ENV_LIMITS } from '@/lib/environment'
 import { DIRECTOR_MIN_SCORE } from '@/lib/gamification'
 import { SFX } from '@/lib/sfx'
-import { getStudioBrief } from '@/lib/studio-briefs'
+import { DEFAULT_BRIEF, DEFAULT_SHORT_TITLE, getStudioBrief, STUDIO_BRIEFS } from '@/lib/studio-briefs'
 import { getConcept } from '@/data'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { gradeShot, SHOTS_MAX, useStudioSession, type StudioShot } from '@/store/useStudioSession'
@@ -34,7 +34,6 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 const ENV_COOLDOWN_MS = 1500
 const ENV_SUGGESTIONS = ['Hoàng hôn gắt, bóng đổ dài', 'Ánh sáng studio mềm chụp chân dung', 'Đêm có sương, đèn viền lạnh']
 const ENV_STEPS = ['Đọc mô tả của bạn', 'Chọn hướng và màu đèn', 'Đặt nền, sương, độ tương phản']
-const DEFAULT_BRIEF = 'Chụp chân dung với chủ thể ở giao điểm một phần ba, ánh sáng đúng ý đồ bạn chọn (tự chỉnh đèn hoặc mô tả bằng lời).'
 
 type EnvState = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error' | 'hint'; message: string }
 
@@ -44,7 +43,7 @@ const glass = 'border border-ink-foreground/15 bg-ink/60 text-ink-foreground bac
 export function OrbitStudioView() {
     const [setup, setSetup] = useState<CameraSetup>(DEFAULT_SETUP)
     const [grid, setGrid] = useState(true)
-    const [tab, setTab] = useState<RailTab>('camera')
+    const [tab, setTab] = useState<RailTab>('light')
     const captureRef = useRef<CaptureFn | null>(null)
     const viewportRef = useRef<HTMLDivElement>(null)
     const stripRef = useRef<HTMLDivElement>(null)
@@ -55,6 +54,8 @@ export function OrbitStudioView() {
     const [searchParams, setSearchParams] = useSearchParams()
     const brief = getStudioBrief(searchParams.get('concept'))
     const briefConcept = brief ? getConcept(brief.conceptId) : undefined
+    const [briefMenuOpen, setBriefMenuOpen] = useState(false)
+    const briefMenuRef = useRef<HTMLDivElement>(null)
     const [env, setEnv] = useState<EnvState>({ kind: 'idle' })
     const [envStep, setEnvStep] = useState(0)
     // Ý đồ ánh sáng đã áp dụng (giữ lại khi lần sau bị từ chối hoặc lỗi)
@@ -87,6 +88,21 @@ export function OrbitStudioView() {
         window.addEventListener('keydown', onKey)
         return () => window.removeEventListener('keydown', onKey)
     }, [])
+
+    // Đóng menu chọn đề khi bấm ngoài hoặc bấm Esc
+    useEffect(() => {
+        if (!briefMenuOpen) return
+        const onDown = (e: PointerEvent) => {
+            if (!briefMenuRef.current?.contains(e.target as Node)) setBriefMenuOpen(false)
+        }
+        const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setBriefMenuOpen(false)
+        document.addEventListener('pointerdown', onDown)
+        document.addEventListener('keydown', onKey)
+        return () => {
+            document.removeEventListener('pointerdown', onDown)
+            document.removeEventListener('keydown', onKey)
+        }
+    }, [briefMenuOpen])
 
     useEffect(() => () => {
         clearTimeout(toastTimer.current)
@@ -245,50 +261,193 @@ export function OrbitStudioView() {
     const gradeLabel = !selected ? 'Chấm ảnh này' : selected.status === 'done' ? 'Đã chấm' : selected.status === 'grading' ? 'Đang chấm…' : 'Chấm ảnh này'
     const gradeDisabled = !selected || selected.status === 'done' || selected.status === 'grading'
 
+    const briefIndex = brief ? STUDIO_BRIEFS.findIndex((b) => b.conceptId === brief.conceptId) : -1
+    const fullTask = briefConcept && brief ? `${briefConcept.name}. ${brief.task}` : (brief?.task ?? DEFAULT_BRIEF)
+    const shortTitle = brief?.shortTitle ?? DEFAULT_SHORT_TITLE
+
+    const hasShots = shots.length > 0
+    const hasGraded = shots.some((s) => s.status === 'done')
+    const isGrading = shots.some((s) => s.status === 'grading')
+
+    const getStepStatus = (index: number) => {
+        if (isGrading) {
+            if (index === 0) return { on: false, done: true }
+            if (index === 1) return { on: false, done: true }
+            return { on: true, done: false }
+        }
+        if (hasGraded) {
+            if (tab === 'light') return { on: index === 0, done: index > 0 }
+            if (tab === 'camera') return { on: index === 1, done: index !== 1 }
+            return { on: false, done: true }
+        }
+        if (hasShots) {
+            if (tab === 'light') return { on: index === 0, done: false }
+            if (tab === 'camera') return { on: index === 1, done: index === 0 }
+            return { on: index === 2, done: index < 2 }
+        }
+        if (tab === 'camera') {
+            return { on: index === 1, done: index === 0 }
+        }
+        return { on: index === 0, done: false }
+    }
+
+    const STUDIO_STEPS = [
+        {
+            id: 'lighting',
+            label: 'Dựng sáng',
+            onClick: () => setTab('light'),
+        },
+        {
+            id: 'camera',
+            label: 'Chụp ảnh',
+            onClick: () => setTab('camera'),
+        },
+        {
+            id: 'grading',
+            label: 'AI chấm',
+            onClick: () => {
+                if (shots.length === 0) {
+                    showToast('Chụp ít nhất 1 ảnh trước khi yêu cầu AI chấm', undefined, 3000)
+                } else if (selected && selected.status !== 'done' && selected.status !== 'grading') {
+                    void gradeShot(selected.id)
+                } else if (selected) {
+                    useStudioSession.getState().openDrawer(true)
+                }
+            },
+        },
+    ]
+
     return (
         <div className="w-full overflow-x-clip min-[980px]:h-[calc(100svh-var(--nav-h))]">
-            <div className="container-wide grid gap-4 py-4 min-[980px]:h-full min-[980px]:grid-cols-[minmax(0,1fr)_340px]">
-                <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Khung làm việc studio">
-                    {/* Chỉ dẫn 3 bước cho người mới */}
-                    <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-card border border-border bg-card px-4 py-2.5 text-xs font-semibold text-muted-foreground shadow-sm">
-                        <div className="flex items-center gap-2 overflow-x-auto">
-                            <span className="flex items-center gap-1.5 font-bold text-brand-ink">
-                                <span className="font-mono text-sm">①</span> Chọn đề bài & Dựng sáng
+            <div className="container-wide flex flex-col py-4 min-[980px]:h-full">
+                {/* Hàng đầu trang không khung: Cột 8 (đề bài + chip tiêu chí) | Cột 4 (stepper 3 bước) */}
+                <header className="lesson-grid items-end mb-6">
+                    {/* Cột 8: eyebrow + menu chọn đề, tiêu đề ngắn, hàng chip tiêu chí */}
+                    <div className="min-w-0">
+                        <div ref={briefMenuRef} className="relative inline-block">
+                            <button
+                                type="button"
+                                aria-expanded={briefMenuOpen}
+                                aria-haspopup="menu"
+                                onClick={() => setBriefMenuOpen((v) => !v)}
+                                className="inline-flex items-center gap-2 rounded-lg py-1 pr-2.5 text-[13px] font-bold text-muted-foreground transition hover:text-strong"
+                            >
+                                <span>Studio 3D · Nhiếp ảnh & Ánh sáng</span>
+                                <em className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-[3px] font-mono text-[11.5px] font-bold not-italic text-brand-ink">
+                                    Đề {briefIndex >= 0 ? briefIndex + 1 : 1}/{STUDIO_BRIEFS.length}
+                                    <ChevronDown size={11} className={`transition-transform duration-fast ${briefMenuOpen ? 'rotate-180' : ''}`} aria-hidden />
+                                </em>
+                            </button>
+                            {briefMenuOpen && (
+                                <div
+                                    role="menu"
+                                    className="absolute left-0 top-[calc(100%+6px)] z-40 w-[380px] max-w-[calc(100vw-32px)] rounded-[14px] border border-border bg-card p-1.5 shadow-raised"
+                                >
+                                    {STUDIO_BRIEFS.map((b, i) => {
+                                        const cur = brief?.conceptId === b.conceptId
+                                        const concept = getConcept(b.conceptId)
+                                        return (
+                                            <button
+                                                key={b.conceptId}
+                                                type="button"
+                                                role="menuitem"
+                                                aria-current={cur ? 'true' : undefined}
+                                                onClick={() => {
+                                                    setSearchParams({ concept: b.conceptId }, { replace: true })
+                                                    setBriefMenuOpen(false)
+                                                }}
+                                                className={`grid w-full grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] p-2.5 text-left text-sm transition ${
+                                                    cur ? 'bg-brand-50' : 'hover:bg-muted'
+                                                }`}
+                                            >
+                                                <span className="font-mono text-xs font-bold text-muted-foreground">{String(i + 1).padStart(2, '0')}</span>
+                                                <div className="min-w-0">
+                                                    <b className={`block truncate font-bold ${cur ? 'text-brand-ink' : 'text-strong'}`}>
+                                                        {b.shortTitle}
+                                                    </b>
+                                                    <span className="block truncate text-xs text-muted-foreground">
+                                                        {concept?.name ?? b.conceptId}
+                                                    </span>
+                                                </div>
+                                                <small className="shrink-0 font-mono text-xs text-muted-foreground">
+                                                    {cur ? 'đang chọn' : '≥70đ'}
+                                                </small>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <h1 title={fullTask} className="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-strong">
+                            {shortTitle}
+                        </h1>
+
+                        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
+                                <Grid3x3 size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+                                <span>{brief?.compositionCriterion ?? 'Bố cục 1/3'}</span>
                             </span>
-                            <span className="text-xs text-muted-foreground/40">→</span>
-                            <span className="flex items-center gap-1.5 font-semibold text-foreground">
-                                <span className="font-mono text-sm">②</span> Căn góc & Chụp ảnh
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
+                                <Sun size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+                                <span>{brief?.lightingCriterion ?? 'Ánh sáng theo ý đồ'}</span>
                             </span>
-                            <span className="text-xs text-muted-foreground/40">→</span>
-                            <span className="flex items-center gap-1.5 font-semibold text-foreground">
-                                <span className="font-mono text-sm">③</span> AI Chấm điểm
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
+                                <Target size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+                                <span>Đạt từ {brief?.targetScore ?? DIRECTOR_MIN_SCORE}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12.5px] font-semibold text-foreground shadow-sm">
+                                <Trophy size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+                                <span>{directorBest > 0 ? `Kỷ lục ${directorBest} điểm` : 'Kỷ lục —/điểm'}</span>
                             </span>
                         </div>
-                        <span className="hidden text-[11px] font-medium text-muted-foreground min-[1180px]:inline">
-                            Studio 3D · Môn Nhiếp ảnh & Ánh sáng
-                        </span>
                     </div>
 
-                    {/* Dải đề bài một dòng */}
-                    <div className="flex items-center gap-3 rounded-card border border-border bg-card px-4 py-2.5 shadow-card">
-                        <span className="shrink-0 text-eyebrow uppercase text-brand-ink">Đề bài</span>
-                        <p className="min-w-0 flex-1 text-sm leading-snug text-foreground min-[980px]:truncate" title={brief?.task ?? DEFAULT_BRIEF}>
-                            {briefConcept && brief ? <><b className="font-bold">{briefConcept.name}.</b> {brief.task}</> : DEFAULT_BRIEF}
-                        </p>
-                        <span className="hidden shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground sm:block">
-                            Kỷ lục <b className="text-foreground">{directorBest > 0 ? directorBest : '—'}</b> · đạt ≥{DIRECTOR_MIN_SCORE}
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setTab('brief')}
-                            className="shrink-0 rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-bold text-foreground transition hover:border-brand-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                        >
-                            Đổi đề
-                        </button>
+                    {/* Cột 4: stepper 3 bước rút gọn "Dựng sáng → Chụp ảnh → AI chấm" */}
+                    <div className="w-full">
+                        <nav aria-label="Các bước thực hành" className="flex w-full items-center justify-between gap-1.5">
+                            {STUDIO_STEPS.map((st, i) => {
+                                const { on, done } = getStepStatus(i)
+                                return (
+                                    <span key={st.id} className="contents">
+                                        {i > 0 && (
+                                            <span aria-hidden className="flex-none text-muted-foreground/50">
+                                                →
+                                            </span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={st.onClick}
+                                            aria-current={on ? 'step' : undefined}
+                                            className={`flex flex-1 items-center justify-center gap-[7px] whitespace-nowrap rounded-full border px-2 py-[7px] text-[13px] font-bold transition duration-fast ${
+                                                on
+                                                    ? 'border-brand-600 bg-brand-600 text-ink-foreground shadow-sm'
+                                                    : done
+                                                      ? 'border-border bg-card text-success shadow-sm hover:text-success'
+                                                      : 'border-border bg-card text-muted-foreground hover:text-strong'
+                                            }`}
+                                        >
+                                            <em
+                                                className={`flex h-[18px] w-[18px] items-center justify-center rounded-full font-mono text-[10.5px] font-bold not-italic ${
+                                                    on ? 'bg-ink-foreground/25' : done ? 'bg-success/15' : 'bg-muted'
+                                                }`}
+                                            >
+                                                {done ? <Check size={11} strokeWidth={3} aria-label="đã xong" /> : i + 1}
+                                            </em>
+                                            {st.label}
+                                        </button>
+                                    </span>
+                                )
+                            })}
+                        </nav>
                     </div>
+                </header>
 
-                    {/* Canvas 3D */}
-                    <div ref={viewportRef} style={{ viewTransitionName: 'vt-studio-stage' }} className="relative h-[56vh] overflow-hidden rounded-panel bg-ink shadow-card min-[980px]:h-auto min-[980px]:min-h-0 min-[980px]:flex-1">
+                {/* Khung 3D (Cột 8) + Bảng điều khiển (Cột 4), cùng lưới với hàng header */}
+                <div className="lesson-grid min-h-0 flex-1">
+                    <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Khung làm việc studio">
+                        {/* Canvas 3D */}
+                        <div ref={viewportRef} style={{ viewTransitionName: 'vt-studio-stage' }} className="relative h-[56vh] overflow-hidden rounded-panel bg-ink shadow-card min-[980px]:h-auto min-[980px]:min-h-0 min-[980px]:flex-1">
                         {webgl ? (
                             <div className="absolute inset-0">
                                 <Suspense fallback={<div className="flex h-full items-center justify-center text-ink-foreground"><Loader2 className="animate-spin" /></div>}>
@@ -475,8 +634,9 @@ export function OrbitStudioView() {
                     />
                 </div>
             </div>
+        </div>
 
-            <Lightbox onReuse={reuseSetup} onDelete={deleteShot} />
+        <Lightbox onReuse={reuseSetup} onDelete={deleteShot} />
             {toast && (
                 <div role="status" className="fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-full bg-ink px-4 py-2.5 text-sm text-ink-foreground shadow-raised">
                     {toast.message}
