@@ -377,101 +377,25 @@
   right: 0;
   bottom: 0;
   height: 92%;
+  width: auto;
   max-width: 100%;
   aspect-ratio: 700 / 880;
-  overflow: visible;
+  object-fit: contain;
+  object-position: right bottom;
+  pointer-events: none;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%);
   mask-image: linear-gradient(90deg, transparent 0, #000 16%);
-}
-.rs-portrait .pc {
   opacity: 0;
-  transition: opacity 0.8s var(--rs-ease);
+  transform: translateY(12px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
 }
-.rs-portrait .pm {
-  opacity: 0;
-  transition: opacity 0.7s var(--rs-ease);
-}
-.rs-portrait .s {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 1s var(--rs-ease), opacity 0.3s;
-}
-.rs-portrait .paper {
-  fill: #f4f1eb;
-}
-.rs-portrait .data text {
-  font: 600 10px 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
-  fill: #373d4e;
-  opacity: 0.7;
-}
-.rs-portrait .data {
-  opacity: 0;
-  transition: opacity 0.8s 0.2s;
-}
-.rs-portrait .tri {
-  fill: #15171f;
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: translate(-10px, -30px) rotate(-14deg);
-  transition: transform 0.9s var(--rs-ease), opacity 0.5s;
-}
-.rs-portrait .thread {
-  fill: none;
-  stroke: #15171f;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-}
-.rs-portrait .rs-cut2 {
-  opacity: 0;
-  transition: opacity 0.6s 0.1s;
-}
-.rs-art.split .rs-cut2 {
+.rs-art.live .rs-portrait {
   opacity: 1;
-}
-.rs-portrait .knot {
-  fill: #15171f;
-  opacity: 0;
-  transition: opacity 0.4s 1.6s;
+  transform: translateY(0);
 }
 .rs-art.split .rs-art-logo {
   opacity: 1;
   transform: none;
-}
-.rs-art.live .pc,
-.rs-art.collage .pc {
-  opacity: 1;
-}
-.rs-art.collage .pm,
-.rs-art.collage .s {
-  opacity: 1;
-}
-.rs-art.split .sR {
-  transform: translate(10px, -6px);
-}
-.rs-art.split .sE {
-  transform: translate(-14px, -10px) rotate(-2.5deg) scale(1.07);
-}
-.rs-art.split .sW {
-  transform: translate(16px, 10px) rotate(4deg);
-}
-.rs-art.split .sH {
-  transform: translate(-12px, 10px) rotate(-6deg);
-}
-.rs-art.split .tri {
-  opacity: 1;
-  transform: none;
-}
-.rs-art.split .data,
-.rs-art.split .knot {
-  opacity: 1;
-}
-.rs-art.split .thread {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1.3s 0.25s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @media (max-width: 1180px) {
@@ -529,5 +453,9 @@
   .rs *::after {
     animation: none !important;
     transition: none !important;
+  }
+  .rs-portrait {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

@@ -1,10 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { LOGO_URL } from '@/lib/brand'
 import colorUrl from '@/assets/role/big-color2.webp?url'
-import monoUrl from '@/assets/role/big-mono.webp?url'
-import { PortraitCollage } from './portrait-collage'
 
-const PORTRAIT_URLS = [colorUrl, monoUrl]
 const CH = '01<>/\\{}[]#=+*?:;ACGTXZ%&$'.split('')
 const MONO = '600 11px "JetBrains Mono Variable", "JetBrains Mono", monospace'
 
@@ -18,16 +15,14 @@ interface Col {
 }
 
 /**
- * Mảng nghệ thuật bên phải màn chọn vai trò: lưới chấm + cột ký tự (canvas), logo PTIT, chân dung collage.
- * Timeline theo class trên .rs-art: live (0s) → collage (1,1s) → split (1,9s). Rê chuột vào thì mọi mảnh về chỗ, rời chuột thì xé lại.
- * Chỉ animate transform / opacity / stroke-dashoffset; canvas chỉ vẽ lại khi gõ ký tự và mỗi ~140ms khi đổi ngẫu nhiên.
+ * Mảng nghệ thuật bên phải màn chọn vai trò: lưới chấm + cột ký tự (canvas), logo PTIT, chân dung màu tĩnh ThS. Nguyễn Cảnh Châu.
+ * Timeline: live (0s, ảnh hiện fade + trượt) → logo chui ra + gõ ký tự (850ms).
  */
 export function RoleArt() {
     const art = useRef<HTMLDivElement>(null)
     const cv = useRef<HTMLCanvasElement>(null)
     const started = useRef(false)
     const logo = useRef<HTMLDivElement>(null)
-    const splitFn = useRef<((on: boolean, delay?: number) => void) | null>(null)
 
     useEffect(() => {
         const el = art.current
@@ -45,31 +40,22 @@ export function RoleArt() {
         let last = 0
         let cancelled = false
         const timers: number[] = []
-        // Logo thở bằng WAAPI (rotate/scale riêng, không đè transform lúc chui ra); bỏ split thì đưa về 0°/1 bằng transition 0,6s thay vì cắt đột ngột
+        // Logo thở bằng WAAPI (rotate/scale riêng, không đè transform lúc chui ra)
         let breathe: Animation | null = null
-        const setSplit = (on: boolean, delay = 2200) => {
-            el.classList.toggle('split', on)
+        const startLogo = (delay = 2200) => {
+            el.classList.add('split')
             const lg = logo.current
             if (!lg || reduce) return
-            if (on) {
-                breathe?.cancel()
-                breathe = lg.animate(
-                    [
-                        { rotate: '0deg', scale: 1 },
-                        { rotate: '-2.2deg', scale: 1.025, offset: 0.5 },
-                        { rotate: '1.6deg', scale: 1.01 },
-                    ],
-                    { duration: 9000, delay, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' },
-                )
-            } else if (breathe) {
-                const cs = getComputedStyle(lg)
-                const from = { rotate: cs.rotate === 'none' ? '0deg' : cs.rotate, scale: cs.scale === 'none' ? '1' : cs.scale }
-                breathe.cancel()
-                breathe = lg.animate([from, { rotate: '0deg', scale: '1' }], { duration: 600, easing: 'ease-out' })
-                breathe.onfinish = () => (breathe = null)
-            }
+            breathe?.cancel()
+            breathe = lg.animate(
+                [
+                    { rotate: '0deg', scale: 1 },
+                    { rotate: '-2.2deg', scale: 1.025, offset: 0.5 },
+                    { rotate: '1.6deg', scale: 1.01 },
+                ],
+                { duration: 9000, delay, iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' },
+            )
         }
-        splitFn.current = setSplit
 
         const build = () => {
             const rect = el.getBoundingClientRect()
@@ -139,14 +125,13 @@ export function RoleArt() {
             draw(0)
             el.classList.add('live')
             if (reduce) {
-                el.classList.add('collage', 'split')
+                el.classList.add('split')
                 draw(1.01)
                 return
             }
-            timers.push(window.setTimeout(() => el.classList.add('collage'), 350))
             timers.push(
                 window.setTimeout(() => {
-                    setSplit(true)
+                    startLogo(2200)
                     typing = true
                     t0 = performance.now()
                 }, 850),
@@ -175,16 +160,13 @@ export function RoleArt() {
         })
         ro.observe(el)
 
-        // Chỉ chạy timeline khi 2 ảnh và font đã sẵn sàng
-        const images = PORTRAIT_URLS.map(
-            (u) =>
-                new Promise<void>((res) => {
-                    const i = new Image()
-                    i.onload = i.onerror = () => res()
-                    i.src = u
-                }),
-        )
-        void Promise.all([...images, document.fonts.load(MONO).catch(() => undefined)])
+        // Chỉ chạy timeline khi ảnh và font đã sẵn sàng
+        const imgReady = new Promise<void>((res) => {
+            const i = new Image()
+            i.onload = i.onerror = () => res()
+            i.src = colorUrl
+        })
+        void Promise.all([imgReady, document.fonts.load(MONO).catch(() => undefined)])
             .then(() => document.fonts.ready)
             .then(run)
 
@@ -193,7 +175,6 @@ export function RoleArt() {
             cancelAnimationFrame(raf)
             timers.forEach(clearTimeout)
             breathe?.cancel()
-            splitFn.current = null
             ro.disconnect()
             el.removeEventListener('pointermove', onMove)
             cancelAnimationFrame(move)
@@ -201,29 +182,21 @@ export function RoleArt() {
     }, [])
 
     return (
-        <div
-            ref={art}
-            className="rs-art"
-            aria-hidden="true"
-            onPointerEnter={() => {
-                if (!started.current) return
-                art.current?.classList.remove('collage')
-                splitFn.current?.(false)
-            }}
-            onPointerLeave={() => {
-                if (!started.current) return
-                art.current?.classList.add('collage')
-                splitFn.current?.(true, 1200)
-            }}
-        >
-            <canvas ref={cv} />
+        <div ref={art} className="rs-art">
+            <canvas ref={cv} aria-hidden="true" />
             {LOGO_URL && (
-                <div ref={logo} className="rs-art-logo">
+                <div ref={logo} className="rs-art-logo" aria-hidden="true">
                     <img src={LOGO_URL} alt="" width={600} height={763} />
                     <span className="rs-glint" />
                 </div>
             )}
-            <PortraitCollage />
+            <img
+                src={colorUrl}
+                alt="ThS. Nguyễn Cảnh Châu"
+                className="rs-portrait"
+                width={700}
+                height={880}
+            />
         </div>
     )
 }
