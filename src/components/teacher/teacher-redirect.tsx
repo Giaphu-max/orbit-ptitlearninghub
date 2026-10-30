@@ -1,8 +1,6 @@
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
-/** Link cũ /teacher?tab=… chuyển sang route mới: thống kê và kết quả test về Lớp học, còn lại về Bài giảng. */
+/** Link cũ /teacher?tab=… chuyển về kho Bài giảng. */
 export function OrbitTeacherRedirect() {
-    const [params] = useSearchParams()
-    const tab = params.get('tab')
-    return <Navigate to={tab === 'stats' || tab === 'tests' ? '/teacher/class' : '/teacher/library'} replace />
+    return <Navigate to="/teacher/library" replace />
 }

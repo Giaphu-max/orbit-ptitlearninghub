@@ -3,6 +3,7 @@ import { staticCourses, staticLessons } from '@/data'
 import type { Lesson } from '@/data/types'
 import { getAllStats } from '@/lib/class-stats'
 import { buildQuestionBank, type BankQuestion, type TestQuestion } from '@/lib/final-test'
+import { useTeacherCourses } from '@/lib/teacher'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 // Đề kiểm tra do giảng viên soạn và duyệt: Kiểm tra nhanh cuối bài (khóa `quick:<lessonId>`) và Test cuối chương (khóa `final:<courseId>`).
@@ -188,4 +189,35 @@ export function coverage(questions: SourcedQuestion[]): Map<string, number> {
     const m = new Map<string, number>()
     for (const q of questions) m.set(q.conceptId, (m.get(q.conceptId) ?? 0) + 1)
     return m
+}
+
+export interface PendingTest {
+    courseId: string
+    courseTitle: string
+    /** Số câu trong đề nháp */
+    count: number
+    /** Số khái niệm chưa có câu nào */
+    missing: number
+}
+
+/** Test cuối chương của các khóa còn ở bản nháp (chưa xuất bản). */
+export function usePendingTests(): PendingTest[] {
+    const courses = useTeacherCourses()
+    const imported = useOrbitStore((s) => s.importedLessons)
+    const edits = useOrbitStore((s) => s.lessonEdits)
+    const review = useOrbitStore((s) => s.lessonReview)
+    const sets = useOrbitStore((s) => s.testSets)
+    return useMemo(() => {
+        const out: PendingTest[] = []
+        for (const c of courses) {
+            const lessons = [...staticLessons, ...imported].filter((l) => l.courseId === c.id).map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
+            if (lessons.length === 0) continue
+            const stored = sets[finalKey(c.id)]
+            if (stored?.published ?? courseFullyPublished(c.id, { importedLessons: imported, lessonReview: review })) continue
+            const qs = resolveSet(finalSetFor(lessons, stored), sourcedBank(lessons))
+            const cover = coverage(qs)
+            out.push({ courseId: c.id, courseTitle: c.title, count: qs.length, missing: lessons.flatMap((l) => l.concepts).filter((k) => !cover.get(k.id)).length })
+        }
+        return out
+    }, [courses, imported, edits, review, sets])
 }

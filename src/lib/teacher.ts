@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { staticCourses, staticLessons } from '@/data'
 import { TEACHER_CLASSES, type TeacherClass } from '@/data/classes'
-import type { ClassStats, Concept, Course, Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
+import type { ClassStats, Course, Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
 import { getAllStats, getClassStats } from '@/lib/class-stats'
-import { WHY_WRONG } from '@/data/teacher-notes'
 import { lessonItemKeys, useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
 // Số liệu và việc cần làm cho vai giảng viên, tính từ dữ liệu bài + store (không gọi AI lúc xem).
 
 export const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0)
 
-/** Ước tính thời gian duyệt một mục (phút). */
-const MIN_PER_ITEM = 2
-/** Ngưỡng: đáp án nhiễu bị chọn từ mức này trở lên thì coi là câu gây nhầm. */
-export const TRAP_SHARE = 25
 /** Ngưỡng tô đỏ % lớp sai lần đầu. */
 export const HOT_RATE = 40
 
@@ -85,13 +80,6 @@ export function useLessonReviews(): LessonReview[] {
     }, [edits, review, items, imported, importedCourses, jobs, now])
 }
 
-/** Các lớp mẫu và lớp đang chọn (chỉ dùng cho thống kê ở trang Lớp học). */
-export function useTeacherClass() {
-    const id = useOrbitStore((s) => s.teacherClassId)
-    const cls = TEACHER_CLASSES.find((c) => c.id === id) ?? TEACHER_CLASSES[0]
-    return useMemo(() => ({ classes: TEACHER_CLASSES, cls, courseIds: cls.courseIds, stats: getClassStats(cls.id) }), [cls])
-}
-
 /** Số liệu gộp toàn bộ sinh viên đã học, không theo lớp (Tổng quan). */
 export function useAllStats(): ClassStats {
     return useMemo(() => getAllStats(), [])
@@ -144,53 +132,34 @@ export function topTrap(stats: ClassStats, q: QuizChoiceQuestion & { id: string 
     return best
 }
 
-export type TeacherTask =
-    | { kind: 'resume'; review: LessonReview; left: number; minutes: number }
-    | { kind: 'new'; review: LessonReview; minutes: number }
-    | { kind: 'fix'; review: LessonReview; question: LessonQuizQuestion; share: number; minutes: number }
+/** Ngưỡng "Cần sửa ngay": từ mức này trở lên số sinh viên sai ngay lần đầu thì câu hỏi cần được xem lại. */
+export const URGENT_SHARE = 0.4
 
-/** Tối đa 3 việc, theo ưu tiên: duyệt tiếp bài dở, duyệt bài mới, sửa câu gây nhầm. */
-export function buildTasks(reviews: LessonReview[], stats: ClassStats): TeacherTask[] {
-    const tasks: TeacherTask[] = []
-    const resume = reviews.find((r) => r.state === 'editing')
-    if (resume) tasks.push({ kind: 'resume', review: resume, left: resume.total - resume.done, minutes: (resume.total - resume.done) * MIN_PER_ITEM })
-    const fresh = reviews.find((r) => r.state === 'wait')
-    if (fresh) tasks.push({ kind: 'new', review: fresh, minutes: fresh.total * MIN_PER_ITEM })
-    let fix: Extract<TeacherTask, { kind: 'fix' }> | null = null
-    // Bài chưa xuất bản đã nằm trong việc duyệt, nên chỉ xét câu của bài đã xuất bản
-    for (const r of reviews.filter((x) => x.state === 'published')) {
+export interface Urgent {
+    review: LessonReview
+    question: LessonQuizQuestion
+    wrong: number
+    total: number
+    share: number
+    /** Đáp án sai được chọn nhiều nhất */
+    trap: { text: string; count: number } | null
+}
+
+/** Câu hỏi đã xuất bản (và thầy cô chưa duyệt lại) có tỉ lệ sinh viên sai lần đầu cao nhất, từ 40% trở lên; không có thì null. */
+export function findUrgent(reviews: LessonReview[], stats: ClassStats): Urgent | null {
+    let best: Urgent | null = null
+    for (const r of reviews) {
+        if (r.state !== 'published') continue
         for (const q of r.lesson.quiz) {
             if (r.reviewed.has(itemKey.question(q.id))) continue
+            const picks = questionPicks(stats, q.id)
+            if (!picks) continue
+            const total = picks.reduce((a, b) => a + b, 0)
+            const wrong = total - (picks[q.correctIndex] ?? 0)
+            const share = wrong / total
+            if (share < URGENT_SHARE || (best && share <= best.share)) continue
             const trap = topTrap(stats, q)
-            if (trap && trap.share >= TRAP_SHARE && (!fix || trap.share > fix.share)) fix = { kind: 'fix', review: r, question: q, share: trap.share, minutes: 3 }
-        }
-    }
-    if (fix) tasks.push(fix)
-    return tasks.slice(0, 3)
-}
-
-export interface Attention {
-    concept: Concept
-    review: LessonReview
-    question?: LessonQuizQuestion
-    rate: number
-    wrong: number
-    answered: number
-    why?: string
-}
-
-/** Khái niệm lớp sai nhiều nhất lần đầu (trong các bài `pool`), kèm câu hỏi tương ứng. */
-export function buildAttention(pool: LessonReview[], stats: ClassStats): Attention | null {
-    let best: Attention | null = null
-    for (const r of pool) {
-        for (const c of r.lesson.concepts) {
-            const s = stats.concepts[c.id]
-            if (!s || s.answered === 0) continue
-            const rate = pct(s.wrongFirstTry, s.answered)
-            if (!best || rate > best.rate) {
-                const question = r.lesson.quiz.find((q) => q.conceptId === c.id)
-                best = { concept: c, review: r, question, rate, wrong: s.wrongFirstTry, answered: s.answered, why: WHY_WRONG[c.id] }
-            }
+            best = { review: r, question: q, wrong, total, share, trap: trap ? { text: q.options[trap.index], count: picks[trap.index] } : null }
         }
     }
     return best

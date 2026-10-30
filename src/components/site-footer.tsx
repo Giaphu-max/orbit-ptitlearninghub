@@ -26,7 +26,6 @@ export function SiteFooter() {
             links: [
                 { label: 'Tổng quan', to: '/' },
                 { label: 'Bài giảng', to: '/teacher/library' },
-                { label: 'Lớp học', to: '/teacher/class' },
             ],
         },
     ]

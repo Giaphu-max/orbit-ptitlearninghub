@@ -79,7 +79,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
     // Nội dung đang sửa: phụ đề và mốc trên video cập nhật ngay
     const live = useMemo<Lesson>(() => ({ ...lesson, summary: draft.summary, concepts: draft.concepts, quiz: draft.quiz, ...(draft.transcript ? { transcript: draft.transcript } : {}) }), [lesson, draft])
 
-    // Tab và dòng mở ban đầu: ?item= (từ Tổng quan / Lớp học) được ưu tiên; không thì tab đầu tiên (Tóm tắt, Khái niệm, Câu hỏi, Kiểm tra nhanh)
+    // Tab và dòng mở ban đầu: ?item= (từ Tổng quan) được ưu tiên; không thì tab đầu tiên (Tóm tắt, Khái niệm, Câu hỏi, Kiểm tra nhanh)
     // còn mục chưa duyệt, mở sẵn mục chưa duyệt đầu tiên của tab đó. Duyệt hết rồi thì mở tab Tóm tắt, không mở mục nào.
     const [start] = useState(() => {
         const item = searchParams.get('item')

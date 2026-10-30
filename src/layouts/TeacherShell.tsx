@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { BarChart3, Bell, Home, PlayCircle, Repeat, RotateCcw } from 'lucide-react'
+import { Bell, Home, PlayCircle, Repeat, RotateCcw } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
 import { AddLessonsDialog } from '@/components/teacher/add-lessons-dialog'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
@@ -14,7 +14,6 @@ import { useOrbitStore } from '@/store/useOrbitStore'
 const NAV = [
     { label: 'Tổng quan', to: '/', icon: Home, match: (p: string) => p === '/' },
     { label: 'Bài giảng', to: '/teacher/library', icon: PlayCircle, match: (p: string) => p.startsWith('/teacher/library') || p.startsWith('/teacher/review') },
-    { label: 'Lớp học', to: '/teacher/class', icon: BarChart3, match: (p: string) => p.startsWith('/teacher/class') },
 ]
 
 const navItem = 'flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-[15px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
