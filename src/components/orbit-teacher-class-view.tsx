@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ChevronDown } from 'lucide-react'
-import { GENERIC_TIPS, TEACHING_TIPS } from '@/data/class-teaching'
-import { WHY_WRONG } from '@/data/teacher-notes'
+import { GENERIC_TIPS, TEACHING_TIPS, WHY_SHORT } from '@/data/class-teaching'
 import type { ClassStats } from '@/data/types'
 import { AnswerBars } from '@/components/teacher/answer-bars'
 import { ClassPicker } from '@/components/teacher/class-picker'
@@ -71,7 +70,9 @@ export function OrbitTeacherClassView() {
     if (!course) return <p className="p-12 text-center text-muted-foreground">Lớp này chưa có học phần nào.</p>
 
     const test = courseTest(stats, course.id)
-    const learners = Math.min(cls.size, Math.max(0, ...courseReviews.flatMap((r) => r.lesson.concepts.map((c) => stats.concepts[c.id]?.answered ?? 0))))
+    // Đã học xong bài = số SV trả lời hết câu của bài ít người làm nhất trong các bài đã xuất bản
+    const doneByLesson = courseReviews.filter((r) => r.state === 'published').map((r) => Math.max(0, ...r.lesson.concepts.map((c) => stats.concepts[c.id]?.answered ?? 0)))
+    const learners = Math.min(cls.size, doneByLesson.length ? Math.min(...doneByLesson) : 0)
     const withData = quick.filter((q) => q.hasData)
     const quickAvg = withData.length ? withData.reduce((s, q) => s + q.avgScore, 0) / withData.length : null
     const finalQs = resolveSet(finalSetFor(pubLessons, testSets[finalKey(course.id)]), sourcedBank(pubLessons))
@@ -86,8 +87,10 @@ export function OrbitTeacherClassView() {
 
     // Bài lớp hụt nhất = tỉ lệ đạt kiểm tra nhanh thấp nhất
     const worstLesson = [...withData].sort((a, b) => a.passed / a.attempted - b.passed / b.attempted)[0]
-    const tips = [...new Set(rows.filter((r) => r.video !== null).slice(0, 6).flatMap((r) => TEACHING_TIPS[r.id]?.slice(0, 1) ?? []))].slice(0, 3)
-    for (const g of GENERIC_TIPS) if (tips.length < 2 && !tips.includes(g)) tips.push(g)
+    // Gợi ý luôn thuộc đúng khái niệm đang nêu ở khối "Lớp hụt nhiều nhất"
+    const hotId = worstLesson?.weakest?.conceptId
+    const tips = hotId ? (TEACHING_TIPS[hotId] ?? GENERIC_TIPS).slice(0, 3) : []
+    const quickPassSv = withData.length ? Math.round((withData.reduce((s, q) => s + q.passed / q.attempted, 0) / withData.length) * cls.size) : 0
 
     return (
         <div className="w-full pb-8">
@@ -111,36 +114,55 @@ export function OrbitTeacherClassView() {
 
             <div className="mt-8 flex flex-col gap-10">
                 <section aria-label="Tóm tắt lớp">
-                    <dl className="grid grid-cols-2 overflow-hidden rounded-[20px] border border-border bg-card shadow-card lg:grid-cols-4">
-                        <Stat label="Đã học" value={`${learners}/${cls.size}`} unit="sinh viên" note="xem hết ít nhất 1 bài" />
-                        <Stat label="Kiểm tra nhanh" value={quickAvg === null ? '—' : vn(quickAvg)} unit={quickAvg === null ? undefined : '/10 điểm TB'} note="trung bình các bài, lượt cao nhất" />
+                    <dl className="grid grid-cols-1 overflow-hidden rounded-[20px] border border-border bg-card shadow-card md:grid-cols-3">
+                        <Stat label="Học xong bài" value={`${learners}/${cls.size}`} unit="sinh viên" note={`${cls.size - learners} bạn còn dở`} />
+                        <Stat label="Kiểm tra nhanh" value={quickAvg === null ? '—' : vn(quickAvg)} unit={quickAvg === null ? undefined : '/10'} chip={quickAvg === null ? undefined : grade(quickAvg)} note={quickAvg === null ? 'chưa có lượt làm' : `trung bình các bài · ${quickPassSv}/${cls.size} bạn đạt`} />
                         {finalOpen && test ? (
-                            <Stat label="Kiểm tra cuối khóa" value={vn(test.avgCorrectPct / 10)} unit="/10 điểm TB" note={`${test.attempted}/${cls.size} đã làm · ${test.passed} bạn đạt từ 8`} />
+                            <Stat label="Kiểm tra cuối khóa" value={vn(test.avgCorrectPct / 10)} unit="/10" chip={grade(test.avgCorrectPct / 10)} note={`${test.attempted}/${cls.size} đã làm · ${test.passed} bạn đạt`} />
                         ) : (
                             <Stat label="Kiểm tra cuối khóa" value="Chưa mở" note="thầy cô chưa xuất bản đề" />
                         )}
-                        <Stat label="Thời gian làm bài cuối khóa TB" value={finalOpen && test ? formatTime(test.avgDurationSec) : '—'} note={finalOpen && test ? `giới hạn ${formatTime(FINAL_RULES.count * FINAL_RULES.secondsPerQuestion)} · ${test.timedOut} lượt hết giờ` : 'chưa có lượt làm'} />
                     </dl>
                 </section>
 
                 {worstLesson && worstLesson.weakest && (
                     <section aria-label="Lớp hụt nhiều nhất ở" className="relative overflow-hidden rounded-[20px] border border-border bg-card py-6 pl-9 pr-8 shadow-card">
                         <i aria-hidden className="absolute inset-y-0 left-0 w-[5px] bg-brand-600" />
-                        <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">Lớp hụt nhiều nhất ở</h3>
-                        <p className="mt-2 max-w-[90ch] text-[17px] font-semibold leading-snug text-strong">
-                            Bài {worstLesson.index + 1} · {worstLesson.review.lesson.shortTitle ?? worstLesson.review.lesson.title}: chỉ {worstLesson.passed}/{worstLesson.attempted} bạn đạt kiểm tra nhanh. Khái niệm yếu nhất là {worstLesson.weakest.name} ({worstLesson.weakest.wrongPct}% sai lần đầu).{' '}
-                            <span className="font-normal text-foreground">{WHY_WRONG[worstLesson.weakest.conceptId] ?? ''}</span>
-                        </p>
-                        {tips.length > 0 && (
-                            <>
-                                <p className="mt-4 text-[13px] font-bold text-muted-foreground">Gợi ý khi lên lớp</p>
-                                <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[15px] leading-snug text-foreground marker:text-brand-600">
+                        <div className="grid gap-x-12 gap-y-6 xl:grid-cols-2">
+                            <div className="min-w-0">
+                                <h3 className="text-xs font-bold text-brand-ink">Lớp hụt nhiều nhất</h3>
+                                <p title={worstLesson.weakest.name} className="mt-1.5 text-[22px] font-black leading-snug tracking-tight text-strong">
+                                    {worstLesson.weakest.name}
+                                </p>
+                                <p title={worstLesson.review.lesson.title} className="mt-1 truncate text-sm text-muted-foreground">
+                                    Bài {worstLesson.index + 1} · {worstLesson.review.lesson.shortTitle ?? worstLesson.review.lesson.title}
+                                </p>
+                                <div className="mt-4 flex flex-wrap gap-x-10 gap-y-3">
+                                    <div>
+                                        <b className="block font-mono text-[28px] font-extrabold leading-none text-strong">{worstLesson.weakest.wrongPct}%</b>
+                                        <small className="mt-1 block text-xs text-muted-foreground">sai lần đầu trong video</small>
+                                    </div>
+                                    <div>
+                                        <b className="block font-mono text-[28px] font-extrabold leading-none text-strong">
+                                            {worstLesson.passed}/{worstLesson.attempted}
+                                        </b>
+                                        <small className="mt-1 block text-xs text-muted-foreground">bạn đạt kiểm tra nhanh bài {worstLesson.index + 1}</small>
+                                    </div>
+                                </div>
+                                <p className="mt-4 rounded-[12px] bg-brand-50 px-4 py-2.5 text-[14.5px] leading-snug text-strong">
+                                    <b className="mr-1.5 text-brand-ink">Vì sao sai</b>
+                                    {WHY_SHORT[worstLesson.weakest.conceptId] ?? 'Nhiều bạn chưa nắm rõ khái niệm này.'}
+                                </p>
+                            </div>
+                            <div className="min-w-0">
+                                <h3 className="text-[13px] font-bold text-muted-foreground">Gợi ý khi lên lớp</h3>
+                                <ul className="mt-2 list-disc space-y-2 pl-5 text-[15px] leading-snug text-foreground marker:text-brand-600">
                                     {tips.map((t) => (
                                         <li key={t}>{t}</li>
                                     ))}
                                 </ul>
-                            </>
-                        )}
+                            </div>
+                        </div>
                     </section>
                 )}
 
@@ -164,6 +186,11 @@ export function OrbitTeacherClassView() {
 
                 <section aria-label="Kiểm tra cuối khóa">
                     <h3 className={h3}>Kiểm tra cuối khóa</h3>
+                    {finalOpen && test && (
+                        <p className="mt-1 text-[13px] text-muted-foreground">
+                            Thời gian làm bài TB <span className="font-mono font-bold text-strong">{formatTime(test.avgDurationSec)}</span> · giới hạn {formatTime(FINAL_RULES.count * FINAL_RULES.secondsPerQuestion)} · {test.timedOut} lượt hết giờ
+                        </p>
+                    )}
                     {finalOpen && test ? (
                         <div className="mt-4 grid items-start gap-6 lg:grid-cols-2">
                             <Distribution test={test} />
@@ -193,15 +220,20 @@ export function OrbitTeacherClassView() {
     )
 }
 
-function Stat({ label, value, unit, note }: { label: string; value: string; unit?: string; note: string }) {
+type Grade = { text: string; cls: string }
+/** Ngưỡng điểm thang 10: từ 8 Tốt, 6,5–7,9 Khá, dưới 6,5 Cần ôn. */
+const grade = (score: number): Grade => (score >= 8 ? { text: 'Tốt', cls: 'bg-success-soft text-success' } : score >= 6.5 ? { text: 'Khá', cls: 'bg-muted text-muted-foreground' } : { text: 'Cần ôn', cls: 'bg-brand-50 text-brand-ink' })
+
+function Stat({ label, value, unit, chip, note }: { label: string; value: string; unit?: string; chip?: Grade; note: string }) {
     return (
-        <div className="min-w-0 border-border px-6 py-5 lg:[&:not(:first-child)]:border-l max-lg:[&:nth-child(n+3)]:border-t max-lg:[&:nth-child(even)]:border-l">
-            <dt className="text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">{label}</dt>
-            <dd className="mt-1.5 whitespace-nowrap leading-none">
-                <span className="font-mono text-[30px] font-extrabold text-strong">{value}</span>
-                {unit && <span className="ml-1.5 text-sm font-bold text-muted-foreground">{unit}</span>}
+        <div className="min-w-0 border-border px-6 py-5 md:[&:not(:first-child)]:border-l max-md:[&:not(:first-child)]:border-t">
+            <dt className="text-[13px] font-semibold text-muted-foreground">{label}</dt>
+            <dd className="mt-2 flex items-baseline gap-2 whitespace-nowrap leading-none">
+                <span className="font-mono text-[32px] font-extrabold text-strong">{value}</span>
+                {unit && <span className="text-sm font-bold text-muted-foreground">{unit}</span>}
+                {chip && <span className={`ml-1 self-center rounded-full px-2.5 py-1 text-xs font-bold ${chip.cls}`}>{chip.text}</span>}
             </dd>
-            <dd className="mt-1.5 text-xs text-muted-foreground">{note}</dd>
+            <dd className="mt-2 text-xs text-muted-foreground">{note}</dd>
         </div>
     )
 }
