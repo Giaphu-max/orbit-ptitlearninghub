@@ -106,7 +106,7 @@ export function TeacherShell() {
                     </Suspense>
                 </div>
             </main>
-            {addOpen && <AddLessonsDialog courseId={addOpen.courseId} onClose={hideAdd} />}
+            {addOpen && <AddLessonsDialog courseId={addOpen.courseId} replaceId={addOpen.replaceId} onClose={hideAdd} />}
             <RewardOverlay />
         </div>
     )

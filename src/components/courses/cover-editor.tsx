@@ -36,7 +36,7 @@ export function CoverEditor() {
     )
 }
 
-function CoverCard({ course }: { course: Course }) {
+export function CoverCard({ course }: { course: Course }) {
     const override = useOrbitStore((s) => s.courseCovers[course.id])
     const setCover = useOrbitStore((s) => s.setCourseCover)
     const fileRef = useRef<HTMLInputElement>(null)

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { staticLessons } from '@/data'
 import { buildImportedCourse, buildImportedLesson, parseYoutubeLink, sampleItems, SAMPLE_PLAYLIST } from '@/data/demo-import'
 import type { Lesson } from '@/data/types'
-import { useTeacherCourses } from '@/lib/teacher'
+import { useLessonReviews, useTeacherCourses } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -16,10 +17,12 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
  * Hộp "Thêm video" với hai tab: tải lên từ máy (mặc định) và từ YouTube. GIẢ LẬP cho bản demo: nhận diện link bằng regex ở trình duyệt, nội dung lấy từ dữ liệu đã tạo sẵn
  * (src/data/demo-import.ts), không gọi Gemini; file tải lên không rời khỏi máy và không được lưu, chỉ lưu tên/thời lượng. Bấm tạo thì sang trang Bài giảng xem thẻ "AI đang tạo".
  */
-export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; courseId?: string }) {
+export function AddLessonsDialog({ onClose, courseId, replaceId }: { onClose: () => void; courseId?: string; replaceId?: string }) {
     const navigate = useNavigate()
     const addImport = useOrbitStore((s) => s.addImport)
     const allCourses = useTeacherCourses()
+    const replaceVideo = useOrbitStore((s) => s.replaceVideo)
+    const replacing = useLessonReviews().find((r) => r.lesson.id === replaceId)?.lesson
     const items = useMemo(() => sampleItems(), [])
     const [link, setLink] = useState('')
     const [picked, setPicked] = useState<Set<string>>(() => new Set(items.map((i) => i.key)))
@@ -62,7 +65,22 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
         }
     }, [onClose])
 
+    // Thay video: chỉ đổi phần video/transcript của bài đã có (nội dung thầy cô viết được giữ), nội dung mẫu luân phiên như luồng thêm
+    const finishReplace = (patch: Parameters<typeof replaceVideo>[1]) => {
+        if (!replacing) return
+        replaceVideo(replacing.id, patch)
+        onClose()
+    }
+    const template = () => items[Date.now() % items.length]
+    const createReplaceYt = () => {
+        const tpl = staticLessons.find((x) => x.id === template().key)
+        if (!tpl) return
+        const videoId = parsed?.kind === 'video' ? parsed.videoId : tpl.youtubeId
+        finishReplace({ youtubeId: videoId, durationSec: tpl.durationSec, transcript: tpl.transcript, upload: null })
+    }
+
     const create = () => {
+        if (replacing) return createReplaceYt()
         const newCourse = target === NEW_COURSE ? buildImportedCourse() : undefined
         const cid = newCourse?.id ?? target
         const lessons = items.filter((i) => picked.has(i.key)).flatMap((i) => buildImportedLesson(i, cid) ?? []) as Lesson[]
@@ -115,6 +133,11 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
             setUploadPct(p)
             if (p < 100) return
             window.clearInterval(uploadTimer.current)
+            if (replacing) {
+                const tpl = staticLessons.find((x) => x.id === template().key)
+                if (!tpl) return
+                return finishReplace({ youtubeId: tpl.youtubeId, durationSec: file.durationSec ?? tpl.durationSec, transcript: tpl.transcript, upload: { fileName: file.name, thumbnail: file.thumbnail } })
+            }
             const newCourse = target === NEW_COURSE ? buildImportedCourse() : undefined
             const cid = newCourse?.id ?? target
             // Nội dung mẫu đã tạo sẵn, luân phiên theo số bài đã tải lên để các bài không trùng nhau
@@ -135,7 +158,7 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
         <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-auto bg-ink/60 p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
             <div ref={rootRef} role="dialog" aria-modal="true" aria-labelledby="add-lessons-title" className="mt-[6vh] w-full max-w-[640px] rounded-[20px] border border-border bg-card p-6 shadow-raised">
                 <h2 id="add-lessons-title" className="text-xl font-black text-strong">
-                    Thêm video
+                    {replacing ? `Thay video cho: ${replacing.title}` : 'Thêm video'}
                 </h2>
                 <div role="tablist" aria-label="Nguồn video" className="mt-4 flex gap-1 rounded-[14px] bg-muted p-1.5">
                     {(
@@ -195,7 +218,7 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
                                     onChange={(e) => setTitle(e.target.value)}
                                     className="h-11 w-full rounded-[10px] border border-border bg-card px-3.5 text-sm text-foreground focus-visible:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200"
                                 />
-                                <CourseSelect newLabel="Tạo khóa học mới" id="up-course" target={target} setTarget={setTarget} courses={allCourses} open={targetOpen} />
+                                {!replacing && <CourseSelect newLabel="Tạo khóa học mới" id="up-course" target={target} setTarget={setTarget} courses={allCourses} open={targetOpen} />}
                                 <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground">
                                     AI sẽ tạo transcript, tóm tắt, khái niệm và câu hỏi để thầy cô duyệt.
                                 </p>
@@ -243,7 +266,12 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
                     </p>
                 )}
 
-                {parsed && (
+                {parsed && replacing && (
+                    <p className="mt-4 rounded-[10px] bg-muted px-3.5 py-2.5 text-[13px] leading-relaxed text-muted-foreground">
+                        Câu hỏi và khái niệm thầy cô đã viết được giữ lại. Bản mới ở trạng thái chờ duyệt{replacing.status === 'published' ? '; sinh viên vẫn học bản cũ cho tới khi thầy cô xuất bản bản mới' : ''}.
+                    </p>
+                )}
+                {parsed && !replacing && (
                     <div className="mt-5">
                         {!isSample && <p className="mb-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">Bản demo: dùng nội dung mẫu đã tạo sẵn.</p>}
                         <p className="text-sm font-bold text-strong">{SAMPLE_PLAYLIST.title}</p>
@@ -282,10 +310,10 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
                         <button
                             type="button"
                             onClick={create}
-                            disabled={!parsed || count === 0}
+                            disabled={!parsed || (!replacing && count === 0)}
                             className="surface-red h-11 rounded-[10px] px-5 text-sm font-extrabold text-ink-foreground shadow-brand disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            ✦ Tạo nội dung cho {count} video
+                            {replacing ? '✦ Tạo bản mới' : `✦ Tạo nội dung cho ${count} video`}
                         </button>
                     ) : (
                         <button
