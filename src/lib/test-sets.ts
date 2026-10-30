@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { staticCourses, staticLessons } from '@/data'
+import { resolveLessons, staticCourses, type OverlayInput } from '@/data'
 import type { Lesson } from '@/data/types'
 import { getAllStats } from '@/lib/class-stats'
 import { buildQuestionBank, type BankQuestion, type TestQuestion } from '@/lib/final-test'
@@ -109,13 +109,23 @@ export const finalKey = (courseId: string) => `final:${courseId}`
 /** Mọi bài (có sẵn + nhập từ YouTube) của một khóa, đã áp chỉnh sửa của giảng viên, kể cả bài chưa xuất bản. */
 export function useCourseAllLessons(courseId: string | undefined): Lesson[] {
     const imported = useOrbitStore((s) => s.importedLessons)
+    const overrides = useOrbitStore((s) => s.lessonOverrides)
+    const order = useOrbitStore((s) => s.lessonOrder)
+    const deleted = useOrbitStore((s) => s.deletedLessons)
+    const deletedCourses = useOrbitStore((s) => s.deletedCourses)
     const edits = useOrbitStore((s) => s.lessonEdits)
-    return useMemo(() => [...staticLessons, ...imported].filter((l) => l.courseId === courseId).map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l)), [imported, edits, courseId])
+    return useMemo(
+        () =>
+            resolveLessons({ importedCourses: [], importedLessons: imported, lessonOverrides: overrides, lessonOrder: order, deletedLessons: deleted, deletedCourses })
+                .filter((l) => l.courseId === courseId)
+                .map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l)),
+        [imported, overrides, order, deleted, deletedCourses, edits, courseId],
+    )
 }
 
 /** Khóa đã xuất bản hết bài chưa (mặc định cho trạng thái đề cuối chương khi giảng viên chưa đụng tới). */
-export function courseFullyPublished(courseId: string, s: { importedLessons: Lesson[]; lessonReview: Record<string, 'draft' | 'published'> }): boolean {
-    const list = [...staticLessons, ...s.importedLessons].filter((l) => l.courseId === courseId)
+export function courseFullyPublished(courseId: string, s: OverlayInput & { lessonReview: Record<string, 'draft' | 'published'> }): boolean {
+    const list = resolveLessons(s).filter((l) => l.courseId === courseId)
     return list.length > 0 && list.every((l) => (s.lessonReview[l.id] ?? l.status) === 'published')
 }
 
@@ -204,20 +214,28 @@ export interface PendingTest {
 export function usePendingTests(): PendingTest[] {
     const courses = useTeacherCourses()
     const imported = useOrbitStore((s) => s.importedLessons)
+    const importedCourses = useOrbitStore((s) => s.importedCourses)
+    const overrides = useOrbitStore((s) => s.lessonOverrides)
+    const order = useOrbitStore((s) => s.lessonOrder)
+    const deleted = useOrbitStore((s) => s.deletedLessons)
+    const deletedCourses = useOrbitStore((s) => s.deletedCourses)
+    const titles = useOrbitStore((s) => s.courseTitles)
     const edits = useOrbitStore((s) => s.lessonEdits)
     const review = useOrbitStore((s) => s.lessonReview)
     const sets = useOrbitStore((s) => s.testSets)
     return useMemo(() => {
         const out: PendingTest[] = []
+        const overlay = { importedCourses, importedLessons: imported, lessonOverrides: overrides, lessonOrder: order, deletedLessons: deleted, deletedCourses, courseTitles: titles }
+        const all = resolveLessons(overlay)
         for (const c of courses) {
-            const lessons = [...staticLessons, ...imported].filter((l) => l.courseId === c.id).map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
+            const lessons = all.filter((l) => l.courseId === c.id).map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
             if (lessons.length === 0) continue
             const stored = sets[finalKey(c.id)]
-            if (stored?.published ?? courseFullyPublished(c.id, { importedLessons: imported, lessonReview: review })) continue
+            if (stored?.published ?? courseFullyPublished(c.id, { ...overlay, lessonReview: review })) continue
             const qs = resolveSet(finalSetFor(lessons, stored), sourcedBank(lessons))
             const cover = coverage(qs)
             out.push({ courseId: c.id, courseTitle: c.title, count: qs.length, missing: lessons.flatMap((l) => l.concepts).filter((k) => !cover.get(k.id)).length })
         }
         return out
-    }, [courses, imported, edits, review, sets])
+    }, [courses, imported, importedCourses, overrides, order, deleted, deletedCourses, titles, edits, review, sets])
 }

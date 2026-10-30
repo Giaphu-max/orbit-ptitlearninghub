@@ -23,20 +23,68 @@ export const courses: Course[] = [...staticCourses]
 export const lessons: Lesson[] = [...staticLessons]
 export const allConcepts = staticLessons.flatMap((l) => l.concepts)
 
-export interface CatalogInput {
+/** Thay đổi của giảng viên trên kho khóa/bài (đổi tên, chuyển khóa, thay video, sắp xếp, xóa mềm); không sửa dữ liệu gốc nên "Đặt lại dữ liệu demo" khôi phục được. */
+export type LessonOverride = Partial<Omit<Lesson, 'upload'>> & { upload?: Lesson['upload'] | null }
+
+export interface OverlayInput {
     importedCourses: Course[]
     importedLessons: Lesson[]
+    courseTitles?: Record<string, string>
+    lessonOverrides?: Record<string, LessonOverride>
+    /** Thứ tự bài do giảng viên sắp xếp (id khóa → id bài); chưa có thì theo thứ tự gốc */
+    lessonOrder?: Record<string, string[]>
+    deletedLessons?: string[]
+    deletedCourses?: string[]
+}
+
+/** Khóa của giảng viên sau khi áp đổi tên và bỏ khóa đã xóa. */
+export function resolveCourses(s: Pick<OverlayInput, 'importedCourses' | 'courseTitles' | 'deletedCourses'>): Course[] {
+    const gone = new Set(s.deletedCourses ?? [])
+    return [...staticCourses, ...s.importedCourses].filter((c) => !gone.has(c.id)).map((c) => (s.courseTitles?.[c.id] ? { ...c, title: s.courseTitles[c.id] } : c))
+}
+
+/** Bài của giảng viên sau khi áp đổi tên/chuyển khóa/thay video, bỏ bài đã xóa, xếp theo thứ tự đã sắp (gom theo khóa). */
+export function resolveLessons(s: OverlayInput): Lesson[] {
+    const goneLessons = new Set(s.deletedLessons ?? [])
+    const goneCourses = new Set(s.deletedCourses ?? [])
+    const list = [...staticLessons, ...s.importedLessons].filter((l) => !goneLessons.has(l.id)).map((l) => {
+        const ov = s.lessonOverrides?.[l.id]
+        if (!ov) return l
+        const { upload, ...rest } = ov
+        const merged = { ...l, ...rest } as Lesson
+        if (upload === null) delete merged.upload
+        else if (upload) merged.upload = upload
+        return merged
+    }).filter((l) => !goneCourses.has(l.courseId))
+    const byCourse = new Map<string, Lesson[]>()
+    for (const l of list) byCourse.set(l.courseId, [...(byCourse.get(l.courseId) ?? []), l])
+    return [...byCourse.entries()].flatMap(([cid, ls]) => {
+        const order = s.lessonOrder?.[cid]
+        if (!order) return ls
+        const rank = (l: Lesson) => { const i = order.indexOf(l.id); return i < 0 ? order.length + ls.indexOf(l) : i }
+        return [...ls].sort((a, b) => rank(a) - rank(b))
+    })
+}
+
+export interface CatalogInput extends OverlayInput {
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong dữ liệu bài */
     lessonReview: Record<string, ReviewStatus>
     /** Khóa đang mở cho sinh viên; chưa có thì coi là mở */
     courseOpen: Record<string, boolean>
+    /** Bản đang xuất bản của bài vừa được thay video (bản mới còn chờ duyệt): sinh viên vẫn học bản này */
+    liveSnapshots?: Record<string, Lesson>
 }
 
-export function applyCatalog({ importedCourses, importedLessons, lessonReview, courseOpen }: CatalogInput) {
+export function applyCatalog(input: CatalogInput) {
+    const { lessonReview, courseOpen, liveSnapshots = {} } = input
     const isOpen = (courseId: string) => courseOpen[courseId] !== false
-    const published = (l: Lesson) => (lessonReview[l.id] ?? l.status) === 'published'
-    const nextCourses = [...staticCourses, ...importedCourses].filter((c) => isOpen(c.id))
-    const nextLessons = [...staticLessons, ...importedLessons].filter((l) => isOpen(l.courseId) && published(l))
+    const nextCourses = resolveCourses(input).filter((c) => isOpen(c.id))
+    const nextLessons = resolveLessons(input).flatMap((l): Lesson[] => {
+        if (!isOpen(l.courseId)) return []
+        if ((lessonReview[l.id] ?? l.status) === 'published') return [l]
+        const snap = liveSnapshots[l.id]
+        return snap ? [{ ...snap, title: l.title, courseId: l.courseId }] : []
+    })
     courses.splice(0, courses.length, ...nextCourses)
     lessons.splice(0, lessons.length, ...nextLessons)
     allConcepts.splice(0, allConcepts.length, ...staticLessons.flatMap((l) => l.concepts), ...nextLessons.filter((l) => l.id.startsWith('imp-')).flatMap((l) => l.concepts))

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import { applyCatalog, dailyArticles, getLesson, staticLessons as allLessons } from '@/data'
+import { applyCatalog, dailyArticles, getLesson, resolveLessons, staticLessons as allLessons, type LessonOverride } from '@/data'
 import type { Course, Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { DEFAULT_CLASS_ID } from '@/data/classes'
 import type { CourseCoverSpec } from '@/lib/cover-kinds'
@@ -156,6 +156,17 @@ interface OrbitState {
     courseCovers: Record<string, CourseCoverOverride>
     /** Phiên làm test cuối chương dở dang theo khóa (id khóa → phiên) */
     activeTestSessions: Record<string, ActiveTestSession>
+    /** Tên khóa do giảng viên đổi (id khóa → tên) */
+    courseTitles: Record<string, string>
+    /** Đổi tên / chuyển khóa / thay video của từng bài (id bài → phần ghi đè) */
+    lessonOverrides: Record<string, LessonOverride>
+    /** Thứ tự bài trong khóa do giảng viên sắp (id khóa → id bài); chưa có thì theo thứ tự gốc */
+    lessonOrder: Record<string, string[]>
+    /** Bài / khóa đã xóa (xóa mềm: dữ liệu gốc còn, "Đặt lại dữ liệu demo" khôi phục) */
+    deletedLessons: string[]
+    deletedCourses: string[]
+    /** Bản đang xuất bản của bài vừa được thay video; sinh viên học bản này cho tới khi bản mới được xuất bản */
+    liveSnapshots: Record<string, Lesson>
 
     setRole: (role: Role | null) => void
     setLearnerName: (name: string) => void
@@ -191,6 +202,20 @@ interface OrbitState {
     markRecapSeen: (lessonId: string) => void
     saveTestSession: (courseId: string, session: ActiveTestSession) => void
     clearTestSession: (courseId: string) => void
+    addCourse: (course: Course) => void
+    renameCourse: (courseId: string, title: string) => void
+    /** Xóa mềm một khóa cùng các bài trong khóa */
+    deleteCourse: (courseId: string) => void
+    renameLesson: (lessonId: string, title: string) => void
+    moveLesson: (lessonId: string, courseId: string) => void
+    setLessonOrder: (courseId: string, lessonIds: string[]) => void
+    /** Thay video của bài: bản mới thành nháp chờ duyệt; bài đang xuất bản thì sinh viên vẫn học bản cũ tới khi bản mới được xuất bản */
+    replaceVideo: (lessonId: string, patch: LessonOverride, jobMs?: number) => void
+    /** Xóa mềm một bài (hoàn tác được) */
+    deleteLesson: (lessonId: string) => void
+    restoreLesson: (lessonId: string) => void
+    /** Chốt xóa: dọn tiến độ học và kết quả quiz của bài */
+    purgeLesson: (lessonId: string) => void
     resetDemo: () => void
 }
 
@@ -266,6 +291,12 @@ export function makeDemoProfile() {
         lessonEdits: {} as Record<string, LessonEdits>,
         courseCovers: {} as Record<string, CourseCoverOverride>,
         activeTestSessions: {} as Record<string, ActiveTestSession>,
+        courseTitles: {} as Record<string, string>,
+        lessonOverrides: {} as Record<string, LessonOverride>,
+        lessonOrder: {} as Record<string, string[]>,
+        deletedLessons: [] as string[],
+        deletedCourses: [] as string[],
+        liveSnapshots: {} as Record<string, Lesson>,
     }
 }
 
@@ -377,8 +408,57 @@ export const useOrbitStore = create<OrbitState>()(
                     },
                 })),
 
+            // Xuất bản bản mới hoặc gỡ xuất bản đều bỏ bản cũ đang giữ cho sinh viên
             setLessonReview: (lessonId, status) =>
-                set((s) => ({ lessonReview: { ...s.lessonReview, [lessonId]: status } })),
+                set((s) => {
+                    const { [lessonId]: _snap, ...liveSnapshots } = s.liveSnapshots ?? {}
+                    return { lessonReview: { ...s.lessonReview, [lessonId]: status }, liveSnapshots }
+                }),
+
+            addCourse: (course) => set((s) => ({ importedCourses: [...s.importedCourses, course], courseOpen: { ...s.courseOpen, [course.id]: false } })),
+
+            renameCourse: (courseId, title) => set((s) => ({ courseTitles: { ...s.courseTitles, [courseId]: title.trim().slice(0, 120) } })),
+
+            deleteCourse: (courseId) => set((s) => ({ deletedCourses: [...s.deletedCourses.filter((id) => id !== courseId), courseId] })),
+
+            renameLesson: (lessonId, title) => set((s) => ({ lessonOverrides: { ...s.lessonOverrides, [lessonId]: { ...s.lessonOverrides[lessonId], title: title.trim().slice(0, 160) } } })),
+
+            moveLesson: (lessonId, courseId) =>
+                set((s) => {
+                    const from = resolveLessons(s).find((l) => l.id === lessonId)?.courseId
+                    const order = { ...s.lessonOrder }
+                    if (from && order[from]) order[from] = order[from].filter((id) => id !== lessonId)
+                    if (order[courseId]) order[courseId] = [...order[courseId].filter((id) => id !== lessonId), lessonId]
+                    return { lessonOverrides: { ...s.lessonOverrides, [lessonId]: { ...s.lessonOverrides[lessonId], courseId } }, lessonOrder: order }
+                }),
+
+            setLessonOrder: (courseId, lessonIds) => set((s) => ({ lessonOrder: { ...s.lessonOrder, [courseId]: lessonIds } })),
+
+            replaceVideo: (lessonId, patch, jobMs = 8000) =>
+                set((s) => {
+                    const current = resolveLessons(s).find((l) => l.id === lessonId)
+                    if (!current) return s
+                    const wasPublished = (s.lessonReview[lessonId] ?? current.status) === 'published'
+                    return {
+                        lessonOverrides: { ...s.lessonOverrides, [lessonId]: { ...s.lessonOverrides[lessonId], ...patch } },
+                        liveSnapshots: wasPublished ? { ...s.liveSnapshots, [lessonId]: s.liveSnapshots[lessonId] ?? current } : s.liveSnapshots,
+                        lessonReview: { ...s.lessonReview, [lessonId]: 'draft' },
+                        // Phải duyệt lại bản mới; câu hỏi/khái niệm thầy cô đã sửa (lessonEdits) vẫn giữ nguyên
+                        reviewedItems: { ...s.reviewedItems, [lessonId]: [] },
+                        importJobs: { ...s.importJobs, [lessonId]: { startedAt: Date.now(), durationMs: jobMs } },
+                    }
+                }),
+
+            deleteLesson: (lessonId) => set((s) => ({ deletedLessons: [...s.deletedLessons.filter((id) => id !== lessonId), lessonId] })),
+
+            restoreLesson: (lessonId) => set((s) => ({ deletedLessons: s.deletedLessons.filter((id) => id !== lessonId) })),
+
+            purgeLesson: (lessonId) =>
+                set((s) => {
+                    if (!s.deletedLessons.includes(lessonId)) return s
+                    const { [lessonId]: _p, ...lessonProgress } = s.lessonProgress
+                    return { lessonProgress, quizResults: Object.fromEntries(Object.entries(s.quizResults).filter(([, r]) => r.lessonId !== lessonId)) }
+                }),
 
             setTeacherClass: (classId) => set({ teacherClassId: classId }),
 
@@ -540,13 +620,13 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 12,
+            version: 13,
             // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio); v10 thêm lớp đang chọn và bài nhập từ YouTube; v9 thêm reviewedItems và hồ sơ giảng viên mặc định (2 bài chờ duyệt) nếu chưa có thay đổi nào.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, courseOpen: old.courseOpen ?? {}, testSets: old.testSets ?? {}, ...(version < 12 && old.reviewedItems ? { reviewedItems: Object.fromEntries(Object.entries(old.reviewedItems).map(([id, keys]) => [id, (old.lessonReview?.[id] ?? allLessons.find((l) => l.id === id)?.status) === 'published' && !keys.includes('qt') ? [...keys, 'qt'] : keys])) } : {}), xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
+                return { ...old, courseTitles: old.courseTitles ?? {}, lessonOverrides: old.lessonOverrides ?? {}, lessonOrder: old.lessonOrder ?? {}, deletedLessons: old.deletedLessons ?? [], deletedCourses: old.deletedCourses ?? [], liveSnapshots: old.liveSnapshots ?? {}, courseOpen: old.courseOpen ?? {}, testSets: old.testSets ?? {}, ...(version < 12 && old.reviewedItems ? { reviewedItems: Object.fromEntries(Object.entries(old.reviewedItems).map(([id, keys]) => [id, (old.lessonReview?.[id] ?? allLessons.find((l) => l.id === id)?.status) === 'published' && !keys.includes('qt') ? [...keys, 'qt'] : keys])) } : {}), xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },
@@ -555,8 +635,9 @@ export const useOrbitStore = create<OrbitState>()(
 
 // Nội dung sinh viên thấy (khóa mở + bài đã xuất bản) dẫn xuất từ trạng thái giảng viên; đồng bộ ngay khi nạp và mỗi khi các phần liên quan đổi,
 // nên mọi trang sinh viên mở sau đó đều đọc đúng danh mục.
-const syncCatalog = (s: OrbitState) => applyCatalog({ importedCourses: s.importedCourses, importedLessons: s.importedLessons, lessonReview: s.lessonReview, courseOpen: s.courseOpen ?? {} })
+const syncCatalog = (s: OrbitState) => applyCatalog({ importedCourses: s.importedCourses, importedLessons: s.importedLessons, lessonReview: s.lessonReview, courseOpen: s.courseOpen ?? {}, courseTitles: s.courseTitles, lessonOverrides: s.lessonOverrides, lessonOrder: s.lessonOrder, deletedLessons: s.deletedLessons, deletedCourses: s.deletedCourses, liveSnapshots: s.liveSnapshots })
 syncCatalog(useOrbitStore.getState())
+const CATALOG_KEYS = ['importedCourses', 'importedLessons', 'lessonReview', 'courseOpen', 'courseTitles', 'lessonOverrides', 'lessonOrder', 'deletedLessons', 'deletedCourses', 'liveSnapshots'] as const
 useOrbitStore.subscribe((s, prev) => {
-    if (s.importedCourses !== prev.importedCourses || s.importedLessons !== prev.importedLessons || s.lessonReview !== prev.lessonReview || s.courseOpen !== prev.courseOpen) syncCatalog(s)
+    if (CATALOG_KEYS.some((k) => s[k] !== prev[k])) syncCatalog(s)
 })

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { staticCourses, staticLessons } from '@/data'
+import { resolveCourses, resolveLessons, staticLessons } from '@/data'
 import { TEACHER_CLASSES, type TeacherClass } from '@/data/classes'
 import type { ClassStats, Course, Lesson, LessonQuizQuestion, QuizChoiceQuestion } from '@/data/types'
 import { getAllStats, getClassStats } from '@/lib/class-stats'
@@ -29,6 +29,8 @@ export interface LessonReview {
     progress?: number
     step?: string
     imported?: boolean
+    /** Đã thay video: bản mới đang chờ duyệt, sinh viên vẫn học bản đang xuất bản */
+    hasNewVersion?: boolean
 }
 
 export const itemKey = {
@@ -41,13 +43,25 @@ export const itemKey = {
 const GEN_STEPS = ['Đọc phụ đề', 'Transcript có mốc thời gian', 'Khái niệm', 'Câu hỏi và câu biến thể']
 export const genStep = (p: number) => GEN_STEPS[Math.min(GEN_STEPS.length - 1, Math.floor(p * GEN_STEPS.length))]
 
+/** Toàn bộ lớp thay đổi của giảng viên trên kho khóa/bài (đổi tên, chuyển khóa, thứ tự, xóa mềm), gom thành một đối tượng ổn định giữa các lần render. */
+export function useOverlay() {
+    const importedCourses = useOrbitStore((s) => s.importedCourses)
+    const importedLessons = useOrbitStore((s) => s.importedLessons)
+    const courseTitles = useOrbitStore((s) => s.courseTitles)
+    const lessonOverrides = useOrbitStore((s) => s.lessonOverrides)
+    const lessonOrder = useOrbitStore((s) => s.lessonOrder)
+    const deletedLessons = useOrbitStore((s) => s.deletedLessons)
+    const deletedCourses = useOrbitStore((s) => s.deletedCourses)
+    return useMemo(() => ({ importedCourses, importedLessons, courseTitles, lessonOverrides, lessonOrder, deletedLessons, deletedCourses }), [importedCourses, importedLessons, courseTitles, lessonOverrides, lessonOrder, deletedLessons, deletedCourses])
+}
+
 /** Bài sau khi áp chỉnh sửa, kèm trạng thái duyệt từng mục. Bài đã xuất bản mà chưa có bản ghi duyệt coi như duyệt hết. */
 export function useLessonReviews(): LessonReview[] {
     const edits = useOrbitStore((s) => s.lessonEdits)
     const review = useOrbitStore((s) => s.lessonReview)
     const items = useOrbitStore((s) => s.reviewedItems)
-    const imported = useOrbitStore((s) => s.importedLessons)
-    const importedCourses = useOrbitStore((s) => s.importedCourses)
+    const overlay = useOverlay()
+    const snapshots = useOrbitStore((s) => s.liveSnapshots)
     const jobs = useOrbitStore((s) => s.importJobs)
 
     // Còn bài đang giả lập thì tick để tiến độ chạy; xong hết thì dừng
@@ -61,7 +75,8 @@ export function useLessonReviews(): LessonReview[] {
 
     return useMemo(() => {
         const seen: Record<string, number> = {}
-        return [...staticLessons, ...imported].map((base) => {
+        const courseList = resolveCourses(overlay)
+        return resolveLessons(overlay).map((base) => {
             const isImported = base.id.startsWith('imp-')
             const lesson = edits[base.id] ? { ...base, ...edits[base.id] } : base
             const published = (review[base.id] ?? base.status) === 'published'
@@ -72,12 +87,12 @@ export function useLessonReviews(): LessonReview[] {
             const index = (seen[base.courseId] = (seen[base.courseId] ?? -1) + 1)
             const job = jobs[base.id]
             const progress = job ? Math.min(1, (now - job.startedAt) / job.durationMs) : 1
-            const generating = isImported && progress < 1
+            const generating = !!job && progress < 1
             const state: LessonState = generating ? 'generating' : published ? 'published' : done > 0 ? 'editing' : 'wait'
-            const course = [...staticCourses, ...importedCourses].find((c) => c.id === base.courseId)
-            return { lesson, course, index, published, keys, reviewed, done, total: keys.length, state, progress: generating ? progress : undefined, step: generating ? genStep(progress) : undefined, imported: isImported }
+            const course = courseList.find((c) => c.id === base.courseId)
+            return { lesson, course, index, published, keys, reviewed, done, total: keys.length, state, progress: generating ? progress : undefined, step: generating ? genStep(progress) : undefined, imported: isImported, hasNewVersion: !!snapshots[base.id] && !published }
         })
-    }, [edits, review, items, imported, importedCourses, jobs, now])
+    }, [edits, review, items, overlay, snapshots, jobs, now])
 }
 
 /** Các lớp mẫu và lớp đang chọn (chỉ dùng cho thống kê ở trang Lớp học). */
@@ -94,9 +109,9 @@ export function useAllStats(): ClassStats {
 
 /** Kho khóa học của giảng viên: khóa có sẵn và khóa tạo từ danh sách phát YouTube, kèm trạng thái mở cho sinh viên. */
 export function useTeacherCourses(): (Course & { open: boolean })[] {
-    const importedCourses = useOrbitStore((s) => s.importedCourses)
+    const overlay = useOverlay()
     const open = useOrbitStore((s) => s.courseOpen)
-    return useMemo(() => [...staticCourses, ...importedCourses].map((c) => ({ ...c, open: open[c.id] !== false })), [importedCourses, open])
+    return useMemo(() => resolveCourses(overlay).map((c) => ({ ...c, open: open[c.id] !== false })), [overlay, open])
 }
 
 /** Số sinh viên đang học một khóa (tổng sĩ số các lớp mẫu học khóa đó). */

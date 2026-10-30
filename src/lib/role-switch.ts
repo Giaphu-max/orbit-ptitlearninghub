@@ -1,4 +1,4 @@
-import { lessons, staticLessons } from '@/data'
+import { lessons, resolveLessons } from '@/data'
 import { introPlaying, introReady, playRoleIntro, type IntroInfo } from '@/lib/role-intro'
 import { preloadHome } from '@/lib/preload'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
@@ -11,7 +11,7 @@ export function introInfo(role: Role): IntroInfo {
     const st = useOrbitStore.getState()
     if (role === 'teacher') {
         // Bài chưa xuất bản (bản nháp) là nội dung AI đang chờ giảng viên duyệt
-        const pending = [...staticLessons, ...st.importedLessons].filter((l) => (st.lessonReview[l.id] ?? l.status) !== 'published').length
+        const pending = resolveLessons(st).filter((l) => (st.lessonReview[l.id] ?? l.status) !== 'published').length
         return {
             words: [{ text: 'Chào' }, { text: 'thầy/cô', name: true }],
             chip: 'Giảng viên',
