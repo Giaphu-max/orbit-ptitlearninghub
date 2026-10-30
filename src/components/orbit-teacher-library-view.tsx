@@ -6,7 +6,7 @@ import type { Course } from '@/data/types'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
 import { CoverDialog, NewCourseDialog } from '@/components/teacher/course-cover-dialogs'
 import { ConfirmDialog, ghost, Modal, MoreMenu, MoveDialog, primary, RenameDialog, type MenuItem } from '@/components/teacher/library-ui'
-import { firstToReview, LessonStateList, NoPublishedBody } from '@/components/teacher/no-published-notice'
+import { LessonStateList, NoPublishedBody } from '@/components/teacher/no-published-notice'
 import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
 import { courseFullyPublished, finalKey, finalSetFor, passCount, resolveSet, sourcedBank, useCourseLessons } from '@/lib/test-sets'
 import { studentsOfCourse, useLessonReviews, useTeacherCourses, type LessonReview } from '@/lib/teacher'
@@ -304,17 +304,12 @@ export function OrbitTeacherLibraryView() {
             {dlg?.k === 'finalNone' && dCourse && (
                 <Modal title="Chưa thể soạn test cuối chương" onClose={() => setDlg(null)}>
                     <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                        <NoPublishedBody courseTitle={`“${dCourse.title}”`} pending={reviews.filter((r) => r.lesson.courseId === dCourse.id && r.state !== 'published')} />
+                        <NoPublishedBody courseTitle={`“${dCourse.title}”`} pending={reviews.filter((r) => r.lesson.courseId === dCourse.id && r.state !== 'published')} onPick={(id) => (setDlg(null), navigate(`/teacher/review/${id}`))} />
                     </div>
                     <div className="mt-6 flex justify-end gap-2.5">
                         <button type="button" onClick={() => setDlg(null)} className={ghost}>
                             Đóng
                         </button>
-                        {firstToReview(reviews.filter((r) => r.lesson.courseId === dCourse.id)) && (
-                            <button type="button" onClick={() => (setDlg(null), navigate(`/teacher/review/${firstToReview(reviews.filter((r) => r.lesson.courseId === dCourse.id))}`))} className={primary}>
-                                Duyệt bài giảng
-                            </button>
-                        )}
                     </div>
                 </Modal>
             )}
@@ -326,15 +321,15 @@ export function OrbitTeacherLibraryView() {
                     <Modal title={`Soạn đề từ ${k}/${mine.length} bài đã duyệt?`} onClose={() => setDlg(null)}>
                         <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
                             <p>AI chỉ lấy câu hỏi từ các bài đã duyệt. Các bài chưa duyệt sẽ không có trong đề:</p>
-                            <LessonStateList items={rest} />
+                            <LessonStateList items={rest} onPick={(id) => (setDlg(null), navigate(`/teacher/review/${id}`))} />
                             <p className="mt-3 text-xs text-muted-foreground/80">Duyệt thêm bài sau thì có thể thêm câu của bài đó vào đề.</p>
                         </div>
                         <div className="mt-6 flex flex-wrap justify-end gap-2.5">
-                            <button type="button" onClick={() => (setDlg(null), navigate(`/teacher/review/${firstToReview(rest)}`))} className={ghost}>
-                                Duyệt bài còn lại trước
-                            </button>
                             <button type="button" onClick={() => (store.confirmFinalDraft(dCourse.id), setDlg(null), navigate(`/teacher/test/${dCourse.id}`))} className={primary}>
                                 Soạn đề với {k} bài
+                            </button>
+                            <button type="button" onClick={() => setDlg(null)} className={ghost}>
+                                Đóng
                             </button>
                         </div>
                     </Modal>

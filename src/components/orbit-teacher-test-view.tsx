@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { blankQuestion, QuestionEditor } from '@/components/teacher/question-editor'
 import { SourceChip } from '@/components/teacher/quick-test-panel'
 import { correctRate, courseFullyPublished, coverage, finalKey, finalSetFor, moveInSet, passCount, removeFromSet, resolveSet, sourcedBank, suggestInto, upsertCustom, useCourseLessons, type SourcedQuestion, type TestRules, type TestSet } from '@/lib/test-sets'
@@ -24,6 +24,7 @@ export function OrbitTeacherTestView() {
 
 function Builder({ courseId, title }: { courseId: string; title: string }) {
     const { all: allLessons, published: lessons } = useCourseLessons(courseId)
+    const navigate = useNavigate()
     const reviews = useLessonReviews().filter((r) => r.lesson.courseId === courseId)
     const stored = useOrbitStore((s) => s.testSets[finalKey(courseId)])
     const fullyPublished = useOrbitStore((s) => courseFullyPublished(courseId, s))
@@ -106,7 +107,6 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
     }
 
     if (lessons.length === 0) {
-        const target = firstToReview(reviews)
         return (
             <div className="w-full pb-8">
                 <Link to="/teacher/library" className="text-[13px] font-bold text-muted-foreground transition hover:text-strong">
@@ -114,12 +114,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                 </Link>
                 <h1 className="mt-1 text-[28px] font-black leading-tight tracking-tight text-strong">Chưa thể soạn test cuối chương</h1>
                 <div className="mt-5 max-w-[620px] rounded-[20px] border border-border bg-card p-6 text-sm leading-relaxed text-muted-foreground shadow-card">
-                    <NoPublishedBody courseTitle={`“${title}”`} pending={reviews.filter((r) => r.state !== 'published')} />
-                    {target && (
-                        <Link to={`/teacher/review/${target}`} className="surface-red mt-5 inline-flex h-11 items-center rounded-[10px] px-5 text-sm font-extrabold text-ink-foreground shadow-brand">
-                            Duyệt bài giảng
-                        </Link>
-                    )}
+                    <NoPublishedBody courseTitle={`“${title}”`} pending={reviews.filter((r) => r.state !== 'published')} onPick={(id) => navigate(`/teacher/review/${id}`)} />
                 </div>
             </div>
         )
