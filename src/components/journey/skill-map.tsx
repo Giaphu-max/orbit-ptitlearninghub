@@ -15,7 +15,7 @@ const questionsLeft = (m: number) => Math.max(1, Math.ceil((UNLOCK_THRESHOLD - m
 
 /**
  * Bản đồ kỹ năng của MỘT chặng (bài): đường cong uốn lượn nối các trạm xen kẽ cao/thấp, mỗi khái niệm một trạm tròn 76px đặt đúng trên đường,
- * trạm cuối là "Test cuối chặng". Đoạn đã đi tô đỏ (vẽ dần), trạm đang học có vòng tiến độ SVG đỏ đúng % (không nước dâng).
+ * trạm cuối là "Kiểm tra cuối chặng". Đoạn đã đi tô đỏ (vẽ dần), trạm đang học có vòng tiến độ SVG đỏ đúng % (không nước dâng).
  * Component được remount (key) khi đổi chặng / mở tab để chạy lại hiệu ứng.
  */
 export function SkillMap({ nodes, lessonId }: { nodes: SkillNode[]; lessonId: string }) {
@@ -94,7 +94,7 @@ export function SkillMap({ nodes, lessonId }: { nodes: SkillNode[]; lessonId: st
                         <span className="grid h-[76px] w-[76px] place-items-center rounded-[22px] bg-ink text-ink-foreground shadow-raised transition-transform duration-base hover:scale-[1.08]">
                             <Star size={28} className="fill-current" />
                         </span>
-                        <span className="max-w-[150px] text-center text-[13.5px] font-bold leading-[1.3] text-strong">Test cuối chặng</span>
+                        <span className="max-w-[150px] text-center text-[13.5px] font-bold leading-[1.3] text-strong">Kiểm tra cuối chặng</span>
                     </Link>
                     {hovered && hover !== null && (
                         <div role="tooltip" className="pointer-events-none absolute z-[5] min-w-[220px] max-w-[260px] -translate-x-1/2 -translate-y-full rounded-xl bg-ink px-3.5 py-3 text-[13px] leading-[1.45] text-ink-foreground shadow-raised" style={{ left: Math.min(Math.max(pts[hover][0], 130), w - 130), top: pts[hover][1] - 38 - (hover === curIdx && hovered.unlocked ? 42 : 12) }}>

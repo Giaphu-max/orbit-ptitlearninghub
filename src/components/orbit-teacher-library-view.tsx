@@ -138,7 +138,7 @@ export function OrbitTeacherLibraryView() {
         matchStatus(status, r.state) && (q === '' || norm([r.lesson.title, r.lesson.shortTitle ?? '', course.title, ...r.lesson.concepts.map((c) => c.name)].join(' ')).includes(q))
     const matchFinal = (course: Course) => {
         const pub = finalPublished(course.id)
-        return (status === 'all' || (status === 'pending' && !pub) || (status === 'published' && pub)) && (q === '' || norm(`${course.title} test cuoi chuong`).includes(q))
+        return (status === 'all' || (status === 'pending' && !pub) || (status === 'published' && pub)) && (q === '' || norm(`${course.title} kiem tra cuoi khoa`).includes(q))
     }
     const visible = sections
         .map(({ course, items }) => ({ course, items, shown: items.filter((r) => matchCard(course, r)), finalShown: items.length > 0 && matchFinal(course) }))
@@ -256,7 +256,7 @@ export function OrbitTeacherLibraryView() {
                         onLessonReplace={(r) => replaceVideo(r.lesson.id)}
                         onLessonUnpublish={(r) => (store.setLessonReview(r.lesson.id, 'draft'), say(`Đã gỡ xuất bản ${r.lesson.title}: sinh viên không còn thấy bài này`))}
                         onLessonDelete={(r) => setDlg({ k: 'delLesson', id: r.lesson.id })}
-                        onFinalUnpublish={(set) => (store.setTestSet(finalKey(course.id), { ...set, published: false }), say('Đã gỡ xuất bản test cuối chương'))}
+                        onFinalUnpublish={(set) => (store.setTestSet(finalKey(course.id), { ...set, published: false }), say('Đã gỡ xuất bản kiểm tra cuối khóa'))}
                         onFinalReset={() => setDlg({ k: 'resetFinal', courseId: course.id })}
                         onFinalGate={(k) => setDlg({ k, courseId: course.id })}
                     />
@@ -302,7 +302,7 @@ export function OrbitTeacherLibraryView() {
                 </ConfirmDialog>
             )}
             {dlg?.k === 'finalNone' && dCourse && (
-                <Modal title="Chưa thể soạn test cuối chương" onClose={() => setDlg(null)}>
+                <Modal title="Chưa thể soạn kiểm tra cuối khóa" onClose={() => setDlg(null)}>
                     <div className="mt-3 text-base leading-[1.6] text-muted-foreground">
                         <NoPublishedBody courseTitle={dCourse.title} pending={reviews.filter((r) => r.lesson.courseId === dCourse.id && r.state !== 'published')} onPick={(id) => (setDlg(null), navigate(`/teacher/review/${id}`))} />
                     </div>
@@ -327,7 +327,7 @@ export function OrbitTeacherLibraryView() {
                     </Modal>
                 )
             })()}
-            {dlg?.k === 'resetFinal' && dCourse && <ResetFinal course={dCourse} onClose={() => setDlg(null)} onDone={() => say('Đã soạn lại test cuối chương từ đầu bằng AI')} />}
+            {dlg?.k === 'resetFinal' && dCourse && <ResetFinal course={dCourse} onClose={() => setDlg(null)} onDone={() => say('Đã soạn lại kiểm tra cuối khóa từ đầu bằng AI')} />}
 
             <div
                 role="status"
@@ -378,7 +378,7 @@ function ResetFinal({ course, onClose, onDone }: { course: Course; onClose: () =
     const setTestSet = useOrbitStore((s) => s.setTestSet)
     return (
         <ConfirmDialog
-            title="Soạn lại test cuối chương từ đầu?"
+            title="Soạn lại kiểm tra cuối khóa từ đầu?"
             confirmLabel="Soạn lại"
             onClose={onClose}
             onConfirm={() => {
@@ -533,7 +533,7 @@ function CourseSection(p: SectionProps) {
                 ))}
                 {showFinal && !sorting && items.length > 0 && (
                     <li>
-                        <FinalTestCard courseId={course.id} total={items.length} published={published} onUnpublish={p.onFinalUnpublish} onReset={p.onFinalReset} onGate={p.onFinalGate} />
+                        <FinalTestCard courseId={course.id} courseTitle={course.title} total={items.length} published={published} onUnpublish={p.onFinalUnpublish} onReset={p.onFinalReset} onGate={p.onFinalGate} />
                     </li>
                 )}
             </ul>
@@ -617,8 +617,8 @@ function Status({ tone, children }: { tone: 'wait' | 'edit' | 'ok' | 'gen'; chil
     return <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>{children}</span>
 }
 
-/** Thẻ "Test cuối chương" ở cuối lưới mỗi khóa: bản nháp AI soạn sẵn hoặc đã xuất bản. */
-function FinalTestCard({ courseId, total, published: k, onUnpublish, onReset, onGate }: { courseId: string; total: number; published: number; onUnpublish: (set: ReturnType<typeof finalSetFor>) => void; onReset: () => void; onGate: (kind: 'finalNone' | 'finalPartial') => void }) {
+/** Thẻ "Kiểm tra cuối khóa" ở cuối lưới mỗi khóa: bản nháp AI soạn sẵn hoặc đã xuất bản. */
+function FinalTestCard({ courseId, courseTitle, total, published: k, onUnpublish, onReset, onGate }: { courseId: string; courseTitle: string; total: number; published: number; onUnpublish: (set: ReturnType<typeof finalSetFor>) => void; onReset: () => void; onGate: (kind: 'finalNone' | 'finalPartial') => void }) {
     const { published: pubLessons } = useCourseLessons(courseId)
     const stored = useOrbitStore((s) => s.testSets[finalKey(courseId)])
     const confirmed = useOrbitStore((s) => !!s.finalConfirmed[courseId])
@@ -645,7 +645,7 @@ function FinalTestCard({ courseId, total, published: k, onUnpublish, onReset, on
                     className="flex aspect-video flex-col items-center justify-center gap-1 text-center text-brand-ink"
                     style={{ background: 'repeating-linear-gradient(135deg, rgb(var(--brand-50)) 0 10px, rgb(var(--brand-100)) 10px 20px)' }}
                 >
-                    <span className="text-[15px] font-extrabold">Test cuối chương</span>
+                    <span className="text-[15px] font-extrabold">Đề tổng hợp cả khóa</span>
                     {k > 0 && (
                         <small className="font-mono text-[11.5px] font-bold opacity-80">
                             {n} câu · đạt {Math.round(set.rules.passRatio * 100)}% ({passCount(set.rules, n)}/{n})
@@ -653,7 +653,7 @@ function FinalTestCard({ courseId, total, published: k, onUnpublish, onReset, on
                     )}
                 </div>
                 <div className="p-3.5">
-                    <b className="block min-h-[2.6em] text-sm font-bold leading-snug text-strong">Đề kiểm tra tổng hợp cả khóa</b>
+                    <b title={`Kiểm tra cuối khóa ${courseTitle}`} className="line-clamp-2 min-h-[2.6em] text-sm font-bold leading-snug text-strong">Kiểm tra cuối khóa {courseTitle}</b>
                     <div className="mt-3 flex items-center justify-between gap-2">
                         {k === 0 ? (
                             <Status tone="gen">Chưa có bài đã duyệt</Status>
@@ -664,7 +664,7 @@ function FinalTestCard({ courseId, total, published: k, onUnpublish, onReset, on
                     </div>
                 </div>
             </Link>
-            {menu.length > 0 && <MoreMenu card label="Tùy chọn cho Test cuối chương" items={menu} className="absolute right-2 top-2 z-10" />}
+            {menu.length > 0 && <MoreMenu card label="Tùy chọn cho Kiểm tra cuối khóa" items={menu} className="absolute right-2 top-2 z-10" />}
         </div>
     )
 }

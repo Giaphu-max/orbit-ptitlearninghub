@@ -9,7 +9,7 @@ import type { TestSet } from '@/lib/test-sets'
 import { masteryAfterTest, testXp, type TestAnswerInput, type TestQuestion } from '@/lib/final-test'
 import { advanceStreak, bestTestRatio, dailyFor, DAILY_LIMIT, directorXp, emptyDaily, evaluateBadges, EXTRA_READ_COST, LIGHTS_BADGE_ID, LIGHTS_XP, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
-/** Phiên làm bài test dở dang để tự động lưu và khôi phục khi tải lại trang/đóng tab */
+/** Phiên làm bài kiểm tra dở dang để tự động lưu và khôi phục khi tải lại trang/đóng tab */
 export interface ActiveTestSession {
     courseId: string
     questionIds: string[]
@@ -66,7 +66,7 @@ export interface RecordQuizInput {
     fixedByVariantId?: string
 }
 
-/** Kết quả một lượt test cuối chương. */
+/** Kết quả một lượt kiểm tra cuối khóa. */
 export interface TestAttempt {
     at: string
     correct: number
@@ -124,11 +124,11 @@ interface OrbitState {
     directorBest: number
     /** Điểm cao nhất theo từng đề Studio (id đề → điểm) */
     briefBest: Record<string, number>
-    /** Test cuối chương theo khóa (id khóa → kết quả) */
+    /** Kiểm tra cuối khóa theo khóa (id khóa → kết quả) */
     testRecords: Record<string, TestRecord>
     /** Trạng thái lúc bắt đầu từng chặng (id bài → ảnh chụp), để tổng kết chặng so trước/sau */
     stageStart: Record<string, StageStart>
-    /** Test cuối chặng 6 câu theo bài (id bài → kết quả), giữ lượt tốt nhất và gần nhất như test cuối chương */
+    /** Kiểm tra cuối chặng 6 câu theo bài (id bài → kết quả), giữ lượt tốt nhất và gần nhất như kiểm tra cuối khóa */
     checkpoints: Record<string, TestRecord>
     /** Chặng đã mở màn tổng kết (hiệu ứng chỉ chạy lần đầu) */
     recapSeen: Record<string, boolean>
@@ -138,7 +138,7 @@ interface OrbitState {
     lessonReview: Record<string, ReviewStatus>
     /** Mục nội dung giảng viên đã duyệt theo bài (khóa 'sum' | 'c:<khái niệm>' | 'q:<câu>' | 'qt' = đề Kiểm tra nhanh); chưa có thì bài xuất bản coi như duyệt hết */
     reviewedItems: Record<string, string[]>
-    /** Đề kiểm tra giảng viên đã chỉnh: `quick:<lessonId>` (Kiểm tra nhanh) và `final:<courseId>` (Test cuối chương); chưa có thì dùng đề AI soạn sẵn */
+    /** Đề kiểm tra giảng viên đã chỉnh: `quick:<lessonId>` (Kiểm tra nhanh) và `final:<courseId>` (Kiểm tra cuối khóa); chưa có thì dùng đề AI soạn sẵn */
     testSets: Record<string, TestSet>
     /** Khóa đang mở cho sinh viên (id khóa → mở); chưa có thì coi là mở. Khóa khóa thì sinh viên không thấy bài nào của khóa đó */
     courseOpen: Record<string, boolean>
@@ -154,7 +154,7 @@ interface OrbitState {
     lessonEdits: Record<string, LessonEdits>
     /** Bìa khóa học do giảng viên chỉnh (id khóa → lựa chọn); chưa có thì dùng cover trong courses.json */
     courseCovers: Record<string, CourseCoverOverride>
-    /** Phiên làm test cuối chương dở dang theo khóa (id khóa → phiên) */
+    /** Phiên làm bài kiểm tra cuối khóa dở dang theo khóa (id khóa → phiên) */
     activeTestSessions: Record<string, ActiveTestSession>
     /** Tên khóa do giảng viên đổi (id khóa → tên) */
     courseTitles: Record<string, string>
@@ -167,7 +167,7 @@ interface OrbitState {
     deletedCourses: string[]
     /** Bản đang xuất bản của bài vừa được thay video; sinh viên học bản này cho tới khi bản mới được xuất bản */
     liveSnapshots: Record<string, Lesson>
-    /** Khóa đã xác nhận soạn Test cuối chương khi mới có một phần bài xuất bản (lần sau vào thẳng trang soạn) */
+    /** Khóa đã xác nhận soạn Kiểm tra cuối khóa khi mới có một phần bài xuất bản (lần sau vào thẳng trang soạn) */
     finalConfirmed: Record<string, boolean>
 
     setRole: (role: Role | null) => void
@@ -197,9 +197,9 @@ interface OrbitState {
     claimMission: (missionId: string) => number
     /** Ghi điểm một lần chụp ở Virtual Director; trả về XP được cộng (0 nếu chưa vượt kỷ lục hoặc dưới 70 điểm) */
     recordDirectorScore: (score: number, briefId?: string) => number
-    /** Ghi kết quả test cuối chương, cập nhật mức nắm vững (bản đồ kỹ năng) và XP; trả về số XP được cộng */
+    /** Ghi kết quả kiểm tra cuối khóa, cập nhật mức nắm vững (bản đồ kỹ năng) và XP; trả về số XP được cộng */
     recordTestResult: (input: { courseId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean; passRatio?: number }) => number
-    /** Ghi kết quả test cuối chặng của một bài (cùng cách cập nhật mức nắm vững và XP như test cuối chương); trả về XP được cộng */
+    /** Ghi kết quả kiểm tra cuối chặng của một bài (cùng cách cập nhật mức nắm vững và XP như kiểm tra cuối khóa); trả về XP được cộng */
     recordCheckpointResult: (input: { lessonId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean; passRatio?: number }) => number
     markRecapSeen: (lessonId: string) => void
     saveTestSession: (courseId: string, session: ActiveTestSession) => void
@@ -328,12 +328,12 @@ const safeLocalStorage: StateStorage = {
     },
 }
 
-/** Phần dùng chung của test cuối chương và test cuối chặng: mức nắm vững mới, chuỗi ngày, bản ghi tốt nhất/gần nhất. */
+/** Phần dùng chung của kiểm tra cuối khóa và kiểm tra cuối chặng: mức nắm vững mới, chuỗi ngày, bản ghi tốt nhất/gần nhất. */
 function applyTest(s: OrbitState, prev: TestRecord | undefined, answers: TestAnswerInput[], durationSec: number, timedOut: boolean) {
     const conceptMastery = { ...s.conceptMastery }
     const concepts: TestAttempt['concepts'] = answers.map((a) => {
         const before = s.conceptMastery[a.conceptId]
-        // Test cuối chặng có thể hỏi hai câu cùng khái niệm: câu sau tính tiếp trên mức vừa cập nhật
+        // Kiểm tra cuối chặng có thể hỏi hai câu cùng khái niệm: câu sau tính tiếp trên mức vừa cập nhật
         const after = masteryAfterTest(conceptMastery[a.conceptId], a)
         // Chưa có dữ liệu về khái niệm và bỏ trống: không có bằng chứng gì để ghi vào bản đồ kỹ năng
         if (before !== undefined || !a.blank) conceptMastery[a.conceptId] = after
@@ -586,7 +586,7 @@ export const useOrbitStore = create<OrbitState>()(
                 const xp = testXp(answers.filter((a) => a.correct).length, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }, passRatio).total
                 set((s) => {
                     const done = applyTest(s, s.checkpoints[lessonId], answers, durationSec, timedOut)
-                    // Test cuối chặng không tính cho huy hiệu "Vượt ải cuối chương" (chỉ test cuối chương), nhưng mức nắm vững vẫn đổi nên huy hiệu theo khái niệm vẫn xét lại
+                    // Kiểm tra cuối chặng không tính cho huy hiệu "Vượt ải cuối chương" (chỉ kiểm tra cuối khóa), nhưng mức nắm vững vẫn đổi nên huy hiệu theo khái niệm vẫn xét lại
                     return {
                         xp: s.xp + xp,
                         conceptMastery: done.conceptMastery,

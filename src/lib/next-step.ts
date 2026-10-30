@@ -62,7 +62,7 @@ export interface NextStep {
     to: string
 }
 
-/** Sau khi xong một bài: bài kế trong khóa; bài cuối khóa thì làm test cuối chương. */
+/** Sau khi xong một bài: bài kế trong khóa; bài cuối khóa thì làm bài kiểm tra cuối khóa. */
 export function afterLesson(lessonId: string): NextStep {
     const lesson = lessons.find((l) => l.id === lessonId)
     const course = lesson && getCourse(lesson.courseId)
@@ -70,10 +70,10 @@ export function afterLesson(lessonId: string): NextStep {
     const visible = new Set(visibleLessons().map((l) => l.id))
     const order = getLessonsOfCourse(course.id).filter((l) => visible.has(l.id))
     const next = order[order.findIndex((l) => l.id === lessonId) + 1]
-    return next ? { label: 'Bài tiếp theo', to: `/lesson/${next.id}` } : { label: 'Làm test cuối chương', to: `/test/${course.id}` }
+    return next ? { label: 'Bài tiếp theo', to: `/lesson/${next.id}` } : { label: 'Làm bài kiểm tra cuối khóa', to: `/test/${course.id}` }
 }
 
-/** Khóa đang học (theo bài đang học dở), để dẫn tới đúng bài test. */
+/** Khóa đang học (theo bài đang học dở), để dẫn tới đúng bài kiểm tra. */
 export function activeCourseId(): string | undefined {
     return resumeLesson()?.courseId ?? courses[0]?.id
 }

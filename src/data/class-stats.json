@@ -1,5 +1,5 @@
 {
-  "note": "Dữ liệu mẫu cho bản demo: lớp 32 sinh viên. Bản triển khai thật tổng hợp từ kết quả quiz và test trên server.",
+  "note": "Dữ liệu mẫu cho bản demo: lớp 32 sinh viên. Bản triển khai thật tổng hợp từ kết quả quiz và bài kiểm tra trên server.",
   "classSize": 32,
   "concepts": {
     "dung-tuyen-tinh": {

@@ -6,7 +6,7 @@ import { buildQuestionBank, type BankQuestion, type TestQuestion } from '@/lib/f
 import { useTeacherCourses } from '@/lib/teacher'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
-// Đề kiểm tra do giảng viên soạn và duyệt: Kiểm tra nhanh cuối bài (khóa `quick:<lessonId>`) và Test cuối chương (khóa `final:<courseId>`).
+// Đề kiểm tra do giảng viên soạn và duyệt: Kiểm tra nhanh (khóa `quick:<lessonId>`) và Kiểm tra cuối khóa (khóa `final:<courseId>`).
 // Phía sinh viên đọc đúng đề và luật ở đây thay cho việc bốc ngẫu nhiên. Chưa chỉnh gì thì dùng đề AI soạn sẵn (chọn đều theo khái niệm, cố định).
 
 export interface TestRules {
@@ -14,7 +14,7 @@ export interface TestRules {
     secondsPerQuestion: number
     /** Tỉ lệ đúng để đạt (0–1) */
     passRatio: number
-    /** Khi nào sinh viên được làm: xong cả khóa / xong còn 1 bài / mở ngay (chỉ test cuối chương) */
+    /** Khi nào sinh viên được làm: xong cả khóa / xong còn 1 bài / mở ngay (chỉ kiểm tra cuối khóa) */
     opens: 'all' | 'almost' | 'now'
     /** Số lần làm tối đa; null = không giới hạn */
     attempts: number | null
@@ -42,7 +42,7 @@ export interface TestSet {
     /** Câu lấy từ kho nhưng do AI gợi ý (hiện nguồn "AI gợi ý") */
     ai: string[]
     rules: TestRules
-    /** Chỉ dùng cho test cuối chương: đã xuất bản chưa. Chưa đặt thì theo việc cả khóa đã xuất bản hay chưa */
+    /** Chỉ dùng cho kiểm tra cuối khóa: đã xuất bản chưa. Chưa đặt thì theo việc cả khóa đã xuất bản hay chưa */
     published?: boolean
     /** Id các bài đã xuất bản được tính khi soạn đề; bài xuất bản sau đó không tự vào đề mà hiện thông báo "Thêm vào đề" */
     basis?: string[]
@@ -97,7 +97,7 @@ export function quickSetFor(lesson: Lesson, stored?: TestSet): TestSet {
     return stored ?? defaultSet(sourcedBank([lesson]), QUICK_RULES)
 }
 
-/** Đề Test cuối chương của một khóa. */
+/** Đề Kiểm tra cuối khóa của một khóa. */
 export function finalSetFor(lessons: Lesson[], stored?: TestSet): TestSet {
     return stored ?? defaultSet(sourcedBank(lessons), FINAL_RULES)
 }
@@ -125,7 +125,7 @@ export function useCourseAllLessons(courseId: string | undefined): Lesson[] {
     )
 }
 
-/** Bài của khóa (kể cả chưa xuất bản) và riêng các bài đã xuất bản: đề Test cuối chương chỉ lấy câu từ bài đã xuất bản. */
+/** Bài của khóa (kể cả chưa xuất bản) và riêng các bài đã xuất bản: đề Kiểm tra cuối khóa chỉ lấy câu từ bài đã xuất bản. */
 export function useCourseLessons(courseId: string | undefined): { all: Lesson[]; published: Lesson[] } {
     const all = useCourseAllLessons(courseId)
     const review = useOrbitStore((s) => s.lessonReview)
@@ -219,7 +219,7 @@ export interface PendingTest {
     missing: number
 }
 
-/** Test cuối chương của các khóa còn ở bản nháp (chưa xuất bản). */
+/** Kiểm tra cuối khóa của các khóa còn ở bản nháp (chưa xuất bản). */
 export function usePendingTests(): PendingTest[] {
     const courses = useTeacherCourses()
     const imported = useOrbitStore((s) => s.importedLessons)

@@ -111,7 +111,7 @@ export function useLessonQuiz(lesson: Lesson, player: PlayerControls) {
             // Màn thưởng phủ đỏ chỉ ở khoảnh khắc đáng nhớ: xong bài, lên cấp, huy hiệu mới
             const after = useOrbitStore.getState()
             const lessonDone = !wasDone && (after.lessonProgress[lesson.id]?.completed ?? false)
-            // Bài xong: nút chính làm test cuối chặng 6 câu, nút phụ xem tổng kết. Chưa xong (lên cấp/huy hiệu giữa bài): chỉ đóng màn và xem tiếp video
+            // Bài xong: nút chính làm kiểm tra cuối chặng 6 câu, nút phụ xem tổng kết. Chưa xong (lên cấp/huy hiệu giữa bài): chỉ đóng màn và xem tiếp video
             const finished = { label: 'Làm kiểm tra nhanh', to: `/checkpoint/${lesson.id}`, secondary: { label: 'Xem tổng kết', to: `/recap/${lesson.id}` } }
             announceRewards(before, after, lessonDone ? lessonCompleteScreen(lesson, after.quizResults, root.conceptId, finished) : undefined, {
                 source: 'lesson',

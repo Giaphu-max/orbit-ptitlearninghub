@@ -174,10 +174,10 @@ function LessonRow({ review: r }: { review: LessonReview }) {
 function TestRow({ test: t }: { test: PendingTest }) {
     return (
         <Link to={`/teacher/test/${t.courseId}`} className={`${rowCls} ${rowLinkCls}`}>
-            <Label>Test chương</Label>
+            <Label>Kiểm tra khóa</Label>
             <span className="min-w-0">
-                <b className="block text-[16.5px] font-bold leading-snug text-strong">Test cuối chương · {t.courseTitle}</b>
-                <small className="mt-1 block text-[13px] text-muted-foreground">
+                <b className="block truncate text-[16.5px] font-bold leading-snug text-strong">Kiểm tra cuối khóa</b>
+                <small title={t.courseTitle} className="mt-1 block truncate text-[13px] text-muted-foreground">
                     {t.courseTitle} · Bản nháp AI soạn{t.missing > 0 ? ` · còn ${t.missing} khái niệm chưa có câu` : ''}
                 </small>
             </span>

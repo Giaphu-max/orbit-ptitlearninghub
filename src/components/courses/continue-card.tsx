@@ -106,10 +106,10 @@ export function ContinueCard({ summary, expanded, onToggle }: { summary: CourseS
                         </div>
                     ))}
                     <div className="relative rounded-[14px] bg-muted p-3 text-[13.5px]">
-                        <Link to={`/test/${course.id}`} aria-label={`Test cuối chương: ${course.title}`} className="absolute inset-0 rounded-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" />
+                        <Link to={`/test/${course.id}`} aria-label={`Kiểm tra cuối khóa: ${course.title}`} className="absolute inset-0 rounded-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" />
                         <div aria-hidden className="mb-2.5 aspect-video rounded-[10px] bg-[repeating-conic-gradient(hsl(var(--border))_0_25%,hsl(var(--card))_0_50%)] [background-size:18px_18px]" />
                         <small className="font-mono text-[11.5px] text-muted-foreground">Đích</small>
-                        <b className="mt-0.5 block font-bold leading-[1.35] text-strong">Test cuối chương</b>
+                        <b className="mt-0.5 block font-bold leading-[1.35] text-strong">Kiểm tra cuối khóa</b>
                         {summary.record && <span className="font-mono text-xs text-muted-foreground">Tốt nhất {summary.record.bestCorrect}/{summary.record.bestTotal}</span>}
                     </div>
                 </div>

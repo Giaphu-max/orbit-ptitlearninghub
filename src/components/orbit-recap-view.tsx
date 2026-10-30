@@ -125,19 +125,19 @@ function Recap({ data }: { data: RecapData }) {
                         <p style={rise(3)} className="rc-rise mt-3.5 max-w-[62ch] text-base leading-relaxed text-muted-foreground">
                             {checkpoint ? (
                                 <>
-                                    Đúng <b className="text-strong">{checkpoint.correct}/{checkpoint.total}</b> ở bài test · {checkpoint.passed ? 'đạt' : 'chưa đạt'} {pct(TEST_PASS_RATIO)}%.
+                                    Đúng <b className="text-strong">{checkpoint.correct}/{checkpoint.total}</b> ở bài kiểm tra · {checkpoint.passed ? 'đạt' : 'chưa đạt'} {pct(TEST_PASS_RATIO)}%.
                                     {weakest && !checkpoint.passed && (
                                         <>
-                                            {' '}Còn yếu nhất là <b className="text-strong">{weakest.name}</b>, xem lại đoạn đó rồi làm test lần nữa.
+                                            {' '}Còn yếu nhất là <b className="text-strong">{weakest.name}</b>, xem lại đoạn đó rồi làm bài kiểm tra lần nữa.
                                         </>
                                     )}
                                 </>
                             ) : weakest ? (
                                 <>
-                                    Còn yếu nhất là <b className="text-strong">{weakest.name}</b>. Làm test {CHECKPOINT_QUESTION_COUNT} câu để chốt lại — đạt từ {pct(TEST_PASS_RATIO)}% là khái niệm sáng lên trong bản đồ kỹ năng.
+                                    Còn yếu nhất là <b className="text-strong">{weakest.name}</b>. Làm bài kiểm tra {CHECKPOINT_QUESTION_COUNT} câu để chốt lại — đạt từ {pct(TEST_PASS_RATIO)}% là khái niệm sáng lên trong bản đồ kỹ năng.
                                 </>
                             ) : (
-                                <>Bạn đã nắm chắc mọi khái niệm của bài. Làm test {CHECKPOINT_QUESTION_COUNT} câu để chốt lại — đạt từ {pct(TEST_PASS_RATIO)}% là khái niệm sáng lên trong bản đồ kỹ năng.</>
+                                <>Bạn đã nắm chắc mọi khái niệm của bài. Làm bài kiểm tra {CHECKPOINT_QUESTION_COUNT} câu để chốt lại — đạt từ {pct(TEST_PASS_RATIO)}% là khái niệm sáng lên trong bản đồ kỹ năng.</>
                             )}
                         </p>
                         <div style={rise(4)} className="rc-rise mt-auto flex flex-wrap items-center pt-6">
@@ -149,13 +149,13 @@ function Recap({ data }: { data: RecapData }) {
                                     `${next.label} →`
                                 ) : (
                                     <>
-                                        <Play size={16} className="fill-current" /> Làm test {CHECKPOINT_QUESTION_COUNT} câu
+                                        <Play size={16} className="fill-current" /> Làm bài kiểm tra {CHECKPOINT_QUESTION_COUNT} câu
                                     </>
                                 )}
                             </Link>
                             <Kpi value={`+${xp.gain}`} fxTo={xp.gain} label="XP chặng này" />
                             <Kpi value={`${videoRight}/${video.total}`} label="câu đúng trong video" />
-                            <Kpi value={checkpoint ? `${checkpoint.correct}/${checkpoint.total}` : '—'} label={checkpoint ? 'kết quả test' : 'test chưa làm'} />
+                            <Kpi value={checkpoint ? `${checkpoint.correct}/${checkpoint.total}` : '—'} label={checkpoint ? 'kết quả kiểm tra' : 'kiểm tra chưa làm'} />
                         </div>
                     </div>
 
@@ -179,13 +179,13 @@ function Recap({ data }: { data: RecapData }) {
                             </>
                         ) : (
                             <>
-                                <b className="mt-3.5 block text-[17px] font-extrabold leading-snug text-strong">Test cuối chương · {course.title}</b>
-                                <small className="mt-1 block text-[13px] text-muted-foreground">Bạn đã đi hết các chặng. Làm test tổng hợp để chốt cả học phần.</small>
+                                <b className="mt-3.5 block text-[17px] font-extrabold leading-snug text-strong">Kiểm tra cuối khóa · {course.title}</b>
+                                <small className="mt-1 block text-[13px] text-muted-foreground">Bạn đã đi hết các chặng. Làm bài kiểm tra tổng hợp để chốt cả học phần.</small>
                             </>
                         )}
                         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
                             <Link to={next.to} className="inline-flex items-center gap-2 rounded-xl border-[1.5px] border-strong px-4 py-[11px] text-sm font-extrabold text-strong transition hover:bg-muted">
-                                {next.lesson ? `Bắt đầu chặng ${nextNo} →` : 'Làm test cuối chương →'}
+                                {next.lesson ? `Bắt đầu chặng ${nextNo} →` : 'Làm bài kiểm tra cuối khóa →'}
                             </Link>
                             <Link to={`/learning?course=${course.id}`} className="text-[13px] font-bold text-muted-foreground hover:text-strong">
                                 Về học phần

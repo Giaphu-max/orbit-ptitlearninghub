@@ -17,7 +17,7 @@ export function SourceChip({ source }: { source: SourcedQuestion['source'] }) {
     return <i className={`rounded-md px-[7px] py-0.5 text-[11px] font-bold not-italic ${SOURCE_CLS[source]}`}>{SOURCE_LABEL[source]}</i>
 }
 
-/** Mục duyệt "Đề kiểm tra nhanh cuối bài" trong trang Duyệt: luật làm bài, câu trong đề, câu còn trong kho, viết thêm / AI gợi ý. */
+/** Mục duyệt "Đề kiểm tra nhanh" trong trang Duyệt: luật làm bài, câu trong đề, câu còn trong kho, viết thêm / AI gợi ý. */
 export function QuickTestPanel({
     lesson,
     set,
@@ -96,7 +96,7 @@ export function QuickTestPanel({
             domId="item-qt"
             open={open}
             done={approved}
-            title="Đề kiểm tra nhanh cuối bài"
+            title="Đề kiểm tra nhanh"
             sub={`${n} câu · ${set.rules.secondsPerQuestion}s/câu · đạt từ ${need}/${n}`}
             onToggle={onToggleOpen}
         >

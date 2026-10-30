@@ -4,7 +4,7 @@ import type { DailyArticle, Lesson, QuizChoiceQuestion } from '@/data/types'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { OUTCOME_MASTERY } from '@/lib/quiz'
 
-// Test tổng hợp cuối chương: lấy câu từ ngân hàng câu hỏi của khóa (câu quiz trong video,
+// Bài kiểm tra tổng hợp cuối chương: lấy câu từ ngân hàng câu hỏi của khóa (câu quiz trong video,
 // câu biến thể, câu kiểm tra của bài Orbit Daily), trộn thứ tự, có giới hạn thời gian. Đề thật do giảng viên duyệt nằm ở lib/test-sets.ts; hàm bốc ngẫu nhiên ở đây chỉ còn là nền cho đề AI soạn sẵn.
 
 export const TEST_QUESTION_COUNT = 10
@@ -112,7 +112,7 @@ const withShuffledOptions = (q: BankQuestion): TestQuestion => {
 }
 
 /**
- * Test cuối chặng: 6 câu từ ngân hàng của một bài. Mỗi khái niệm ít nhất một câu (khái niệm nhiều hơn số câu thì bốc ngẫu nhiên),
+ * Kiểm tra cuối chặng: 6 câu từ ngân hàng của một bài. Mỗi khái niệm ít nhất một câu (khái niệm nhiều hơn số câu thì bốc ngẫu nhiên),
  * câu còn lại bù thêm; luôn ưu tiên câu sinh viên chưa gặp (đặc biệt biến thể), không trùng đề.
  */
 export function pickCheckpointQuestions(bank: BankQuestion[], seen: Set<string>, count = CHECKPOINT_QUESTION_COUNT): TestQuestion[] {
@@ -157,7 +157,7 @@ export interface TestAnswerInput {
     blank?: boolean
 }
 
-/** Trọng số của mức cũ khi gộp với kết quả test; mỗi khái niệm chỉ có 1 câu nên test chỉ được xê dịch mức nắm vững. */
+/** Trọng số của mức cũ khi gộp với kết quả kiểm tra; mỗi khái niệm chỉ có 1 câu nên test chỉ được xê dịch mức nắm vững. */
 export const TEST_MASTERY_KEEP = 0.7
 
 /**

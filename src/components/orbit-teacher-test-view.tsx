@@ -11,7 +11,7 @@ const seg = 'inline-flex rounded-[10px] bg-muted p-[3px]'
 const segBtn = (on: boolean) => `rounded-lg px-2.5 py-1.5 font-mono text-[12.5px] font-bold transition ${on ? 'bg-card text-strong shadow-card' : 'text-muted-foreground hover:text-strong'}`
 const selCls = 'h-[34px] rounded-[10px] border border-border bg-card px-2.5 text-[13px] text-foreground'
 
-/** /teacher/test/:courseId – soạn Test cuối chương: độ phủ khái niệm, danh sách câu (kéo thả đổi thứ tự), cài đặt bài thi, xuất bản. */
+/** /teacher/test/:courseId – soạn Kiểm tra cuối khóa: độ phủ khái niệm, danh sách câu (kéo thả đổi thứ tự), cài đặt bài thi, xuất bản. */
 export function OrbitTeacherTestView() {
     const role = useOrbitStore((s) => s.role)
     const { courseId } = useParams()
@@ -112,7 +112,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                 <Link to="/teacher/library" className="text-[13px] font-bold text-muted-foreground transition hover:text-strong">
                     ‹ Bài giảng
                 </Link>
-                <h1 className="mt-1 text-[28px] font-black leading-tight tracking-tight text-strong">Chưa thể soạn test cuối chương</h1>
+                <h1 className="mt-1 text-[28px] font-black leading-tight tracking-tight text-strong">Chưa thể soạn kiểm tra cuối khóa</h1>
                 <div className="mt-5 max-w-[620px] rounded-[20px] border border-border bg-card p-6 text-sm leading-relaxed text-muted-foreground shadow-card">
                     <NoPublishedBody courseTitle={title} pending={reviews.filter((r) => r.state !== 'published')} onPick={(id) => navigate(`/teacher/review/${id}`)} />
                 </div>
@@ -133,7 +133,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                             {lessons.length} bài · {concepts.length} khái niệm
                         </em>
                     </div>
-                    <h1 className="mt-1 text-[28px] font-black leading-tight tracking-tight text-strong">Test cuối chương</h1>
+                    <h1 className="mt-1 text-[28px] font-black leading-tight tracking-tight text-strong">Kiểm tra cuối khóa</h1>
                 </div>
                 <nav aria-label="Các bước soạn đề" className="flex shrink-0 items-center gap-1 text-xs font-semibold">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-success">✓ AI soạn đề</span>
@@ -364,7 +364,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                         {published ? 'Đã xuất bản' : 'Xuất bản đề'}
                     </button>
                     {published && (
-                        <button type="button" onClick={() => (save(set, false), say('Đã gỡ xuất bản · sinh viên không làm được Test cuối chương'))} className="mt-2 block w-full text-center text-[13px] font-bold text-muted-foreground transition hover:text-strong">
+                        <button type="button" onClick={() => (save(set, false), say('Đã gỡ xuất bản · sinh viên không làm được bài kiểm tra cuối khóa'))} className="mt-2 block w-full text-center text-[13px] font-bold text-muted-foreground transition hover:text-strong">
                             Gỡ xuất bản
                         </button>
                     )}

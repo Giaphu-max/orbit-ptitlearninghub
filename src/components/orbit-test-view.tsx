@@ -43,7 +43,7 @@ type Phase =
       }
     | { kind: 'result'; attempt: TestAttempt; questions?: TestQuestion[]; picks?: Record<string, number>; xp?: number }
 
-/** /test/:courseId – test tổng hợp cuối chương: câu từ ngân hàng của khóa, trộn thứ tự, có giờ. Kết quả cập nhật bản đồ kỹ năng và XP. */
+/** /test/:courseId – bài kiểm tra tổng hợp cuối chương: câu từ ngân hàng của khóa, trộn thứ tự, có giờ. Kết quả cập nhật bản đồ kỹ năng và XP. */
 export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
     const { courseId } = useParams()
     const teacherCourses = useTeacherCourses()
@@ -90,8 +90,8 @@ export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
     const doneLessons = visibleLessons.filter((l) => progress[l.id]?.completed).length
     const missing = rules.opens === 'all' ? visibleLessons.length - doneLessons : rules.opens === 'almost' ? visibleLessons.length - 1 - doneLessons : 0
     const outOfAttempts = !preview && rules.attempts !== null && (record?.attempts ?? 0) >= rules.attempts
-    if (!published || fixed.length === 0) return <Locked back={back} title="Thầy cô chưa mở bài kiểm tra này." note="Khi thầy cô duyệt và xuất bản đề, Test cuối chương sẽ mở ở đây." />
-    if (!preview && missing > 0) return <Locked back={back} title={`Hoàn thành thêm ${missing} bài để mở Test cuối chương.`} note={`Thầy cô đặt điều kiện mở: ${rules.opens === 'all' ? 'xong cả' : 'xong gần hết'} ${visibleLessons.length} bài của khóa. Bạn đã xong ${doneLessons}/${visibleLessons.length} bài.`} />
+    if (!published || fixed.length === 0) return <Locked back={back} title="Thầy cô chưa mở bài kiểm tra này." note="Khi thầy cô duyệt và xuất bản đề, bài kiểm tra cuối khóa sẽ mở ở đây." />
+    if (!preview && missing > 0) return <Locked back={back} title={`Hoàn thành thêm ${missing} bài để mở bài kiểm tra cuối khóa.`} note={`Thầy cô đặt điều kiện mở: ${rules.opens === 'all' ? 'xong cả' : 'xong gần hết'} ${visibleLessons.length} bài của khóa. Bạn đã xong ${doneLessons}/${visibleLessons.length} bài.`} />
 
     const validSession = isSessionValid(activeSession) ? activeSession : undefined
 
@@ -154,7 +154,7 @@ export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
         const step = weakest ? reviewStepFor(weakest.conceptId) : undefined
         const weakestStep = step ? { label: `Ôn: ${step.conceptName}`, to: `/lesson/${step.lessonId}?t=${step.start}` } : undefined
         announceRewards(before, after, {
-            context: `Test cuối chương · ${course.title}`,
+            context: `Kiểm tra cuối khóa · ${course.title}`,
             headline: correct / attempt.total >= rules.passRatio ? 'Nắm chắc cả chương.' : 'Biết chỗ hổng là đã đi được nửa đường.',
             rows: rows.filter((r) => r.xp > 0 || rows.length === 1),
             next: weakestStep ?? { label: 'Xem bản đồ kỹ năng', to: '/journey' },
@@ -241,10 +241,10 @@ function Intro({
             <Link to={back.to} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
                 <ChevronLeft size={16} /> {back.label}
             </Link>
-            <p className="mt-6 text-eyebrow uppercase text-brand-ink">Test cuối chương</p>
+            <p className="mt-6 text-eyebrow uppercase text-brand-ink">Kiểm tra cuối khóa</p>
             <h1 className="mt-3 text-headline text-foreground">{courseTitle}</h1>
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-                Một bài test ngắn gom kiến thức của cả khóa. Kết quả cho biết bạn nắm vững từng khái niệm đến đâu và chỉ đúng đoạn video cần xem lại.
+                Một bài kiểm tra ngắn gom kiến thức của cả khóa. Kết quả cho biết bạn nắm vững từng khái niệm đến đâu và chỉ đúng đoạn video cần xem lại.
             </p>
 
             {activeSession && (
@@ -336,7 +336,7 @@ export function Running({
     onAutoSave,
     split = false,
 }: {
-    /** Bố cục lưới 8/4 (checkpoint): câu hỏi cột 8, đồng hồ + danh sách câu + nút nộp cột 4. Mặc định: một cột cũ của test cuối chương */
+    /** Bố cục lưới 8/4 (checkpoint): câu hỏi cột 8, đồng hồ + danh sách câu + nút nộp cột 4. Mặc định: một cột cũ của kiểm tra cuối khóa */
     split?: boolean
     phase: Extract<Phase, { kind: 'running' }>
     onSubmit: (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => void
@@ -595,7 +595,7 @@ function Result({ courseTitle, phase, onRetry, passRatio, back, canRetry }: { co
     const { attempt, questions, picks, xp } = phase
     const pctScore = Math.round((attempt.correct / attempt.total) * 100)
     const passed = attempt.correct / attempt.total >= passRatio
-    // Đã nắm chắc = mức sau test từ 80%, kể cả khi câu test vừa rồi sai; còn lại hiện đầy đủ, chỉ khái niệm trả lời sai/bỏ trống mới vào lộ trình ôn
+    // Đã nắm chắc = mức sau kiểm tra từ 80%, kể cả khi câu test vừa rồi sai; còn lại hiện đầy đủ, chỉ khái niệm trả lời sai/bỏ trống mới vào lộ trình ôn
     const passedConcepts = attempt.concepts.filter((c) => c.after >= MASTERED_RATIO)
     const openConcepts = attempt.concepts.filter((c) => c.after < MASTERED_RATIO)
     const gaps = openConcepts.filter((c) => !c.correct)
@@ -606,7 +606,7 @@ function Result({ courseTitle, phase, onRetry, passRatio, back, canRetry }: { co
             <Link to={back.to} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
                 <ChevronLeft size={16} /> {back.label}
             </Link>
-            <section aria-label="Kết quả test" className="mt-6 rounded-panel surface-red-deep p-7 shadow-brand">
+            <section aria-label="Kết quả kiểm tra" className="mt-6 rounded-panel surface-red-deep p-7 shadow-brand">
                 <p className="text-eyebrow uppercase text-ink-foreground/70">Kết quả · {courseTitle}</p>
                 <div className="mt-3 flex flex-wrap items-end gap-x-10 gap-y-3">
                     <p className="font-mono text-7xl font-bold leading-none">
@@ -627,7 +627,7 @@ function Result({ courseTitle, phase, onRetry, passRatio, back, canRetry }: { co
 
             <section className="mt-10" aria-labelledby="mastery-title">
                 <h2 id="mastery-title" className="text-title text-foreground">Mức nắm vững từng khái niệm</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Thanh là mức sau test, đã gộp với kết quả học trước đó. Bản đồ kỹ năng được cập nhật theo đây.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Thanh là mức sau kiểm tra, đã gộp với kết quả học trước đó. Bản đồ kỹ năng được cập nhật theo đây.</p>
                 <ul className="mt-5 flex flex-col gap-3">
                     {openConcepts.map((c) => {
                         const after = Math.round(c.after * 100)

@@ -7,7 +7,7 @@ export function blankQuestion(lessonId: string, conceptId: string): SourcedQuest
     return { id: newCustomId(), lessonId, conceptId, prompt: '', options: ['', '', '', ''], correctIndex: 0, explanation: '', source: 'teacher' }
 }
 
-/** Editor một câu hỏi trong đề (dùng ở Kiểm tra nhanh và Test cuối chương): nội dung, 4 đáp án, đáp án đúng, giải thích, khái niệm. */
+/** Editor một câu hỏi trong đề (dùng ở Kiểm tra nhanh và Kiểm tra cuối khóa): nội dung, 4 đáp án, đáp án đúng, giải thích, khái niệm. */
 export function QuestionEditor({
     question,
     concepts,

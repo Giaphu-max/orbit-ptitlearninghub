@@ -10,7 +10,7 @@ import { QUICK_RULES } from '@/lib/test-sets'
 import type { useOrbitStore } from '@/store/useOrbitStore'
 
 // Số liệu cho màn tổng kết chặng (/recap/:lessonId). Chặng = một bài học trong khóa.
-// Mọi con số lấy từ store: mức nắm vững trước/sau (stageStart → conceptMastery), XP chặng, câu trong video, test cuối chặng, huy hiệu mới.
+// Mọi con số lấy từ store: mức nắm vững trước/sau (stageStart → conceptMastery), XP chặng, câu trong video, kiểm tra cuối chặng, huy hiệu mới.
 
 type State = ReturnType<typeof useOrbitStore.getState>
 
@@ -21,7 +21,7 @@ export interface RecapConcept {
     was: number
     now: number
     mastered: boolean
-    /** Ghi chú ngắn: sửa được sau khi sai / sai trong test cuối chặng */
+    /** Ghi chú ngắn: sửa được sau khi sai / sai trong kiểm tra cuối chặng */
     note?: string
 }
 
@@ -64,7 +64,7 @@ export interface RecapReview {
 export interface RecapNext {
     label: string
     to: string
-    /** Bài kế tiếp trong khóa (không có = bài cuối khóa, nút chính là test cuối chương) */
+    /** Bài kế tiếp trong khóa (không có = bài cuối khóa, nút chính là kiểm tra cuối khóa) */
     lesson?: Lesson
     unlocked: { name: string; because: string }[]
 }
@@ -110,7 +110,7 @@ function badgeInfo(b: Badge, s: State): RecapBadge {
             rows = [{ label: 'Điểm Virtual Director', value: `${s.directorBest} / ${c.minScore}` }]
             break
         case 'test-score':
-            rows = [{ label: 'Test cuối chương tốt nhất', value: `${pct(ctx.testBest)}% / ${pct(c.minRatio)}%` }]
+            rows = [{ label: 'Kiểm tra cuối khóa tốt nhất', value: `${pct(ctx.testBest)}% / ${pct(c.minRatio)}%` }]
             break
         case 'hidden-mission':
             rows = []
@@ -138,7 +138,7 @@ export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapDa
         const now = s.conceptMastery[c.id] ?? 0
         const was = start ? (start.mastery[c.id] ?? 0) : now
         const corrected = quizOf.some((x) => x.q.conceptId === c.id && x.r.outcome === 'corrected')
-        const note = wrongInCheckpoint.has(c.id) ? 'Sai câu ở bài test cuối chặng' : corrected ? 'Sửa được sau khi sai' : undefined
+        const note = wrongInCheckpoint.has(c.id) ? 'Sai câu ở bài kiểm tra cuối chặng' : corrected ? 'Sửa được sau khi sai' : undefined
         return { id: c.id, name: c.name, segment: c.segment, was: Math.min(was, now), now, mastered: now >= UNLOCK_THRESHOLD, note }
     })
     const weakest = [...concepts].filter((c) => !c.mastered).sort((a, b) => a.now - b.now)[0]
@@ -197,7 +197,7 @@ export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapDa
         .map((n) => ({ name: n.concept.name, because: n.concept.prerequisiteIds.map((id) => getConcept(id)?.name).filter(Boolean).join(', ') }))
     const next: RecapNext = nextLesson
         ? { label: `Bắt đầu chặng ${index + 2}`, to: `/lesson/${nextLesson.id}`, lesson: nextLesson, unlocked }
-        : { label: 'Làm test cuối chương', to: `/test/${course.id}`, unlocked }
+        : { label: 'Làm bài kiểm tra cuối khóa', to: `/test/${course.id}`, unlocked }
 
     return {
         course,

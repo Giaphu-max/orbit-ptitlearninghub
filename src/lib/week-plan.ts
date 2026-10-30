@@ -26,8 +26,8 @@ const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), 
 const fmtShort = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}`
 
 /**
- * Lộ trình đề xuất (tối đa 3 việc, mỗi việc cách 2 ngày kể từ hôm nay): bài đang học → test cuối chặng của bài đó → chặng kế
- * (hết bài thì test cuối chương). Tính theo ngày hiện tại và tiến độ trong store, không lưu.
+ * Lộ trình đề xuất (tối đa 3 việc, mỗi việc cách 2 ngày kể từ hôm nay): bài đang học → kiểm tra cuối chặng của bài đó → chặng kế
+ * (hết bài thì kiểm tra cuối khóa). Tính theo ngày hiện tại và tiến độ trong store, không lưu.
  */
 export function buildPlan(summaries: CourseSummary[], progress: Record<string, { lastPositionSec: number; completed: boolean }>, now = new Date()): PlanTask[] {
     const main = primaryCourse(summaries)
@@ -46,13 +46,13 @@ export function buildPlan(summaries: CourseSummary[], progress: Record<string, {
             date: localDate(now),
             href: `/lesson/${cur.id}${resuming ? `?t=${Math.floor(pos)}` : ''}`,
         },
-        { id: `checkpoint-${cur.id}`, title: `Test cuối chặng ${String(idx + 1).padStart(2, '0')}`, sub: 'Kiểm tra nhanh cuối bài', date: localDate(addDays(now, 2)), href: `/checkpoint/${cur.id}` },
+        { id: `checkpoint-${cur.id}`, title: `Kiểm tra cuối chặng ${String(idx + 1).padStart(2, '0')}`, sub: 'Kiểm tra nhanh', date: localDate(addDays(now, 2)), href: `/checkpoint/${cur.id}` },
     ]
     const next = ls[idx + 1]
     tasks.push(
         next
             ? { id: `lesson-${next.id}`, title: next.title, sub: `Chặng ${String(idx + 2).padStart(2, '0')} · ${Math.ceil(next.durationSec / 60)} phút`, date: localDate(addDays(now, 4)), href: `/lesson/${next.id}` }
-            : { id: `test-${main.course.id}`, title: 'Test cuối chương', sub: main.course.title, date: localDate(addDays(now, 4)), href: `/test/${main.course.id}` },
+            : { id: `test-${main.course.id}`, title: 'Kiểm tra cuối khóa', sub: main.course.title, date: localDate(addDays(now, 4)), href: `/test/${main.course.id}` },
     )
     return tasks
 }

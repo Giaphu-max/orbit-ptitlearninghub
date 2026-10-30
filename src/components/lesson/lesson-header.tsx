@@ -151,7 +151,7 @@ function LessonTitleBlock({ course, lesson, courseLessons }: LessonTitleBlockPro
             footer={{
                 to: `/test/${lesson.courseId}`,
                 icon: <Star size={14} className="text-brand-ink" aria-hidden />,
-                title: 'Test cuối chương',
+                title: 'Kiểm tra cuối khóa',
                 meta: doneCount >= courseLessons.length ? 'sẵn sàng' : `xong ${doneCount}/${courseLessons.length} bài`,
             }}
             title={lesson.title}

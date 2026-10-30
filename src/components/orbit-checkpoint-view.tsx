@@ -12,7 +12,7 @@ import { LessonHeader } from '@/components/lesson/lesson-header'
 type Phase = { kind: 'intro' } | { kind: 'running'; questions: TestQuestion[]; deadline: number }
 
 /**
- * /checkpoint/:lessonId – test cuối chặng 6 câu của một bài. Dùng lại phần làm bài của test cuối chương (đồng hồ 60s/câu, ngưỡng đạt 80%);
+ * /checkpoint/:lessonId – kiểm tra cuối chặng 6 câu của một bài. Dùng lại phần làm bài của kiểm tra cuối khóa (đồng hồ 60s/câu, ngưỡng đạt 80%);
  * nộp bài xong ghi kết quả (mức nắm vững + XP) rồi chuyển sang màn tổng kết chặng.
  */
 export function OrbitCheckpointView() {

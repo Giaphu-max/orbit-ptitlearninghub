@@ -42,7 +42,7 @@
   {
     "id": "vuot-ai-cuoi-chuong",
     "name": "Vượt ải cuối chương",
-    "description": "Đạt từ 80% trong một bài test cuối chương: nắm chắc kiến thức cả khóa.",
+    "description": "Đạt từ 80% trong một bài kiểm tra cuối khóa: nắm chắc kiến thức cả khóa.",
     "criterion": {
       "type": "test-score",
       "minRatio": 0.8

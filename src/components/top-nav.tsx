@@ -35,7 +35,7 @@ function getCurrentPageLabel(pathname: string): string {
     if (pathname.startsWith('/lesson')) return 'Bài giảng'
     if (pathname.startsWith('/checkpoint')) return 'Kiểm tra'
     if (pathname.startsWith('/recap')) return 'Tổng kết'
-    if (pathname.startsWith('/test')) return 'Bài test'
+    if (pathname.startsWith('/test')) return 'Bài kiểm tra'
     if (pathname.startsWith('/studio')) return 'Studio 3D'
     if (pathname.startsWith('/journey')) return 'Tiến độ & Kỹ năng'
     return 'PTIT'

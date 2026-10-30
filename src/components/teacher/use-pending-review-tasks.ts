@@ -5,7 +5,7 @@ import { usePendingTests, type PendingTest } from '@/lib/test-sets'
 export type PendingTask = { kind: 'lesson'; review: LessonReview } | { kind: 'test'; test: PendingTest }
 
 /**
- * Việc chờ duyệt của giảng viên, đã sắp xếp: bài đang duyệt dở → bài AI vừa tạo xong → test cuối chương bản nháp (bỏ bài AI đang tạo).
+ * Việc chờ duyệt của giảng viên, đã sắp xếp: bài đang duyệt dở → bài AI vừa tạo xong → kiểm tra cuối khóa bản nháp (bỏ bài AI đang tạo).
  * Nguồn duy nhất cho Tổng quan, badge "Bài giảng" ở thanh bên và chuông, nên ba con số luôn bằng nhau và cập nhật cùng lúc khi duyệt/xuất bản.
  */
 export function usePendingReviewTasks(): PendingTask[] {

@@ -36,7 +36,7 @@ export function SiteFooter() {
             links: [
                 { label: 'Ôn tập', to: '/today' },
                 { label: 'Học phần', to: '/learning' },
-                ...(firstCourse ? [{ label: 'Test cuối chương', to: `/test/${firstCourse.id}` }] : []),
+                ...(firstCourse ? [{ label: 'Kiểm tra cuối khóa', to: `/test/${firstCourse.id}` }] : []),
                 { label: 'Tiến độ & Kỹ năng', to: '/journey' },
             ],
         },

@@ -55,12 +55,12 @@ export function LessonStateList({ items, onPick, outline }: { items: LessonRevie
     )
 }
 
-/** Nội dung báo "chưa thể soạn Test cuối chương" khi khóa chưa có bài nào xuất bản; dùng chung cho hộp thoại ở trang Bài giảng và trang soạn test. */
+/** Nội dung báo "chưa thể soạn Kiểm tra cuối khóa" khi khóa chưa có bài nào xuất bản; dùng chung cho hộp thoại ở trang Bài giảng và trang soạn test. */
 export function NoPublishedBody({ courseTitle, pending, onPick }: { courseTitle: string; pending: LessonReview[]; onPick: (lessonId: string) => void }) {
     return (
         <>
             <p>
-                Đề test chỉ lấy câu hỏi từ các bài đã duyệt và xuất bản. Khóa “<span title={courseTitle}>{clip40(courseTitle)}</span>” chưa có bài nào được xuất bản.
+                Đề kiểm tra chỉ lấy câu hỏi từ các bài đã duyệt và xuất bản. Khóa “<span title={courseTitle}>{clip40(courseTitle)}</span>” chưa có bài nào được xuất bản.
             </p>
             {pending.length > 0 && <LessonStateList items={pending} onPick={onPick} />}
         </>
