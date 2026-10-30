@@ -35,7 +35,7 @@ export function ClassPicker() {
                 className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card px-4 text-[13.5px] font-bold text-strong shadow-card transition hover:border-muted-foreground/40"
             >
                 Lớp <span className="font-mono">{cls.id}</span>
-                <span className="font-medium text-muted-foreground">· {cls.subject} · {cls.size} sinh viên</span>
+                <span className="font-medium text-muted-foreground">· {cls.size} SV</span>
                 <ChevronDown size={13} className={`transition-transform duration-fast ${open ? 'rotate-180' : ''}`} aria-hidden />
             </button>
             {open && (

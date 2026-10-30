@@ -58,9 +58,8 @@ export function OrbitTeacherClassView() {
     const courses = useTeacherCourses()
     const testSets = useOrbitStore((s) => s.testSets)
     const { cls, stats, courseIds } = useTeacherClass()
-    const [courseSel, setCourseSel] = useState<string>()
     const classCourses = courses.filter((c) => courseIds.includes(c.id))
-    const course = classCourses.find((c) => c.id === courseSel) ?? classCourses[0]
+    const course = classCourses[0]
     const { published: pubLessons } = useCourseLessons(course?.id)
     const courseReviews = useMemo(() => reviews.filter((r) => r.lesson.courseId === course?.id), [reviews, course])
     const quick = useMemo(() => buildQuick(courseReviews, stats, testSets), [courseReviews, stats, testSets])
@@ -98,18 +97,8 @@ export function OrbitTeacherClassView() {
                 <div>
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">Lớp học</p>
                     <h1 className="mt-2 text-4xl font-black tracking-[-0.03em] text-strong">Kết quả theo lớp</h1>
-                    <p className="mt-2 text-xs text-muted-foreground">Dữ liệu mẫu</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2.5">
-                    <ClassPicker />
-                    <select aria-label="Chọn khóa" value={course.id} onChange={(e) => setCourseSel(e.target.value)} disabled={classCourses.length < 2} className="h-10 max-w-[280px] truncate rounded-full border border-border bg-card px-4 text-[13.5px] font-bold text-strong shadow-card disabled:opacity-100">
-                        {classCourses.map((c) => (
-                            <option key={c.id} value={c.id}>
-                                {c.title}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                <ClassPicker />
             </header>
 
             <div className="mt-8 flex flex-col gap-10">
@@ -381,7 +370,7 @@ function ConceptSection({ rows, stats }: { rows: ConceptRow[]; stats: ClassStats
             <h3 className={h3}>Theo khái niệm</h3>
             <div className="mt-4 rounded-[20px] border border-border bg-card shadow-card">
                 <div className={`${CONCEPT_GRID} border-b border-border px-5 py-3 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground max-md:hidden`}>
-                    <span>Khái niệm · sắp theo mức hổng</span>
+                    <span>Khái niệm</span>
                     <span>Sai lần đầu trong video</span>
                     <span>Kiểm tra nhanh</span>
                     <span>Kiểm tra cuối khóa</span>

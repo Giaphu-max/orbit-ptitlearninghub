@@ -211,7 +211,6 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                         <h2 className="text-[22px] font-black text-strong">
                             Câu hỏi trong đề <span className="ml-1.5 font-mono text-base font-extrabold text-muted-foreground">{questions.length}</span>
                         </h2>
-                        <span className="text-[12.5px] text-muted-foreground">Kéo để đổi thứ tự (hoặc Alt + ↑/↓) · bấm để sửa</span>
                     </div>
                     <p className="sr-only" role="status" aria-live="polite">
                         {live}
@@ -236,6 +235,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                                         <button
                                             type="button"
                                             aria-label={`Kéo để đổi thứ tự câu ${i + 1}; Alt cùng mũi tên lên xuống để di chuyển`}
+                                            title="Kéo để đổi thứ tự (Alt + ↑/↓)"
                                             onKeyDown={(e) => {
                                                 if (!e.altKey) return
                                                 if (e.key === 'ArrowUp') (e.preventDefault(), move(i, i - 1))

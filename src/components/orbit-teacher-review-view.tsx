@@ -376,12 +376,6 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                         </div>
 
                         <div role="tabpanel" className="px-3 pb-3 pt-2">
-                            {(tab === 'con' || tab === 'q') && stats && (
-                                <p className="px-2 pb-1.5 pt-2 text-xs text-muted-foreground">
-                                    Xếp theo <b className="font-bold text-strong">% lớp sai lần đầu</b>, mục chưa duyệt lên đầu
-                                </p>
-                            )}
-
                             {tab === 'sum' && (
                                 <ReviewRow
                                     domId="item-sum"
@@ -477,7 +471,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                                 open={openKey === key}
                                                 done={reviewed.has(key)}
                                                 title={q.prompt}
-                                                sub={`dừng ở ${formatTime(q.pauseAt)}${q.variants.length ? ` · có ${q.variants.length} câu biến thể` : ''}`}
+                                                sub={`${formatTime(q.pauseAt)}${q.variants.length ? ` · ${q.variants.length} câu biến thể` : ''}`}
                                                 rate={rate}
                                                 hot={rate !== null && rate >= HOT_RATE}
                                                 onToggle={() => (openKey === key ? setOpenKey(null) : openItem(key))}

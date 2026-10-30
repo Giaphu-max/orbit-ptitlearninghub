@@ -1,6 +1,5 @@
 import { Link, Navigate } from 'react-router-dom'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
-import { TEACHER_PROFILE } from '@/data/teacher-notes'
 import { findUrgent, pct, useAllStats, useLessonReviews, type LessonReview } from '@/lib/teacher'
 import type { PendingTest } from '@/lib/test-sets'
 import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
@@ -8,12 +7,6 @@ import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 const MAX_ROWS = 3
-
-function dateLabel() {
-    const d = new Date()
-    const w = d.toLocaleDateString('vi-VN', { weekday: 'long' })
-    return `${w.charAt(0).toUpperCase()}${w.slice(1).toLowerCase()}, ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
-}
 
 /** Hàng là một link: hover/focus nổi lên, nút CTA bên phải chỉ là hình (aria-hidden) để cả hàng là một điểm focus. */
 const rowLinkCls = 'group transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-card hover:shadow-card focus-visible:-translate-y-0.5 focus-visible:bg-card focus-visible:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0'
@@ -37,12 +30,7 @@ export function TeacherOverview() {
 
     return (
         <div className="w-full pb-8">
-            <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-                <h1 className="text-[34px] font-black leading-tight tracking-tight text-strong">Việc cần làm</h1>
-                <p className="text-sm text-muted-foreground">
-                    Chào {TEACHER_PROFILE.honorific} {TEACHER_PROFILE.name} · {dateLabel()}
-                </p>
-            </header>
+            <h1 className="text-[34px] font-black leading-tight tracking-tight text-strong">Việc cần làm</h1>
 
             {urgent && (
                 <section
@@ -98,7 +86,6 @@ export function TeacherOverview() {
                     <h2 id="pending-title" className="text-[22px] font-black tracking-tight text-strong">
                         Chờ duyệt <span className="ml-1 font-mono text-base font-extrabold text-brand-ink">{rows.length}</span>
                     </h2>
-                    {rows.length > 0 && <small className="text-[12.5px] text-muted-foreground">Bài đang dở lên trước</small>}
                 </div>
                 {rows.length === 0 ? (
                     <p className="rounded-[20px] border border-border bg-card px-6 py-5 text-[15px] text-foreground shadow-card">

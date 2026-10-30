@@ -10,9 +10,9 @@ export interface TeacherClass {
 }
 
 export const TEACHER_CLASSES: TeacherClass[] = [
-    { id: 'D24CQPT01', subject: 'Dựng phim', size: 32, courseIds: ['dung-audio-video-phi-tuyen'] },
-    { id: 'D24CQPT02', subject: 'Nhiếp ảnh', size: 29, courseIds: ['nhiep-anh-va-anh-sang'] },
-    { id: 'D23CQPT01', subject: 'Hậu kỳ nâng cao', size: 35, courseIds: ['dung-audio-video-phi-tuyen'] },
+    { id: 'D24CQPT01', subject: 'Dựng audio và video phi tuyến', size: 32, courseIds: ['dung-audio-video-phi-tuyen'] },
+    { id: 'D24CQPT02', subject: 'Nhiếp ảnh và ánh sáng', size: 29, courseIds: ['nhiep-anh-va-anh-sang'] },
+    { id: 'D23CQPT01', subject: 'Nhiếp ảnh và ánh sáng', size: 35, courseIds: ['nhiep-anh-va-anh-sang'] },
 ]
 
 export const DEFAULT_CLASS_ID = TEACHER_CLASSES[0].id

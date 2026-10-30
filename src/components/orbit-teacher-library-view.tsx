@@ -498,7 +498,6 @@ function CourseSection(p: SectionProps) {
                 )}
                 <MoreMenu label={`Tùy chọn khóa ${course.title}`} items={menu} />
             </div>
-            {sorting && <p className="mb-3 text-[13px] text-muted-foreground">Kéo tay nắm để đổi vị trí, hoặc giữ Alt rồi bấm ← → khi đang chọn tay nắm. Bấm “Xong” khi sắp xếp xong.</p>}
             {cards.length === 0 && !filtering && <p className="rounded-[14px] border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">Khóa này chưa có video. Bấm “+ Thêm video” để bắt đầu.</p>}
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-[18px]">
                 {cards.map((r, i) => (
@@ -518,6 +517,7 @@ function CourseSection(p: SectionProps) {
                             <button
                                 type="button"
                                 aria-label={`Đổi vị trí: ${r.lesson.title} (vị trí ${i + 1}/${cards.length}). Alt và mũi tên trái phải để di chuyển`}
+                                title="Kéo để đổi vị trí (Alt + ←/→)"
                                 onKeyDown={(e) => {
                                     if (!e.altKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return
                                     e.preventDefault()
