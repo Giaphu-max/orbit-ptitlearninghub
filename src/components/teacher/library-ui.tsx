@@ -96,7 +96,7 @@ export function MoreMenu({ label, items, className = 'relative', card }: { label
 }
 
 /** Hộp thoại nhỏ: focus trap, Esc đóng, bấm nền đóng, trả focus về nút đã mở. */
-export function Modal({ title, onClose, children, width = 440 }: { title: string; onClose: () => void; children: ReactNode; width?: number }) {
+export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
     const root = useRef<HTMLDivElement>(null)
     useEffect(() => {
         const prev = document.activeElement as HTMLElement | null
@@ -115,15 +115,15 @@ export function Modal({ title, onClose, children, width = 440 }: { title: string
         }
     }, [onClose])
     return (
-        <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-auto bg-ink/60 p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-            <div ref={root} role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: width }} className="mt-[12vh] w-full rounded-[20px] border border-border bg-card p-6 shadow-raised">
+        <div className="fixed inset-0 z-[80] grid place-items-center overflow-auto bg-ink/60 p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+            <div ref={root} role="dialog" aria-modal="true" aria-label={title} className="m-auto w-[min(640px,calc(100vw-48px))] rounded-[20px] border border-border bg-card p-8 shadow-raised">
                 <div className="flex items-start justify-between gap-3">
-                    <h2 className="text-lg font-black text-strong">{title}</h2>
+                    <h2 className="text-2xl font-black leading-tight text-strong">{title}</h2>
                     <button
                         type="button"
                         aria-label="Đóng"
                         onClick={onClose}
-                        className="-mr-1.5 -mt-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+                        className="-mr-2 -mt-1.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
                     >
                         <X size={18} aria-hidden />
                     </button>
@@ -143,7 +143,7 @@ export function ConfirmDialog({ title, children, confirmLabel, onConfirm, onClos
     useEffect(() => cancel.current?.focus(), [])
     return (
         <Modal title={title} onClose={onClose}>
-            <div className="mt-3 text-sm leading-relaxed text-muted-foreground">{children}</div>
+            <div className="mt-3 text-base leading-[1.6] text-muted-foreground">{children}</div>
             <div className="mt-6 flex flex-wrap items-center justify-end gap-2.5">
                 {extra}
                 <button ref={cancel} type="button" onClick={onClose} className={ghost}>

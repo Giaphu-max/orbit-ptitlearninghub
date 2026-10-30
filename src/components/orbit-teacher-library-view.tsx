@@ -303,7 +303,7 @@ export function OrbitTeacherLibraryView() {
             )}
             {dlg?.k === 'finalNone' && dCourse && (
                 <Modal title="Chưa thể soạn test cuối chương" onClose={() => setDlg(null)}>
-                    <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    <div className="mt-3 text-base leading-[1.6] text-muted-foreground">
                         <NoPublishedBody courseTitle={`“${dCourse.title}”`} pending={reviews.filter((r) => r.lesson.courseId === dCourse.id && r.state !== 'published')} onPick={(id) => (setDlg(null), navigate(`/teacher/review/${id}`))} />
                     </div>
                 </Modal>
@@ -314,10 +314,10 @@ export function OrbitTeacherLibraryView() {
                 const rest = mine.filter((r) => r.state !== 'published')
                 return (
                     <Modal title={`Soạn đề từ ${k}/${mine.length} bài đã duyệt?`} onClose={() => setDlg(null)}>
-                        <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                        <div className="mt-3 text-base leading-[1.6] text-muted-foreground">
                             <p>AI chỉ lấy câu hỏi từ các bài đã duyệt. Các bài chưa duyệt sẽ không có trong đề:</p>
                             <LessonStateList outline items={rest} onPick={(id) => (setDlg(null), navigate(`/teacher/review/${id}`))} />
-                            <p className="mt-3 text-xs text-muted-foreground/80">Duyệt thêm bài sau thì có thể thêm câu của bài đó vào đề.</p>
+                            <p className="mt-3 text-sm text-muted-foreground/80">Duyệt thêm bài sau thì có thể thêm câu của bài đó vào đề.</p>
                         </div>
                         <div className="mt-6 flex flex-wrap justify-end gap-2.5">
                             <button type="button" onClick={() => (store.confirmFinalDraft(dCourse.id), setDlg(null), navigate(`/teacher/test/${dCourse.id}`))} className={primary}>

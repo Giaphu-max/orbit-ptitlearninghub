@@ -112,7 +112,7 @@ export function NewCourseDialog({ onCreate, onClose }: { onCreate: (course: Cour
         onClose()
     }
     return (
-        <Modal title="Khóa học mới" onClose={onClose} width={620}>
+        <Modal title="Khóa học mới" onClose={onClose}>
             <label htmlFor="new-course-title" className={`${labelCls} mt-4`}>
                 Tên khóa
             </label>
@@ -139,7 +139,7 @@ export function CoverDialog({ course, onClose }: { course: Course; onClose: () =
     const derived = deriveCover(course.subject)
     const accent = override?.accent ?? course.cover?.accent ?? derived.accent
     return (
-        <Modal title="Đổi bìa khóa" onClose={onClose} width={620}>
+        <Modal title="Đổi bìa khóa" onClose={onClose}>
             <p className="mt-1 text-sm text-muted-foreground">{course.title}</p>
             <div className="mt-4">
                 <CoverFields

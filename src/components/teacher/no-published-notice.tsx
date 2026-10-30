@@ -22,11 +22,11 @@ export function LessonStateList({ items, onPick, outline }: { items: LessonRevie
                                 <span title={r.lesson.title} className="truncate font-semibold text-strong">
                                     {r.lesson.title}
                                 </span>
-                                {r.state === 'editing' && <span className="shrink-0 font-mono text-xs text-muted-foreground/80">{r.done}/{r.total}</span>}
+                                {r.state === 'editing' && <span className="shrink-0 font-mono text-[13px] text-muted-foreground/80">{r.done}/{r.total}</span>}
                                 {r.state === 'generating' && <span className="shrink-0 text-xs text-muted-foreground/80">AI đang tạo</span>}
                             </span>
                             {r.state !== 'generating' && (
-                                <span className={`inline-flex h-[34px] shrink-0 items-center rounded-[10px] px-3.5 text-[13px] font-extrabold ${outline ? 'border border-brand-600 bg-card text-brand-ink' : 'surface-red text-ink-foreground shadow-brand'}`}>
+                                <span className={`inline-flex h-10 shrink-0 items-center rounded-[10px] px-5 text-[15px] font-extrabold ${outline ? 'border border-brand-600 bg-card text-brand-ink' : 'surface-red text-ink-foreground shadow-brand'}`}>
                                     {r.state === 'editing' ? 'Duyệt tiếp' : 'Duyệt'}
                                 </span>
                             )}
@@ -35,9 +35,9 @@ export function LessonStateList({ items, onPick, outline }: { items: LessonRevie
                     return (
                         <li key={r.lesson.id}>
                             {r.state === 'generating' ? (
-                                <div className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13.5px]">{row}</div>
+                                <div className="flex items-center gap-2.5 min-h-[60px] px-4 py-2 text-base">{row}</div>
                             ) : (
-                                <button type="button" onClick={() => onPick(r.lesson.id)} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-[13.5px] transition hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
+                                <button type="button" onClick={() => onPick(r.lesson.id)} className="flex w-full items-center gap-2.5 min-h-[60px] px-4 py-2 text-base transition hover:bg-muted focus-visible:bg-muted focus-visible:outline-none">
                                     {row}
                                 </button>
                             )}
