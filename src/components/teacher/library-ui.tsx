@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { MoreHorizontal } from 'lucide-react'
+import { MoreHorizontal, X } from 'lucide-react'
 import type { Course } from '@/data/types'
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -117,7 +117,17 @@ export function Modal({ title, onClose, children, width = 440 }: { title: string
     return (
         <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-auto bg-ink/60 p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
             <div ref={root} role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: width }} className="mt-[12vh] w-full rounded-[20px] border border-border bg-card p-6 shadow-raised">
-                <h2 className="text-lg font-black text-strong">{title}</h2>
+                <div className="flex items-start justify-between gap-3">
+                    <h2 className="text-lg font-black text-strong">{title}</h2>
+                    <button
+                        type="button"
+                        aria-label="Đóng"
+                        onClick={onClose}
+                        className="-mr-1.5 -mt-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+                    >
+                        <X size={18} aria-hidden />
+                    </button>
+                </div>
                 {children}
             </div>
         </div>
