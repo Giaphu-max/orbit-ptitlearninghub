@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowRight, Image as ImageIcon, Info, X, ChevronDown } from 'lucide-react'
+import { ArrowRight, Check, Image as ImageIcon, Info, X, ChevronDown } from 'lucide-react'
 import type { ClassStats, Lesson, LessonQuizQuestion } from '@/data/types'
 import { useYouTubePlayer } from '@/hooks/useYouTubePlayer'
 import { CoverEditor } from '@/components/courses/cover-editor'
-import { StepPills, TitleBlock } from '@/components/lesson/lesson-header'
+import { TitleBlock } from '@/components/lesson/lesson-header'
+import { QuickTestPanel } from '@/components/teacher/quick-test-panel'
 import { LessonPlayer } from '@/components/lesson/lesson-player'
 import { PlayerControls } from '@/components/lesson/player-controls'
 import { ItemActions, OptionRows, ReviewRow, VariantsBox, fieldCls, labelCls } from '@/components/teacher/review-fields'
@@ -12,17 +13,19 @@ import { TRAP_NOTES } from '@/data/teacher-notes'
 import { ApiRequestError, rewriteContent } from '@/lib/api'
 import { conceptRate, HOT_RATE, itemKey, lessonsOriginal, useAllStats, useLessonReviews, validate, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
+import { quickKey, quickSetFor, sourcedBank, type TestSet } from '@/lib/test-sets'
 import { useOrbitStore, type LessonEdits } from '@/store/useOrbitStore'
 
-type Tab = 'sum' | 'con' | 'q'
-const TAB_ORDER: Tab[] = ['sum', 'con', 'q']
+type Tab = 'sum' | 'con' | 'q' | 'qt'
+const TAB_ORDER: Tab[] = ['sum', 'con', 'q', 'qt']
 const NO_RESULTS = {}
 
-const tabOf = (key: string): Tab => (key === 'sum' ? 'sum' : key.startsWith('c:') ? 'con' : 'q')
+const tabOf = (key: string): Tab => (key === 'sum' ? 'sum' : key === 'qt' ? 'qt' : key.startsWith('c:') ? 'con' : 'q')
 
 /** Khóa các mục của một tab theo thứ tự hiển thị: xếp theo % lớp sai lần đầu giảm dần. */
 function orderedKeys(tab: Tab, d: Pick<LessonEdits, 'concepts' | 'quiz'>, stats: ClassStats): string[] {
     if (tab === 'sum') return ['sum']
+    if (tab === 'qt') return ['qt']
     const rows =
         tab === 'con'
             ? d.concepts.map((c, i) => ({ key: itemKey.concept(c.id), i, rate: conceptRate(stats, c.id) ?? -1 }))
@@ -73,12 +76,18 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
         const item = searchParams.get('item')
         const all = TAB_ORDER.flatMap((t) => orderedKeys(t, lesson, stats))
         if (item && all.includes(item)) return { tab: tabOf(item), open: item as string | null }
-        for (const t of ['q', 'con', 'sum'] as Tab[]) {
+        for (const t of ['q', 'con', 'sum', 'qt'] as Tab[]) {
             const first = orderedKeys(t, lesson, stats).find((k) => !reviewed.has(k))
             if (first) return { tab: t, open: first as string | null }
         }
         return { tab: 'q' as Tab, open: null }
     })
+    const setTestSet = useOrbitStore((s) => s.setTestSet)
+    const storedQuick = useOrbitStore((s) => s.testSets[quickKey(lesson.id)])
+    const quickBank = useMemo(() => sourcedBank([live]), [live])
+    const quickSet = useMemo(() => quickSetFor(live, storedQuick), [live, storedQuick])
+    const saveQuick = (next: TestSet) => setTestSet(quickKey(lesson.id), next)
+    const [focusAt, setFocusAt] = useState(() => Number(searchParams.get('t')) || 0)
     const [tab, setTab] = useState<Tab>(start.tab)
     const [openKey, setOpenKey] = useState<string | null>(start.open)
 
@@ -101,7 +110,10 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
     const openItem = useCallback(
         (key: string) => {
             setOpenKey(key)
-            seekTo(timeOf(key, live), { play: false })
+            if (key !== 'qt') {
+                setFocusAt(timeOf(key, live))
+                seekTo(timeOf(key, live), { play: false })
+            }
         },
         [seekTo, live],
     )
@@ -161,6 +173,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
         sum: { done: reviewed.has('sum') ? 1 : 0, all: 1 },
         con: { done: draft.concepts.filter((c) => reviewed.has(itemKey.concept(c.id))).length, all: draft.concepts.length },
         q: { done: draft.quiz.filter((q) => reviewed.has(itemKey.question(q.id))).length, all: draft.quiz.length },
+        qt: { done: reviewed.has('qt') ? 1 : 0, all: 1 },
     }
     const left = total - reviewed.size
 
@@ -199,88 +212,123 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
     const [coverOpen, setCoverOpen] = useState(false)
     const nextPending = reviews.find((r) => !r.published && r.lesson.id !== lesson.id && reviews.indexOf(r) > reviews.indexOf(review)) ?? reviews.find((r) => !r.published && r.lesson.id !== lesson.id)
 
+    // Lời giảng quanh mốc đang chọn (theo mục đang mở hoặc vị trí tua; đang phát thì theo đầu phát)
+    const at = player.isPlaying ? player.currentTime : focusAt
+    const lines = live.transcript
+    const curLine = Math.max(0, lines.findIndex((l, i) => at >= l.start && (i === lines.length - 1 || at < lines[i + 1].start)))
+    const around = lines.slice(Math.max(0, curLine - 1), curLine + 2)
+
+    const stepCls = (on: boolean, done: boolean) => `inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${on ? 'bg-brand-50 text-brand-ink' : done ? 'text-success' : 'text-muted-foreground'}`
+
     return (
         <div className="lesson-page w-full" data-focus="off">
             <div className="lesson-body pb-6">
-                <header className="lesson-grid items-end">
-                    <TitleBlock
-                        label={review.course?.title ?? 'Học phần'}
-                        badge={`Bài ${review.index + 1}/${courseReviews.length}`}
-                        items={courseReviews.map((r) => ({
-                            key: r.lesson.id,
-                            to: `/teacher/review/${r.lesson.id}`,
-                            n: String(r.index + 1).padStart(2, '0'),
-                            title: r.lesson.shortTitle ?? r.lesson.title,
-                            meta: r.published ? 'đã xb' : `${r.done}/${r.total}`,
-                            current: r.lesson.id === lesson.id,
-                        }))}
-                        footer={{ icon: <ImageIcon size={14} className="text-brand-ink" aria-hidden />, title: 'Đổi bìa môn học', meta: '', onClick: () => setCoverOpen(true) }}
-                        title={lesson.title}
-                        back={{ to: '/teacher/library', label: 'Bài giảng' }}
-                    />
-                    <StepPills
-                        label="Các bước duyệt"
-                        steps={[
-                            { id: 'ai', label: 'AI tạo nội dung', done: true },
-                            { id: 'review', label: 'Thầy cô duyệt', current: !published, done: published },
-                            { id: 'pub', label: 'Xuất bản', current: published },
-                        ]}
-                    />
+                <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                    <div className="min-w-0 flex-1 basis-[460px]">
+                        <TitleBlock
+                            wrapTitle
+                            label={review.course?.title ?? 'Học phần'}
+                            badge={`Bài ${review.index + 1}/${courseReviews.length}`}
+                            items={courseReviews.map((r) => ({
+                                key: r.lesson.id,
+                                to: `/teacher/review/${r.lesson.id}`,
+                                n: String(r.index + 1).padStart(2, '0'),
+                                title: r.lesson.shortTitle ?? r.lesson.title,
+                                meta: r.published ? 'đã xb' : `${r.done}/${r.total}`,
+                                current: r.lesson.id === lesson.id,
+                            }))}
+                            footer={{ icon: <ImageIcon size={14} className="text-brand-ink" aria-hidden />, title: 'Đổi bìa môn học', meta: '', onClick: () => setCoverOpen(true) }}
+                            title={lesson.title}
+                            back={{ to: '/teacher/library', label: 'Bài giảng' }}
+                        />
+                    </div>
+                    <nav aria-label="Các bước duyệt" className="flex shrink-0 items-center gap-1">
+                        <span className={stepCls(false, true)}>
+                            <Check size={12} strokeWidth={3} aria-hidden /> AI tạo nội dung
+                        </span>
+                        <span aria-hidden className="text-muted-foreground/50">→</span>
+                        <span className={stepCls(!published, published)} aria-current={!published ? 'step' : undefined}>
+                            {published ? <Check size={12} strokeWidth={3} aria-hidden /> : <b className="font-mono">2</b>} Thầy cô duyệt
+                        </span>
+                        <span aria-hidden className="text-muted-foreground/50">→</span>
+                        <span className={stepCls(published, false)} aria-current={published ? 'step' : undefined}>
+                            <b className="font-mono">3</b> Xuất bản
+                        </span>
+                    </nav>
                 </header>
-                <div className="h-6" />
 
-                <section className="lesson-grid lesson-theater">
-                    <div ref={playerAreaRef} className="lesson-player-area relative [&:fullscreen]:flex [&:fullscreen]:items-center [&:fullscreen]:bg-ink">
-                        <LessonPlayer containerRef={player.containerRef} status={player.status} error={player.error} youtubeId={lesson.youtubeId}>
-                            <PlayerControls
-                                lesson={live}
-                                currentTime={player.currentTime}
-                                duration={player.duration}
-                                isPlaying={player.isPlaying}
-                                rate={player.rate}
-                                results={NO_RESULTS}
-                                captionsOn={captionsOn}
-                                panelHidden={false}
-                                hidePanelToggle
-                                onToggle={() => (player.isPlaying ? player.pause() : player.play())}
-                                onSeek={(sec) => seekTo(sec, { play: player.isPlaying })}
-                                onToggleCaptions={() => setCaptionsOn((v) => !v)}
-                                onRate={player.setRate}
-                                onFullscreen={() => (document.fullscreenElement ? void document.exitFullscreen() : void playerAreaRef.current?.requestFullscreen?.())}
-                                onTogglePanel={() => undefined}
-                                interactive={canPlay}
-                                pinned={false}
-                                youtubeId={lesson.youtubeId}
-                                label={lesson.title}
-                                isBuffering={player.isBuffering}
-                                started={player.started}
-                                onSeekBy={(delta) => seekTo(Math.min(lesson.durationSec, Math.max(0, player.currentTime + delta)), { play: player.isPlaying })}
-                                quizMarker={(q) => {
-                                    const ok = reviewed.has(itemKey.question(q.id))
-                                    const rate = conceptRate(stats, q.conceptId)
-                                    const hot = !ok && rate !== null && rate >= HOT_RATE
-                                    const at = formatTime(q.pauseAt)
-                                    return {
-                                        state: ok ? 'approved' : hot ? 'hot' : 'pending',
-                                        hint: ok ? `Câu ${at} · đã duyệt` : hot ? `Câu ${at} · ${rate}% sai · chưa duyệt` : `Câu ${at} · chưa duyệt`,
-                                        current: openKey === itemKey.question(q.id),
-                                    }
-                                }}
-                                onMarkerClick={(q) => {
-                                    setTab('q')
-                                    openItem(itemKey.question(q.id))
-                                }}
-                            />
-                        </LessonPlayer>
+                <section className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+                    <div className="flex flex-col gap-4 lg:sticky lg:top-[88px]">
+                        <div ref={playerAreaRef} className="lesson-player-area relative [&:fullscreen]:flex [&:fullscreen]:items-center [&:fullscreen]:bg-ink">
+                            <LessonPlayer containerRef={player.containerRef} status={player.status} error={player.error} youtubeId={lesson.youtubeId}>
+                                <PlayerControls
+                                    lesson={live}
+                                    currentTime={player.currentTime}
+                                    duration={player.duration}
+                                    isPlaying={player.isPlaying}
+                                    rate={player.rate}
+                                    results={NO_RESULTS}
+                                    captionsOn={captionsOn}
+                                    panelHidden={false}
+                                    hidePanelToggle
+                                    compact
+                                    onToggle={() => (player.isPlaying ? player.pause() : player.play())}
+                                    onSeek={(sec) => (setFocusAt(sec), seekTo(sec, { play: player.isPlaying }))}
+                                    onToggleCaptions={() => setCaptionsOn((v) => !v)}
+                                    onRate={player.setRate}
+                                    onFullscreen={() => (document.fullscreenElement ? void document.exitFullscreen() : void playerAreaRef.current?.requestFullscreen?.())}
+                                    onTogglePanel={() => undefined}
+                                    interactive={canPlay}
+                                    pinned={false}
+                                    youtubeId={lesson.youtubeId}
+                                    label={lesson.title}
+                                    isBuffering={player.isBuffering}
+                                    started={player.started}
+                                    onSeekBy={(delta) => seekTo(Math.min(lesson.durationSec, Math.max(0, player.currentTime + delta)), { play: player.isPlaying })}
+                                    quizMarker={(q) => {
+                                        const ok = reviewed.has(itemKey.question(q.id))
+                                        const rate = conceptRate(stats, q.conceptId)
+                                        const hot = !ok && rate !== null && rate >= HOT_RATE
+                                        const at = formatTime(q.pauseAt)
+                                        return {
+                                            state: ok ? 'approved' : hot ? 'hot' : 'pending',
+                                            hint: ok ? `Câu ${at} · đã duyệt` : hot ? `Câu ${at} · ${rate}% sai · chưa duyệt` : `Câu ${at} · chưa duyệt`,
+                                            current: openKey === itemKey.question(q.id),
+                                        }
+                                    }}
+                                    onMarkerClick={(q) => {
+                                        setTab('q')
+                                        openItem(itemKey.question(q.id))
+                                    }}
+                                />
+                            </LessonPlayer>
+                        </div>
+
+                        <section aria-label="Lời giảng quanh mốc đang chọn" className="rounded-[16px] border border-border bg-card px-5 py-4 shadow-card">
+                            <h2 className="text-[13px] font-bold text-strong">
+                                Lời giảng quanh <span className="font-mono text-brand-ink">{formatTime(at)}</span>
+                            </h2>
+                            <ul className="mt-2.5 flex flex-col gap-1.5">
+                                {around.map((l) => (
+                                    <li key={l.start} className="grid grid-cols-[44px_1fr] gap-2.5 text-[13.5px] leading-relaxed">
+                                        <button type="button" onClick={() => (setFocusAt(l.start), seekTo(l.start, { play: false }))} className="text-left font-mono text-xs font-semibold text-muted-foreground hover:text-brand-ink">
+                                            {formatTime(l.start)}
+                                        </button>
+                                        <span className={l === lines[curLine] ? 'font-semibold text-strong' : 'text-muted-foreground'}>{l.text}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
                     </div>
 
-                    <aside aria-label="Duyệt nội dung" className="lesson-side flex flex-col rounded-[20px] border border-border bg-card shadow-card">
-                        <div role="tablist" aria-label="Loại nội dung" className="m-4 mb-0 flex shrink-0 gap-1 rounded-[14px] bg-muted p-1.5">
+                    <aside aria-label="Duyệt nội dung" className="min-w-0 rounded-[20px] border border-border bg-card shadow-card">
+                        <div role="tablist" aria-label="Loại nội dung" className="flex gap-1 border-b border-border p-2">
                             {(
                                 [
                                     ['sum', 'Tóm tắt'],
                                     ['con', 'Khái niệm'],
                                     ['q', 'Câu hỏi'],
+                                    ['qt', 'Kiểm tra nhanh'],
                                 ] as [Tab, string][]
                             ).map(([id, label]) => (
                                 <button
@@ -289,21 +337,21 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                     role="tab"
                                     aria-selected={tab === id}
                                     onClick={() => setTab(id)}
-                                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-[10px] px-1.5 py-[9px] text-[13.5px] font-bold transition duration-fast ${
-                                        tab === id ? 'bg-card text-strong shadow-card' : 'text-muted-foreground hover:text-strong'
+                                    className={`flex h-[52px] flex-1 flex-col items-center justify-center rounded-xl text-[15.5px] font-bold leading-tight transition duration-fast ${
+                                        tab === id ? 'bg-muted text-strong' : 'text-muted-foreground hover:text-strong'
                                     }`}
                                 >
                                     {label}
-                                    <em className="font-mono text-[11.5px] font-semibold not-italic opacity-75">
+                                    <em className="font-mono text-xs font-semibold not-italic opacity-75">
                                         {counts[id].done}/{counts[id].all}
                                     </em>
                                 </button>
                             ))}
                         </div>
 
-                        <div role="tabpanel" className="min-h-0 flex-1 overflow-auto px-3 pb-3 pt-2">
-                            {tab !== 'sum' && (
-                                <p className="flex items-center justify-between px-1.5 pb-1.5 pt-2 text-xs text-muted-foreground">
+                        <div role="tabpanel" className="px-3 pb-3 pt-2">
+                            {(tab === 'con' || tab === 'q') && (
+                                <p className="flex items-center justify-between px-2 pb-1.5 pt-2 text-xs text-muted-foreground">
                                     <span>
                                         Xếp theo <b className="font-bold text-strong">% lớp sai lần đầu</b>
                                     </span>
@@ -445,42 +493,55 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                     })}
                                 </div>
                             )}
+
+                            {tab === 'qt' && (
+                                <div className="flex flex-col gap-1">
+                                    <QuickTestPanel
+                                        lesson={live}
+                                        set={quickSet}
+                                        bank={quickBank}
+                                        open={openKey === 'qt'}
+                                        approved={reviewed.has('qt')}
+                                        onToggleOpen={() => (openKey === 'qt' ? setOpenKey(null) : openItem('qt'))}
+                                        onApprove={() => toggleApprove('qt')}
+                                        onChange={saveQuick}
+                                        say={say}
+                                    />
+                                </div>
+                            )}
                         </div>
 
-                        <div className="shrink-0 border-t border-border px-4 pb-4 pt-3.5">
-                            <p className="flex justify-between text-[12.5px] text-muted-foreground">
-                                <span>Đã duyệt</span>
-                                <b className="font-mono text-strong">{reviewed.size}/{total} mục</b>
-                            </p>
-                            <div className="mb-3 mt-2 h-[5px] overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={reviewed.size} aria-valuemax={total} aria-label="Tiến độ duyệt">
-                                <div className="h-full rounded-full bg-mm-teal transition-[width] duration-slow" style={{ width: `${total ? (reviewed.size / total) * 100 : 0}%` }} />
-                            </div>
-                            {published ? (
-                                <div className="flex gap-2">
-                                    <button type="button" onClick={onUnpublish} className="h-[46px] flex-1 rounded-xl border border-border bg-card text-[15px] font-bold text-strong transition hover:bg-muted">
-                                        Gỡ xuất bản
-                                    </button>
+                        <div className="sticky bottom-0 z-10 rounded-b-[20px] border-t border-border bg-card px-5 pb-4 pt-3.5">
+                            <div className="flex items-center gap-5">
+                                <div className="min-w-0 flex-1">
+                                    <p className="flex justify-between text-[13px] text-muted-foreground">
+                                        <span>Đã duyệt</span>
+                                        <b className="font-mono text-strong">{reviewed.size}/{total} mục</b>
+                                    </p>
+                                    <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={reviewed.size} aria-valuemax={total} aria-label="Tiến độ duyệt">
+                                        <div className="h-full rounded-full bg-mm-teal transition-[width] duration-slow" style={{ width: `${total ? (reviewed.size / total) * 100 : 0}%` }} />
+                                    </div>
+                                </div>
+                                {published ? (
+                                    <div className="flex shrink-0 gap-2">
+                                        <button type="button" onClick={onUnpublish} className="h-11 rounded-xl border border-border bg-card px-4 text-[15px] font-bold text-strong transition hover:bg-muted">
+                                            Gỡ xuất bản
+                                        </button>
+                                        <button type="button" onClick={onSave} disabled={!dirty} className="surface-red h-11 rounded-xl px-5 text-[15px] font-extrabold text-ink-foreground shadow-brand disabled:cursor-not-allowed disabled:opacity-50">
+                                            Lưu chỉnh sửa
+                                        </button>
+                                    </div>
+                                ) : (
                                     <button
                                         type="button"
-                                        onClick={onSave}
-                                        disabled={!dirty}
-                                        className="surface-red h-[46px] flex-1 rounded-xl text-[15px] font-extrabold text-ink-foreground shadow-brand disabled:cursor-not-allowed disabled:opacity-50"
+                                        onClick={onPublish}
+                                        className={`h-11 shrink-0 rounded-xl px-6 text-[15px] font-extrabold transition ${left > 0 ? 'border border-brand-200 bg-card text-brand-ink hover:bg-brand-50' : 'surface-red text-ink-foreground shadow-brand'}`}
                                     >
-                                        Lưu chỉnh sửa
+                                        Xuất bản
                                     </button>
-                                </div>
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={onPublish}
-                                    className={`h-[46px] w-full rounded-xl text-[15px] font-extrabold transition ${
-                                        left > 0 ? 'border border-brand-200 bg-card text-brand-ink hover:bg-brand-50' : 'surface-red text-ink-foreground shadow-brand'
-                                    }`}
-                                >
-                                    Xuất bản cho lớp
-                                </button>
-                            )}
-                            <p className="mt-2 text-center text-xs text-muted-foreground" aria-live="polite">
+                                )}
+                            </div>
+                            <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
                                 {problems.length > 0
                                     ? problems[0]
                                     : published
@@ -504,13 +565,15 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                     </aside>
                 </section>
 
-                <div className="lesson-grid items-start pt-6">
-                    <TranscriptEditor
-                        lines={live.transcript}
-                        onSeek={(s) => seekTo(s, { play: false })}
-                        onChange={(i, text) => setDraft((d) => ({ ...d, transcript: (d.transcript ?? lesson.transcript).map((s, j) => (j === i ? { ...s, text } : s)) }))}
-                    />
-                    <div className="justify-self-end">
+                <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1 basis-[420px]">
+                        <TranscriptEditor
+                            lines={live.transcript}
+                            onSeek={(s) => (setFocusAt(s), seekTo(s, { play: false }))}
+                            onChange={(i, text) => setDraft((d) => ({ ...d, transcript: (d.transcript ?? lesson.transcript).map((s, j) => (j === i ? { ...s, text } : s)) }))}
+                        />
+                    </div>
+                    <div>
                         {nextPending ? (
                             <Link to={`/teacher/review/${nextPending.lesson.id}`} className="inline-flex h-8 items-center gap-2 text-sm font-bold text-muted-foreground transition hover:text-strong">
                                 Bài tiếp chờ duyệt: {nextPending.lesson.shortTitle ?? nextPending.lesson.title}

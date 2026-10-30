@@ -35,10 +35,12 @@ interface TitleBlockProps {
     title: string
     /** Link nhỏ "‹ ..." đứng trước nút xổ */
     back?: { to: string; label: string }
+    /** Tiêu đề 28px được xuống dòng (trang duyệt của giảng viên) */
+    wrapTitle?: boolean
 }
 
 /** Dòng nhỏ "<học phần> [Bài n/N] ▾" mở menu danh sách, dưới là tiêu đề một dòng. Dùng chung trang học bài và các trang giảng viên. */
-export function TitleBlock({ label, badge, items, footer, title, back }: TitleBlockProps) {
+export function TitleBlock({ label, badge, items, footer, title, back, wrapTitle }: TitleBlockProps) {
     const [open, setOpen] = useState(false)
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -117,7 +119,7 @@ export function TitleBlock({ label, badge, items, footer, title, back }: TitleBl
                     </div>
                 )}
             </div>
-            <h1 title={title} className="mt-1 truncate text-2xl font-black leading-tight tracking-tight text-strong">
+            <h1 title={title} className={`mt-1 font-black leading-tight tracking-tight text-strong ${wrapTitle ? 'text-[28px]' : 'truncate text-2xl'}`}>
                 {title}
             </h1>
         </div>

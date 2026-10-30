@@ -4,7 +4,7 @@ import type { ClassStats, QuizChoiceQuestion } from '@/data/types'
 import { pct, questionPicks, topTrap } from '@/lib/teacher'
 
 export const fieldCls =
-    'w-full resize-y rounded-[10px] border border-border bg-card px-[11px] py-[9px] text-sm leading-normal text-foreground transition duration-fast focus-visible:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200'
+    'w-full resize-y rounded-[10px] border border-border bg-card px-3 py-2.5 text-[15.5px] leading-normal text-foreground transition duration-fast focus-visible:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200'
 export const labelCls = 'mb-1.5 mt-3 block text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground'
 
 /** Vòng tick đầu dòng: đã duyệt = xanh teal có dấu ✓, chưa = vòng nét đứt. */
@@ -39,17 +39,17 @@ export function ReviewRow({ domId, open, done, title, sub, rate, hot, onToggle, 
                 type="button"
                 aria-expanded={open}
                 onClick={onToggle}
-                className={`grid w-full grid-cols-[24px_1fr_auto_14px] items-center gap-2.5 px-2.5 py-[11px] text-left transition hover:bg-muted ${open ? 'rounded-t-[14px]' : 'rounded-[14px]'}`}
+                className={`grid w-full grid-cols-[24px_1fr_auto_14px] items-center gap-3.5 px-3.5 py-3.5 text-left transition hover:bg-muted ${open ? 'rounded-t-[14px]' : 'rounded-[14px]'}`}
             >
                 <Tick done={done} />
                 <span className="min-w-0">
-                    <b className="line-clamp-2 text-sm font-semibold leading-snug text-strong">{title}</b>
-                    <small className="mt-0.5 block font-mono text-xs text-muted-foreground">{sub}</small>
+                    <b className={`line-clamp-2 text-[16.5px] font-semibold leading-snug ${done && !open ? 'text-muted-foreground' : 'text-strong'}`}>{title}</b>
+                    <small className="mt-1 block font-mono text-[12.5px] text-muted-foreground">{sub}</small>
                 </span>
-                <span className={`font-mono text-[12.5px] font-extrabold ${hot ? 'text-brand-ink' : 'text-muted-foreground'}`}>{rate != null ? `${rate}%` : ''}</span>
+                <span className={`rounded-md px-2 py-0.5 font-mono text-xs font-bold ${rate == null ? 'hidden' : hot ? 'bg-brand-50 text-brand-ink' : 'bg-muted text-muted-foreground'}`}>{rate != null ? `${rate}% sai` : ''}</span>
                 <ChevronDown size={13} className={`text-muted-foreground transition-transform duration-fast ${open ? 'rotate-180' : ''}`} aria-hidden />
             </button>
-            {open && <div className="px-3.5 pb-3.5 pt-0.5">{children}</div>}
+            {open && <div className="pb-4 pl-14 pr-4 pt-0.5">{children}</div>}
         </div>
     )
 }
@@ -69,11 +69,11 @@ export function ItemActions({
     seek: { label: string; onClick: () => void }
 }) {
     return (
-        <div className="mt-3.5 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-3">
             <button
                 type="button"
                 onClick={onApprove}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3.5 text-[13.5px] font-bold transition ${
+                className={`inline-flex h-11 items-center gap-1.5 rounded-xl px-[18px] text-[15px] font-bold transition ${
                     approved ? 'bg-success-soft text-success' : 'bg-strong text-background hover:opacity-90'
                 }`}
             >
@@ -90,7 +90,7 @@ export function ItemActions({
                     type="button"
                     disabled={ai.busy}
                     onClick={ai.onClick}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-border bg-card px-3 text-[13px] font-bold text-strong transition hover:bg-muted disabled:cursor-wait disabled:opacity-70"
+                    className="inline-flex h-11 items-center gap-1.5 rounded-xl px-2 text-[13.5px] font-bold text-brand-ink transition hover:underline disabled:cursor-wait disabled:opacity-70"
                 >
                     {ai.busy ? <Loader2 size={13} className="animate-spin" aria-hidden /> : <Sparkles size={13} aria-hidden />}
                     {ai.busy ? 'Đang tạo…' : ai.label}
@@ -117,7 +117,7 @@ export function OptionRows({ question, onChange, stats }: { question: QuizChoice
                 return (
                     <div
                         key={i}
-                        className={`mt-1.5 grid grid-cols-[20px_1fr_auto] items-center gap-2 rounded-[10px] border px-2.5 py-1.5 text-[13.5px] ${
+                        className={`mt-1.5 grid grid-cols-[20px_1fr_auto] items-center gap-2 rounded-[10px] border px-2.5 py-2.5 text-[15px] ${
                             right ? 'border-success-soft-border bg-success-soft' : 'border-border'
                         }`}
                     >

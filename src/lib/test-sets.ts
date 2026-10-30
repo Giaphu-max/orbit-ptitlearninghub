@@ -141,3 +141,51 @@ export function prepareQuestions(questions: SourcedQuestion[], rules: TestRules)
 
 /** Đề Kiểm tra nhanh đã được thầy cô duyệt (mục 'qt') thì sinh viên mới làm được. Bài xuất bản từ trước chưa có bản ghi duyệt coi như đã duyệt. */
 export const quickApproved = (reviewed: string[] | undefined) => (reviewed ? reviewed.includes('qt') : true)
+
+// ─── Chỉnh đề (hàm thuần, trả về đề mới) ───────────────────────────────────
+
+export const removeFromSet = (set: TestSet, id: string): TestSet => ({ ...set, ids: set.ids.filter((x) => x !== id), ai: set.ai.filter((x) => x !== id), custom: set.custom.filter((q) => q.id !== id || false) })
+
+export const addToSet = (set: TestSet, id: string): TestSet => (set.ids.includes(id) ? set : { ...set, ids: [...set.ids, id] })
+
+export function moveInSet(set: TestSet, from: number, to: number): TestSet {
+    if (from === to || from < 0 || to < 0 || from >= set.ids.length || to >= set.ids.length) return set
+    const ids = [...set.ids]
+    const [x] = ids.splice(from, 1)
+    ids.splice(to, 0, x)
+    return { ...set, ids }
+}
+
+let seq = 0
+export const newCustomId = () => `tq-${Date.now().toString(36)}-${(seq++).toString(36)}`
+
+/** Lưu câu thầy cô viết/sửa. Câu lấy từ kho mà bị sửa thì thành bản riêng của đề (không đụng vào bài giảng gốc), giữ nguyên vị trí. */
+export function upsertCustom(set: TestSet, q: SourcedQuestion, replacesId?: string): TestSet {
+    const exists = set.custom.some((c) => c.id === q.id)
+    const custom = exists ? set.custom.map((c) => (c.id === q.id ? q : c)) : [...set.custom, q]
+    let ids = set.ids
+    if (replacesId && replacesId !== q.id) ids = ids.map((x) => (x === replacesId ? q.id : x))
+    else if (!ids.includes(q.id)) ids = [...ids, q.id]
+    return { ...set, custom, ids, ai: set.ai.filter((x) => x !== replacesId) }
+}
+
+/** AI gợi ý (giả lập): thêm tối đa n câu có sẵn trong kho, ưu tiên khái niệm chưa có câu nào. Trả về đề mới và số câu đã thêm. */
+export function suggestInto(set: TestSet, bank: SourcedQuestion[], conceptIds: string[], n: number): { set: TestSet; added: SourcedQuestion[] } {
+    const inSet = new Set(set.ids)
+    const covered = new Set(resolveSet(set, bank).map((q) => q.conceptId))
+    const pool = bank.filter((q) => !inSet.has(q.id))
+    const picked: SourcedQuestion[] = []
+    for (const c of conceptIds.filter((c) => !covered.has(c))) {
+        const q = pool.find((x) => x.conceptId === c && !picked.includes(x))
+        if (q && picked.length < n) picked.push(q)
+    }
+    for (const q of pool) if (picked.length < n && !picked.includes(q) && !picked.some((p) => p.prompt === q.prompt)) picked.push(q)
+    return { set: { ...set, ids: [...set.ids, ...picked.map((q) => q.id)], ai: [...set.ai, ...picked.map((q) => q.id)] }, added: picked }
+}
+
+/** Số câu theo khái niệm trong đề. */
+export function coverage(questions: SourcedQuestion[]): Map<string, number> {
+    const m = new Map<string, number>()
+    for (const q of questions) m.set(q.conceptId, (m.get(q.conceptId) ?? 0) + 1)
+    return m
+}

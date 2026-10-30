@@ -50,6 +50,8 @@ interface PlayerControlsProps {
   /** Bấm mốc câu hỏi (mặc định: tua tới mốc) */
   onMarkerClick?: (q: Lesson["quiz"][number]) => void;
   hidePanelToggle?: boolean;
+  /** Gọn: bỏ nút tốc độ và toàn màn hình (trang duyệt của giảng viên) */
+  compact?: boolean;
 }
 
 /** Hiệu ứng phản hồi gọi từ ngoài (phím tắt) để dùng chung với thao tác chuột. */
@@ -485,6 +487,8 @@ export function PlayerControls(p: PlayerControlsProps) {
             >
               <Captions size={15} /> Phụ đề
             </button>
+            {!p.compact && (
+            <>
             <div className="relative">
               <button
                 type="button"
@@ -535,6 +539,8 @@ export function PlayerControls(p: PlayerControlsProps) {
             >
               <Maximize size={15} />
             </button>
+            </>
+            )}
             {!p.hidePanelToggle && (
             <button
               type="button"
