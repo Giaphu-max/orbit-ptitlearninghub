@@ -75,6 +75,8 @@ export interface Lesson {
     origin: ContentOrigin
     /** Trạng thái mặc định khi mới tạo; giảng viên đổi trong store */
     status: ReviewStatus
+    /** Video tải lên từ máy (bản demo, chỉ lưu metadata): tên file và khung hình đầu dạng ảnh JPEG nhỏ */
+    upload?: { fileName: string; thumbnail?: string }
 }
 
 /** Dẫn nguồn một đoạn bài đọc về bài giảng và mốc thời gian cụ thể. */

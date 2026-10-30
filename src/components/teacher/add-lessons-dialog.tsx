@@ -25,7 +25,7 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
     const [picked, setPicked] = useState<Set<string>>(() => new Set(items.map((i) => i.key)))
     const [target, setTarget] = useState(courseId ?? NEW_COURSE)
     const [tab, setTab] = useState<'upload' | 'yt'>('upload')
-    const [file, setFile] = useState<{ name: string; size: number; durationSec: number | null } | null>(null)
+    const [file, setFile] = useState<{ name: string; size: number; durationSec: number | null; thumbnail?: string } | null>(null)
     const [title, setTitle] = useState('')
     const [fileError, setFileError] = useState('')
     const [dragOver, setDragOver] = useState(false)
@@ -82,8 +82,23 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
         const url = URL.createObjectURL(f)
         const v = document.createElement('video')
         v.preload = 'metadata'
+        v.muted = true
         v.onloadedmetadata = () => {
             setFile((cur) => (cur && cur.name === f.name ? { ...cur, durationSec: Number.isFinite(v.duration) ? Math.round(v.duration) : null } : cur))
+            // Chụp khung hình đầu làm thumbnail (tua nhẹ để có hình)
+            v.currentTime = Math.min(0.5, (v.duration || 1) / 2)
+        }
+        v.onseeked = () => {
+            try {
+                const cv = document.createElement('canvas')
+                cv.width = 320
+                cv.height = 180
+                cv.getContext('2d')?.drawImage(v, 0, 0, 320, 180)
+                const thumbnail = cv.toDataURL('image/jpeg', 0.7)
+                setFile((cur) => (cur && cur.name === f.name ? { ...cur, thumbnail } : cur))
+            } catch {
+                // Không chụp được: thẻ dùng gradient
+            }
             URL.revokeObjectURL(url)
         }
         v.onerror = () => URL.revokeObjectURL(url)
@@ -108,7 +123,7 @@ export function AddLessonsDialog({ onClose, courseId }: { onClose: () => void; c
             const uid = `up${Date.now().toString(36)}`
             const built = buildImportedLesson(tpl, cid, uid)
             if (!built) return
-            const lesson: Lesson = { ...built, id: `imp-up-${uid}`, title: title.trim() || file.name, shortTitle: undefined, durationSec: file.durationSec ?? built.durationSec }
+            const lesson: Lesson = { ...built, id: `imp-up-${uid}`, title: title.trim() || file.name, shortTitle: undefined, durationSec: file.durationSec ?? built.durationSec, upload: { fileName: file.name, thumbnail: file.thumbnail } }
             addImport({ course: newCourse, lessons: [lesson] })
             onClose()
             navigate('/teacher/library')

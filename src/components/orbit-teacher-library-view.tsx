@@ -127,9 +127,9 @@ function VideoCard({ review: r }: { review: LessonReview }) {
     const body = (
         <>
             <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-ink via-ink to-brand-950">
-                {!broken && (
+                {!broken && !(r.lesson.upload && !r.lesson.upload.thumbnail) && (
                     <img
-                        src={`https://i.ytimg.com/vi/${r.lesson.youtubeId}/hqdefault.jpg`}
+                        src={r.lesson.upload ? (r.lesson.upload.thumbnail ?? '') : `https://i.ytimg.com/vi/${r.lesson.youtubeId}/hqdefault.jpg`}
                         alt=""
                         loading="lazy"
                         onError={() => setBroken(true)}
