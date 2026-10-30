@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Kiểm tra nhanh</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#FAFAFC;
+  --teal:#2EC3A8;--ok:#1E7F55;--ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--gut:clamp(40px,4vw,80px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(60% 50% at 100% 0%,rgba(244,135,143,.10),transparent 70%),var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.box{max-width:1760px;margin:0 auto;padding:0 var(--gut)}
+.nav .box{display:flex;align-items:center;gap:44px;height:84px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tile{width:46px;height:46px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}.brand .tile img{width:76%}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:22px;line-height:1}.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+.links{display:flex;gap:34px;font-size:16.5px}.links .on{color:var(--red-ink);font-weight:800}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.stats{display:flex;align-items:center;gap:10px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 12px;font:700 14px var(--mono);color:var(--navy)}.stats i{width:1px;height:18px;background:var(--line)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+.grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(320px,4fr);gap:24px}
+/* header row — same as lesson page */
+.lh{align-items:end;margin:8px 0 24px}
+.pick{font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:8px}
+.pick em{font-style:normal;font:700 11.5px var(--mono);color:var(--red-ink);background:var(--red-50);padding:3px 8px;border-radius:6px}
+h1{margin:6px 0 0;font-size:24px;line-height:1.25;font-weight:900;letter-spacing:-.02em;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.steps{display:flex;gap:6px;align-items:center;width:100%}
+.sp{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 8px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted);background:#fff;border:1px solid var(--line);white-space:nowrap}
+.sp em{font-style:normal;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:700 10.5px var(--mono);background:var(--sunk)}
+.sp.done{color:var(--ok)}.sp.done em{background:#E6F4EE;color:var(--ok)}
+.sp.on{background:var(--red);border-color:var(--red);color:#fff}.sp.on em{background:rgba(255,255,255,.25)}
+.steps .ar{color:#C3C7D3}
+/* start card: one block */
+.start{display:grid;grid-template-columns:minmax(0,8fr) minmax(320px,4fr);column-gap:0;overflow:hidden;border-radius:24px;background:#fff;border:1px solid var(--line);box-shadow:0 30px 60px -40px rgba(10,26,80,.35)}
+.st-l{padding:40px 44px;display:flex;flex-direction:column}
+.eb{font:700 12px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--red-ink)}
+.st-l h2{margin:12px 0 0;font-size:40px;line-height:1.1;font-weight:900;letter-spacing:-.03em;color:var(--navy)}
+.st-l p{margin:14px 0 0;font-size:16px;line-height:1.6;color:var(--muted);max-width:46ch}
+.facts{display:flex;gap:0;margin-top:28px;border:1px solid var(--line);border-radius:16px;overflow:hidden;width:max-content}
+.facts span{padding:14px 22px;font-size:13px;color:var(--muted)}
+.facts span+span{border-left:1px solid var(--line)}
+.facts b{display:block;font:800 22px var(--mono);color:var(--navy);margin-bottom:2px}
+.facts b em{font-style:normal;font-size:13px;color:var(--muted);font-weight:600;margin-left:3px}
+.cta{margin-top:auto;padding-top:34px;display:flex;align-items:center;gap:18px}
+.btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);color:#fff;font-weight:800;font-size:17px;padding:16px 26px;border-radius:14px;box-shadow:0 14px 26px -12px rgba(226,38,28,.7);animation:bob 3s 1s ease-in-out infinite}
+.btn:hover{animation:none;transform:translateY(-2px)}
+@keyframes bob{50%{translate:0 -6px}}
+@media (prefers-reduced-motion:reduce){.btn{animation:none}}
+.skip{font-size:14px;font-weight:700;color:var(--muted)}
+.skip:hover{color:var(--navy);text-decoration:underline}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--muted);margin-bottom:auto}
+/* right half: what will be tested */
+.st-r{padding:34px 28px 34px 28px;margin-left:12px;background:var(--sunk);border-left:1px solid var(--line);display:flex;flex-direction:column}
+.st-r h3{margin:0;font-size:14px;font-weight:800;color:var(--navy);display:flex;justify-content:space-between}
+.st-r h3 small{font:600 12px var(--mono);color:var(--muted)}
+.kl{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.k{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;padding:14px 16px;border-radius:14px;background:#fff;border:1px solid var(--line)}
+.k b{font-size:14.5px;color:var(--navy)}
+.k .n{font:600 12px var(--mono);color:var(--muted)}
+.k .bar{grid-column:1/-1;position:relative;height:6px;border-radius:3px;background:var(--sunk)}
+.k .bar i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--red)}
+.k .bar u{position:absolute;left:80%;top:-3px;width:2px;height:12px;background:var(--navy);opacity:.5}
+.k.ok .bar i{background:var(--teal)}
+.k.weak{border-color:var(--red-100);background:var(--red-50)}
+.k.weak .n{color:var(--red-ink);font-weight:700}
+.rw{margin-top:auto;padding-top:18px;font-size:13px;color:var(--muted);line-height:1.5}
+.rw b{color:var(--navy)}
+</style></head>
+<body>
+<header class="nav"><div class="box">
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Học viện Công nghệ BCVT</small></span></span>
+  <nav class="links"><span>Trang chủ</span><span>Ôn tập</span><span class="on">Học phần</span><span>Studio 3D</span><span>Tiến độ &amp; Kỹ năng</span></nav>
+  <span class="right"><span class="stats"><span style="color:#D41F16">13</span><i></i>7 · 2.500 <small style="font-weight:500;color:#646880">XP</small></span><span class="avatar">P</span></span>
+</div></header>
+<main class="box">
+  <header class="grid lh">
+    <div><div class="pick">Dựng audio và video phi tuyến <em>Bài 1/3</em> ▾</div><h1>Bản chất của dựng audio và video phi tuyến trong hậu kỳ</h1></div>
+    <div class="steps"><span class="sp done"><em>✓</em>Xem bài &amp; quiz</span><span class="ar">→</span><span class="sp on"><em>2</em>Kiểm tra nhanh</span><span class="ar">→</span><span class="sp"><em>3</em>Tổng kết</span></div>
+  </header>
+
+  <section class="start">
+    <div class="st-l">
+      <a class="back">‹ Quay lại bài giảng</a>
+      <div class="eb" style="margin-top:28px">Kiểm tra nhanh · cuối chặng</div>
+      <h2>6 câu để chốt lại bài vừa học</h2>
+      <p>Ưu tiên những câu bạn chưa gặp trong video. Đạt từ 80% là khái niệm sáng lên trong bản đồ kỹ năng.</p>
+      <div class="facts">
+        <span><b>6<em>câu</em></b>từ ngân hàng 8 câu</span>
+        <span><b>6:00</b>hết giờ tự nộp</span>
+        <span><b>+10<em>XP/câu</em></b>+30 khi đạt 80%</span>
+      </div>
+      <div class="cta"><a class="btn">▶&nbsp; Bắt đầu làm bài</a><a class="skip">Bỏ qua, xem tổng kết</a></div>
+    </div>
+    <aside class="st-r">
+      <h3>Sẽ hỏi về <small>4 khái niệm</small></h3>
+      <div class="kl">
+        <div class="k ok"><b>Dựng tuyến tính</b><span class="n">1 câu · đã vững</span><span class="bar"><i style="width:100%"></i><u></u></span></div>
+        <div class="k ok"><b>Dựng phi tuyến (NLE)</b><span class="n">1 câu · đã vững</span><span class="bar"><i style="width:90%"></i><u></u></span></div>
+        <div class="k"><b>Tính phi hủy hoại</b><span class="n">2 câu · 62%</span><span class="bar"><i style="width:62%"></i><u></u></span></div>
+        <div class="k weak"><b>Quy trình dựng 4 giai đoạn</b><span class="n">2 câu · còn yếu</span><span class="bar"><i style="width:30%"></i><u></u></span></div>
+      </div>
+      <p class="rw">Câu sai sẽ được AI giải thích và tua về <b>đúng đoạn video</b> chứa đáp án trong phần tổng kết.</p>
+    </aside>
+  </section>
+  <div style="height:64px"></div>
+</main>
+</body></html>
