@@ -5,7 +5,7 @@ import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { OUTCOME_MASTERY } from '@/lib/quiz'
 
 // Test tổng hợp cuối chương: lấy câu từ ngân hàng câu hỏi của khóa (câu quiz trong video,
-// câu biến thể, câu kiểm tra của bài Orbit Daily), trộn thứ tự, có giới hạn thời gian.
+// câu biến thể, câu kiểm tra của bài Orbit Daily), trộn thứ tự, có giới hạn thời gian. Đề thật do giảng viên duyệt nằm ở lib/test-sets.ts; hàm bốc ngẫu nhiên ở đây chỉ còn là nền cho đề AI soạn sẵn.
 
 export const TEST_QUESTION_COUNT = 10
 export const TEST_SECONDS_PER_QUESTION = 60
@@ -136,15 +136,15 @@ export function pickCheckpointQuestions(bank: BankQuestion[], seen: Set<string>,
     return shuffle(chosen).map(withShuffledOptions)
 }
 
-export const testTimeLimit = (questionCount: number) => questionCount * TEST_SECONDS_PER_QUESTION
+export const testTimeLimit = (questionCount: number, secondsPerQuestion = TEST_SECONDS_PER_QUESTION) => questionCount * secondsPerQuestion
 
 /** XP: dưới 50% số câu đúng thì không có; còn lại mỗi câu đúng vượt kỷ lục cũ + thưởng một lần khi lần đầu đạt mức cao. Làm lại không đạt kỷ lục thì không có XP. */
-export function testXp(correct: number, total: number, best: { correct: number; total: number } | undefined) {
+export function testXp(correct: number, total: number, best: { correct: number; total: number } | undefined, passRatio = TEST_PASS_RATIO) {
     if (total === 0 || correct / total < TEST_MIN_XP_RATIO) return { base: 0, bonus: 0, total: 0 }
     const bestCorrect = best?.correct ?? 0
     const base = Math.max(0, correct - bestCorrect) * TEST_XP_PER_CORRECT
-    const passedBefore = best ? best.correct / best.total >= TEST_PASS_RATIO : false
-    const bonus = total > 0 && correct / total >= TEST_PASS_RATIO && !passedBefore ? TEST_PASS_BONUS_XP : 0
+    const passedBefore = best ? best.correct / best.total >= passRatio : false
+    const bonus = total > 0 && correct / total >= passRatio && !passedBefore ? TEST_PASS_BONUS_XP : 0
     return { base, bonus, total: base + bonus }
 }
 

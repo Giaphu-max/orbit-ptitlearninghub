@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, Play } from 'lucide-react'
-import { buildQuestionBank, CHECKPOINT_QUESTION_COUNT, pickCheckpointQuestions, seenQuestionIds, testTimeLimit, TEST_PASS_BONUS_XP, TEST_PASS_RATIO, TEST_XP_PER_CORRECT, type TestQuestion } from '@/lib/final-test'
+import { testTimeLimit, TEST_PASS_BONUS_XP, TEST_XP_PER_CORRECT, type TestQuestion } from '@/lib/final-test'
+import { passCount, prepareQuestions, quickApproved, quickKey, quickSetFor, resolveSet, sourcedBank } from '@/lib/test-sets'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
 import { useEffectiveLesson } from '@/lib/lesson-edits'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -20,31 +21,42 @@ export function OrbitCheckpointView() {
     const navigate = useNavigate()
     const record = useOrbitStore((s) => (lessonId ? s.checkpoints[lessonId] : undefined))
     const recordCheckpointResult = useOrbitStore((s) => s.recordCheckpointResult)
-    const bank = useMemo(() => (lesson ? buildQuestionBank([lesson]) : []), [lesson])
+    const stored = useOrbitStore((s) => (lessonId ? s.testSets[quickKey(lessonId)] : undefined))
+    const approved = useOrbitStore((s) => quickApproved(lessonId ? s.reviewedItems[lessonId] : undefined))
     const mastery = useOrbitStore((s) => s.conceptMastery)
     const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
-    // Bộ câu của lượt sắp làm: chọn sẵn để màn bắt đầu hiện đúng số câu theo từng khái niệm, bấm "Bắt đầu" dùng đúng bộ này
-    const [planned, setPlanned] = useState<TestQuestion[]>(() =>
-        lesson ? pickCheckpointQuestions(bank, seenQuestionIds(lesson, useOrbitStore.getState().quizResults)) : [],
-    )
-    if (!lesson || !lessonId) return <Navigate to="/learning" replace />
+    // Đề do thầy cô duyệt (hoặc đề AI soạn sẵn nếu chưa chỉnh) và luật làm bài đi kèm
+    const set = useMemo(() => (lesson ? quickSetFor(lesson, stored) : undefined), [lesson, stored])
+    const bank = useMemo(() => (lesson ? sourcedBank([lesson]) : []), [lesson])
+    const fixed = useMemo(() => (set ? resolveSet(set, bank) : []), [set, bank])
+    const rules = set?.rules
+    // Bộ câu của lượt sắp làm: trộn sẵn để màn bắt đầu hiện đúng số câu theo từng khái niệm, bấm "Bắt đầu" dùng đúng bộ này
+    const [planned, setPlanned] = useState<TestQuestion[]>(() => (rules ? prepareQuestions(fixed, rules) : []))
+    if (!lesson || !lessonId || !set || !rules) return <Navigate to="/learning" replace />
 
-    const count = Math.min(CHECKPOINT_QUESTION_COUNT, bank.length)
-    const enough = bank.length >= 3
+    const count = fixed.length
+    const enough = count >= 1
+    const needed = passCount(rules, count)
+    const outOfAttempts = rules.attempts !== null && (record?.attempts ?? 0) >= rules.attempts
+    const perQ = rules.secondsPerQuestion
+
+    if (!approved || !enough) {
+        return <Unavailable lesson={lesson} lessonId={lessonId} message="Thầy cô chưa mở bài kiểm tra này." />
+    }
 
     const start = () => {
         const questions = planned
-        setPhase({ kind: 'running', questions, deadline: Date.now() + testTimeLimit(questions.length) * 1000 })
+        setPhase({ kind: 'running', questions, deadline: Date.now() + testTimeLimit(questions.length, perQ) * 1000 })
         // Lượt sau (làm lại) sẽ bốc bộ câu mới
-        setPlanned(pickCheckpointQuestions(bank, seenQuestionIds(lesson, useOrbitStore.getState().quizResults)))
+        setPlanned(prepareQuestions(fixed, rules))
         window.scrollTo(0, 0)
     }
 
     const submit = (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => {
-        const limit = testTimeLimit(questions.length)
+        const limit = testTimeLimit(questions.length, perQ)
         const durationSec = Math.min(limit, Math.round(limit - (deadline - Date.now()) / 1000))
         const answers = questions.map((q) => ({ conceptId: q.conceptId, correct: picks[q.id] === q.correctIndex, blank: picks[q.id] === undefined }))
-        recordCheckpointResult({ lessonId, answers, durationSec, timedOut })
+        recordCheckpointResult({ lessonId, answers, durationSec, timedOut, passRatio: rules.passRatio })
         navigate(`/recap/${lessonId}`, { replace: true })
     }
 
@@ -65,7 +77,7 @@ export function OrbitCheckpointView() {
     const asked = lesson.concepts
         .map((c) => ({ concept: c, questions: planned.filter((q) => q.conceptId === c.id).length, level: mastery[c.id] ?? 0 }))
         .filter((k) => k.questions > 0)
-    const passPct = Math.round(TEST_PASS_RATIO * 100)
+    const passPct = Math.round(rules.passRatio * 100)
 
     return (
         <div className="w-full">
@@ -81,29 +93,29 @@ export function OrbitCheckpointView() {
                         <p className="mt-7 text-xs font-bold uppercase tracking-[0.14em] text-brand-ink">Kiểm tra nhanh · cuối chặng</p>
                         <h2 className="mt-3 text-[40px] font-black leading-[1.1] tracking-tight text-strong">{count} câu để chốt lại bài vừa học</h2>
                         <p className="mt-3.5 max-w-[46ch] text-base leading-relaxed text-muted-foreground">
-                            Ưu tiên những câu bạn chưa gặp trong video. Đạt từ {passPct}% là khái niệm sáng lên trong bản đồ kỹ năng.
+                            Đề do thầy cô duyệt. Đúng từ {needed}/{count} câu là đạt; khái niệm sáng lên trong bản đồ kỹ năng khi mức nắm vững đạt 80%.
                         </p>
 
                         <dl className="mt-7 flex w-fit overflow-hidden rounded-2xl border border-border">
-                            <Fact value={String(count)} unit="câu" note={`từ ngân hàng ${bank.length} câu`} />
-                            <Fact value={clock(testTimeLimit(count))} note="hết giờ tự nộp" divided />
-                            <Fact value={`+${TEST_XP_PER_CORRECT}`} unit="XP/câu" note={`+${TEST_PASS_BONUS_XP} khi đạt ${passPct}%`} divided />
+                            <Fact value={String(count)} unit="câu" note="đề do thầy cô duyệt" />
+                            <Fact value={clock(testTimeLimit(count, perQ))} note={`${perQ}s/câu · hết giờ tự nộp`} divided />
+                            <Fact value={`+${TEST_XP_PER_CORRECT}`} unit="XP/câu" note={`+${TEST_PASS_BONUS_XP} khi đạt từ ${needed}/${count}`} divided />
                         </dl>
 
                         <div className="mt-auto flex flex-wrap items-center gap-[18px] pt-8">
                             <button
                                 type="button"
                                 onClick={start}
-                                disabled={!enough}
+                                disabled={outOfAttempts}
                                 className="tier-1-bob surface-red inline-flex items-center gap-2.5 rounded-[14px] px-6 py-4 text-[17px] font-extrabold text-ink-foreground shadow-brand disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <Play size={17} className="fill-current" /> {record ? 'Làm lại' : 'Bắt đầu làm bài'}
+                                <Play size={17} className="fill-current" /> {record ? 'Làm lại' : 'Bắt đầu làm bài'}{rules.attempts !== null && !outOfAttempts && <small className="ml-1 text-sm font-semibold opacity-80">· còn {rules.attempts - (record?.attempts ?? 0)} lượt</small>}
                             </button>
                             <Link to={`/recap/${lessonId}`} className="text-sm font-bold text-muted-foreground hover:text-strong hover:underline">
                                 {record ? `Xem tổng kết (lần trước ${record.last.correct}/${record.last.total})` : 'Bỏ qua, xem tổng kết'}
                             </Link>
                         </div>
-                        {!enough && <p className="mt-4 text-sm text-muted-foreground">Bài này chưa đủ câu hỏi để làm test cuối chặng.</p>}
+                        {outOfAttempts && <p className="mt-4 text-sm font-semibold text-brand-ink">Bạn đã dùng hết {rules.attempts} lượt làm bài này. Xem tổng kết để ôn lại phần còn yếu.</p>}
                     </div>
 
                     <aside className="flex flex-col border-l border-border bg-muted px-7 py-[34px]">
@@ -146,6 +158,29 @@ function Fact({ value, unit, note, divided }: { value: string; unit?: string; no
                 {unit && <em className="ml-[3px] text-[13px] font-semibold not-italic text-muted-foreground">{unit}</em>}
             </dt>
             <dd>{note}</dd>
+        </div>
+    )
+}
+
+/** Đề chưa được thầy cô mở: báo thân thiện, không để stepper và tổng kết vỡ. */
+function Unavailable({ lesson, lessonId, message }: { lesson: NonNullable<ReturnType<typeof useEffectiveLesson>>; lessonId: string; message: string }) {
+    return (
+        <div className="w-full">
+            <div className="container-wide py-6">
+                <LessonHeader lesson={lesson} currentStep="checkpoint" />
+                <section className="mx-auto mt-10 max-w-xl rounded-[24px] border border-border bg-card px-10 py-12 text-center shadow-card">
+                    <h2 className="text-2xl font-black text-strong">{message}</h2>
+                    <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">Khi thầy cô duyệt và mở đề, bài Kiểm tra nhanh sẽ xuất hiện ở đây. Bạn vẫn xem được tổng kết chặng.</p>
+                    <div className="mt-7 flex flex-wrap justify-center gap-3">
+                        <Link to={`/lesson/${lessonId}`} className="inline-flex h-11 items-center rounded-xl border border-border px-5 text-sm font-bold text-strong transition hover:bg-muted">
+                            Về bài giảng
+                        </Link>
+                        <Link to={`/recap/${lessonId}`} className="surface-red inline-flex h-11 items-center rounded-xl px-5 text-sm font-extrabold text-ink-foreground shadow-brand">
+                            Xem tổng kết
+                        </Link>
+                    </div>
+                </section>
+            </div>
         </div>
     )
 }

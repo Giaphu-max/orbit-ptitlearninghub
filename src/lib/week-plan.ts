@@ -46,7 +46,7 @@ export function buildPlan(summaries: CourseSummary[], progress: Record<string, {
             date: localDate(now),
             href: `/lesson/${cur.id}${resuming ? `?t=${Math.floor(pos)}` : ''}`,
         },
-        { id: `checkpoint-${cur.id}`, title: `Test cuối chặng ${String(idx + 1).padStart(2, '0')}`, sub: '6 câu · đạt từ 80%', date: localDate(addDays(now, 2)), href: `/checkpoint/${cur.id}` },
+        { id: `checkpoint-${cur.id}`, title: `Test cuối chặng ${String(idx + 1).padStart(2, '0')}`, sub: 'Kiểm tra nhanh cuối bài', date: localDate(addDays(now, 2)), href: `/checkpoint/${cur.id}` },
     ]
     const next = ls[idx + 1]
     tasks.push(

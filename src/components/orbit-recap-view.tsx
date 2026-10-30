@@ -6,7 +6,7 @@ import { useEffectiveLesson, useCourseLessons } from '@/lib/lesson-edits'
 import { buildRecap, type RecapConcept, type RecapData } from '@/lib/recap'
 import { LessonHeader } from '@/components/lesson/lesson-header'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
-import { CHECKPOINT_QUESTION_COUNT, TEST_PASS_RATIO } from '@/lib/final-test'
+import { quickKey, quickSetFor, resolveSet, sourcedBank } from '@/lib/test-sets'
 import { QUIZ_XP } from '@/lib/quiz'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -33,6 +33,10 @@ function Recap({ data }: { data: RecapData }) {
     const { lesson, course, index, concepts, checkpoint, xp, video, weakest, next, stages } = data
     const markRecapSeen = useOrbitStore((s) => s.markRecapSeen)
     const totalXp = useOrbitStore((s) => s.xp)
+    const quickStored = useOrbitStore((s) => s.testSets[quickKey(lesson.id)])
+    const quick = quickSetFor(lesson, quickStored)
+    const CHECKPOINT_QUESTION_COUNT = resolveSet(quick, sourcedBank([lesson])).length
+    const TEST_PASS_RATIO = quick.rules.passRatio
     // Hiệu ứng chỉ chạy lần đầu mở màn tổng kết của chặng này
     const [play] = useState(() => !useOrbitStore.getState().recapSeen[lesson.id] && !reducedMotion())
     const root = useRef<HTMLDivElement>(null)

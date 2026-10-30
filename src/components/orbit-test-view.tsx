@@ -4,8 +4,6 @@ import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronDown, ChevronLeft, Clock
 import { getConcept, getCourse } from '@/data'
 import { announceRewards } from '@/lib/gamification'
 import {
-    buildQuestionBank,
-    pickTestQuestions,
     reviewStepFor,
     testTimeLimit,
     testXp,
@@ -17,7 +15,10 @@ import {
     type TestQuestion,
 } from '@/lib/final-test'
 import { useCourseLessons } from '@/lib/lesson-edits'
+import { courseFullyPublished, finalKey, finalSetFor, passCount, prepareQuestions, resolveSet, sourcedBank, useCourseAllLessons } from '@/lib/test-sets'
+import { useTeacherCourses } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
+import type { TestRules } from '@/lib/test-sets'
 import { useOrbitStore, type ActiveTestSession, type TestAttempt } from '@/store/useOrbitStore'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -44,21 +45,33 @@ type Phase =
     | { kind: 'result'; attempt: TestAttempt; questions?: TestQuestion[]; picks?: Record<string, number>; xp?: number }
 
 /** /test/:courseId – test tổng hợp cuối chương: câu từ ngân hàng của khóa, trộn thứ tự, có giờ. Kết quả cập nhật bản đồ kỹ năng và XP. */
-export function OrbitTestView() {
+export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
     const { courseId } = useParams()
-    const course = courseId ? getCourse(courseId) : undefined
-    const lessons = useCourseLessons(courseId)
-    const bank = useMemo(() => buildQuestionBank(lessons), [lessons])
+    const teacherCourses = useTeacherCourses()
+    const course = courseId ? (getCourse(courseId) ?? (preview ? teacherCourses.find((c) => c.id === courseId) : undefined)) : undefined
+    const visibleLessons = useCourseLessons(courseId)
+    const allLessons = useCourseAllLessons(courseId)
+    // Xem thử của giảng viên: dùng cả bài chưa xuất bản; sinh viên chỉ thấy câu của bài đã xuất bản
+    const lessons = preview ? allLessons : visibleLessons
+    const stored = useOrbitStore((s) => (courseId ? s.testSets[finalKey(courseId)] : undefined))
+    const fullyPublished = useOrbitStore((s) => (courseId ? courseFullyPublished(courseId, s) : false))
+    const progress = useOrbitStore((s) => s.lessonProgress)
+    // Đề và luật do thầy cô duyệt (chưa chỉnh thì đề AI soạn sẵn); không bốc ngẫu nhiên từ kho nữa
+    const set = useMemo(() => finalSetFor(allLessons, stored), [allLessons, stored])
+    const bank = useMemo(() => sourcedBank(lessons), [lessons])
+    const fixed = useMemo(() => resolveSet(set, bank), [set, bank])
+    const rules = set.rules
+    const published = preview || (stored?.published ?? fullyPublished)
     const record = useOrbitStore((s) => (courseId ? s.testRecords[courseId] : undefined))
     const recordTestResult = useOrbitStore((s) => s.recordTestResult)
-    const activeSession = useOrbitStore((s) => (courseId ? s.activeTestSessions?.[courseId] : undefined))
+    const activeSession = useOrbitStore((s) => (courseId && !preview ? s.activeTestSessions?.[courseId] : undefined))
     const saveTestSession = useOrbitStore((s) => s.saveTestSession)
     const clearTestSession = useOrbitStore((s) => s.clearTestSession)
     const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
 
     const handleAutoSave = useCallback(
         (data: { currentIndex: number; answers: Record<string, number>; remainingSec: number }) => {
-            if (!courseId || phase.kind !== 'running') return
+            if (!courseId || phase.kind !== 'running' || preview) return
             saveTestSession(courseId, {
                 courseId,
                 questionIds: phase.questions.map((q) => q.id),
@@ -69,10 +82,17 @@ export function OrbitTestView() {
                 updatedAt: Date.now(),
             })
         },
-        [courseId, phase, saveTestSession],
+        [courseId, phase, saveTestSession, preview],
     )
 
     if (!course || !courseId) return <Navigate to="/" replace />
+
+    const back = preview ? { to: `/teacher/test/${courseId}`, label: 'Quay lại soạn đề' } : { to: '/learning', label: 'Khóa học' }
+    const doneLessons = visibleLessons.filter((l) => progress[l.id]?.completed).length
+    const missing = rules.opens === 'all' ? visibleLessons.length - doneLessons : rules.opens === 'almost' ? visibleLessons.length - 1 - doneLessons : 0
+    const outOfAttempts = !preview && rules.attempts !== null && (record?.attempts ?? 0) >= rules.attempts
+    if (!published || fixed.length === 0) return <Locked back={back} title="Thầy cô chưa mở bài kiểm tra này." note="Khi thầy cô duyệt và xuất bản đề, Test cuối chương sẽ mở ở đây." />
+    if (!preview && missing > 0) return <Locked back={back} title={`Hoàn thành thêm ${missing} bài để mở Test cuối chương.`} note={`Thầy cô đặt điều kiện mở: ${rules.opens === 'all' ? 'xong cả' : 'xong gần hết'} ${visibleLessons.length} bài của khóa. Bạn đã xong ${doneLessons}/${visibleLessons.length} bài.`} />
 
     const validSession = isSessionValid(activeSession) ? activeSession : undefined
 
@@ -89,11 +109,11 @@ export function OrbitTestView() {
     }
 
     const start = () => {
-        if (courseId) clearTestSession(courseId)
-        const questions = pickTestQuestions(bank)
-        const timeLimit = testTimeLimit(questions.length)
+        if (courseId && !preview) clearTestSession(courseId)
+        const questions = prepareQuestions(fixed, rules)
+        const timeLimit = testTimeLimit(questions.length, rules.secondsPerQuestion)
         const deadline = Date.now() + timeLimit * 1000
-        if (courseId) {
+        if (courseId && !preview) {
             saveTestSession(courseId, {
                 courseId,
                 questionIds: questions.map((q) => q.id),
@@ -109,26 +129,34 @@ export function OrbitTestView() {
     }
 
     const submit = (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => {
-        if (courseId) clearTestSession(courseId)
-        const limit = testTimeLimit(questions.length)
+        if (courseId && !preview) clearTestSession(courseId)
+        const limit = testTimeLimit(questions.length, rules.secondsPerQuestion)
         const durationSec = Math.min(limit, Math.round(limit - (deadline - Date.now()) / 1000))
         const answers = questions.map((q) => ({ conceptId: q.conceptId, correct: picks[q.id] === q.correctIndex, blank: picks[q.id] === undefined }))
+        if (preview) {
+            // Xem thử: không ghi điểm, không cộng XP
+            const correct = answers.filter((a) => a.correct).length
+            const attempt: TestAttempt = { at: new Date().toISOString(), correct, total: answers.length, durationSec, timedOut, concepts: answers.map((a) => ({ conceptId: a.conceptId, correct: a.correct, blank: a.blank, before: null, after: a.correct ? 1 : 0 })) }
+            setPhase({ kind: 'result', attempt, questions, picks })
+            window.scrollTo(0, 0)
+            return
+        }
         const before = useOrbitStore.getState()
         const prev = before.testRecords[courseId]
-        const xp = recordTestResult({ courseId, answers, durationSec, timedOut })
+        const xp = recordTestResult({ courseId, answers, durationSec, timedOut, passRatio: rules.passRatio })
         const after = useOrbitStore.getState()
         const attempt = after.testRecords[courseId].last
         const correct = attempt.correct
-        const rows = [{ label: `Đúng ${correct}/${attempt.total} câu`, xp: testXp(correct, attempt.total, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).base }]
-        const bonus = testXp(correct, attempt.total, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).bonus
-        if (bonus) rows.push({ label: `Đạt từ ${Math.round(TEST_PASS_RATIO * 100)}% · thưởng một lần`, xp: bonus })
+        const rows = [{ label: `Đúng ${correct}/${attempt.total} câu`, xp: testXp(correct, attempt.total, prev && { correct: prev.bestCorrect, total: prev.bestTotal }, rules.passRatio).base }]
+        const bonus = testXp(correct, attempt.total, prev && { correct: prev.bestCorrect, total: prev.bestTotal }, rules.passRatio).bonus
+        if (bonus) rows.push({ label: `Đạt từ ${passCount(rules, attempt.total)}/${attempt.total} · thưởng một lần`, xp: bonus })
         // Một hành động chính: ôn khái niệm yếu nhất trong lộ trình (xem lại đúng đoạn giảng)
         const weakest = attempt.concepts.filter((c) => !c.correct && c.after < MASTERED_RATIO).sort((a, b) => a.after - b.after)[0]
         const step = weakest ? reviewStepFor(weakest.conceptId) : undefined
         const weakestStep = step ? { label: `Ôn: ${step.conceptName}`, to: `/lesson/${step.lessonId}?t=${step.start}` } : undefined
         announceRewards(before, after, {
             context: `Test cuối chương · ${course.title}`,
-            headline: correct / attempt.total >= TEST_PASS_RATIO ? 'Nắm chắc cả chương.' : 'Biết chỗ hổng là đã đi được nửa đường.',
+            headline: correct / attempt.total >= rules.passRatio ? 'Nắm chắc cả chương.' : 'Biết chỗ hổng là đã đi được nửa đường.',
             rows: rows.filter((r) => r.xp > 0 || rows.length === 1),
             next: weakestStep ?? { label: 'Xem bản đồ kỹ năng', to: '/journey' },
         }, { source: 'test', next: weakestStep ?? { label: 'Xem bản đồ kỹ năng', to: '/journey' } })
@@ -139,11 +167,16 @@ export function OrbitTestView() {
     return (
         <div className="w-full">
             <div className="container-wide py-8 lg:py-12"><div className="mx-auto max-w-3xl">
+                {preview && <p className="mb-4 rounded-xl bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-ink">Xem thử như sinh viên: kết quả không được ghi và không cộng XP.</p>}
                 {phase.kind === 'intro' && (
                     <Intro
                         courseTitle={course.title}
-                        bankSize={bank.length}
-                        conceptCount={new Set(bank.map((q) => q.conceptId)).size}
+                        rules={rules}
+                        count={fixed.length}
+                        conceptCount={new Set(fixed.map((q) => q.conceptId)).size}
+                        back={back}
+                        outOfAttempts={outOfAttempts}
+                        attemptsLeft={rules.attempts === null || preview ? null : rules.attempts - (record?.attempts ?? 0)}
                         last={record?.last}
                         activeSession={validSession}
                         onResume={resume}
@@ -164,7 +197,7 @@ export function OrbitTestView() {
                         }}
                     />
                 )}
-                {phase.kind === 'result' && <Result courseTitle={course.title} phase={phase} onRetry={start} />}
+                {phase.kind === 'result' && <Result courseTitle={course.title} phase={phase} onRetry={start} passRatio={rules.passRatio} back={back} canRetry={!outOfAttempts} />}
             </div>
             </div>
         </div>
@@ -175,8 +208,12 @@ export function OrbitTestView() {
 
 function Intro({
     courseTitle,
-    bankSize,
+    rules,
+    count,
     conceptCount,
+    back,
+    outOfAttempts,
+    attemptsLeft,
     last,
     activeSession,
     onResume,
@@ -185,8 +222,12 @@ function Intro({
     onShowLast,
 }: {
     courseTitle: string
-    bankSize: number
+    rules: TestRules
+    count: number
     conceptCount: number
+    back: { to: string; label: string }
+    outOfAttempts: boolean
+    attemptsLeft: number | null
     last?: TestAttempt
     activeSession?: ActiveTestSession
     onResume: (session: ActiveTestSession) => void
@@ -194,12 +235,12 @@ function Intro({
     onStart: () => void
     onShowLast: () => void
 }) {
-    const count = Math.min(10, bankSize)
-    const enough = bankSize >= 4
+    const enough = count >= 1 && !outOfAttempts
+    const needed = passCount(rules, count)
     return (
         <>
-            <Link to="/learning" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
-                <ChevronLeft size={16} /> Khóa học
+            <Link to={back.to} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
+                <ChevronLeft size={16} /> {back.label}
             </Link>
             <p className="mt-6 text-eyebrow uppercase text-brand-ink">Test cuối chương</p>
             <h1 className="mt-3 text-headline text-foreground">{courseTitle}</h1>
@@ -242,14 +283,14 @@ function Intro({
             )}
 
             <dl className="mt-8 grid gap-4 sm:grid-cols-3">
-                <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`Chọn ngẫu nhiên từ ngân hàng ${bankSize} câu, ${conceptCount} khái niệm`} />
-                <Fact icon={<Clock size={18} />} label="Thời gian" value={clock(testTimeLimit(count))} note="Hết giờ bài tự nộp" />
+                <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`Đề do thầy cô duyệt, ${conceptCount} khái niệm`} />
+                <Fact icon={<Clock size={18} />} label="Thời gian" value={clock(testTimeLimit(count, rules.secondsPerQuestion))} note={`${rules.secondsPerQuestion}s/câu · hết giờ bài tự nộp`} />
                 <Fact icon={<BookOpen size={18} />} label="Phần thưởng" value={`+${TEST_XP_PER_CORRECT} XP/câu`} note={`Mỗi câu đúng vượt kỷ lục. Thêm ${TEST_PASS_BONUS_XP} XP khi đạt ${Math.round(TEST_PASS_RATIO * 100)}%`} />
             </dl>
 
             <ul className="mt-6 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
                 <li>Không hiện đáp án trong lúc làm. Bạn có thể quay lại sửa câu trước khi nộp.</li>
-                <li>Mỗi khái niệm tối đa một câu; thứ tự câu và đáp án được trộn, mỗi lần làm là một bộ khác.</li>
+                <li>Đúng từ {needed}/{count} câu là đạt. {rules.shuffleQuestions || rules.shuffleOptions ? 'Thứ tự câu và đáp án được trộn mỗi lần làm.' : 'Câu hỏi giữ nguyên thứ tự thầy cô sắp.'}</li>
                 <li>XP chỉ cộng khi đúng từ {TEST_MIN_XP_RATIO * 100}% số câu và vượt kết quả tốt nhất trước đó, nên làm lại để ôn chứ không để cày điểm.</li>
             </ul>
 
@@ -268,7 +309,8 @@ function Intro({
                     </button>
                 )}
             </div>
-            {!enough && <p className="mt-4 text-sm text-muted-foreground">Khóa này chưa đủ câu hỏi đã xuất bản để làm test.</p>}
+            {outOfAttempts && <p className="mt-4 text-sm font-semibold text-brand-ink">Bạn đã dùng hết lượt làm bài này. Xem kết quả lần trước để ôn phần còn yếu.</p>}
+            {attemptsLeft !== null && !outOfAttempts && <p className="mt-4 text-sm text-muted-foreground">Còn {attemptsLeft} lượt làm bài.</p>}
         </>
     )
 }
@@ -550,10 +592,10 @@ export function Running({
 
 // ─── Kết quả + lộ trình ôn tập ────────────────────────────────────────────
 
-function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: Extract<Phase, { kind: 'result' }>; onRetry: () => void }) {
+function Result({ courseTitle, phase, onRetry, passRatio, back, canRetry }: { courseTitle: string; phase: Extract<Phase, { kind: 'result' }>; onRetry: () => void; passRatio: number; back: { to: string; label: string }; canRetry: boolean }) {
     const { attempt, questions, picks, xp } = phase
     const pctScore = Math.round((attempt.correct / attempt.total) * 100)
-    const passed = attempt.correct / attempt.total >= TEST_PASS_RATIO
+    const passed = attempt.correct / attempt.total >= passRatio
     // Đã nắm chắc = mức sau test từ 80%, kể cả khi câu test vừa rồi sai; còn lại hiện đầy đủ, chỉ khái niệm trả lời sai/bỏ trống mới vào lộ trình ôn
     const passedConcepts = attempt.concepts.filter((c) => c.after >= MASTERED_RATIO)
     const openConcepts = attempt.concepts.filter((c) => c.after < MASTERED_RATIO)
@@ -562,8 +604,8 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
 
     return (
         <>
-            <Link to="/learning" className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
-                <ChevronLeft size={16} /> Khóa học
+            <Link to={back.to} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-card hover:text-foreground">
+                <ChevronLeft size={16} /> {back.label}
             </Link>
             <section aria-label="Kết quả test" className="mt-6 rounded-panel surface-red-deep p-7 shadow-brand">
                 <p className="text-eyebrow uppercase text-ink-foreground/70">Kết quả · {courseTitle}</p>
@@ -703,13 +745,39 @@ function Result({ courseTitle, phase, onRetry }: { courseTitle: string; phase: E
             )}
 
             <div className="mt-10 flex flex-wrap gap-3 border-t border-border pt-6">
-                <button type="button" onClick={onRetry} className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700">
-                    <RotateCcw size={16} /> Làm lại với bộ câu khác
-                </button>
+                {canRetry ? (
+                    <button type="button" onClick={onRetry} className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-bold text-ink-foreground shadow-brand transition hover:bg-brand-700">
+                        <RotateCcw size={16} /> Làm lại
+                    </button>
+                ) : (
+                    <p className="self-center text-sm font-semibold text-muted-foreground">Bạn đã dùng hết lượt làm bài.</p>
+                )}
                 <Link to="/journey" className="rounded-full border border-border bg-card px-6 py-3 text-sm font-bold text-foreground transition hover:bg-muted">
                     Xem bản đồ kỹ năng
                 </Link>
             </div>
         </>
     )
+}
+
+/** Đề chưa mở hoặc chưa đủ điều kiện mở: báo thân thiện, có đường về. */
+function Locked({ back, title, note }: { back: { to: string; label: string }; title: string; note: string }) {
+    return (
+        <div className="w-full">
+            <div className="container-wide py-12">
+                <section className="mx-auto max-w-xl rounded-[24px] border border-border bg-card px-10 py-12 text-center shadow-card">
+                    <h1 className="text-2xl font-black text-strong">{title}</h1>
+                    <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">{note}</p>
+                    <Link to={back.to} className="surface-red mt-7 inline-flex h-11 items-center rounded-xl px-5 text-sm font-extrabold text-ink-foreground shadow-brand">
+                        {back.label}
+                    </Link>
+                </section>
+            </div>
+        </div>
+    )
+}
+
+/** Giảng viên làm thử đề đang soạn trong khung giảng viên (đúng giao diện của sinh viên, không ghi điểm). */
+export function OrbitTestPreview() {
+    return <OrbitTestView preview />
 }

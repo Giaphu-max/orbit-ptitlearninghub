@@ -5,7 +5,8 @@ import { gapScore, DAILY_LIMIT } from '@/lib/next-step'
 import { lessonState } from '@/lib/course-progress'
 import { QUIZ_XP } from '@/lib/quiz'
 import { bestTestRatio } from '@/lib/gamification'
-import { testXp, TEST_PASS_RATIO } from '@/lib/final-test'
+import { testXp } from '@/lib/final-test'
+import { QUICK_RULES } from '@/lib/test-sets'
 import type { useOrbitStore } from '@/store/useOrbitStore'
 
 // Số liệu cho màn tổng kết chặng (/recap/:lessonId). Chặng = một bài học trong khóa.
@@ -122,6 +123,7 @@ function badgeInfo(b: Badge, s: State): RecapBadge {
 export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapData | null {
     const course = getCourse(lesson.courseId)
     if (!course) return null
+    const passRatio = s.testSets?.[`quick:${lesson.id}`]?.rules.passRatio ?? QUICK_RULES.passRatio
     const order = visible.some((l) => l.id === lesson.id) ? visible : getLessonsOfCourse(course.id)
     const index = Math.max(0, order.findIndex((l) => l.id === lesson.id))
     const firstOpen = order.findIndex((l) => lessonState(l, s.lessonProgress) !== 'done')
@@ -206,7 +208,7 @@ export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapDa
         concepts,
         masteredCount: concepts.filter((c) => c.mastered).length,
         weakest,
-        checkpoint: checkRec ? { correct: checkRec.last.correct, total: checkRec.last.total, pct: pct(checkRec.last.correct / checkRec.last.total), passed: checkRec.last.correct / checkRec.last.total >= TEST_PASS_RATIO, bestCorrect: checkRec.bestCorrect, bestTotal: checkRec.bestTotal } : undefined,
+        checkpoint: checkRec ? { correct: checkRec.last.correct, total: checkRec.last.total, pct: pct(checkRec.last.correct / checkRec.last.total), passed: checkRec.last.correct / checkRec.last.total >= passRatio, bestCorrect: checkRec.bestCorrect, bestTotal: checkRec.bestTotal } : undefined,
         xp,
         video,
         mistake,

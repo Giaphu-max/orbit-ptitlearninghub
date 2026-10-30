@@ -5,6 +5,7 @@ import type { Course, Lesson, ReviewStatus, Seconds } from '@/data/types'
 import { DEFAULT_CLASS_ID } from '@/data/classes'
 import type { CourseCoverSpec } from '@/lib/cover-kinds'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
+import type { TestSet } from '@/lib/test-sets'
 import { masteryAfterTest, testXp, type TestAnswerInput, type TestQuestion } from '@/lib/final-test'
 import { advanceStreak, bestTestRatio, dailyFor, DAILY_LIMIT, directorXp, emptyDaily, evaluateBadges, EXTRA_READ_COST, LIGHTS_BADGE_ID, LIGHTS_XP, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
@@ -135,8 +136,10 @@ interface OrbitState {
     daily: DailyState
     /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
     lessonReview: Record<string, ReviewStatus>
-    /** Mục nội dung giảng viên đã duyệt theo bài (khóa 'sum' | 'c:<khái niệm>' | 'q:<câu>'); chưa có thì bài xuất bản coi như duyệt hết */
+    /** Mục nội dung giảng viên đã duyệt theo bài (khóa 'sum' | 'c:<khái niệm>' | 'q:<câu>' | 'qt' = đề Kiểm tra nhanh); chưa có thì bài xuất bản coi như duyệt hết */
     reviewedItems: Record<string, string[]>
+    /** Đề kiểm tra giảng viên đã chỉnh: `quick:<lessonId>` (Kiểm tra nhanh) và `final:<courseId>` (Test cuối chương); chưa có thì dùng đề AI soạn sẵn */
+    testSets: Record<string, TestSet>
     /** Khóa đang mở cho sinh viên (id khóa → mở); chưa có thì coi là mở. Khóa khóa thì sinh viên không thấy bài nào của khóa đó */
     courseOpen: Record<string, boolean>
     /** Lớp đang chọn ở trang Lớp học của giảng viên (chỉ để xem thống kê) */
@@ -168,6 +171,7 @@ interface OrbitState {
     setReviewedItems: (lessonId: string, keys: string[]) => void
     setTeacherClass: (classId: string) => void
     setCourseOpen: (courseId: string, open: boolean) => void
+    setTestSet: (key: string, set: TestSet) => void
     /** Thêm bài (và khóa mới nếu có) từ hộp "Thêm từ YouTube"; mỗi bài bắt đầu một lượt giả lập AI tạo nội dung */
     addImport: (input: { course?: Course; lessons: Lesson[] }) => void
     /** patch = null: bỏ chỉnh sửa bìa, quay về bìa mặc định */
@@ -181,9 +185,9 @@ interface OrbitState {
     /** Ghi điểm một lần chụp ở Virtual Director; trả về XP được cộng (0 nếu chưa vượt kỷ lục hoặc dưới 70 điểm) */
     recordDirectorScore: (score: number, briefId?: string) => number
     /** Ghi kết quả test cuối chương, cập nhật mức nắm vững (bản đồ kỹ năng) và XP; trả về số XP được cộng */
-    recordTestResult: (input: { courseId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
+    recordTestResult: (input: { courseId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean; passRatio?: number }) => number
     /** Ghi kết quả test cuối chặng của một bài (cùng cách cập nhật mức nắm vững và XP như test cuối chương); trả về XP được cộng */
-    recordCheckpointResult: (input: { lessonId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean }) => number
+    recordCheckpointResult: (input: { lessonId: string; answers: TestAnswerInput[]; durationSec: number; timedOut: boolean; passRatio?: number }) => number
     markRecapSeen: (lessonId: string) => void
     saveTestSession: (courseId: string, session: ActiveTestSession) => void
     clearTestSession: (courseId: string) => void
@@ -204,7 +208,7 @@ export const DEFAULT_LEARNER_NAME = 'Phú'
  */
 /** Mọi khóa nội dung của một bài: tóm tắt, từng khái niệm, từng câu hỏi trong video. */
 export function lessonItemKeys(l: Pick<Lesson, 'concepts' | 'quiz'>): string[] {
-    return ['sum', ...l.concepts.map((c) => `c:${c.id}`), ...l.quiz.map((q) => `q:${q.id}`)]
+    return ['sum', ...l.concepts.map((c) => `c:${c.id}`), ...l.quiz.map((q) => `q:${q.id}`), 'qt']
 }
 
 /** Hồ sơ giảng viên mặc định: hai bài Nhiếp ảnh mới tạo còn chờ duyệt (một bài duyệt dở 6/9), các bài khác đã duyệt hết trừ một câu có đáp án nhiễu bị chọn nhiều. */
@@ -254,6 +258,7 @@ export function makeDemoProfile() {
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
         ...makeTeacherDemo(),
         courseOpen: {} as Record<string, boolean>,
+        testSets: {} as Record<string, TestSet>,
         teacherClassId: DEFAULT_CLASS_ID,
         importedLessons: [] as Lesson[],
         importedCourses: [] as Course[],
@@ -377,6 +382,8 @@ export const useOrbitStore = create<OrbitState>()(
 
             setTeacherClass: (classId) => set({ teacherClassId: classId }),
 
+            setTestSet: (key, next) => set((s) => ({ testSets: { ...s.testSets, [key]: next } })),
+
             setCourseOpen: (courseId, open) => set((s) => ({ courseOpen: { ...s.courseOpen, [courseId]: open } })),
 
             addImport: ({ course, lessons: added }) =>
@@ -470,9 +477,9 @@ export const useOrbitStore = create<OrbitState>()(
                 return xp
             },
 
-            recordTestResult: ({ courseId, answers, durationSec, timedOut }) => {
+            recordTestResult: ({ courseId, answers, durationSec, timedOut, passRatio }) => {
                 const prev = get().testRecords[courseId]
-                const xp = testXp(answers.filter((a) => a.correct).length, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).total
+                const xp = testXp(answers.filter((a) => a.correct).length, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }, passRatio).total
                 set((s) => {
                     const done = applyTest(s, s.testRecords[courseId], answers, durationSec, timedOut)
                     const testRecords = { ...s.testRecords, [courseId]: done.record }
@@ -488,9 +495,9 @@ export const useOrbitStore = create<OrbitState>()(
                 return xp
             },
 
-            recordCheckpointResult: ({ lessonId, answers, durationSec, timedOut }) => {
+            recordCheckpointResult: ({ lessonId, answers, durationSec, timedOut, passRatio }) => {
                 const prev = get().checkpoints[lessonId]
-                const xp = testXp(answers.filter((a) => a.correct).length, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }).total
+                const xp = testXp(answers.filter((a) => a.correct).length, answers.length, prev && { correct: prev.bestCorrect, total: prev.bestTotal }, passRatio).total
                 set((s) => {
                     const done = applyTest(s, s.checkpoints[lessonId], answers, durationSec, timedOut)
                     // Test cuối chặng không tính cho huy hiệu "Vượt ải cuối chương" (chỉ test cuối chương), nhưng mức nắm vững vẫn đổi nên huy hiệu theo khái niệm vẫn xét lại
@@ -533,13 +540,13 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 11,
+            version: 12,
             // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio); v10 thêm lớp đang chọn và bài nhập từ YouTube; v9 thêm reviewedItems và hồ sơ giảng viên mặc định (2 bài chờ duyệt) nếu chưa có thay đổi nào.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, courseOpen: old.courseOpen ?? {}, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
+                return { ...old, courseOpen: old.courseOpen ?? {}, testSets: old.testSets ?? {}, ...(version < 12 && old.reviewedItems ? { reviewedItems: Object.fromEntries(Object.entries(old.reviewedItems).map(([id, keys]) => [id, (old.lessonReview?.[id] ?? allLessons.find((l) => l.id === id)?.status) === 'published' && !keys.includes('qt') ? [...keys, 'qt'] : keys])) } : {}), xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },
