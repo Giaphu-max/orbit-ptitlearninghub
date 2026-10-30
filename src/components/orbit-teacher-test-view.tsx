@@ -114,7 +114,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                 </Link>
                 <h1 className="mt-1 text-[28px] font-black leading-tight tracking-tight text-strong">Chưa thể soạn test cuối chương</h1>
                 <div className="mt-5 max-w-[620px] rounded-[20px] border border-border bg-card p-6 text-sm leading-relaxed text-muted-foreground shadow-card">
-                    <NoPublishedBody courseTitle={`“${title}”`} pending={reviews.filter((r) => r.state !== 'published')} onPick={(id) => navigate(`/teacher/review/${id}`)} />
+                    <NoPublishedBody courseTitle={title} pending={reviews.filter((r) => r.state !== 'published')} onPick={(id) => navigate(`/teacher/review/${id}`)} />
                 </div>
             </div>
         )

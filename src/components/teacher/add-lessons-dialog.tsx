@@ -157,7 +157,7 @@ export function AddLessonsDialog({ onClose, courseId, replaceId }: { onClose: ()
     return (
         <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-auto bg-ink/60 p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
             <div ref={rootRef} role="dialog" aria-modal="true" aria-labelledby="add-lessons-title" className="mt-[6vh] w-full max-w-[640px] rounded-[20px] border border-border bg-card p-6 shadow-raised">
-                <h2 id="add-lessons-title" className="text-xl font-black text-strong">
+                <h2 id="add-lessons-title" title={replacing ? `Thay video cho: ${replacing.title}` : undefined} className="truncate text-xl font-black text-strong">
                     {replacing ? `Thay video cho: ${replacing.title}` : 'Thêm video'}
                 </h2>
                 <div role="tablist" aria-label="Nguồn video" className="mt-4 flex gap-1 rounded-[14px] bg-muted p-1.5">
@@ -285,7 +285,7 @@ export function AddLessonsDialog({ onClose, courseId, replaceId }: { onClose: ()
                                             onChange={() => setPicked((p) => (p.has(it.key) ? new Set([...p].filter((k) => k !== it.key)) : new Set(p).add(it.key)))}
                                             className="h-4 w-4 accent-brand-600"
                                         />
-                                        <span className="min-w-0 flex-1 font-semibold leading-snug text-strong">{it.title}</span>
+                                        <span title={it.title} className="min-w-0 flex-1 truncate font-semibold leading-snug text-strong">{it.title}</span>
                                         <span className="font-mono text-xs text-muted-foreground">{formatTime(it.durationSec)}</span>
                                     </label>
                                 </li>

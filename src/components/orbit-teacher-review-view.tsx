@@ -601,8 +601,8 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                     </div>
                     <div>
                         {nextPending ? (
-                            <Link to={`/teacher/review/${nextPending.lesson.id}`} className="inline-flex h-8 items-center gap-2 text-sm font-bold text-muted-foreground transition hover:text-strong">
-                                Bài tiếp chờ duyệt: {nextPending.lesson.shortTitle ?? nextPending.lesson.title}
+                            <Link to={`/teacher/review/${nextPending.lesson.id}`} title={nextPending.lesson.title} className="inline-flex h-8 max-w-full items-center gap-2 text-sm font-bold text-muted-foreground transition hover:text-strong">
+                                <span className="min-w-0 truncate">Bài tiếp chờ duyệt: {nextPending.lesson.shortTitle ?? nextPending.lesson.title}</span>
                                 <ArrowRight size={15} className="text-brand-ink" aria-hidden />
                             </Link>
                         ) : (

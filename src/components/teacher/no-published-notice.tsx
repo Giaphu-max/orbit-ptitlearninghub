@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { clip40 } from '@/components/teacher/library-ui'
 import type { LessonReview } from '@/lib/teacher'
 
 /** Bài nên mở để duyệt tiếp: đang duyệt dở, rồi bài chờ duyệt đầu tiên. */
@@ -19,7 +20,7 @@ export function LessonStateList({ items, onPick, outline }: { items: LessonRevie
                     const row = (
                         <>
                             <span className="flex min-w-0 flex-1 items-baseline gap-2 text-left">
-                                <span title={r.lesson.title} className="truncate font-semibold text-strong">
+                                <span title={r.lesson.title} className="min-w-0 truncate font-semibold text-strong">
                                     {r.lesson.title}
                                 </span>
                                 {r.state === 'editing' && <span className="shrink-0 font-mono text-[13px] text-muted-foreground/80">{r.done}/{r.total}</span>}
@@ -59,7 +60,7 @@ export function NoPublishedBody({ courseTitle, pending, onPick }: { courseTitle:
     return (
         <>
             <p>
-                Đề test chỉ lấy câu hỏi từ các bài đã duyệt và xuất bản. Khóa {courseTitle} chưa có bài nào được xuất bản.
+                Đề test chỉ lấy câu hỏi từ các bài đã duyệt và xuất bản. Khóa “<span title={courseTitle}>{clip40(courseTitle)}</span>” chưa có bài nào được xuất bản.
             </p>
             {pending.length > 0 && <LessonStateList items={pending} onPick={onPick} />}
         </>

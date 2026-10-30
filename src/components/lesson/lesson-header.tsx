@@ -87,10 +87,10 @@ export function TitleBlock({ label, badge, items, footer, title, back, wrapTitle
                                 role="menuitem"
                                 aria-current={it.current ? 'page' : undefined}
                                 onClick={() => setOpen(false)}
-                                className={`grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-[10px] p-2.5 text-sm transition ${it.current ? 'bg-brand-50' : 'hover:bg-muted'}`}
+                                className={`grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] p-2.5 text-sm transition ${it.current ? 'bg-brand-50' : 'hover:bg-muted'}`}
                             >
                                 <span className="font-mono text-xs font-bold text-muted-foreground">{it.n}</span>
-                                <b className={`font-bold ${it.current ? 'text-brand-ink' : 'text-strong'}`}>{it.title}</b>
+                                <b title={it.title} className={`truncate font-bold ${it.current ? 'text-brand-ink' : 'text-strong'}`}>{it.title}</b>
                                 <small className="font-mono text-xs text-muted-foreground">{it.meta}</small>
                             </Link>
                         ))}

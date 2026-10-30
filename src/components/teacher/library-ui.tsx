@@ -7,6 +7,9 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 export const field = 'h-11 w-full rounded-[10px] border border-border bg-card px-3.5 text-sm text-foreground focus-visible:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200'
 export const labelCls = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground'
 
+/** Tên khóa/bài đưa vào câu chữ: dài quá 40 ký tự thì cắt + "…". */
+export const clip40 = (name: string) => (name.length > 40 ? `${name.slice(0, 40).trimEnd()}…` : name)
+
 export interface MenuItem {
     label: string
     onSelect: () => void

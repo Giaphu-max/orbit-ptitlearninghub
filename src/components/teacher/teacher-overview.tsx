@@ -61,7 +61,7 @@ export function TeacherOverview() {
                                     </>
                                 )}
                             </p>
-                            <small className="mt-2 block text-[13px] text-muted-foreground">
+                            <small className="mt-2 block truncate text-[13px] text-muted-foreground">
                                 {urgent.review.course?.title} · {urgent.review.lesson.shortTitle ?? urgent.review.lesson.title} · câu ở {formatTime(urgent.question.pauseAt)}
                             </small>
                         </div>
@@ -118,8 +118,8 @@ export function TeacherOverview() {
                         {published.map((r) => (
                             <li key={r.lesson.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl px-3.5 py-3 [&+&]:border-t [&+&]:border-border">
                                 <span className="min-w-0">
-                                    <b className="block truncate text-[14.5px] font-semibold text-muted-foreground">{r.lesson.title}</b>
-                                    <small className="text-xs text-muted-foreground">{r.course?.title}</small>
+                                    <b title={r.lesson.title} className="block truncate text-[14.5px] font-semibold text-muted-foreground">{r.lesson.title}</b>
+                                    <small title={r.course?.title} className="block truncate text-xs text-muted-foreground">{r.course?.title}</small>
                                 </span>
                                 <Link to={`/teacher/review/${r.lesson.id}`} className={outlineBtn}>
                                     Xem
@@ -145,8 +145,8 @@ function LessonRow({ review: r }: { review: LessonReview }) {
         <div className={rowCls}>
             <Label>Bài giảng</Label>
             <span className="min-w-0">
-                <b className="block text-[16.5px] font-bold leading-snug text-strong">{r.lesson.title}</b>
-                <small className="mt-1 block text-[13px] text-muted-foreground">
+                <b title={r.lesson.title} className="block truncate text-[16.5px] font-bold leading-snug text-strong">{r.lesson.title}</b>
+                <small title={r.course?.title} className="mt-1 block truncate text-[13px] text-muted-foreground">
                     {r.course?.title} · {editing ? 'đang duyệt dở' : 'AI vừa tạo xong'}
                 </small>
             </span>

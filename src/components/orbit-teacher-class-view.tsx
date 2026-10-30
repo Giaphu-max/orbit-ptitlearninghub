@@ -177,7 +177,7 @@ function ConceptLine({ row, to, stats }: { row: ConceptRow; to: string; stats: C
             >
                 <span className="min-w-0">
                     <b className="block text-sm font-bold leading-snug text-strong">{row.name}</b>
-                    <small className="mt-0.5 block truncate text-xs text-muted-foreground">{review.lesson.shortTitle ?? review.lesson.title}</small>
+                    <small title={review.lesson.title} className="mt-0.5 block truncate text-xs text-muted-foreground">{review.lesson.shortTitle ?? review.lesson.title}</small>
                 </span>
                 <span className="font-mono text-sm font-extrabold">
                     {row.video === null ? (

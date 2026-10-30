@@ -5,7 +5,7 @@ import { CourseArt } from '@/components/courses/course-cover'
 import type { Course } from '@/data/types'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
 import { CoverDialog, NewCourseDialog } from '@/components/teacher/course-cover-dialogs'
-import { ConfirmDialog, Modal, MoreMenu, MoveDialog, primary, RenameDialog, type MenuItem } from '@/components/teacher/library-ui'
+import { clip40, ConfirmDialog, Modal, MoreMenu, MoveDialog, primary, RenameDialog, type MenuItem } from '@/components/teacher/library-ui'
 import { LessonStateList, NoPublishedBody } from '@/components/teacher/no-published-notice'
 import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
 import { courseFullyPublished, finalKey, finalSetFor, passCount, resolveSet, sourcedBank, useCourseLessons } from '@/lib/test-sets'
@@ -284,7 +284,7 @@ export function OrbitTeacherLibraryView() {
             {dlg?.k === 'rename' && dLesson && <RenameDialog title="Đổi tên bài" label="Tên bài" initial={dLesson.lesson.title} onSave={(v) => store.renameLesson(dLesson.lesson.id, v)} onClose={() => setDlg(null)} />}
             {dlg?.k === 'move' && dLesson && (
                 <MoveDialog
-                    lessonTitle={dLesson.lesson.title}
+                    lessonTitle={clip40(dLesson.lesson.title)}
                     currentId={dLesson.lesson.courseId}
                     courses={allCourses}
                     onMove={(cid) => (store.moveLesson(dLesson.lesson.id, cid), say(`Đã chuyển sang “${courseOf(cid)?.title ?? ''}”`))}
@@ -293,7 +293,7 @@ export function OrbitTeacherLibraryView() {
             )}
             {dlg?.k === 'delLesson' && dLesson && (
                 <ConfirmDialog
-                    title={`Xóa “${dLesson.lesson.title}”?`}
+                    title={`Xóa “${clip40(dLesson.lesson.title)}”?`}
                     confirmLabel="Xóa"
                     onClose={() => setDlg(null)}
                     onConfirm={() => (removeLesson(dLesson), setDlg(null))}
@@ -304,7 +304,7 @@ export function OrbitTeacherLibraryView() {
             {dlg?.k === 'finalNone' && dCourse && (
                 <Modal title="Chưa thể soạn test cuối chương" onClose={() => setDlg(null)}>
                     <div className="mt-3 text-base leading-[1.6] text-muted-foreground">
-                        <NoPublishedBody courseTitle={`“${dCourse.title}”`} pending={reviews.filter((r) => r.lesson.courseId === dCourse.id && r.state !== 'published')} onPick={(id) => (setDlg(null), navigate(`/teacher/review/${id}`))} />
+                        <NoPublishedBody courseTitle={dCourse.title} pending={reviews.filter((r) => r.lesson.courseId === dCourse.id && r.state !== 'published')} onPick={(id) => (setDlg(null), navigate(`/teacher/review/${id}`))} />
                     </div>
                 </Modal>
             )}
@@ -349,7 +349,7 @@ function DeleteCourse({ course, lessons, onClose, onToggleOff, onDelete }: { cou
     const blocked = course.open && published > 0
     return (
         <ConfirmDialog
-            title={`Xóa khóa “${course.title}”?`}
+            title={`Xóa khóa “${clip40(course.title)}”?`}
             confirmLabel="Xóa"
             blocked={blocked}
             onClose={onClose}
@@ -387,7 +387,7 @@ function ResetFinal({ course, onClose, onDone }: { course: Course; onClose: () =
                 onDone()
             }}
         >
-            AI sẽ soạn lại đề từ các bài của khóa “{course.title}”. Những chỉnh sửa của thầy cô trên đề hiện tại sẽ mất và đề quay về bản nháp.
+            AI sẽ soạn lại đề từ các bài của khóa “<span title={course.title}>{clip40(course.title)}</span>”. Những chỉnh sửa của thầy cô trên đề hiện tại sẽ mất và đề quay về bản nháp.
         </ConfirmDialog>
     )
 }

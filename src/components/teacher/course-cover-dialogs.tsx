@@ -140,7 +140,7 @@ export function CoverDialog({ course, onClose }: { course: Course; onClose: () =
     const accent = override?.accent ?? course.cover?.accent ?? derived.accent
     return (
         <Modal title="Đổi bìa khóa" onClose={onClose}>
-            <p className="mt-1 text-sm text-muted-foreground">{course.title}</p>
+            <p title={course.title} className="mt-1 truncate text-sm text-muted-foreground">{course.title}</p>
             <div className="mt-4">
                 <CoverFields
                     course={{ id: course.id, subject: course.subject, cover: { ...course.cover, ...(override?.motif && { motif: override.motif }), ...(override?.seed !== undefined && { seed: override.seed }) } }}
