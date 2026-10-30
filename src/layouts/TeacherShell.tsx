@@ -94,8 +94,8 @@ export function TeacherShell() {
                 </div>
             </aside>
 
-            <main className="min-h-[100svh] pt-16 lg:ml-[248px]">
-                <div className="p-7">
+            <main className="min-h-[100svh] min-w-0 overflow-x-clip pt-16 lg:ml-[248px]">
+                <div className="min-w-0 p-7">
                     <Suspense
                         fallback={
                             <div className="flex items-center justify-center py-32 text-muted-foreground">

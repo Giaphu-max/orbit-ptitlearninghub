@@ -162,7 +162,7 @@ function dailyPrompt(lessons: Lesson[], count: number) {
             return `### Bài "${l.title}" (lessonId=${l.id})\nKhái niệm:\n${concepts}\nTranscript:\n${transcript}`
         })
         .join('\n\n')
-    return `Bạn soạn "Orbit Daily": bài đọc ngắn 2–3 phút TỔNG HỢP kiến thức từ nhiều bài giảng, giúp sinh viên thấy các bài giảng liên hệ với nhau.
+    return `Bạn soạn "Bài đọc hôm nay": bài đọc ngắn 2–3 phút TỔNG HỢP kiến thức từ nhiều bài giảng, giúp sinh viên thấy các bài giảng liên hệ với nhau.
 
 Viết ${count} bài đọc. Yêu cầu:
 - BẮT BUỘC mỗi bài lấy kiến thức từ ít nhất 2 bài giảng KHÁC NHAU (lessonId khác nhau): lấy một ý ở bài này đặt cạnh, so sánh hoặc nối với một ý ở bài kia. Bài nào chỉ dùng một bài giảng là không đạt.
@@ -354,10 +354,10 @@ async function main() {
 
     if (!lessonsOut.length) fail('Không tạo được bài học nào, không ghi đè src/data.')
 
-    // ── Orbit Daily ──
+    // ── Bài đọc hôm nay ──
     let daily: DailyArticle[] = readJson<DailyArticle[]>(path.join(args.out!, 'daily.json'))?.filter((a) => a.origin === 'gemini') ?? []
     if (!args['skip-daily'] && config.dailyCount > 0) {
-        console.log(`\n▶ Orbit Daily (${config.dailyCount} bài từ ${lessonsOut.length} bài giảng)`)
+        console.log(`\n▶ Bài đọc hôm nay (${config.dailyCount} bài từ ${lessonsOut.length} bài giảng)`)
         const lessonsHash = createHash('sha256').update(JSON.stringify(lessonsOut.map((l) => [l.id, l.transcript, l.concepts]))).digest('hex')
         const cacheFile = path.join(CACHE_DIR, 'daily.json')
         let cache = readJson<{ lessonsHash: string; count: number; promptVersion?: string; draft: DailyDraft }>(cacheFile)
