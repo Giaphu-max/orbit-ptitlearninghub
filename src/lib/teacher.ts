@@ -80,6 +80,13 @@ export function useLessonReviews(): LessonReview[] {
     }, [edits, review, items, imported, importedCourses, jobs, now])
 }
 
+/** Các lớp mẫu và lớp đang chọn (chỉ dùng cho thống kê ở trang Lớp học). */
+export function useTeacherClass() {
+    const id = useOrbitStore((s) => s.teacherClassId)
+    const cls = TEACHER_CLASSES.find((c) => c.id === id) ?? TEACHER_CLASSES[0]
+    return useMemo(() => ({ classes: TEACHER_CLASSES, cls, courseIds: cls.courseIds, stats: getClassStats(cls.id) }), [cls])
+}
+
 /** Số liệu gộp toàn bộ sinh viên đã học, không theo lớp (Tổng quan). */
 export function useAllStats(): ClassStats {
     return useMemo(() => getAllStats(), [])
