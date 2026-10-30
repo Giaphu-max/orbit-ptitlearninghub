@@ -540,10 +540,75 @@ body{background:#F5F6FA}
 .vis.on{color:#1E7F55;border-color:#BFE7CF;background:#F3FBF6}.vis.on i{background:#22A05A}.vis.on i::after{left:14px}
 .chd .vis+.mini{margin-left:0}
 .vnote{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+/* soạn test */
+.crumb2{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.crumb2 span{font-weight:700}.crumb2 em{font-style:normal;font:700 11.5px var(--mono);color:var(--red-ink);background:var(--red-50);padding:3px 8px;border-radius:6px}
+.tgrid{display:grid;grid-template-columns:minmax(0,8fr) minmax(320px,4fr);gap:24px;align-items:start}
+.cov{padding:18px 20px}
+.covh{display:flex;justify-content:space-between;align-items:baseline}.covh b{font-size:15px;color:var(--navy)}.covh small{font-size:12.5px;color:var(--muted)}
+.covs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.cvc{display:inline-flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px}
+.cvc b{font-weight:600;color:var(--navy)}
+.cvc em{font:800 11.5px var(--mono);font-style:normal;min-width:22px;height:22px;border-radius:11px;display:grid;place-items:center;background:#EAF8EE;color:#1E7F55}
+.cvc.hot em{background:var(--red-50);color:var(--red-ink)}
+.cvc.miss{border-style:dashed;border-color:var(--red-100)}.cvc.miss em{background:var(--red);color:#fff}
+.covw{margin:12px 0 0;font-size:13.5px;color:var(--muted)}.covw b{color:var(--navy)}.covw a{margin-left:6px;font-weight:800;color:var(--red-ink);cursor:pointer}
+.qh{display:flex;justify-content:space-between;align-items:baseline;margin:28px 2px 10px}
+.qh h3{margin:0;font-size:22px;font-weight:900;color:var(--navy)}.qh h3 span{font:800 16px var(--mono);color:var(--muted);margin-left:6px}
+.qh>span{font-size:12.5px;color:var(--muted)}
+.ql{padding:6px}
+.qr{display:grid;grid-template-columns:18px 30px 1fr auto 30px;gap:12px;align-items:center;padding:13px 12px;border-radius:12px;cursor:pointer}
+.qr+.qr{border-top:1px solid var(--line)}
+.qr:hover{background:#FAFAFC}
+.dg{color:#C3C7D3;font-size:12px;letter-spacing:-2px;cursor:grab}
+.no{font:700 12px var(--mono);color:var(--muted)}
+.qt b{display:block;font-size:14.5px;font-weight:600;color:var(--navy);line-height:1.4}
+.qt small{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12px;color:var(--muted)}
+.src{font-style:normal;font-weight:700;font-size:11px;padding:2px 7px;border-radius:6px}
+.src.v{background:#EEF3FF;color:#1F63DB}.src.b{background:var(--sunk);color:var(--navy)}.src.t{background:#EAF8EE;color:#1E7F55}.src.a{background:var(--red-50);color:var(--red-ink)}
+.rt{font:700 12px var(--mono);color:var(--muted)}.rt.low{color:var(--red-ink)}.rt.q{color:#1E7F55}
+.rm{border:0;background:none;color:#B0B5C5;font-size:13px;width:28px;height:28px;border-radius:8px}.rm:hover{background:var(--red-50);color:var(--red-ink)}
+.more3{padding:10px 12px;border-top:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+.adds{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.ab{height:38px;display:inline-flex;align-items:center;padding:0 14px;border-radius:10px;border:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--navy);cursor:pointer;background:#fff}
+.ab:hover{background:var(--sunk)}.ab.ai{color:var(--red-ink);border-color:var(--red-100)}
+.set{padding:22px;position:sticky;top:88px}
+.set h3{margin:0 0 6px;font-size:16px;font-weight:800;color:var(--navy)}
+.sr{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+.seg{display:flex;padding:3px;border-radius:10px;background:var(--sunk)}
+.seg b{font:700 12.5px var(--mono);padding:6px 10px;border-radius:8px;color:var(--muted);cursor:pointer}
+.seg b.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(10,26,80,.12)}
+.sel.sm{width:auto;height:34px;font-size:13px}
+.tg2{display:flex;align-items:center;gap:10px;padding:10px 0;font-size:13.5px;color:var(--ink);cursor:pointer}
+.tg2 input{display:none}
+.tg2 i{width:30px;height:18px;border-radius:9px;background:#D5D8E2;position:relative;flex:none;transition:.2s}
+.tg2 i::after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s var(--ease)}
+.tg2 input:checked+i{background:#22A05A}.tg2 input:checked+i::after{left:14px}
+.sum{margin-top:12px;padding:14px;border-radius:14px;background:var(--sunk)}
+.sum small{display:block;font-size:12px;color:var(--muted)}.sum b{display:block;margin-top:4px;font:800 15px var(--mono);color:var(--navy)}
+.go2.w{width:100%;height:46px;margin-top:14px;font-size:15px}
+.try{display:block;text-align:center;margin-top:12px}
+/* thẻ test trong thư viện */
+.vc.tcard .th{background:repeating-linear-gradient(135deg,#FFF1EF 0 10px,#FFE6E2 10px 20px);color:var(--red-ink);align-items:center;justify-content:center;flex-direction:column;gap:4px;text-align:center}
+.vc.tcard .th span{max-width:none;font-size:15px}
+.vc.tcard .th small{font:700 11.5px var(--mono);color:var(--red-ink);opacity:.8}
+/* tab Kiểm tra trong trang duyệt */
+.ck2{padding:12px 14px;margin:6px 0 10px;border-radius:12px;background:var(--sunk);font-size:12.5px;color:var(--muted)}
+.ck2 b{font-family:var(--mono);color:var(--navy)}
+.pk{display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:start;padding:10px 8px;border-radius:10px;font-size:13.5px;cursor:pointer}
+.pk+.pk{border-top:1px solid var(--line)}
+.pk input{accent-color:#E2261C;width:16px;height:16px;margin-top:2px}
+.pk b{font-weight:600;color:var(--navy);line-height:1.4}.pk small{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+.pk em{font:700 11px var(--mono);font-style:normal;color:var(--muted)}
+.pk.off b{color:var(--muted);font-weight:500}
+.lbl{margin:14px 8px 4px;font:700 11px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:#9AA0B4}
+
+body{background:radial-gradient(60% 50% at 100% 0%,rgba(244,135,143,.10),transparent 70%),var(--bg)}
+.cta{white-space:nowrap}
 </style></head>
 <body>
 <header class="topbar">
-  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Cổng giảng viên · Orbit</small></span></span>
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Cổng giảng viên</small></span></span>
   <span class="right"><span class="bell" title="Thông báo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><i>2</i></span>
     <span class="who2"><span class="avatar">C</span><span><b>ThS. Nguyễn Cảnh Châu</b><small>Giảng viên · Khoa Đa phương tiện</small></span></span></span>
 </header>
@@ -553,9 +618,8 @@ body{background:#F5F6FA}
     <span data-v="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Tổng quan</span>
     <span data-v="lib"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4-2.5z"/></svg>Bài giảng<em>2</em></span>
     <span data-v="class"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>Lớp học</span>
-    <div class="sg">Công cụ</div>
-    <a class="sl" data-add><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Thêm từ YouTube</a>
-    <a class="sl"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Xem như sinh viên</a>
+    
+    
   </nav>
   <div class="sfoot"><a class="sl"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Đặt lại dữ liệu demo</a>
     <small>Sản phẩm dự thi Ứng dụng AI trong giảng dạy 2026</small></div>
@@ -624,7 +688,7 @@ body{background:#F5F6FA}
     <div><div class="eb">Bài giảng</div><h2>Khóa học của thầy</h2>
       <p>Kho bài giảng của thầy. Mỗi khóa là một danh sách phát YouTube. Khóa đang mở thì mọi sinh viên đều học được các bài đã xuất bản, không cần giao cho từng lớp.</p></div>
     <div class="libr">
-      <button class="addbtn" data-add>+ Thêm từ YouTube</button></div>
+      <button class="addbtn" data-add>+ Thêm video</button></div>
   </header>
 
   <section class="course2">
@@ -636,6 +700,7 @@ body{background:#F5F6FA}
       <a class="vc need" data-go="review"><span class="th" style="--a:#1C2C72"><em>7:19</em><span>Bản chất của dựng phi tuyến</span></span><b>Bản chất của dựng audio và video phi tuyến trong hậu kỳ</b><span class="vs"><span class="st edit">Đang duyệt 6/9</span><span class="cta">Duyệt tiếp →</span></span></a>
       <a class="vc"><span class="th" style="--a:#23306B"><em>6:25</em><span>Tổ chức cấu trúc nội dung</span></span><b>Tổ chức cấu trúc nội dung và điều hướng tiếp nhận</b><span class="vs"><span class="st ok">Đã xuất bản</span><span class="cta q">Xem</span></span></a>
       <a class="vc"><span class="th" style="--a:#2A2F5E"><em>6:19</em><span>Nhịp điệu dựng phim</span></span><b>Nhịp điệu dựng phim</b><span class="vs"><span class="st ok">Đã xuất bản</span><span class="cta q">Xem</span></span></a>
+          <a class="vc tcard" data-go="test"><span class="th"><span>Test cuối chương</span><small>10 câu · đạt 80%</small></span><b>Kiểm tra cả chương Dựng phi tuyến</b><span class="vs"><span class="st edit">Bản nháp · AI soạn sẵn</span><span class="cta">Soạn đề →</span></span></a>
     </div>
   </section>
 
@@ -648,6 +713,7 @@ body{background:#F5F6FA}
       <a class="vc need" data-go="review"><span class="th" style="--a:#5B1E12"><em>8:02</em><span>Nguyên lý màu sắc</span></span><b>Nguyên lý màu sắc cơ bản trong nhiếp ảnh và điện ảnh</b><span class="vs"><span class="st wait">Chờ duyệt · 11 mục</span><span class="cta">Duyệt →</span></span></a>
       <a class="vc"><span class="th" style="--a:#3B2416"><em>6:48</em><span>Ba loại ánh sáng</span></span><b>Ba loại ánh sáng cơ bản trong quay phim và chụp ảnh</b><span class="vs"><span class="st ok">Đã xuất bản</span><span class="cta q">Xem</span></span></a>
       <a class="vc"><span class="th" style="--a:#30233F"><em>9:10</em><span>Tư duy nhiếp ảnh</span></span><b>Phát triển tư duy nhiếp ảnh đến thị giác điện ảnh</b><span class="vs"><span class="st ok">Đã xuất bản</span><span class="cta q">Xem</span></span></a>
+          <a class="vc tcard" data-go="test"><span class="th"><span>Test cuối chương</span><small>10 câu · đạt 80%</small></span><b>Kiểm tra cả chương Nhiếp ảnh &amp; ánh sáng</b><span class="vs"><span class="st ok">Đã xuất bản</span><span class="cta q">Sửa đề</span></span></a>
     </div>
   </section>
   <div style="height:56px"></div>
@@ -733,6 +799,7 @@ body{background:#F5F6FA}
         <button data-p="p-sum">Tóm tắt <em id="c-sum">1/1</em></button>
         <button data-p="p-con">Khái niệm <em id="c-con">3/4</em></button>
         <button class="on" data-p="p-q">Câu hỏi <em id="c-q">2/4</em></button>
+        <button data-p="p-ck">Kiểm tra <em id="c-ck">0/1</em></button>
       </div>
 
       <div class="pane" id="p-sum">
@@ -810,8 +877,30 @@ body{background:#F5F6FA}
         </div>
       </div>
 
+      <div class="pane" id="p-ck">
+        <div class="list">
+          <div class="it" data-g="ck">
+            <div class="ih"><span class="ck">✓</span><span><b>Đề kiểm tra nhanh cuối bài</b><small>AI chọn sẵn 6/8 câu · đạt từ 80%</small></span><span></span><span class="cv">▾</span></div>
+            <div class="ib">
+              <div class="ck2"><b>6</b> câu · <b>60s</b>/câu · đạt từ <b>5/6</b> · sinh viên làm sau khi xem hết video</div>
+              <div class="lbl">Trong đề · 6</div>
+              <label class="pk"><input type="checkbox" checked><span><b>Đặc điểm nào là của dựng tuyến tính?</b><small>Câu trong video · 1:10</small></span><em>84%</em></label>
+              <label class="pk"><input type="checkbox" checked><span><b>Lợi ích nổi bật của dựng phi tuyến (NLE)?</b><small>Câu trong video · 1:37</small></span><em>74%</em></label>
+              <label class="pk"><input type="checkbox" checked><span><b>Xóa clip khỏi timeline thì file gốc thế nào?</b><small>Câu biến thể · phi hủy hoại</small></span><em>41%</em></label>
+              <label class="pk"><input type="checkbox" checked><span><b>Tính phi hủy hoại được hiểu như thế nào?</b><small>Câu trong video · 1:53</small></span><em>53%</em></label>
+              <label class="pk"><input type="checkbox" checked><span><b>Giai đoạn nào khóa timeline?</b><small>Câu trong video · 5:15</small></span><em>54%</em></label>
+              <label class="pk"><input type="checkbox" checked><span><b>Rough cut khác Fine cut ở điểm nào?</b><small>Câu biến thể · quy trình</small></span><em>61%</em></label>
+              <div class="lbl">Còn trong kho · 2</div>
+              <label class="pk off"><input type="checkbox"><span><b>NLE là viết tắt của cụm từ nào?</b><small>Câu biến thể · dựng phi tuyến</small></span><em>92%</em></label>
+              <label class="pk off"><input type="checkbox"><span><b>Assembly là bước làm gì?</b><small>Câu biến thể · quy trình</small></span><em>—</em></label>
+              <div class="ia"><button class="ok">Duyệt đề</button><button class="gh">+ Tự viết câu</button><button class="gh">✦ AI gợi ý</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="pub">
-        <div class="pr"><span>Đã duyệt</span><b id="pc">6/9 mục</b></div>
+        <div class="pr"><span>Đã duyệt</span><b id="pc">6/10 mục</b></div>
         <div class="pb"><i id="pbar" style="width:66%"></i></div>
         <button id="pubBtn" class="soft">Xuất bản cho lớp</button>
         <p class="hint" id="pubHint">Duyệt hết 3 mục còn lại để xuất bản. <span class="gemini">· Nội dung do Gemini tạo</span></p>
@@ -829,6 +918,61 @@ body{background:#F5F6FA}
   <div style="height:40px"></div>
 </main>
 
+<!-- ================= SOẠN TEST CUỐI CHƯƠNG ================= -->
+<main class="box view" id="v-test">
+  <header class="lh">
+    <div class="lt">
+      <div class="crumb2"><a class="bk" data-go="lib">‹ Bài giảng</a><span>Dựng audio và video phi tuyến</span><em>3 bài · 6 khái niệm</em></div>
+      <h1>Test cuối chương</h1>
+    </div>
+    <div class="steps"><span class="sp done"><em>✓</em>AI soạn đề</span><span class="ar">→</span><span class="sp on"><em>2</em>Thầy cô chỉnh</span><span class="ar">→</span><span class="sp" id="tPub"><em>3</em>Xuất bản</span></div>
+  </header>
+
+  <section class="tgrid">
+    <div>
+      <div class="card cov">
+        <div class="covh"><b>Độ phủ khái niệm</b><small>mỗi khái niệm nên có ít nhất 1 câu</small></div>
+        <div class="covs">
+          <span class="cvc"><b>Dựng tuyến tính</b><em>1</em></span>
+          <span class="cvc"><b>Dựng phi tuyến (NLE)</b><em>2</em></span>
+          <span class="cvc hot"><b>Tính phi hủy hoại</b><em>3</em></span>
+          <span class="cvc"><b>Quy trình 4 giai đoạn</b><em>2</em></span>
+          <span class="cvc"><b>Cấu trúc 3 hồi</b><em>2</em></span>
+          <span class="cvc miss"><b>Nhịp dựng</b><em>0</em></span>
+        </div>
+        <p class="covw">Chưa có câu nào về <b>Nhịp dựng</b> (bài 3). <a id="aiFill">✦ AI gợi ý 2 câu</a></p>
+      </div>
+
+      <div class="qh"><h3>Câu hỏi trong đề <span id="qn">10</span></h3><span>Kéo để đổi thứ tự · bấm để sửa</span></div>
+      <div class="card ql" id="ql">
+        <div class="qr"><span class="dg">⋮⋮</span><span class="no">01</span><span class="qt"><b>Đặc điểm nào sau đây là của phương pháp dựng tuyến tính?</b><small><i class="src v">Câu trong video</i>Bài 1 · Dựng tuyến tính</small></span><span class="rt">84% đúng</span><button class="rm" title="Bỏ khỏi đề">✕</button></div>
+        <div class="qr"><span class="dg">⋮⋮</span><span class="no">02</span><span class="qt"><b>Dựng phi tuyến (NLE) mang lại lợi ích nổi bật nào so với dựng tuyến tính?</b><small><i class="src v">Câu trong video</i>Bài 1 · Dựng phi tuyến</small></span><span class="rt">74% đúng</span><button class="rm">✕</button></div>
+        <div class="qr"><span class="dg">⋮⋮</span><span class="no">03</span><span class="qt"><b>Khi xóa một clip khỏi timeline trong phần mềm NLE, file video gốc sẽ thế nào?</b><small><i class="src b">Câu biến thể</i>Bài 1 · Tính phi hủy hoại</small></span><span class="rt low">41% đúng</span><button class="rm">✕</button></div>
+        <div class="qr"><span class="dg">⋮⋮</span><span class="no">04</span><span class="qt"><b>Vì sao phần mềm dựng phi tuyến cho phép quay lại bản dựng cũ bất kỳ lúc nào?</b><small><i class="src t">Thầy cô viết</i>Bài 1 · Tính phi hủy hoại</small></span><span class="rt q">mới</span><button class="rm">✕</button></div>
+        <div class="qr"><span class="dg">⋮⋮</span><span class="no">05</span><span class="qt"><b>Giai đoạn nào khóa timeline và không thay đổi thời lượng nữa?</b><small><i class="src v">Câu trong video</i>Bài 1 · Quy trình 4 giai đoạn</small></span><span class="rt">54% đúng</span><button class="rm">✕</button></div>
+        <div class="qr"><span class="dg">⋮⋮</span><span class="no">06</span><span class="qt"><b>Rough cut khác Fine cut ở điểm nào?</b><small><i class="src b">Câu biến thể</i>Bài 1 · Quy trình 4 giai đoạn</small></span><span class="rt">61% đúng</span><button class="rm">✕</button></div>
+        <div class="more3"><span>+ 4 câu nữa</span></div>
+        <div class="adds"><a class="ab" id="addOwn">+ Tự viết câu</a><a class="ab" id="openBank">Lấy từ kho câu hỏi · 18</a><a class="ab ai" id="aiMore">✦ AI gợi ý thêm</a></div>
+      </div>
+    </div>
+
+    <aside class="card set">
+      <h3>Cài đặt bài thi</h3>
+      <div class="sr"><span>Thời gian mỗi câu</span><div class="seg"><b>45s</b><b class="on">60s</b><b>90s</b></div></div>
+      <div class="sr"><span>Ngưỡng đạt</span><div class="seg"><b>70%</b><b class="on">80%</b><b>90%</b></div></div>
+      <div class="sr"><span>Mở khi sinh viên</span><select class="sel sm"><option>Xong cả 3 bài</option><option>Xong 2/3 bài</option><option>Mở ngay</option></select></div>
+      <div class="sr"><span>Số lần làm</span><select class="sel sm"><option>Không giới hạn</option><option>3 lần</option><option>1 lần</option></select></div>
+      <label class="tg2"><input type="checkbox" checked><i></i>Trộn thứ tự câu hỏi</label>
+      <label class="tg2"><input type="checkbox" checked><i></i>Trộn thứ tự đáp án</label>
+      <label class="tg2"><input type="checkbox" checked><i></i>Sai thì AI giải thích và tua về đoạn video</label>
+      <div class="sum"><small>Sinh viên sẽ thấy</small><b><span id="sq">10</span> câu · <span id="sm">10</span> phút · đạt từ <span id="sp">8</span>/<span id="sq2">10</span></b></div>
+      <button class="go2 w" id="tPubBtn">Xuất bản đề</button>
+      <a class="lk try">Làm thử đề này</a>
+    </aside>
+  </section>
+  <div style="height:48px"></div>
+</main>
+
 <!-- ================= LỚP HỌC (chưa dựng) ================= -->
 <main class="box view" id="v-class">
   <header class="libh"><div><div class="eb">Lớp học</div><h2>Kết quả theo lớp</h2><p>Chọn lớp thầy đang đứng để xem sinh viên hổng ở đâu.</p></div>
@@ -841,7 +985,7 @@ body{background:#F5F6FA}
 <div class="toast" id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-function show(v){const nv=v==='review'?'lib':v;$$('.links span[data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v===nv));$$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));scrollTo({top:0})}
+function show(v){const nv=(v==='review'||v==='test')?'lib':v;$$('.links span[data-v]').forEach(x=>x.classList.toggle('on',x.dataset.v===nv));$$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));scrollTo({top:0})}
 $$('.links span[data-v]').forEach(s=>s.onclick=()=>show(s.dataset.v));
 $$('[data-go]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();show(a.dataset.go)}));
 // tabs
@@ -864,9 +1008,9 @@ $$('.opt').forEach(o=>o.onclick=()=>{o.parentElement.querySelectorAll('.opt').fo
 $$('.qm').forEach(m=>m.onclick=()=>{const it=document.getElementById(m.dataset.i);if(!it)return;$$('.tabs button')[2].click();it.querySelector('.ih').click()});
 function count(){
   const g=k=>[$$(`.it[data-g="${k}"]`).length,$$(`.it[data-g="${k}"].ok`).length];
-  const [st,sd]=g('sum'),[ct,cd]=g('con'),[qt,qd]=g('q');
-  $('#c-sum').textContent=sd+'/'+st;$('#c-con').textContent=cd+'/'+ct;$('#c-q').textContent=qd+'/'+qt;
-  const T=st+ct+qt,D=sd+cd+qd,left=T-D;$('#pc').textContent=D+'/'+T+' mục';$('#pbar').style.width=(D/T*100)+'%';
+  const [st,sd]=g('sum'),[ct,cd]=g('con'),[qt,qd]=g('q'),[kt,kd]=g('ck');
+  $('#c-sum').textContent=sd+'/'+st;$('#c-con').textContent=cd+'/'+ct;$('#c-q').textContent=qd+'/'+qt;$('#c-ck').textContent=kd+'/'+kt;
+  const T=st+ct+qt+kt,D=sd+cd+qd+kd,left=T-D;$('#pc').textContent=D+'/'+T+' mục';$('#pbar').style.width=(D/T*100)+'%';
   const b=$('#pubBtn');b.classList.toggle('soft',left>0);
   $('#pubHint').innerHTML=left>0?`Duyệt hết ${left} mục còn lại để xuất bản. <span class="gemini">· Nội dung do Gemini tạo</span>`:'Sinh viên sẽ thấy bài ngay sau khi xuất bản.';
 }
@@ -896,6 +1040,23 @@ $('#gen').onclick=()=>{dlg.classList.remove('on');show('lib');
       if(p>=100){clearInterval(h);a.className='vc need';a.querySelector('.vs').innerHTML='<span class="st wait">Chờ duyệt · 9 mục</span><span class="cta">Duyệt →</span>';a.onclick=()=>show('review')}},380+k*120)});
   const t=$('#toast');t.textContent='AI đang tạo nội dung cho '+names.length+' video. Xong sẽ hiện "Chờ duyệt".';t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2800)};
 
+
+// ----- soạn test -----
+$$('.seg').forEach(g=>g.querySelectorAll('b').forEach(b=>b.onclick=()=>{g.querySelectorAll('b').forEach(x=>x.classList.toggle('on',x===b));tsum()}));
+function tsum(){const n=$$('#ql .qr').length+4;const sec=parseInt($$('.seg')[0].querySelector('.on').textContent);const pass=parseInt($$('.seg')[1].querySelector('.on').textContent);
+  $('#qn').textContent=n;$('#sq').textContent=n;$('#sq2').textContent=n;$('#sm').textContent=Math.round(n*sec/60);$('#sp').textContent=Math.ceil(n*pass/100)}
+$$('#ql .rm').forEach(r=>r.onclick=e=>{e.stopPropagation();r.closest('.qr').remove();$$('#ql .qr .no').forEach((x,i)=>x.textContent=String(i+1).padStart(2,'0'));tsum()});
+function addQ(t,src,cls,sub){const r=document.createElement('div');r.className='qr';r.innerHTML=`<span class="dg">⋮⋮</span><span class="no"></span><span class="qt"><b>${t}</b><small><i class="src ${cls}">${src}</i>${sub}</small></span><span class="rt q">mới</span><button class="rm">✕</button>`;
+  $('#ql .more3').before(r);r.querySelector('.rm').onclick=e=>{e.stopPropagation();r.remove();tsum()};$$('#ql .qr .no').forEach((x,i)=>x.textContent=String(i+1).padStart(2,'0'));tsum()}
+$('#aiFill').onclick=()=>{addQ('Cắt cảnh nhanh liên tục thường tạo cảm giác gì cho người xem?','AI gợi ý','a','Bài 3 · Nhịp dựng');addQ('Khi nào nên kéo dài một cảnh thay vì cắt sớm?','AI gợi ý','a','Bài 3 · Nhịp dựng');
+  const c=$('.cvc.miss');c.classList.remove('miss');c.querySelector('em').textContent='2';$('.covw').innerHTML='Mọi khái niệm đều đã có câu hỏi.';toastT('AI gợi ý 2 câu cho Nhịp dựng · thầy cô xem lại trước khi xuất bản')};
+$('#aiMore').onclick=()=>{addQ('Ưu điểm lớn nhất của việc dựng trên bản proxy là gì?','AI gợi ý','a','Bài 1 · Dựng phi tuyến');toastT('Đã thêm 1 câu AI gợi ý')};
+$('#addOwn').onclick=()=>addQ('Câu hỏi mới của thầy cô (bấm để soạn)','Thầy cô viết','t','chọn khái niệm');
+$('#openBank').onclick=()=>toastT('Kho câu hỏi: câu trong video, câu biến thể và câu thầy cô đã viết của cả chương');
+$('#tPubBtn').onclick=()=>{$('#tPub').classList.add('on');toastT('Đã xuất bản test cuối chương · sinh viên làm được khi xong cả 3 bài')};
+function toastT(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2600)}
+$$('.pk input').forEach(i=>i.onchange=()=>i.closest('.pk').classList.toggle('off',!i.checked));
+tsum();
 if(location.hash)show(location.hash.slice(1));
 </script>
 </body></html>
