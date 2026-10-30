@@ -66,17 +66,9 @@ export function targetBody(
     return { body, dy }
 }
 
-/** Đáy navbar thật (cả dạng viên kính của các chương cuộn) */
+/** Đáy thanh nav cố định: 84px ở hero, 60px khi đã thu (từ chương 1) */
 function getNavBottom(index: number) {
-    const navShell = document.querySelector<HTMLElement>('.nav-shell')
-    if (navShell) {
-        // Với các chương cuộn (index 1..3), navbar ở dạng viên (pill)
-        if (index > 0) {
-            return navShell.dataset.state === 'pill' ? navShell.getBoundingClientRect().bottom : 72
-        }
-        return navShell.getBoundingClientRect().bottom
-    }
-    return index > 0 ? 72 : 80
+    return index > 0 ? 60 : 84
 }
 
 /** Đáy màn hình / mép trên dòng hướng dẫn [data-guide] */

@@ -67,7 +67,7 @@ export function OrbitHomeView() {
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
             {journey ? (
                 <section id="journey" className="pointer-events-none relative z-10" style={{ height: paged ? '100svh' : `${(CHAPTERS + 1) * 100}svh` }}>
-                    <div className={`container-wide ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center py-[var(--nav-h)]'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
+                    <div className={`container-wide ${paged ? 'relative' : PIN_SWAP ? 'absolute inset-x-0 top-0' : 'sticky top-0'} flex h-[100svh] ${staticMode ? 'items-start pb-6' : 'items-center py-[var(--nav-full-h)]'}`} style={staticMode ? { paddingTop: 'calc(44svh + 1rem)' } : undefined}>
                         <div className="grid w-full grid-cols-[minmax(0,1fr)] items-center">
                             <Panel id="top" index={0}>
                                 <HeroChapter />

@@ -50,20 +50,6 @@ function useScrolledPast(enabled: boolean, enter: number, leave: number) {
     return enabled && past
 }
 
-/** Màn hẹp (<860px): trang chủ luôn dùng viên thuốc; dãy mục cuộn ngang thay vì gom vào menu. */
-function useNarrow() {
-    const query = '(max-width: 859px)'
-    return useSyncExternalStore(
-        (cb) => {
-            const m = window.matchMedia(query)
-            m.addEventListener('change', cb)
-            return () => m.removeEventListener('change', cb)
-        },
-        () => window.matchMedia(query).matches,
-        () => false,
-    )
-}
-
 const initials = (name: string) =>
     name
         .trim()
@@ -75,7 +61,7 @@ const initials = (name: string) =>
 
 const linkCls = 'whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70'
 
-function NavLinks({ pathname, pill = false, className = '' }: { pathname: string; pill?: boolean; className?: string }) {
+function NavLinks({ pathname, className = '' }: { pathname: string; className?: string }) {
     return (
         <nav aria-label="Điều hướng chính" className={`no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto ${className}`}>
             {BASE_ITEMS.map((it) => {
@@ -85,7 +71,7 @@ function NavLinks({ pathname, pill = false, className = '' }: { pathname: string
                         key={it.label}
                         to={it.to}
                         aria-current={active ? 'page' : undefined}
-                        className={`${linkCls} ${pill ? 'px-3.5' : ''} ${active ? `font-extrabold text-brand-ink ${pill ? 'bg-brand-50' : ''}` : 'font-medium text-foreground hover:text-strong'}`}
+                        className={`${linkCls} ${active ? 'font-extrabold text-brand-ink' : 'font-medium text-foreground hover:text-strong'}`}
                     >
                         {it.label}
                     </Link>
@@ -96,10 +82,9 @@ function NavLinks({ pathname, pill = false, className = '' }: { pathname: string
 }
 
 /**
- * Thanh điều hướng sinh viên.
- * - Mọi trang trừ trang chủ: một thanh cố định luôn hiện đủ (logo, 5 mục, streak/XP, avatar). Cuộn quá 8px thì thu 84 → 60px
- *   (logo 46 → 36px, ẩn chữ phụ, nền mờ + viền dưới); `--nav-h` cập nhật theo để mọi phần tử sticky bám đúng.
- * - Trang chủ: đầu trang là thanh trong suốt trên hero; từ chương 1 trở đi là viên thuốc nổi căn trái theo lề container, hiện đủ 5 mục.
+ * Thanh điều hướng sinh viên: một thanh cố định rộng hết chiều ngang, dùng chung cho mọi trang kể cả trang chủ.
+ * Đủ logo, 5 mục, streak/XP, avatar. Cuộn quá 8px thì thu 84 → 60px (logo 46 → 36px, ẩn chữ phụ, nền mờ + viền dưới);
+ * `--nav-h` cập nhật theo để mọi phần tử sticky bám đúng. Trang chủ hành trình không cuộn tài liệu: "đã cuộn" = đã sang chương 1 trở đi.
  */
 export function TopNav() {
     const { pathname } = useLocation()
@@ -107,84 +92,40 @@ export function TopNav() {
     const onHome = pathname === '/'
     const chapter = useSyncExternalStore(subscribeChapter, getJourneyChapter)
     // Trang chủ hành trình: chỉ đọc chương đã chốt (không đọc scrollY); các trang khác và trang chủ giảm chuyển động (chapter = -1) đọc scrollY
-    const scrolled = useScrolledPast(!onHome || chapter < 0, onHome ? 60 : 8, onHome ? 40 : 2)
-    const narrow = useNarrow()
-    const pill = onHome && (narrow || (chapter >= 0 ? chapter >= 1 : scrolled))
-    const compactBar = !onHome && scrolled
-    const name = useOrbitStore((s) => s.learnerName)
+    const scrollY = useScrolledPast(!onHome || chapter < 0, 8, 2)
+    const compact = onHome && chapter >= 0 ? chapter >= 1 : scrollY
     useOrbitStore((s) => s.lessonProgress)
     const navHidden = useNavHidden()
 
     // Chiều cao thanh hiện tại cho mọi phần tử sticky (--nav-h); phần chừa chỗ ở đầu trang dùng --nav-full-h (cố định)
     useEffect(() => {
-        document.documentElement.style.setProperty('--nav-h', compactBar ? '60px' : '84px')
+        document.documentElement.style.setProperty('--nav-h', compact ? '60px' : '84px')
         return () => {
             document.documentElement.style.removeProperty('--nav-h')
         }
-    }, [compactBar])
-
-    const logoCls = compactBar ? '!h-9 !w-9' : '!h-[46px] !w-[46px]'
-
-    if (!onHome) {
-        return (
-            <header style={{ viewTransitionName: 'site-nav' }} data-nav={compactBar ? 'compact' : 'full'} data-focus-hidden={navHidden} className="lesson-focus-nav own-layer fixed inset-x-0 top-0 z-50 text-foreground">
-                <div className="site-bar" data-scrolled={compactBar}>
-                    <div className="mx-auto flex h-full w-full max-w-[var(--page-max)] items-center gap-4 px-[var(--page-gutter)] lg:gap-6">
-                        <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ">
-                            <BrandLogo className={`site-bar-logo ${logoCls}`} />
-                            <span className="leading-tight">
-                                <span className="block text-xl font-black leading-none tracking-tight text-brand-ink">PTIT</span>
-                                <span className="site-bar-sub mt-1 hidden whitespace-nowrap text-[11px] text-muted-foreground xl:block">Học viện Công nghệ BCVT</span>
-                            </span>
-                        </Link>
-                        <NavLinks pathname={pathname} />
-                        <div className="ml-auto flex shrink-0 items-center gap-2.5">
-                            <StatsPill tooltip={!compactBar} />
-                            {FLAGS.darkMode && role !== 'teacher' && <ThemeToggle tone="hero" />}
-                            <AccountMenu />
-                        </div>
-                    </div>
-                </div>
-            </header>
-        )
-    }
+    }, [compact])
 
     return (
         <header
             style={{ viewTransitionName: 'site-nav' }}
-            data-nav={pill ? 'pill' : 'wide'}
+            data-nav={compact ? 'compact' : 'full'}
             data-focus-hidden={navHidden}
-            className="lesson-focus-nav own-layer nav-over-3d pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center text-foreground"
+            className={`lesson-focus-nav own-layer fixed inset-x-0 top-0 z-50 text-foreground ${onHome ? 'nav-over-3d' : ''}`}
         >
-            <div className="nav-shell" data-state={pill ? 'pill' : 'wide'}>
-                {/* Thanh đầy đủ trên hero */}
-                <div className="nav-layer nav-layer-wide gap-4 px-[var(--page-gutter)] lg:gap-6">
+            <div className="site-bar" data-scrolled={compact}>
+                <div className="mx-auto flex h-full w-full max-w-[var(--page-max)] items-center gap-4 px-[var(--page-gutter)] lg:gap-6">
                     <Link to="/" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70" aria-label="PTIT, trang chủ">
-                        <BrandLogo />
+                        <BrandLogo className={`site-bar-logo ${compact ? '!h-9 !w-9' : '!h-[46px] !w-[46px]'}`} />
                         <span className="leading-tight">
                             <span className="block text-xl font-black leading-none tracking-tight text-brand-ink">PTIT</span>
-                            <span className="mt-1 hidden whitespace-nowrap text-[11px] text-muted-foreground xl:block">Học viện Công nghệ BCVT</span>
+                            <span className="site-bar-sub mt-1 hidden whitespace-nowrap text-[11px] text-muted-foreground xl:block">Học viện Công nghệ BCVT</span>
                         </span>
                     </Link>
                     <NavLinks pathname={pathname} />
-                    <div className="ml-auto flex items-center gap-2.5">
-                        <StatsPill tooltip={!pill} />
+                    <div className="ml-auto flex shrink-0 items-center gap-2.5">
+                        <StatsPill tooltip={!compact} />
                         {FLAGS.darkMode && role !== 'teacher' && <ThemeToggle tone="hero" />}
                         <AccountMenu />
-                    </div>
-                </div>
-
-                {/* Viên thuốc nổi: căn trái theo lề container, logo nhỏ ở đầu, streak/XP + avatar ở cuối */}
-                <div className="nav-layer nav-layer-pill px-[var(--page-gutter)]">
-                    <div className="ptit-glass-navbar-pill mt-4 flex max-w-full items-center gap-1.5 p-1.5 pl-2">
-                        <Link to="/" aria-label="PTIT, trang chủ" className="shrink-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
-                            <BrandLogo className="!h-7 !w-7 !rounded-lg !p-0.5" />
-                        </Link>
-                        <NavLinks pathname={pathname} pill />
-                        <div className="flex shrink-0 items-center gap-2 pl-1">
-                            {role !== 'teacher' && <StatsPill compact tooltip={false} />}
-                            <AccountMenu small label={`Tài khoản của ${name}`} />
-                        </div>
                     </div>
                 </div>
             </div>
@@ -193,7 +134,7 @@ export function TopNav() {
 }
 
 /** Avatar + menu tài khoản giả lập (đổi tên, đổi vai trò, đặt lại demo). */
-function AccountMenu({ small = false, label }: { small?: boolean; label?: string }) {
+function AccountMenu() {
     const name = useOrbitStore((s) => s.learnerName)
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
@@ -214,10 +155,10 @@ function AccountMenu({ small = false, label }: { small?: boolean; label?: string
         <div ref={ref} className="relative">
             <button
                 type="button"
-                aria-label={label ?? `Tài khoản của ${name}`}
+                aria-label={`Tài khoản của ${name}`}
                 aria-expanded={open}
                 onClick={() => setOpen((v) => !v)}
-                className={`flex aspect-square ${small ? 'h-8 w-8 text-[11px]' : 'h-10 w-10 text-xs'} shrink-0 items-center justify-center rounded-full font-extrabold shadow-card transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 bg-foreground text-background`}
+                className={`flex aspect-square h-10 w-10 text-xs shrink-0 items-center justify-center rounded-full font-extrabold shadow-card transition duration-fast hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 bg-foreground text-background`}
             >
                 {initials(name)}
             </button>

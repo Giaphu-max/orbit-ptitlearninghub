@@ -852,9 +852,7 @@
   }
 }
 
-/* Thanh nav sinh viên (top-nav.tsx).
-   Trang thường: .site-bar cao var(--nav-h) (84 → 60px khi cuộn quá 8px), nền mờ + viền dưới khi đã thu.
-   Trang chủ: .nav-shell chứa hai lớp chồng nhau (thanh trong suốt trên hero / viên thuốc căn trái), đổi bằng fade + trượt 6px, không co giãn ngang. */
+/* Thanh nav sinh viên (top-nav.tsx), dùng chung mọi trang: .site-bar cao var(--nav-h) (84 → 60px khi cuộn quá 8px), nền mờ + viền dưới khi đã thu. */
 @property --nav-h {
   syntax: '<length>';
   inherits: true;
@@ -867,42 +865,24 @@
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .site-bar[data-scrolled='true'] {
-  background: hsl(var(--background) / 0.85);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border-bottom-color: hsl(var(--border));
+  background: hsl(var(--background) / 0.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom-color: hsl(var(--border) / 0.6);
+}
+/* Trang chủ: canvas 3D chạy sau thanh nên nền đặc hơn (72%) để chữ luôn đọc rõ ở mọi chương */
+.nav-over-3d .site-bar[data-scrolled='true'] { background: hsl(var(--background) / 0.72); }
+/* Safari: không blur lên canvas WebGL (giữ fps), nền gần đục thay thế */
+.is-webkit .nav-over-3d .site-bar[data-scrolled='true'] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: hsl(var(--background) / 0.92);
 }
 .site-bar-logo { transition: width 0.2s ease, height 0.2s ease; }
 .site-bar-sub { max-height: 16px; overflow: hidden; transition: opacity 0.2s ease, max-height 0.2s ease, margin 0.2s ease; }
 .site-bar[data-scrolled='true'] .site-bar-sub { opacity: 0; max-height: 0; margin-top: 0; }
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
-.nav-shell {
-  position: relative;
-  width: 100%;
-  max-width: var(--page-max);
-  height: var(--nav-full-h);
-}
-.nav-shell[data-state='pill'] { height: 64px; }
-.nav-layer {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-start;
-  pointer-events: none;
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s;
-}
-.nav-layer-wide { align-items: center; }
-.nav-layer > * { pointer-events: auto; }
-.nav-shell[data-state='wide'] .nav-layer-pill,
-.nav-shell[data-state='pill'] .nav-layer-wide {
-  opacity: 0;
-  transform: translate3d(0, -6px, 0);
-  visibility: hidden;
-  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0s 0.22s;
-}
-.nav-shell[data-state='wide'] .nav-layer-pill > *,
-.nav-shell[data-state='pill'] .nav-layer-wide > * { pointer-events: none; }
 .nav-menu-panel {
   background: hsl(var(--card) / 0.97);
   transform-origin: top center;
@@ -915,8 +895,7 @@
   :root { transition: none; }
   .site-bar,
   .site-bar-logo,
-  .site-bar-sub,
-  .nav-layer { transition: none !important; }
+  .site-bar-sub { transition: none !important; }
   .nav-menu-panel { animation: none; }
 }
 
@@ -929,14 +908,6 @@
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow), inset 0 0 0 1px var(--glass-inset);
     border-radius: 20px;
-  }
-  .ptit-glass-navbar-pill {
-    background: var(--glass-bg-scrolled);
-    -webkit-backdrop-filter: blur(16px) saturate(190%);
-    backdrop-filter: blur(16px) saturate(190%);
-    border: 1px solid var(--pill-border);
-    box-shadow: var(--pill-shadow);
-    border-radius: 9999px;
   }
   .ptit-pin {
     display: inline-flex;
@@ -992,20 +963,9 @@
   .dark .ptit-streak-chip { color: hsl(var(--brand-ink)); }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .ptit-glass-card,
-  .ptit-glass-navbar-pill { background: rgb(255 255 255 / 0.95); }
-  .dark .ptit-glass-card,
-  .dark .ptit-glass-navbar-pill { background: rgb(28 24 22 / 0.95); }
+  .ptit-glass-card { background: rgb(255 255 255 / 0.95); }
+  .dark .ptit-glass-card { background: rgb(28 24 22 / 0.95); }
 }
-/* Safari + trang chủ: viên kính nằm trên canvas WebGL, bỏ blur (nền gần đục) để giữ ~60fps */
-.is-webkit .nav-over-3d .ptit-glass-navbar-pill {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  background: rgb(255 255 255 / 0.95);
-}
-.is-webkit.dark .nav-over-3d .ptit-glass-navbar-pill { background: rgb(28 24 22 / 0.95); }
-
-
 /* Studio 3D: trạng thái chờ AI dựng ánh sáng, vệt quét khi chấm ảnh, skeleton. Chỉ transform + opacity; reduced-motion đã tắt animation ở trên. */
 @keyframes studio-scan {
   from { transform: translateX(-100%); }
