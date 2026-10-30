@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Tổng kết chặng</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#FAFAFC;
+  --teal:#2EC3A8;--ok:#1E7F55;--ok-50:#EAF7EF;--amber:#F39531;--blue:#1F63DB;--ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--gut:clamp(40px,4vw,80px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(60% 50% at 100% 0%,rgba(244,135,143,.10),transparent 70%),var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none;cursor:pointer}
+.box{max-width:1760px;margin:0 auto;padding:0 var(--gut)}
+.nav .box{display:flex;align-items:center;gap:44px;height:84px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .tile{width:46px;height:46px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center}.brand .tile img{width:76%}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:22px;line-height:1}.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+.links{display:flex;gap:34px;font-size:16.5px}.links .on{color:var(--red-ink);font-weight:800}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}
+.stats{display:flex;align-items:center;gap:10px;height:40px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 12px;font:700 14px var(--mono);color:var(--navy)}.stats i{width:1px;height:18px;background:var(--line)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+.grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(320px,4fr);gap:24px}
+.lh{align-items:end;margin:8px 0 24px}
+.pick{font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:8px}
+.pick em{font-style:normal;font:700 11.5px var(--mono);color:var(--red-ink);background:var(--red-50);padding:3px 8px;border-radius:6px}
+h1{margin:6px 0 0;font-size:24px;line-height:1.25;font-weight:900;letter-spacing:-.02em;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.steps{display:flex;gap:6px;align-items:center;width:100%}
+.sp{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 8px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted);background:#fff;border:1px solid var(--line);white-space:nowrap}
+.sp em{font-style:normal;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:700 10.5px var(--mono);background:var(--sunk)}
+.sp.done{color:var(--ok)}.sp.done em{background:#E6F4EE;color:var(--ok)}
+.sp.on{background:var(--red);border-color:var(--red);color:#fff}.sp.on em{background:rgba(255,255,255,.25)}
+.steps .ar{color:#C3C7D3}
+.card{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 1px 2px rgba(10,26,80,.04)}
+.col{display:flex;flex-direction:column}
+.top{align-items:stretch}
+/* result hero (left 8) */
+.res{display:grid;grid-template-columns:auto 1fr;gap:34px;align-items:center;padding:30px 34px;border-radius:24px;color:#fff;
+  background:radial-gradient(70% 90% at 90% 10%,rgba(255,255,255,.14),transparent 60%),linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);box-shadow:0 26px 50px -30px rgba(226,38,28,.8)}
+.ring{position:relative;width:150px;height:150px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font:800 36px/1 var(--mono)}
+.ring b small{display:block;font:600 11.5px/1.25 var(--sans);opacity:.85;margin-top:6px;max-width:80px}
+.res .eb{font:700 12px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.res h2{margin:8px 0 0;font-size:30px;line-height:1.15;font-weight:900;letter-spacing:-.025em}
+.res p{margin:10px 0 0;font-size:15.5px;line-height:1.55;color:rgba(255,255,255,.9);max-width:56ch}
+.res p b{color:#fff}
+.chips{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);font-size:13px}
+.chip b{font:800 16px var(--mono)}
+.res .cta{display:flex;align-items:center;gap:16px;margin-top:22px}
+.btn-w{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--red-ink);font-weight:800;font-size:15.5px;padding:13px 20px;border-radius:14px;box-shadow:0 10px 20px -10px rgba(0,0,0,.35);animation:bob 3s 1s ease-in-out infinite}
+.btn-w:hover{animation:none}
+@keyframes bob{50%{translate:0 -6px}}
+@media (prefers-reduced-motion:reduce){.btn-w{animation:none}}
+.res .cta small{font-size:13px;color:rgba(255,255,255,.85)}
+/* next (right 4) */
+.next{padding:24px;display:flex;flex-direction:column}
+.next .eb{font:700 12px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.next .th{margin-top:12px;aspect-ratio:16/8;border-radius:14px;background:linear-gradient(150deg,#2A3A7E,#0A1A50);position:relative;overflow:hidden}
+.next .th span{position:absolute;right:10px;bottom:10px;font:700 11.5px var(--mono);color:#fff;background:rgba(0,0,0,.45);padding:3px 7px;border-radius:6px}
+.next .th i{position:absolute;left:16px;top:16px;right:40%;height:10px;border-radius:3px;background:rgba(255,255,255,.8)}
+.next .th i+i{top:32px;right:55%;background:#41A5E1}
+.next b{display:block;margin-top:14px;font-size:17px;line-height:1.35;color:var(--navy)}
+.next small{display:block;margin-top:4px;font-size:13px;color:var(--muted)}
+.next .go{margin-top:auto;padding-top:16px;display:flex;justify-content:space-between;align-items:center}
+.btn-o{display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:12px;border:1.5px solid var(--navy);color:var(--navy);font-weight:800;font-size:14px}
+.next .go a.l{font-size:13px;font-weight:700;color:var(--muted)}
+/* section titles */
+.st{display:flex;justify-content:space-between;align-items:baseline;margin:36px 0 14px}
+.st h3{margin:0;font-size:20px;font-weight:900;letter-spacing:-.015em;color:var(--navy)}
+.st small{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px}
+.lg{display:inline-flex;align-items:center;gap:6px}.lg i{width:14px;height:6px;border-radius:3px}
+/* concept rows */
+.cs{padding:6px}
+.c{display:grid;grid-template-columns:52px minmax(0,1.3fr) minmax(0,1.6fr) 110px 150px;gap:20px;align-items:center;padding:16px 18px;border-radius:16px}
+.c+.c{border-top:1px solid var(--line)}
+.c .rg{position:relative;width:52px;height:52px}
+.c .rg svg{transform:rotate(-90deg)}
+.c .rg b{position:absolute;inset:0;display:grid;place-items:center;font:800 13px var(--mono);color:var(--navy)}
+.c .nm b{display:block;font-size:15.5px;color:var(--navy)}
+.c .nm span{display:inline-flex;margin-top:6px;gap:8px;align-items:center;font-size:12px}
+.tag{padding:3px 9px;border-radius:999px;font-weight:700}
+.tag.ok{background:var(--ok-50);color:var(--ok)}.tag.mid{background:#FFF4E8;color:#A9580B}.tag.low{background:var(--red-50);color:var(--red-ink)}
+.ts{font:700 11.5px var(--mono);color:var(--muted)}
+.bar{position:relative;height:10px;border-radius:5px;background:var(--sunk)}
+.bar .was{position:absolute;inset:0 auto 0 0;border-radius:5px;background:#D7DBE6}
+.bar .now{position:absolute;inset:0 auto 0 0;border-radius:5px;transform-origin:left;animation:grow 1.2s var(--ease) both}
+@keyframes grow{from{transform:scaleX(0)}}
+.bar u{position:absolute;left:80%;top:-5px;width:2px;height:20px;border-radius:1px;background:var(--navy);opacity:.6}
+.c .dl{text-align:right}
+.c .dl b{display:block;font:800 18px var(--mono);color:var(--navy)}
+.c .dl small{font:700 12px var(--mono);color:var(--ok)}
+.c .ac{text-align:right}
+.btn-s{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:800}
+.btn-s.red{background:var(--red);color:#fff}
+.btn-s.ghost{color:var(--muted);font-weight:600}
+.c.low{background:var(--red-50)}
+/* mistakes + badge */
+.bottom{margin-top:0}
+.mk{padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.mi{display:grid;grid-template-columns:36px 1fr auto;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--sunk)}
+.mi .x{width:36px;height:36px;border-radius:11px;background:var(--red-50);color:var(--red-ink);display:grid;place-items:center;font-weight:900}
+.mi b{display:block;font-size:14.5px;color:var(--navy)}
+.mi small{display:block;margin-top:3px;font-size:13px;color:var(--muted)}
+.mi small em{font-style:normal;color:var(--ok);font-weight:700}
+.bd{padding:22px 24px;display:flex;gap:16px;align-items:center}
+.bd .ic{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#1F63DB,#2EC3A8);display:grid;place-items:center;color:#fff;font-size:24px;flex:none}
+.bd small{font:700 11.5px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.bd b{display:block;margin-top:4px;font-size:16px;color:var(--navy)}
+.bd .p{display:block;height:6px;border-radius:3px;background:var(--sunk);margin:10px 0 6px;overflow:hidden}.bd .p i{display:block;height:100%;width:50%;background:var(--blue)}
+.bd span.t{font-size:12.5px;color:var(--muted)}
+
+.hero{padding:8px 0 4px;display:flex;flex-direction:column}
+.eb2{font:700 13px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--red-ink)}
+.big{margin-top:6px;font-weight:900;font-size:clamp(96px,8.4vw,150px);line-height:.92;letter-spacing:-.055em;color:var(--navy)}
+.sub{margin:14px 0 0;font-size:clamp(28px,2.4vw,40px);line-height:1.15;font-weight:800;letter-spacing:-.025em;color:#555A6E}
+.sub em{font-style:normal;color:var(--red-ink)}
+.hint{margin:14px 0 0;font-size:16px;line-height:1.6;color:var(--muted);max-width:62ch}
+.hint b{color:var(--navy)}
+.hero .row{display:flex;align-items:center;gap:0;margin-top:auto;padding-top:26px}
+.btn-r{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);color:#fff;font-weight:800;font-size:16px;padding:14px 22px;border-radius:14px;box-shadow:0 14px 26px -12px rgba(226,38,28,.7);margin-right:28px;animation:bob 3s 1s ease-in-out infinite}
+.btn-r:hover{animation:none}
+.kpi{padding:0 22px;border-left:1px solid var(--line)}
+.kpi b{display:block;font:800 22px var(--mono);color:var(--navy);line-height:1.1}
+.kpi small{font-size:12.5px;color:var(--muted)}
+</style></head>
+<body>
+<header class="nav"><div class="box">
+  <span class="brand"><span class="tile"><img src="ptit-logo.webp" alt=""></span><span><b>PTIT</b><small>Học viện Công nghệ BCVT</small></span></span>
+  <nav class="links"><span>Trang chủ</span><span>Ôn tập</span><span class="on">Học phần</span><span>Studio 3D</span><span>Tiến độ &amp; Kỹ năng</span></nav>
+  <span class="right"><span class="stats"><span style="color:#D41F16">13</span><i></i>7 · 2.500 <small style="font-weight:500;color:#646880">XP</small></span><span class="avatar">P</span></span>
+</div></header>
+<main class="box">
+  <header class="grid lh">
+    <div><div class="pick">Dựng audio và video phi tuyến <em>Bài 1/3</em> ▾</div><h1>Bản chất của dựng audio và video phi tuyến trong hậu kỳ</h1></div>
+    <div class="steps"><span class="sp done"><em>✓</em>Xem bài &amp; quiz</span><span class="ar">→</span><span class="sp done"><em>✓</em>Kiểm tra nhanh</span><span class="ar">→</span><span class="sp on"><em>3</em>Tổng kết</span></div>
+  </header>
+
+  <section class="grid top">
+    <div class="hero">
+      <div class="eb2">Tổng kết chặng 1 · 3 chặng</div>
+      <div class="big">Chặng 1.</div>
+      <h2 class="sub">Bạn đã vững <em>2/4</em> khái niệm của bài.</h2>
+      <p class="hint">Còn yếu nhất là <b>Quy trình dựng 4 giai đoạn</b>. Làm test 6 câu để chốt lại — đạt từ 80% là khái niệm sáng lên trong bản đồ kỹ năng.</p>
+      <div class="row">
+        <a class="btn-r">▶&nbsp; Làm test 6 câu</a>
+        <span class="kpi"><b>+20</b><small>XP chặng này</small></span>
+        <span class="kpi"><b>1/4</b><small>câu đúng trong video</small></span>
+        <span class="kpi"><b>—</b><small>test chưa làm</small></span>
+      </div>
+    </div>
+    <aside class="card next">
+      <div class="eb">Chặng tiếp theo</div>
+      <div class="th"><i></i><i></i><span>6:25</span></div>
+      <b>Chặng 2 · Tổ chức cấu trúc nội dung và điều hướng tiếp nhận</b>
+      <small>5 khái niệm · mở khi xong chặng này</small>
+      <div class="go"><a class="btn-o">Bắt đầu chặng 2 →</a><a class="l">Về học phần</a></div>
+    </aside>
+  </section>
+
+  <div class="st"><h3>Mức nắm vững từng khái niệm</h3><small><span class="lg"><i style="background:#D7DBE6"></i>Đầu chặng</span><span class="lg"><i style="background:#E2261C"></i>Bây giờ</span><span class="lg"><i style="background:#0A1A50;width:2px;height:12px;opacity:.6"></i>Mốc 80%</span></small></div>
+  <section class="card cs">
+    <div class="c"><span class="rg"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="#F3F4F8" stroke-width="6"/><circle cx="26" cy="26" r="21" fill="none" stroke="#2EC3A8" stroke-width="6" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="10.6"/></svg><b>92</b></span>
+      <span class="nm"><b>Dựng tuyến tính</b><span><span class="tag ok">✓ Nắm chắc</span><span class="ts">00:37–01:10</span></span></span>
+      <span class="bar"><i class="was" style="width:40%"></i><i class="now" style="width:92%;background:#2EC3A8"></i><u></u></span>
+      <span class="dl"><b>92%</b><small>+52%</small></span><span class="ac"><a class="btn-s ghost">Xem lại</a></span></div>
+    <div class="c"><span class="rg"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="#F3F4F8" stroke-width="6"/><circle cx="26" cy="26" r="21" fill="none" stroke="#2EC3A8" stroke-width="6" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="19.8"/></svg><b>85</b></span>
+      <span class="nm"><b>Dựng phi tuyến (NLE)</b><span><span class="tag ok">✓ Nắm chắc</span><span class="ts">01:10–01:37</span></span></span>
+      <span class="bar"><i class="was" style="width:35%"></i><i class="now" style="width:85%;background:#2EC3A8"></i><u></u></span>
+      <span class="dl"><b>85%</b><small>+50%</small></span><span class="ac"><a class="btn-s ghost">Xem lại</a></span></div>
+    <div class="c"><span class="rg"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="#F3F4F8" stroke-width="6"/><circle cx="26" cy="26" r="21" fill="none" stroke="#F39531" stroke-width="6" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="50"/></svg><b>62</b></span>
+      <span class="nm"><b>Tính phi hủy hoại</b><span><span class="tag mid">Cần ôn</span><span class="ts">01:10–01:53</span></span></span>
+      <span class="bar"><i class="was" style="width:20%"></i><i class="now" style="width:62%;background:#F39531"></i><u></u></span>
+      <span class="dl"><b>62%</b><small>+42%</small></span><span class="ac"><a class="btn-s ghost">▶ Xem lại 01:10</a></span></div>
+    <div class="c low"><span class="rg"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="#FFDCD7" stroke-width="6"/><circle cx="26" cy="26" r="21" fill="none" stroke="#E2261C" stroke-width="6" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="99"/></svg><b>25</b></span>
+      <span class="nm"><b>Quy trình dựng 4 giai đoạn</b><span><span class="tag low">Yếu nhất · ôn trước</span><span class="ts">03:22–04:32</span></span></span>
+      <span class="bar"><i class="was" style="width:0"></i><i class="now" style="width:25%;background:#E2261C"></i><u></u></span>
+      <span class="dl"><b>25%</b><small>+25%</small></span><span class="ac"><a class="btn-s red">▶ Xem lại 03:22</a></span></div>
+  </section>
+
+  <section class="grid bottom" style="margin-top:24px">
+    <div class="card mk">
+      <div class="st" style="margin:0 0 2px"><h3>Học từ lỗi sai</h3><small>Sửa đúng sau khi sai được XP gấp đôi</small></div>
+      <div class="mi"><span class="x">✕</span><span><b>“Quy trình dựng chuyên nghiệp gồm bốn giai đoạn nào?”</b><small>Bạn bỏ lỡ câu này ở 05:15 · đáp án nằm trong đoạn 03:22–04:32 · <em>làm lại được +40 XP</em></small></span><a class="btn-s red">▶ Xem đoạn đáp án</a></div>
+    </div>
+    <div class="card bd">
+      <span class="ic">◎</span>
+      <span style="flex:1"><small>Huy hiệu gần đạt nhất</small><b>Nhà dựng phi tuyến</b><span class="p"><i></i></span><span class="t">1/2 · vững “Phi hủy hoại” từ 80% là nhận</span></span>
+    </div>
+  </section>
+  <div style="height:64px"></div>
+</main>
+</body></html>

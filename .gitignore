@@ -31,3 +31,6 @@ scripts/.cache
 
 # Claude Code
 .claude/
+
+# Temporary screenshots/artifacts
+docs/shots-tmp/
