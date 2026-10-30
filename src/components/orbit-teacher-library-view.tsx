@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import type { Course } from '@/data/types'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
+import { courseFullyPublished, finalKey, finalSetFor, passCount, resolveSet, sourcedBank, useCourseAllLessons } from '@/lib/test-sets'
 import { studentsOfCourse, useLessonReviews, useTeacherCourses, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -116,6 +117,9 @@ function CourseSection({ course, open, items, onAdd, onToggle }: { course: Cours
                         <VideoCard review={r} />
                     </li>
                 ))}
+                <li>
+                    <FinalTestCard courseId={course.id} />
+                </li>
             </ul>
         </section>
     )
@@ -185,4 +189,37 @@ function Status({ tone, children }: { tone: 'wait' | 'edit' | 'ok' | 'gen'; chil
         gen: 'bg-muted text-muted-foreground',
     }[tone]
     return <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>{children}</span>
+}
+
+/** Thẻ "Test cuối chương" ở cuối lưới mỗi khóa: bản nháp AI soạn sẵn hoặc đã xuất bản. */
+function FinalTestCard({ courseId }: { courseId: string }) {
+    const lessons = useCourseAllLessons(courseId)
+    const stored = useOrbitStore((s) => s.testSets[finalKey(courseId)])
+    const fullyPublished = useOrbitStore((s) => courseFullyPublished(courseId, s))
+    const set = useMemo(() => finalSetFor(lessons, stored), [lessons, stored])
+    const n = useMemo(() => resolveSet(set, sourcedBank(lessons)).length, [set, lessons])
+    const published = stored?.published ?? fullyPublished
+    return (
+        <Link
+            to={`/teacher/test/${courseId}`}
+            className={`block overflow-hidden rounded-[18px] border bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${published ? 'border-border' : 'border-brand-100'}`}
+        >
+            <div
+                className="flex aspect-video flex-col items-center justify-center gap-1 text-center text-brand-ink"
+                style={{ background: 'repeating-linear-gradient(135deg, rgb(var(--brand-50)) 0 10px, rgb(var(--brand-100)) 10px 20px)' }}
+            >
+                <span className="text-[15px] font-extrabold">Test cuối chương</span>
+                <small className="font-mono text-[11.5px] font-bold opacity-80">
+                    {n} câu · đạt {Math.round(set.rules.passRatio * 100)}% ({passCount(set.rules, n)}/{n})
+                </small>
+            </div>
+            <div className="p-3.5">
+                <b className="block min-h-[2.6em] text-sm font-bold leading-snug text-strong">Đề kiểm tra tổng hợp cả khóa</b>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                    <Status tone={published ? 'ok' : 'wait'}>{published ? 'Đã xuất bản' : 'Bản nháp · AI soạn sẵn'}</Status>
+                    <span className={`whitespace-nowrap text-[13px] font-extrabold ${published ? 'text-muted-foreground' : 'text-brand-ink'}`}>{published ? 'Sửa đề' : 'Soạn đề →'}</span>
+                </div>
+            </div>
+        </Link>
+    )
 }

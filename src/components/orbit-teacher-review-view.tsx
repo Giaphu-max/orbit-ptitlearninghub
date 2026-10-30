@@ -309,8 +309,8 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                 Lời giảng quanh <span className="font-mono text-brand-ink">{formatTime(at)}</span>
                             </h2>
                             <ul className="mt-2.5 flex flex-col gap-1.5">
-                                {around.map((l) => (
-                                    <li key={l.start} className="grid grid-cols-[44px_1fr] gap-2.5 text-[13.5px] leading-relaxed">
+                                {around.map((l, i) => (
+                                    <li key={`${l.start}-${i}`} className="grid grid-cols-[44px_1fr] gap-2.5 text-[13.5px] leading-relaxed">
                                         <button type="button" onClick={() => (setFocusAt(l.start), seekTo(l.start, { play: false }))} className="text-left font-mono text-xs font-semibold text-muted-foreground hover:text-brand-ink">
                                             {formatTime(l.start)}
                                         </button>

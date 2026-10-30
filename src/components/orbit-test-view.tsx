@@ -10,7 +10,6 @@ import {
     MASTERED_RATIO,
     TEST_MIN_XP_RATIO,
     TEST_PASS_BONUS_XP,
-    TEST_PASS_RATIO,
     TEST_XP_PER_CORRECT,
     type TestQuestion,
 } from '@/lib/final-test'
@@ -285,7 +284,7 @@ function Intro({
             <dl className="mt-8 grid gap-4 sm:grid-cols-3">
                 <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`Đề do thầy cô duyệt, ${conceptCount} khái niệm`} />
                 <Fact icon={<Clock size={18} />} label="Thời gian" value={clock(testTimeLimit(count, rules.secondsPerQuestion))} note={`${rules.secondsPerQuestion}s/câu · hết giờ bài tự nộp`} />
-                <Fact icon={<BookOpen size={18} />} label="Phần thưởng" value={`+${TEST_XP_PER_CORRECT} XP/câu`} note={`Mỗi câu đúng vượt kỷ lục. Thêm ${TEST_PASS_BONUS_XP} XP khi đạt ${Math.round(TEST_PASS_RATIO * 100)}%`} />
+                <Fact icon={<BookOpen size={18} />} label="Phần thưởng" value={`+${TEST_XP_PER_CORRECT} XP/câu`} note={`Mỗi câu đúng vượt kỷ lục. Thêm ${TEST_PASS_BONUS_XP} XP khi đạt từ ${needed}/${count}`} />
             </dl>
 
             <ul className="mt-6 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
