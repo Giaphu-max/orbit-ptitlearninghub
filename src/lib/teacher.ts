@@ -111,7 +111,14 @@ export function useAllStats(): ClassStats {
 export function useTeacherCourses(): (Course & { open: boolean })[] {
     const overlay = useOverlay()
     const open = useOrbitStore((s) => s.courseOpen)
-    return useMemo(() => resolveCourses(overlay).map((c) => ({ ...c, open: open[c.id] !== false })), [overlay, open])
+    // Mới tạo nằm trên cùng; khóa mẫu không có createdAt được gán ngày cũ hơn, theo thứ tự hiện tại
+    return useMemo(
+        () =>
+            resolveCourses(overlay)
+                .map((c, i) => ({ ...c, createdAt: c.createdAt ?? Date.UTC(2024, 0, 1) - i * 86_400_000, open: open[c.id] !== false }))
+                .sort((a, b) => b.createdAt - a.createdAt),
+        [overlay, open],
+    )
 }
 
 /** Số sinh viên đang học một khóa (tổng sĩ số các lớp mẫu học khóa đó). */

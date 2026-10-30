@@ -24,6 +24,8 @@ export interface Course {
     classCode?: string
     /** Bìa tự sinh (họa tiết, màu nhấn, seed); thiếu thì suy từ subject */
     cover?: CourseCoverSpec
+    /** Lúc tạo (ms); khóa mẫu không có thì suy theo thứ tự trong dữ liệu. Chỉ dùng sắp xếp ở cổng giảng viên */
+    createdAt?: number
 }
 
 export interface TranscriptSegment {

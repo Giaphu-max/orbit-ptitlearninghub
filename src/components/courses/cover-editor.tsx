@@ -10,7 +10,7 @@ const MAX_EDGE = 1280
 const MAX_BYTES = 12 * 1024 * 1024
 
 /** Nén ảnh tải lên về JPEG cạnh dài ≤1280px để lưu dataURL trong localStorage không vượt hạn mức. */
-async function compressToJpeg(file: File): Promise<string> {
+export async function compressToJpeg(file: File): Promise<string> {
     const bitmap = await createImageBitmap(file)
     const k = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
     const cv = document.createElement('canvas')

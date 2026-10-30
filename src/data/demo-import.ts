@@ -77,5 +77,6 @@ export function buildImportedCourse(): Course {
         description: 'Khóa học tạo từ danh sách phát YouTube (bản demo).',
         lessonIds: [],
         cover: { motif: 'light', accent: 'photo', seed: 3 },
+        createdAt: Date.now(),
     }
 }

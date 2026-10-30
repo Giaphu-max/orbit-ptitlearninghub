@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import type { Course } from '@/data/types'
-import { COVER_ACCENTS, COVER_MOTIFS, MOTIF_LABELS, type CoverAccent, type CoverMotif } from '@/lib/cover-kinds'
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-const field = 'h-11 w-full rounded-[10px] border border-border bg-card px-3.5 text-sm text-foreground focus-visible:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200'
-const labelCls = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground'
+export const field = 'h-11 w-full rounded-[10px] border border-border bg-card px-3.5 text-sm text-foreground focus-visible:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-200'
+export const labelCls = 'mb-1.5 block text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground'
 
 export interface MenuItem {
     label: string
@@ -101,8 +100,8 @@ export function Modal({ title, onClose, children, width = 440 }: { title: string
     )
 }
 
-const ghost = 'h-11 rounded-[10px] px-4 text-sm font-bold text-muted-foreground transition hover:bg-muted hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
-const primary = 'surface-red h-11 rounded-[10px] px-5 text-sm font-extrabold text-ink-foreground shadow-brand disabled:cursor-not-allowed disabled:opacity-50'
+export const ghost = 'h-11 rounded-[10px] px-4 text-sm font-bold text-muted-foreground transition hover:bg-muted hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
+export const primary = 'surface-red h-11 rounded-[10px] px-5 text-sm font-extrabold text-ink-foreground shadow-brand disabled:cursor-not-allowed disabled:opacity-50'
 
 /** Xác nhận: "Hủy" nhận focus mặc định; nút chính đỏ. `extra` là nút phụ (ví dụ tắt nhanh), `blocked` thì không cho xác nhận. */
 export function ConfirmDialog({ title, children, confirmLabel, onConfirm, onClose, blocked, extra }: { title: string; children: ReactNode; confirmLabel: string; onConfirm: () => void; onClose: () => void; blocked?: boolean; extra?: ReactNode }) {
@@ -182,75 +181,6 @@ export function MoveDialog({ lessonTitle, currentId, courses, onMove, onClose }:
                     className={primary}
                 >
                     Chuyển
-                </button>
-            </div>
-        </Modal>
-    )
-}
-
-const SUBJECT: Record<CoverAccent, string> = { film: 'Dựng phim', photo: 'Nhiếp ảnh', audio: 'Âm thanh', design: 'Thiết kế', default: 'Đa phương tiện' }
-const ACCENT_LABEL: Record<CoverAccent, string> = { film: 'Đỏ cam', photo: 'Cam', audio: 'Xanh lam', design: 'Tím', default: 'Xám xanh' }
-
-/** Khóa mới: tên + màu/họa tiết bìa từ bộ có sẵn. Khóa mới mặc định đang khóa (chỉ thầy cô thấy). */
-export function NewCourseDialog({ onCreate, onClose }: { onCreate: (course: Course) => void; onClose: () => void }) {
-    const [title, setTitle] = useState('')
-    const [accent, setAccent] = useState<CoverAccent>('photo')
-    const [motif, setMotif] = useState<CoverMotif>('light')
-    const ref = useRef<HTMLInputElement>(null)
-    useEffect(() => ref.current?.focus(), [])
-    const ok = title.trim() !== ''
-    const submit = () => {
-        if (!ok) return
-        onCreate({
-            id: `imp-c-${Date.now().toString(36)}`,
-            title: title.trim(),
-            subject: SUBJECT[accent],
-            instructor: 'Khoa Đa phương tiện, PTIT',
-            description: '',
-            lessonIds: [],
-            cover: { motif, accent, seed: Math.floor(Math.random() * 9) + 1 },
-        })
-        onClose()
-    }
-    return (
-        <Modal title="Khóa học mới" onClose={onClose}>
-            <label htmlFor="new-course-title" className={`${labelCls} mt-4`}>
-                Tên khóa
-            </label>
-            <input id="new-course-title" ref={ref} value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} className={field} />
-            <p className={`${labelCls} mt-4`}>Màu bìa</p>
-            <div role="radiogroup" aria-label="Màu bìa" className="flex gap-2.5">
-                {COVER_ACCENTS.map((a) => (
-                    <button
-                        key={a}
-                        type="button"
-                        role="radio"
-                        aria-checked={accent === a}
-                        aria-label={ACCENT_LABEL[a]}
-                        title={ACCENT_LABEL[a]}
-                        onClick={() => setAccent(a)}
-                        className={`h-9 w-9 rounded-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${accent === a ? 'ring-2 ring-strong ring-offset-2 ring-offset-card' : ''}`}
-                        style={{ background: `hsl(var(--subject-${a}))` }}
-                    />
-                ))}
-            </div>
-            <label htmlFor="new-course-motif" className={`${labelCls} mt-4`}>
-                Họa tiết
-            </label>
-            <select id="new-course-motif" value={motif} onChange={(e) => setMotif(e.target.value as CoverMotif)} className={field}>
-                {COVER_MOTIFS.map((m) => (
-                    <option key={m} value={m}>
-                        {MOTIF_LABELS[m]}
-                    </option>
-                ))}
-            </select>
-            <p className="mt-4 text-[13px] text-muted-foreground">Khóa mới mặc định đang khóa: chỉ thầy cô thấy cho tới khi thầy cô mở cho sinh viên.</p>
-            <div className="mt-6 flex justify-end gap-2.5">
-                <button type="button" onClick={onClose} className={ghost}>
-                    Hủy
-                </button>
-                <button type="button" onClick={submit} disabled={!ok} className={primary}>
-                    Tạo khóa
                 </button>
             </div>
         </Modal>

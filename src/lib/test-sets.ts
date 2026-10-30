@@ -229,7 +229,8 @@ export function usePendingTests(): PendingTest[] {
         const all = resolveLessons(overlay)
         for (const c of courses) {
             const lessons = all.filter((l) => l.courseId === c.id).map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
-            if (lessons.length === 0) continue
+            // Chưa có bài nào xuất bản thì thẻ test cuối chương còn khóa, chưa có gì để duyệt
+            if (!lessons.some((l) => (review[l.id] ?? l.status) === 'published')) continue
             const stored = sets[finalKey(c.id)]
             if (stored?.published ?? courseFullyPublished(c.id, { ...overlay, lessonReview: review })) continue
             const qs = resolveSet(finalSetFor(lessons, stored), sourcedBank(lessons))

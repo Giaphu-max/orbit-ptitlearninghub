@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { GripVertical, Search } from 'lucide-react'
 import { CourseArt } from '@/components/courses/course-cover'
-import { CoverCard } from '@/components/courses/cover-editor'
 import type { Course } from '@/data/types'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
-import { ConfirmDialog, Modal, MoreMenu, MoveDialog, NewCourseDialog, RenameDialog, type MenuItem } from '@/components/teacher/library-ui'
+import { CoverDialog, NewCourseDialog } from '@/components/teacher/course-cover-dialogs'
+import { ConfirmDialog, MoreMenu, MoveDialog, RenameDialog, type MenuItem } from '@/components/teacher/library-ui'
 import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
 import { courseFullyPublished, finalKey, finalSetFor, passCount, resolveSet, sourcedBank, useCourseAllLessons } from '@/lib/test-sets'
 import { studentsOfCourse, useLessonReviews, useTeacherCourses, type LessonReview } from '@/lib/teacher'
@@ -53,6 +53,8 @@ export function OrbitTeacherLibraryView() {
     const [text, setText] = useState(query)
     const searchRef = useRef<HTMLInputElement>(null)
     const [dlg, setDlg] = useState<Dlg | null>(null)
+    const [justCreated, setJustCreated] = useState<string | null>(null)
+    const [glow, setGlow] = useState<string | null>(null)
     const [toast, setToast] = useState<Toast | null>(null)
     const toastTimer = useRef<number | undefined>(undefined)
     const purgeTimers = useRef(new Map<string, number>())
@@ -115,12 +117,28 @@ export function OrbitTeacherLibraryView() {
         [allCourses, reviews, store.lessonOrder],
     )
 
+    // Khóa vừa tạo: cuộn tới, sáng viền khoảng 1,5s, focus vào "+ Thêm video" của khóa
+    const createdReady = !!justCreated && allCourses.some((c) => c.id === justCreated)
+    useEffect(() => {
+        if (!justCreated || !createdReady) return
+        const el = document.getElementById(`course-${justCreated}`)
+        if (!el) return
+        const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' })
+        el.querySelector<HTMLElement>('[data-add-video]')?.focus({ preventScroll: true })
+        setGlow(justCreated)
+        setJustCreated(null)
+        const t = window.setTimeout(() => setGlow(null), 1500)
+        return () => window.clearTimeout(t)
+    }, [justCreated, createdReady])
+
     if (role !== 'teacher') return <Navigate to="/" replace />
 
     const matchCard = (course: Course, r: LessonReview) =>
         matchStatus(status, r.state) && (q === '' || norm([r.lesson.title, r.lesson.shortTitle ?? '', course.title, ...r.lesson.concepts.map((c) => c.name)].join(' ')).includes(q))
     const matchFinal = (course: Course) => {
         const pub = finalPublished(course.id)
+        if (!reviews.some((r) => r.lesson.courseId === course.id && r.state === 'published')) return status === 'all' && (q === '' || norm(`${course.title} test cuoi chuong`).includes(q))
         return (status === 'all' || (status === 'pending' && !pub) || (status === 'published' && pub)) && (q === '' || norm(`${course.title} test cuoi chuong`).includes(q))
     }
     const visible = sections
@@ -225,6 +243,7 @@ export function OrbitTeacherLibraryView() {
                         items={items}
                         shown={shown}
                         showFinal={!filtering || finalShown}
+                        highlight={glow === course.id}
                         filtering={filtering}
                         onAdd={() => showAdd(course.id)}
                         onToggle={(v) => toggle(course, v)}
@@ -245,22 +264,16 @@ export function OrbitTeacherLibraryView() {
 
             {dlg?.k === 'newCourse' && (
                 <NewCourseDialog
-                    onCreate={(c) => (store.addCourse(c), say(`Đã tạo khóa “${c.title}” · đang khóa, chỉ thầy cô thấy`))}
+                    onCreate={(c, image) => {
+                        store.addCourse(c)
+                        if (image) store.setCourseCover(c.id, { image })
+                        setJustCreated(c.id)
+                        say(`Đã tạo khóa “${c.title}” · đang khóa, chỉ thầy cô thấy`)
+                    }}
                     onClose={() => setDlg(null)}
                 />
             )}
-            {dlg?.k === 'cover' && dCourse && (
-                <Modal title="Đổi bìa khóa" onClose={() => setDlg(null)} width={520}>
-                    <div className="mt-4">
-                        <CoverCard course={dCourse} aspect="aspect-video" />
-                    </div>
-                    <div className="mt-5 flex justify-end">
-                        <button type="button" onClick={() => setDlg(null)} className="surface-red h-11 rounded-[10px] px-5 text-sm font-extrabold text-ink-foreground shadow-brand">
-                            Xong
-                        </button>
-                    </div>
-                </Modal>
-            )}
+            {dlg?.k === 'cover' && dCourse && <CoverDialog course={dCourse} onClose={() => setDlg(null)} />}
             {dlg?.k === 'delCourse' && dCourse && <DeleteCourse course={dCourse} lessons={reviews.filter((r) => r.lesson.courseId === dCourse.id)} onClose={() => setDlg(null)} onToggleOff={() => toggle(dCourse, false)} onDelete={(ids) => {
                 ids.forEach((id) => (store.deleteLesson(id), store.purgeLesson(id)))
                 store.deleteCourse(dCourse.id)
@@ -358,6 +371,7 @@ interface SectionProps {
     items: LessonReview[]
     shown: LessonReview[]
     showFinal: boolean
+    highlight?: boolean
     filtering: boolean
     onAdd: () => void
     onToggle: (open: boolean) => void
@@ -407,7 +421,7 @@ function CourseSection(p: SectionProps) {
     }
     const cards = sorting ? items : shown
     return (
-        <section aria-label={course.title}>
+        <section id={`course-${course.id}`} aria-label={course.title} className={`-m-3 rounded-[20px] p-3 ring-2 transition-shadow duration-slow ${p.highlight ? 'ring-brand-100' : 'ring-transparent'}`}>
             <div className="mb-3 flex flex-wrap items-center gap-3.5">
                 <span aria-hidden className="block h-12 w-12 shrink-0 overflow-hidden rounded-[10px]">
                     <CourseArt course={course} />
@@ -451,7 +465,7 @@ function CourseSection(p: SectionProps) {
                         Xong
                     </button>
                 ) : (
-                    <button type="button" onClick={p.onAdd} className="rounded-lg px-2.5 py-1.5 text-[13px] font-bold text-muted-foreground transition hover:bg-muted hover:text-strong">
+                    <button type="button" data-add-video onClick={p.onAdd} className="rounded-lg px-2.5 py-1.5 text-[13px] font-bold text-muted-foreground transition hover:bg-muted hover:text-strong">
                         + Thêm video
                     </button>
                 )}
@@ -492,7 +506,7 @@ function CourseSection(p: SectionProps) {
                 ))}
                 {showFinal && !sorting && items.length > 0 && (
                     <li>
-                        <FinalTestCard courseId={course.id} onUnpublish={p.onFinalUnpublish} onReset={p.onFinalReset} />
+                        <FinalTestCard courseId={course.id} locked={published === 0} onUnpublish={p.onFinalUnpublish} onReset={p.onFinalReset} />
                     </li>
                 )}
             </ul>
@@ -577,13 +591,25 @@ function Status({ tone, children }: { tone: 'wait' | 'edit' | 'ok' | 'gen'; chil
 }
 
 /** Thẻ "Test cuối chương" ở cuối lưới mỗi khóa: bản nháp AI soạn sẵn hoặc đã xuất bản. */
-function FinalTestCard({ courseId, onUnpublish, onReset }: { courseId: string; onUnpublish: (set: ReturnType<typeof finalSetFor>) => void; onReset: () => void }) {
+function FinalTestCard({ courseId, locked, onUnpublish, onReset }: { courseId: string; locked: boolean; onUnpublish: (set: ReturnType<typeof finalSetFor>) => void; onReset: () => void }) {
     const lessons = useCourseAllLessons(courseId)
     const stored = useOrbitStore((s) => s.testSets[finalKey(courseId)])
     const fullyPublished = useOrbitStore((s) => courseFullyPublished(courseId, s))
     const set = useMemo(() => finalSetFor(lessons, stored), [lessons, stored])
     const n = useMemo(() => resolveSet(set, sourcedBank(lessons)).length, [set, lessons])
     const published = stored?.published ?? fullyPublished
+    if (locked) {
+        return (
+            <div aria-disabled="true" className="block overflow-hidden rounded-[18px] border border-border bg-card opacity-60">
+                <div className="flex aspect-video flex-col items-center justify-center gap-1 bg-muted text-center text-muted-foreground">
+                    <span className="text-[15px] font-extrabold">Test cuối chương</span>
+                </div>
+                <div className="p-3.5">
+                    <b className="block min-h-[2.6em] text-sm font-bold leading-snug text-muted-foreground">Mở soạn đề khi có bài đã xuất bản</b>
+                </div>
+            </div>
+        )
+    }
     const menu: MenuItem[] = [...(published ? [{ label: 'Gỡ xuất bản', onSelect: () => onUnpublish(set) }] : []), { label: 'Soạn lại từ đầu bằng AI', onSelect: onReset }]
     return (
         <div className="group relative">
