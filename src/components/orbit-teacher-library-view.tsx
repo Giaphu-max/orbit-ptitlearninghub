@@ -54,7 +54,6 @@ export function OrbitTeacherLibraryView() {
     const searchRef = useRef<HTMLInputElement>(null)
     const [dlg, setDlg] = useState<Dlg | null>(null)
     const [justCreated, setJustCreated] = useState<string | null>(null)
-    const [glow, setGlow] = useState<string | null>(null)
     const [toast, setToast] = useState<Toast | null>(null)
     const toastTimer = useRef<number | undefined>(undefined)
     const purgeTimers = useRef(new Map<string, number>())
@@ -117,7 +116,7 @@ export function OrbitTeacherLibraryView() {
         [allCourses, reviews, store.lessonOrder],
     )
 
-    // Khóa vừa tạo: cuộn tới, sáng viền khoảng 1,5s, focus vào "+ Thêm video" của khóa
+    // Khóa vừa tạo: cuộn tới, focus vào "+ Thêm video" của khóa
     const createdReady = !!justCreated && allCourses.some((c) => c.id === justCreated)
     useEffect(() => {
         if (!justCreated || !createdReady) return
@@ -126,10 +125,7 @@ export function OrbitTeacherLibraryView() {
         const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
         el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' })
         el.querySelector<HTMLElement>('[data-add-video]')?.focus({ preventScroll: true })
-        setGlow(justCreated)
         setJustCreated(null)
-        const t = window.setTimeout(() => setGlow(null), 1500)
-        return () => window.clearTimeout(t)
     }, [justCreated, createdReady])
 
     if (role !== 'teacher') return <Navigate to="/" replace />
@@ -225,7 +221,9 @@ export function OrbitTeacherLibraryView() {
                 </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-8">
+            <hr className="mb-8 mt-6 border-0 border-t border-border" />
+
+            <div className="flex flex-col gap-8">
                 {sections.length === 0 && <p className="text-sm text-muted-foreground">Chưa có khóa học nào.</p>}
                 {filtering && visible.length === 0 && sections.length > 0 && (
                     <p className="text-sm text-muted-foreground">
@@ -243,7 +241,6 @@ export function OrbitTeacherLibraryView() {
                         items={items}
                         shown={shown}
                         showFinal={!filtering || finalShown}
-                        highlight={glow === course.id}
                         filtering={filtering}
                         onAdd={() => showAdd(course.id)}
                         onToggle={(v) => toggle(course, v)}
@@ -371,7 +368,6 @@ interface SectionProps {
     items: LessonReview[]
     shown: LessonReview[]
     showFinal: boolean
-    highlight?: boolean
     filtering: boolean
     onAdd: () => void
     onToggle: (open: boolean) => void
@@ -421,7 +417,7 @@ function CourseSection(p: SectionProps) {
     }
     const cards = sorting ? items : shown
     return (
-        <section id={`course-${course.id}`} aria-label={course.title} className={`-m-3 rounded-[20px] p-3 ring-2 transition-shadow duration-slow ${p.highlight ? 'ring-brand-100' : 'ring-transparent'}`}>
+        <section id={`course-${course.id}`} aria-label={course.title}>
             <div className="mb-3 flex flex-wrap items-center gap-3.5">
                 <span aria-hidden className="block h-12 w-12 shrink-0 overflow-hidden rounded-[10px]">
                     <CourseArt course={course} />
