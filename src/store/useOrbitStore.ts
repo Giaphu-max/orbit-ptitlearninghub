@@ -167,6 +167,8 @@ interface OrbitState {
     deletedCourses: string[]
     /** Bản đang xuất bản của bài vừa được thay video; sinh viên học bản này cho tới khi bản mới được xuất bản */
     liveSnapshots: Record<string, Lesson>
+    /** Khóa đã xác nhận soạn Test cuối chương khi mới có một phần bài xuất bản (lần sau vào thẳng trang soạn) */
+    finalConfirmed: Record<string, boolean>
 
     setRole: (role: Role | null) => void
     setLearnerName: (name: string) => void
@@ -203,6 +205,7 @@ interface OrbitState {
     saveTestSession: (courseId: string, session: ActiveTestSession) => void
     clearTestSession: (courseId: string) => void
     addCourse: (course: Course) => void
+    confirmFinalDraft: (courseId: string) => void
     renameCourse: (courseId: string, title: string) => void
     /** Xóa mềm một khóa cùng các bài trong khóa */
     deleteCourse: (courseId: string) => void
@@ -297,6 +300,7 @@ export function makeDemoProfile() {
         deletedLessons: [] as string[],
         deletedCourses: [] as string[],
         liveSnapshots: {} as Record<string, Lesson>,
+        finalConfirmed: {} as Record<string, boolean>,
     }
 }
 
@@ -414,6 +418,8 @@ export const useOrbitStore = create<OrbitState>()(
                     const { [lessonId]: _snap, ...liveSnapshots } = s.liveSnapshots ?? {}
                     return { lessonReview: { ...s.lessonReview, [lessonId]: status }, liveSnapshots }
                 }),
+
+            confirmFinalDraft: (courseId) => set((s) => ({ finalConfirmed: { ...s.finalConfirmed, [courseId]: true } })),
 
             addCourse: (course) => set((s) => ({ importedCourses: [...s.importedCourses, course], courseOpen: { ...s.courseOpen, [course.id]: false } })),
 
@@ -620,13 +626,13 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 13,
+            version: 14,
             // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio); v10 thêm lớp đang chọn và bài nhập từ YouTube; v9 thêm reviewedItems và hồ sơ giảng viên mặc định (2 bài chờ duyệt) nếu chưa có thay đổi nào.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
                 const old = persisted as Partial<OrbitState>
-                return { ...old, courseTitles: old.courseTitles ?? {}, lessonOverrides: old.lessonOverrides ?? {}, lessonOrder: old.lessonOrder ?? {}, deletedLessons: old.deletedLessons ?? [], deletedCourses: old.deletedCourses ?? [], liveSnapshots: old.liveSnapshots ?? {}, courseOpen: old.courseOpen ?? {}, testSets: old.testSets ?? {}, ...(version < 12 && old.reviewedItems ? { reviewedItems: Object.fromEntries(Object.entries(old.reviewedItems).map(([id, keys]) => [id, (old.lessonReview?.[id] ?? allLessons.find((l) => l.id === id)?.status) === 'published' && !keys.includes('qt') ? [...keys, 'qt'] : keys])) } : {}), xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
+                return { ...old, courseTitles: old.courseTitles ?? {}, lessonOverrides: old.lessonOverrides ?? {}, lessonOrder: old.lessonOrder ?? {}, deletedLessons: old.deletedLessons ?? [], deletedCourses: old.deletedCourses ?? [], liveSnapshots: old.liveSnapshots ?? {}, finalConfirmed: old.finalConfirmed ?? {}, courseOpen: old.courseOpen ?? {}, testSets: old.testSets ?? {}, ...(version < 12 && old.reviewedItems ? { reviewedItems: Object.fromEntries(Object.entries(old.reviewedItems).map(([id, keys]) => [id, (old.lessonReview?.[id] ?? allLessons.find((l) => l.id === id)?.status) === 'published' && !keys.includes('qt') ? [...keys, 'qt'] : keys])) } : {}), xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },

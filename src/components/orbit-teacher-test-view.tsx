@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { blankQuestion, QuestionEditor } from '@/components/teacher/question-editor'
 import { SourceChip } from '@/components/teacher/quick-test-panel'
-import { correctRate, courseFullyPublished, coverage, finalKey, finalSetFor, moveInSet, passCount, removeFromSet, resolveSet, sourcedBank, suggestInto, upsertCustom, useCourseAllLessons, type SourcedQuestion, type TestRules, type TestSet } from '@/lib/test-sets'
-import { useTeacherCourses } from '@/lib/teacher'
+import { correctRate, courseFullyPublished, coverage, finalKey, finalSetFor, moveInSet, passCount, removeFromSet, resolveSet, sourcedBank, suggestInto, upsertCustom, useCourseLessons, type SourcedQuestion, type TestRules, type TestSet } from '@/lib/test-sets'
+import { NoPublishedBody, firstToReview } from '@/components/teacher/no-published-notice'
+import { useLessonReviews, useTeacherCourses } from '@/lib/teacher'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 const seg = 'inline-flex rounded-[10px] bg-muted p-[3px]'
@@ -22,7 +23,8 @@ export function OrbitTeacherTestView() {
 }
 
 function Builder({ courseId, title }: { courseId: string; title: string }) {
-    const lessons = useCourseAllLessons(courseId)
+    const { all: allLessons, published: lessons } = useCourseLessons(courseId)
+    const reviews = useLessonReviews().filter((r) => r.lesson.courseId === courseId)
     const stored = useOrbitStore((s) => s.testSets[finalKey(courseId)])
     const fullyPublished = useOrbitStore((s) => courseFullyPublished(courseId, s))
     const setTestSet = useOrbitStore((s) => s.setTestSet)
@@ -37,6 +39,10 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
     const byNeed = [...concepts].sort((a, b) => (cover.get(a.id) ?? 0) - (cover.get(b.id) ?? 0))
     const CHIPS = 6
     const rules = set.rules
+    const unreviewed = reviews.filter((r) => r.state !== 'published')
+    const basis = stored?.basis
+    // Bài mới xuất bản sau khi soạn đề: kho có câu của bài đó nhưng đề không tự đổi
+    const fresh = basis ? lessons.filter((l) => !basis.includes(l.id)) : []
     const need = passCount(rules, questions.length)
     const minutes = Math.ceil((questions.length * rules.secondsPerQuestion) / 60)
 
@@ -46,6 +52,11 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
         const cur = useOrbitStore.getState().testSets[finalKey(courseId)] ?? set
         save({ ...cur, rules: { ...cur.rules, ...patch } })
     }
+
+    // Ghi lại các bài đã tính vào đề, để bài xuất bản sau không tự chui vào đề nháp
+    useEffect(() => {
+        if (lessons.length > 0 && !stored?.basis) setTestSet(finalKey(courseId), { ...(stored ?? set), basis: lessons.map((l) => l.id) })
+    }, [lessons, stored, set, courseId, setTestSet])
 
     const [toast, setToast] = useState<string | null>(null)
     const timer = useRef<number | undefined>(undefined)
@@ -86,6 +97,33 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
     const shown = showAll ? questions : questions.slice(0, 6)
     const rest = bank.filter((q) => !set.ids.includes(q.id))
     const dot = 'text-muted-foreground/50'
+    const addFresh = () => {
+        const l = fresh[0]
+        if (!l) return
+        const { set: next, added } = suggestInto(set, bank.filter((q) => q.lessonId === l.id), l.concepts.map((c) => c.id), 2)
+        save({ ...next, basis: [...(basis ?? []), l.id] })
+        say(added.length ? `Đã thêm ${added.length} câu của ${l.title} vào đề.` : `${l.title} chưa có câu nào để thêm.`)
+    }
+
+    if (lessons.length === 0) {
+        const target = firstToReview(reviews)
+        return (
+            <div className="w-full pb-8">
+                <Link to="/teacher/library" className="text-[13px] font-bold text-muted-foreground transition hover:text-strong">
+                    ‹ Bài giảng
+                </Link>
+                <h1 className="mt-1 text-[28px] font-black leading-tight tracking-tight text-strong">Chưa thể soạn test cuối chương</h1>
+                <div className="mt-5 max-w-[620px] rounded-[20px] border border-border bg-card p-6 text-sm leading-relaxed text-muted-foreground shadow-card">
+                    <NoPublishedBody courseTitle={`“${title}”`} pending={reviews.filter((r) => r.state !== 'published')} />
+                    {target && (
+                        <Link to={`/teacher/review/${target}`} className="surface-red mt-5 inline-flex h-11 items-center rounded-[10px] px-5 text-sm font-extrabold text-ink-foreground shadow-brand">
+                            Duyệt bài giảng
+                        </Link>
+                    )}
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="w-full pb-8">
@@ -114,6 +152,26 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                     </span>
                 </nav>
             </header>
+
+            {(unreviewed.length > 0 || fresh.length > 0) && (
+                <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground">
+                    {fresh.length > 0 ? (
+                        <>
+                            Có câu hỏi mới từ <b className="font-semibold text-strong">{fresh[0].title}</b> ·{' '}
+                            <button type="button" onClick={addFresh} className="font-extrabold text-brand-ink hover:underline">
+                                Thêm vào đề
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            Đề đang lấy từ {lessons.length}/{allLessons.length} bài. {unreviewed.length} bài chưa duyệt: {unreviewed.map((r) => r.lesson.title).join(', ')} ·{' '}
+                            <Link to={`/teacher/review/${firstToReview(unreviewed)}`} className="font-extrabold text-brand-ink hover:underline">
+                                Duyệt bài
+                            </Link>
+                        </>
+                    )}
+                </p>
+            )}
 
             <section className="lesson-grid mt-6 items-start">
                 <div className="min-w-0">

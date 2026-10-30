@@ -44,6 +44,8 @@ export interface TestSet {
     rules: TestRules
     /** Chỉ dùng cho test cuối chương: đã xuất bản chưa. Chưa đặt thì theo việc cả khóa đã xuất bản hay chưa */
     published?: boolean
+    /** Id các bài đã xuất bản được tính khi soạn đề; bài xuất bản sau đó không tự vào đề mà hiện thông báo "Thêm vào đề" */
+    basis?: string[]
 }
 
 /** Kho câu hỏi của các bài, kèm nguồn: câu gốc trong video, câu biến thể, câu kiểm tra của bài đọc. */
@@ -121,6 +123,13 @@ export function useCourseAllLessons(courseId: string | undefined): Lesson[] {
                 .map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l)),
         [imported, overrides, order, deleted, deletedCourses, edits, courseId],
     )
+}
+
+/** Bài của khóa (kể cả chưa xuất bản) và riêng các bài đã xuất bản: đề Test cuối chương chỉ lấy câu từ bài đã xuất bản. */
+export function useCourseLessons(courseId: string | undefined): { all: Lesson[]; published: Lesson[] } {
+    const all = useCourseAllLessons(courseId)
+    const review = useOrbitStore((s) => s.lessonReview)
+    return useMemo(() => ({ all, published: all.filter((l) => (review[l.id] ?? l.status) === 'published') }), [all, review])
 }
 
 /** Khóa đã xuất bản hết bài chưa (mặc định cho trạng thái đề cuối chương khi giảng viên chưa đụng tới). */
@@ -228,9 +237,9 @@ export function usePendingTests(): PendingTest[] {
         const overlay = { importedCourses, importedLessons: imported, lessonOverrides: overrides, lessonOrder: order, deletedLessons: deleted, deletedCourses, courseTitles: titles }
         const all = resolveLessons(overlay)
         for (const c of courses) {
-            const lessons = all.filter((l) => l.courseId === c.id).map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
-            // Chưa có bài nào xuất bản thì thẻ test cuối chương còn khóa, chưa có gì để duyệt
-            if (!lessons.some((l) => (review[l.id] ?? l.status) === 'published')) continue
+            // Chỉ bài đã xuất bản mới vào đề; chưa có bài nào thì chưa có gì để duyệt
+            const lessons = all.filter((l) => l.courseId === c.id && (review[l.id] ?? l.status) === 'published').map((l) => (edits[l.id] ? { ...l, ...edits[l.id] } : l))
+            if (lessons.length === 0) continue
             const stored = sets[finalKey(c.id)]
             if (stored?.published ?? courseFullyPublished(c.id, { ...overlay, lessonReview: review })) continue
             const qs = resolveSet(finalSetFor(lessons, stored), sourcedBank(lessons))

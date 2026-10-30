@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { GripVertical, Search } from 'lucide-react'
 import { CourseArt } from '@/components/courses/course-cover'
 import type { Course } from '@/data/types'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
 import { CoverDialog, NewCourseDialog } from '@/components/teacher/course-cover-dialogs'
-import { ConfirmDialog, MoreMenu, MoveDialog, RenameDialog, type MenuItem } from '@/components/teacher/library-ui'
+import { ConfirmDialog, ghost, Modal, MoreMenu, MoveDialog, primary, RenameDialog, type MenuItem } from '@/components/teacher/library-ui'
+import { firstToReview, LessonStateList, NoPublishedBody } from '@/components/teacher/no-published-notice'
 import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
-import { courseFullyPublished, finalKey, finalSetFor, passCount, resolveSet, sourcedBank, useCourseAllLessons } from '@/lib/test-sets'
+import { courseFullyPublished, finalKey, finalSetFor, passCount, resolveSet, sourcedBank, useCourseLessons } from '@/lib/test-sets'
 import { studentsOfCourse, useLessonReviews, useTeacherCourses, type LessonReview } from '@/lib/teacher'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -31,6 +32,8 @@ type Dlg =
     | { k: 'move'; id: string }
     | { k: 'delLesson'; id: string }
     | { k: 'resetFinal'; courseId: string }
+    | { k: 'finalNone'; courseId: string }
+    | { k: 'finalPartial'; courseId: string }
 
 interface Toast {
     msg: string
@@ -46,6 +49,7 @@ export function OrbitTeacherLibraryView() {
     const showAdd = useAddDialog((s) => s.show)
     const replaceVideo = useAddDialog((s) => s.replace)
     const store = useOrbitStore()
+    const navigate = useNavigate()
     const [params, setParams] = useSearchParams()
     const query = params.get('q') ?? ''
     const statusParam = params.get('status')
@@ -134,7 +138,6 @@ export function OrbitTeacherLibraryView() {
         matchStatus(status, r.state) && (q === '' || norm([r.lesson.title, r.lesson.shortTitle ?? '', course.title, ...r.lesson.concepts.map((c) => c.name)].join(' ')).includes(q))
     const matchFinal = (course: Course) => {
         const pub = finalPublished(course.id)
-        if (!reviews.some((r) => r.lesson.courseId === course.id && r.state === 'published')) return status === 'all' && (q === '' || norm(`${course.title} test cuoi chuong`).includes(q))
         return (status === 'all' || (status === 'pending' && !pub) || (status === 'published' && pub)) && (q === '' || norm(`${course.title} test cuoi chuong`).includes(q))
     }
     const visible = sections
@@ -255,6 +258,7 @@ export function OrbitTeacherLibraryView() {
                         onLessonDelete={(r) => setDlg({ k: 'delLesson', id: r.lesson.id })}
                         onFinalUnpublish={(set) => (store.setTestSet(finalKey(course.id), { ...set, published: false }), say('Đã gỡ xuất bản test cuối chương'))}
                         onFinalReset={() => setDlg({ k: 'resetFinal', courseId: course.id })}
+                        onFinalGate={(k) => setDlg({ k, courseId: course.id })}
                     />
                 ))}
             </div>
@@ -297,6 +301,45 @@ export function OrbitTeacherLibraryView() {
                     Sinh viên sẽ không thấy bài này nữa. Tiến độ học của bài cũng bị xóa khỏi dữ liệu demo.
                 </ConfirmDialog>
             )}
+            {dlg?.k === 'finalNone' && dCourse && (
+                <Modal title="Chưa thể soạn test cuối chương" onClose={() => setDlg(null)}>
+                    <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                        <NoPublishedBody courseTitle={`“${dCourse.title}”`} pending={reviews.filter((r) => r.lesson.courseId === dCourse.id && r.state !== 'published')} />
+                    </div>
+                    <div className="mt-6 flex justify-end gap-2.5">
+                        <button type="button" onClick={() => setDlg(null)} className={ghost}>
+                            Đóng
+                        </button>
+                        {firstToReview(reviews.filter((r) => r.lesson.courseId === dCourse.id)) && (
+                            <button type="button" onClick={() => (setDlg(null), navigate(`/teacher/review/${firstToReview(reviews.filter((r) => r.lesson.courseId === dCourse.id))}`))} className={primary}>
+                                Duyệt bài giảng
+                            </button>
+                        )}
+                    </div>
+                </Modal>
+            )}
+            {dlg?.k === 'finalPartial' && dCourse && (() => {
+                const mine = reviews.filter((r) => r.lesson.courseId === dCourse.id)
+                const k = mine.filter((r) => r.state === 'published').length
+                const rest = mine.filter((r) => r.state !== 'published')
+                return (
+                    <Modal title={`Soạn đề từ ${k}/${mine.length} bài đã duyệt?`} onClose={() => setDlg(null)}>
+                        <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                            <p>AI chỉ lấy câu hỏi từ các bài đã duyệt. Các bài chưa duyệt sẽ không có trong đề:</p>
+                            <LessonStateList items={rest} />
+                            <p className="mt-3 text-xs text-muted-foreground/80">Duyệt thêm bài sau thì có thể thêm câu của bài đó vào đề.</p>
+                        </div>
+                        <div className="mt-6 flex flex-wrap justify-end gap-2.5">
+                            <button type="button" onClick={() => (setDlg(null), navigate(`/teacher/review/${firstToReview(rest)}`))} className={ghost}>
+                                Duyệt bài còn lại trước
+                            </button>
+                            <button type="button" onClick={() => (store.confirmFinalDraft(dCourse.id), setDlg(null), navigate(`/teacher/test/${dCourse.id}`))} className={primary}>
+                                Soạn đề với {k} bài
+                            </button>
+                        </div>
+                    </Modal>
+                )
+            })()}
             {dlg?.k === 'resetFinal' && dCourse && <ResetFinal course={dCourse} onClose={() => setDlg(null)} onDone={() => say('Đã soạn lại test cuối chương từ đầu bằng AI')} />}
 
             <div
@@ -344,7 +387,7 @@ function DeleteCourse({ course, lessons, onClose, onToggleOff, onDelete }: { cou
 }
 
 function ResetFinal({ course, onClose, onDone }: { course: Course; onClose: () => void; onDone: () => void }) {
-    const lessons = useCourseAllLessons(course.id)
+    const lessons = useCourseLessons(course.id).published
     const setTestSet = useOrbitStore((s) => s.setTestSet)
     return (
         <ConfirmDialog
@@ -382,6 +425,7 @@ interface SectionProps {
     onLessonDelete: (r: LessonReview) => void
     onFinalUnpublish: (set: ReturnType<typeof finalSetFor>) => void
     onFinalReset: () => void
+    onFinalGate: (kind: 'finalNone' | 'finalPartial') => void
 }
 
 function CourseSection(p: SectionProps) {
@@ -502,7 +546,7 @@ function CourseSection(p: SectionProps) {
                 ))}
                 {showFinal && !sorting && items.length > 0 && (
                     <li>
-                        <FinalTestCard courseId={course.id} locked={published === 0} onUnpublish={p.onFinalUnpublish} onReset={p.onFinalReset} />
+                        <FinalTestCard courseId={course.id} total={items.length} published={published} onUnpublish={p.onFinalUnpublish} onReset={p.onFinalReset} onGate={p.onFinalGate} />
                     </li>
                 )}
             </ul>
@@ -587,50 +631,53 @@ function Status({ tone, children }: { tone: 'wait' | 'edit' | 'ok' | 'gen'; chil
 }
 
 /** Thẻ "Test cuối chương" ở cuối lưới mỗi khóa: bản nháp AI soạn sẵn hoặc đã xuất bản. */
-function FinalTestCard({ courseId, locked, onUnpublish, onReset }: { courseId: string; locked: boolean; onUnpublish: (set: ReturnType<typeof finalSetFor>) => void; onReset: () => void }) {
-    const lessons = useCourseAllLessons(courseId)
+function FinalTestCard({ courseId, total, published: k, onUnpublish, onReset, onGate }: { courseId: string; total: number; published: number; onUnpublish: (set: ReturnType<typeof finalSetFor>) => void; onReset: () => void; onGate: (kind: 'finalNone' | 'finalPartial') => void }) {
+    const { published: pubLessons } = useCourseLessons(courseId)
     const stored = useOrbitStore((s) => s.testSets[finalKey(courseId)])
+    const confirmed = useOrbitStore((s) => !!s.finalConfirmed[courseId])
     const fullyPublished = useOrbitStore((s) => courseFullyPublished(courseId, s))
-    const set = useMemo(() => finalSetFor(lessons, stored), [lessons, stored])
-    const n = useMemo(() => resolveSet(set, sourcedBank(lessons)).length, [set, lessons])
-    const published = stored?.published ?? fullyPublished
-    if (locked) {
-        return (
-            <div aria-disabled="true" className="block overflow-hidden rounded-[18px] border border-border bg-card opacity-60">
-                <div className="flex aspect-video flex-col items-center justify-center gap-1 bg-muted text-center text-muted-foreground">
-                    <span className="text-[15px] font-extrabold">Test cuối chương</span>
-                </div>
-                <div className="p-3.5">
-                    <b className="block min-h-[2.6em] text-sm font-bold leading-snug text-muted-foreground">Mở soạn đề khi có bài đã xuất bản</b>
-                </div>
-            </div>
-        )
-    }
-    const menu: MenuItem[] = [...(published ? [{ label: 'Gỡ xuất bản', onSelect: () => onUnpublish(set) }] : []), { label: 'Soạn lại từ đầu bằng AI', onSelect: onReset }]
+    const set = useMemo(() => finalSetFor(pubLessons, stored), [pubLessons, stored])
+    const n = useMemo(() => resolveSet(set, sourcedBank(pubLessons)).length, [set, pubLessons])
+    const published = k > 0 && (stored?.published ?? fullyPublished)
+    const partial = k > 0 && k < total
+    // Chưa có bài duyệt: hộp báo; mới có một phần và đề chưa từng soạn/xác nhận: hộp xác nhận; còn lại vào thẳng trang soạn
+    const gate = k === 0 ? 'finalNone' : partial && !stored && !confirmed ? 'finalPartial' : null
+    const menu: MenuItem[] = k === 0 ? [] : [...(published ? [{ label: 'Gỡ xuất bản', onSelect: () => onUnpublish(set) }] : []), { label: 'Soạn lại từ đầu bằng AI', onSelect: onReset }]
     return (
         <div className="group relative">
-        <Link
-            to={`/teacher/test/${courseId}`}
-            className={`block overflow-hidden rounded-[18px] border bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${published ? 'border-border' : 'border-brand-100'}`}
-        >
-            <div
-                className="flex aspect-video flex-col items-center justify-center gap-1 text-center text-brand-ink"
-                style={{ background: 'repeating-linear-gradient(135deg, rgb(var(--brand-50)) 0 10px, rgb(var(--brand-100)) 10px 20px)' }}
+            <Link
+                to={`/teacher/test/${courseId}`}
+                onClick={(e) => {
+                    if (!gate) return
+                    e.preventDefault()
+                    onGate(gate)
+                }}
+                className={`block overflow-hidden rounded-[18px] border bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 ${published ? 'border-border' : 'border-brand-100'}`}
             >
-                <span className="text-[15px] font-extrabold">Test cuối chương</span>
-                <small className="font-mono text-[11.5px] font-bold opacity-80">
-                    {n} câu · đạt {Math.round(set.rules.passRatio * 100)}% ({passCount(set.rules, n)}/{n})
-                </small>
-            </div>
-            <div className="p-3.5">
-                <b className="block min-h-[2.6em] text-sm font-bold leading-snug text-strong">Đề kiểm tra tổng hợp cả khóa</b>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                    <Status tone={published ? 'ok' : 'wait'}>{published ? 'Đã xuất bản' : 'Bản nháp · AI soạn sẵn'}</Status>
-                    <span className={`whitespace-nowrap text-[13px] font-extrabold ${published ? 'text-muted-foreground' : 'text-brand-ink'}`}>{published ? 'Sửa đề' : 'Soạn đề →'}</span>
+                <div
+                    className="flex aspect-video flex-col items-center justify-center gap-1 text-center text-brand-ink"
+                    style={{ background: 'repeating-linear-gradient(135deg, rgb(var(--brand-50)) 0 10px, rgb(var(--brand-100)) 10px 20px)' }}
+                >
+                    <span className="text-[15px] font-extrabold">Test cuối chương</span>
+                    {k > 0 && (
+                        <small className="font-mono text-[11.5px] font-bold opacity-80">
+                            {n} câu · đạt {Math.round(set.rules.passRatio * 100)}% ({passCount(set.rules, n)}/{n})
+                        </small>
+                    )}
                 </div>
-            </div>
-        </Link>
-        <MoreMenu card label="Tùy chọn cho Test cuối chương" items={menu} className="absolute right-2 top-2 z-10" />
+                <div className="p-3.5">
+                    <b className="block min-h-[2.6em] text-sm font-bold leading-snug text-strong">Đề kiểm tra tổng hợp cả khóa</b>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                        {k === 0 ? (
+                            <Status tone="gen">Chưa có bài đã duyệt</Status>
+                        ) : (
+                            <Status tone={published ? 'ok' : 'wait'}>{published ? 'Đã xuất bản' : partial ? `Bản nháp · từ ${k}/${total} bài` : 'Bản nháp · AI soạn sẵn'}</Status>
+                        )}
+                        <span className={`whitespace-nowrap text-[13px] font-extrabold ${published || k === 0 ? 'text-muted-foreground' : 'text-brand-ink'}`}>{k === 0 ? 'Xem →' : published ? 'Sửa đề' : 'Soạn đề →'}</span>
+                    </div>
+                </div>
+            </Link>
+            {menu.length > 0 && <MoreMenu card label="Tùy chọn cho Test cuối chương" items={menu} className="absolute right-2 top-2 z-10" />}
         </div>
     )
 }
