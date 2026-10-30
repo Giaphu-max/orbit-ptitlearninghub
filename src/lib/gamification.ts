@@ -114,6 +114,8 @@ export const DAILY_ARTICLE_XP = 20
 export const dailyXp = (lastRead: string | undefined) => (lastRead ? Math.round(DAILY_ARTICLE_XP / 2) : DAILY_ARTICLE_XP)
 /** Số bài Orbit Daily miễn phí mỗi ngày; bài thứ 4 trở đi mở bằng XP. */
 export const DAILY_LIMIT = 3
+/** Trần số bài ôn tập mỗi ngày (ứng với 10 tầng tòa A2); bài thứ 4 trở đi mở bằng XP, không vượt trần này. */
+export const DAILY_MAX = 10
 /** Giá mở thêm một bài Daily (trừ vào XP tiêu được, không làm tụt cấp). */
 export const EXTRA_READ_COST = 60
 /** Nhiệm vụ ẩn "Tòa A2 sáng đèn": đọc hết mọi bài Daily trong ngày. */

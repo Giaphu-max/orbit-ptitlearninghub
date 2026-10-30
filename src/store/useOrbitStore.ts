@@ -7,7 +7,7 @@ import type { CourseCoverSpec } from '@/lib/cover-kinds'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
 import type { TestSet } from '@/lib/test-sets'
 import { masteryAfterTest, testXp, type TestAnswerInput, type TestQuestion } from '@/lib/final-test'
-import { advanceStreak, bestTestRatio, dailyFor, DAILY_LIMIT, directorXp, emptyDaily, evaluateBadges, EXTRA_READ_COST, LIGHTS_BADGE_ID, LIGHTS_XP, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
+import { advanceStreak, bestTestRatio, dailyFor, DAILY_LIMIT, DAILY_MAX, directorXp, emptyDaily, evaluateBadges, EXTRA_READ_COST, LIGHTS_BADGE_ID, LIGHTS_XP, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
 /** Phiên làm bài kiểm tra dở dang để tự động lưu và khôi phục khi tải lại trang/đóng tab */
 export interface ActiveTestSession {
@@ -383,7 +383,7 @@ export const useOrbitStore = create<OrbitState>()(
             unlockExtraRead: () => {
                 const s = get()
                 const bought = s.dailyUnlocks.date === localDate() ? s.dailyUnlocks.count : 0
-                if (xpBalance(s) < EXTRA_READ_COST || DAILY_LIMIT + bought >= dailyArticles.length) return false
+                if (xpBalance(s) < EXTRA_READ_COST || DAILY_LIMIT + bought >= Math.min(DAILY_MAX, dailyArticles.length)) return false
                 // Báo chip XP trên nav đây là trả XP (khác với đặt lại demo): chip "−n" rơi xuống
                 window.dispatchEvent(new CustomEvent('orbit:xp-spend', { detail: { amount: EXTRA_READ_COST } }))
                 set((st) => ({ xpSpent: st.xpSpent + EXTRA_READ_COST, dailyUnlocks: { date: localDate(), count: bought + 1 } }))

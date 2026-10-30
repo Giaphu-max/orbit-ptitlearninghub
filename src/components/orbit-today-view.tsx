@@ -1,21 +1,21 @@
 import { Link } from 'react-router-dom'
 import { Check, Moon } from 'lucide-react'
-import { dailyArticles, getConcept } from '@/data'
+import { getConcept } from '@/data'
 import { TodayMissionsList } from '@/components/missions'
 import { TodayHeroCard, TodayRows } from '@/components/daily/today-board'
 import { useTodayDaily } from '@/hooks/useTodayDaily'
-import { localDate } from '@/lib/gamification'
+import { EXTRA_READ_COST } from '@/lib/gamification'
 import { A2_TIERS } from '@/lib/daily-lit'
+import { DAILY_LIMIT } from '@/lib/next-step'
 import { CAMPUS } from '@/components/home/campus-palette'
-import { useOrbitStore } from '@/store/useOrbitStore'
 
-/** /today – bài đọc hôm nay (3 miễn phí + bài mở thêm bằng XP), nhiệm vụ ôn tập, và tóm tắt "Hôm nay đủ rồi" khi đọc hết. Dùng chung khối với chương Hôm nay ở trang chủ.
+/** /today – bài đọc hôm nay (miễn phí theo lượt ngày + bài mở thêm bằng XP), nhiệm vụ ôn tập, và tóm tắt "Hôm nay đủ rồi" khi đọc hết. Dùng chung khối với chương Hôm nay ở trang chủ.
  *  Lưới 7/5 cùng chiều cao (stretch): trái là bài đọc (thẻ đỏ bài ưu tiên giãn flex-1, còn lại là hàng gọn), phải là MỘT thẻ "Hôm nay của bạn" gộp tòa A2 và nhiệm vụ. */
 export function OrbitTodayView() {
     const today = useTodayDaily()
-    const { articles, allDone, readCount, limit, locked, priority } = today
-    // Hết lượt hẳn (không còn bài khóa để mở): khối "Hôm nay đủ rồi" thay thẻ đỏ
-    const doneOnly = allDone && !locked && !priority
+    const { articles, readCount, limit, priority, poolSize } = today
+    // Đọc xong các bài đang mở: khối "Hôm nay đủ rồi" thay thẻ đỏ (còn bài khóa thì khối có nút mở thêm bằng XP)
+    const doneOnly = articles.length > 0 && !priority
 
     return (
         <div className="w-full">
@@ -24,7 +24,7 @@ export function OrbitTodayView() {
                     <p className="text-eyebrow uppercase text-brand-ink">Ôn tập cá nhân hóa</p>
                     <h1 style={{ fontSize: 'clamp(1.5rem, 2.55vw, 2.75rem)' }} className="mt-3 whitespace-nowrap text-headline text-foreground">Lấp lỗ hổng kiến thức chỉ với 3 phút mỗi ngày.</h1>
                     <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-muted-foreground">
-                        AI xem lại những câu bạn từng làm sai, rồi tóm thành 3 bài đọc ngắn từ chính bài giảng của thầy cô. Nắm lại bản chất mà không phải xem lại cả video dài.
+                        AI gom những câu bạn từng làm sai thành các bài đọc ngắn từ chính bài giảng của thầy cô. Nắm lại bản chất mà không phải xem lại cả video dài.
                     </p>
                 </header>
 
@@ -32,12 +32,12 @@ export function OrbitTodayView() {
                     <section aria-label="Bài đọc hôm nay" className="col-span-7 flex flex-col">
                         <h2 className="mb-3 text-[15px] font-extrabold tracking-tight text-strong">
                             Bài hôm nay<em className="ml-1.5 font-mono text-[13px] font-bold not-italic text-muted-foreground">{Math.min(readCount, limit)}/{limit}</em>
+                            {poolSize > DAILY_LIMIT && <span className="ml-3 text-[12.5px] font-medium text-muted-foreground">Hôm nay mở miễn phí {DAILY_LIMIT} bài · bài thứ {DAILY_LIMIT + 1} trở đi dùng XP</span>}
                         </h2>
                         {doneOnly ? <DoneBlock className="flex-1" /> : <TodayHeroCard today={today} className="flex-1" />}
                         <TodayRows today={today} className="mt-3.5" />
                         {articles.length === 0 && <p className="rounded-card bg-muted p-5 text-muted-foreground">Chưa có bài đọc nào.</p>}
-                        {allDone && !doneOnly && <DoneBlock className="mt-3.5" />}
-                    </section>
+                                    </section>
 
                     <aside aria-labelledby="today-mine" className="col-span-5 flex flex-col">
                         <div className="mb-3 flex items-baseline justify-between">
@@ -55,31 +55,46 @@ export function OrbitTodayView() {
     )
 }
 
-/** Phần trên của thẻ "Hôm nay của bạn": tòa A2 SVG 80×118 (10 tầng × 4 ô, tầng sáng từ dưới lên theo số bài Daily đọc hôm nay, màu đèn tầng của mô hình 3D) + chữ. */
+/**
+ * Phần trên của thẻ "Hôm nay của bạn": tòa A2 SVG 10 tầng ứng với tối đa 10 bài. Tầng đã đọc sáng đèn (màu đèn tầng của mô hình 3D),
+ * tầng đang mở miễn phí/đã mở để tối, tầng cần XP có ổ khóa + giá, tầng không có bài (kho ít hơn 10) mờ.
+ */
 function A2Tower() {
-    const read = useOrbitStore((s) => s.dailyRead)
-    const todayDate = localDate()
-    const lit = Math.min(A2_TIERS, dailyArticles.filter((a) => read[a.id] === todayDate).length)
-    const dark = A2_TIERS - lit
+    const { articles, read, poolSize } = useTodayDaily()
+    const lit = Math.min(A2_TIERS, articles.filter((a) => read[a.id]).length)
+    const dark = Math.max(0, Math.min(A2_TIERS, poolSize) - lit)
+    const tierState = (f: number) => (f < lit ? 'lit' : f < articles.length ? 'open' : f < poolSize ? 'locked' : 'none')
+    const H = 18
     return (
-        <div className="grid grid-cols-[80px_1fr] items-center gap-5 border-b border-border px-6 py-[22px]">
-            <svg width="80" height="118" viewBox="0 0 96 140" aria-hidden className="block">
-                <rect x="10" y="10" width="76" height="126" rx="4" style={{ fill: 'hsl(var(--card))', stroke: 'hsl(var(--border))' }} />
-                <rect x="40" y="2" width="16" height="10" rx="2" style={{ fill: 'hsl(var(--border))' }} />
-                <rect x="44" y="14" width="8" height="120" style={{ fill: 'var(--mm-teal)', fillOpacity: 0.3 }} />
-                {Array.from({ length: A2_TIERS }, (_, f) =>
-                    [16, 27, 58, 69].map((x) => (
+        <div className="grid grid-cols-[104px_1fr] items-center gap-5 border-b border-border px-6 py-[22px]">
+            <svg width="104" height="206" viewBox="0 0 104 206" aria-hidden className="block">
+                <rect x="4" y="14" width="96" height="190" rx="4" style={{ fill: 'hsl(var(--card))', stroke: 'hsl(var(--border))' }} />
+                <rect x="44" y="2" width="16" height="10" rx="2" style={{ fill: 'hsl(var(--border))' }} />
+                {Array.from({ length: A2_TIERS }, (_, f) => {
+                    const y = 192 - f * H
+                    const st = tierState(f)
+                    if (st === 'locked') {
+                        return (
+                            <g key={f} style={{ fill: 'none', stroke: 'hsl(var(--muted-foreground))' }}>
+                                <rect x="14" y={y + 1} width="76" height="12" rx="3" style={{ fill: 'hsl(var(--muted))', stroke: 'none' }} />
+                                <rect x="20" y={y + 6} width="7" height="5" rx="1" strokeWidth="1.2" />
+                                <path d={`M21.5 ${y + 6}v-1.5a2 2 0 0 1 4 0V${y + 6}`} strokeWidth="1.2" />
+                                <text x="32" y={y + 11} style={{ fill: 'hsl(var(--muted-foreground))', stroke: 'none', font: '600 8.5px ui-monospace, monospace' }}>{EXTRA_READ_COST} XP</text>
+                            </g>
+                        )
+                    }
+                    return [14, 31, 62, 79].map((x) => (
                         <rect
                             key={`${f}-${x}`}
                             x={x}
-                            y={122 - f * 11.4}
-                            width="8"
-                            height="7"
+                            y={y + 2}
+                            width="11"
+                            height="10"
                             rx="1.5"
-                            style={f < lit ? { fill: CAMPUS.windowTier, filter: `drop-shadow(0 0 3px ${CAMPUS.windowTier})` } : { fill: 'hsl(var(--muted))' }}
+                            style={st === 'lit' ? { fill: CAMPUS.windowTier, filter: `drop-shadow(0 0 3px ${CAMPUS.windowTier})` } : { fill: 'hsl(var(--muted))', opacity: st === 'none' ? 0.35 : 1 }}
                         />
-                    )),
-                )}
+                    ))
+                })}
             </svg>
             <div>
                 <h3 className="text-[15px] font-extrabold text-strong">Tòa A2 · {lit} tầng đã sáng</h3>
@@ -93,7 +108,7 @@ function A2Tower() {
 
 /** "Hôm nay đủ rồi": tóm tắt những gì đã học qua các bài vừa đọc (khái niệm, XP). */
 function DoneBlock({ className = '' }: { className?: string }) {
-    const { articles, read } = useTodayDaily()
+    const { articles, read, locked, remaining, canAfford, unlockExtra } = useTodayDaily()
     const done = articles.filter((a) => read[a.id])
     const conceptIds = [...new Set(done.flatMap((a) => a.conceptIds))]
 
@@ -117,6 +132,19 @@ function DoneBlock({ className = '' }: { className?: string }) {
                     </li>
                 ))}
             </ul>
+            {locked && (
+                <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-5">
+                    <button
+                        type="button"
+                        onClick={() => unlockExtra()}
+                        disabled={!canAfford}
+                        className="rounded-[14px] surface-red px-5 py-3 text-[15px] font-extrabold text-ink-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 disabled:opacity-50"
+                    >
+                        {canAfford ? 'Mở thêm 1 bài' : 'Chưa đủ XP để mở thêm'} · <span className="font-mono">{EXTRA_READ_COST} XP</span>
+                    </button>
+                    <span className="text-sm text-muted-foreground">Còn {remaining} bài có thể mở thêm hôm nay.</span>
+                </div>
+            )}
             {conceptIds.length > 0 && <p className="mt-4 text-xs text-muted-foreground">Khái niệm đã ôn hôm nay: {conceptIds.length}</p>}
         </section>
     )

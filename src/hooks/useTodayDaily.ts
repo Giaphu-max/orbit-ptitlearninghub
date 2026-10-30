@@ -5,7 +5,7 @@ import { dailyFor, dailyXp, EXTRA_READ_COST, localDate, MISSIONS } from '@/lib/g
 import { DAILY_LIMIT, dailyPool, extraReadsToday, gapScore, todaysDaily } from '@/lib/next-step'
 import { useOrbitStore, xpBalance } from '@/store/useOrbitStore'
 
-/** Bài Orbit Daily hôm nay + trạng thái; dùng chung cho chương Hôm nay ở trang chủ và trang /today. */
+/** Bài ôn tập hôm nay + trạng thái; dùng chung cho chương Hôm nay ở trang chủ và trang /today. */
 export function useTodayDaily() {
     const lastRead = useOrbitStore((s) => s.dailyRead)
     const mastery = useOrbitStore((s) => s.conceptMastery)
@@ -25,7 +25,10 @@ export function useTodayDaily() {
     const readCount = articles.filter((a) => read[a.id]).length
     const priority = [...articles.filter((a) => !read[a.id])].sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery))[0]
     // Bài kế tiếp đang khóa: đã đọc hết các bài đang mở mà kho còn bài chưa đọc
-    const locked = priority ? undefined : dailyPool(lastRead, mastery)[articles.length]
+    const pool = dailyPool(lastRead, mastery)
+    const locked = priority ? undefined : pool[articles.length]
+    // Số bài còn có thể mở thêm bằng XP hôm nay
+    const remaining = Math.max(0, pool.length - articles.length)
     const allDone = articles.length > 0 && !priority && !locked
     const canAfford = balance >= EXTRA_READ_COST
 
@@ -56,7 +59,7 @@ export function useTodayDaily() {
         return isReview(a) ? `${reviewLabel(a)} · +${xp} XP` : `${a.readingMinutes} phút · +${xp} XP`
     }
 
-    return { articles, read, mastery, readCount, priority, locked, allDone, canAfford, balance, extra, missionsDone, missionsTotal: MISSIONS.length, reasonFor, noteFor, isReview, reviewLabel, xpFor, unlockExtra, limit: DAILY_LIMIT }
+    return { articles, read, mastery, readCount, priority, locked, allDone, canAfford, balance, extra, remaining, poolSize: pool.length, missionsDone, missionsTotal: MISSIONS.length, reasonFor, noteFor, isReview, reviewLabel, xpFor, unlockExtra, limit: Math.min(DAILY_LIMIT, pool.length) }
 }
 
 /**

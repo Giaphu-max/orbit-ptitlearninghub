@@ -1,12 +1,12 @@
 import { dailyArticles, courses, getCourse, getLessonsOfCourse, lessons } from '@/data'
 import type { DailyArticle, Lesson } from '@/data/types'
-import { DAILY_LIMIT, localDate } from '@/lib/gamification'
+import { DAILY_LIMIT, DAILY_MAX, localDate } from '@/lib/gamification'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 // "Bước tiếp theo" cho mọi điểm kết thúc (màn thưởng, nhiệm vụ): luôn dẫn người dùng tới việc kế tiếp
 // trong đúng ngữ cảnh, không đẩy về danh sách chung. Đọc trạng thái từ store, dùng được ngoài component.
 
-export { DAILY_LIMIT, EXTRA_READ_COST } from '@/lib/gamification'
+export { DAILY_LIMIT, DAILY_MAX, EXTRA_READ_COST } from '@/lib/gamification'
 
 /** Số bài mua thêm hôm nay (sang ngày mới thì về 0). */
 export const extraReadsToday = (unlocks: { date: string; count: number }) => (unlocks.date === localDate() ? unlocks.count : 0)
@@ -22,13 +22,15 @@ export function gapScore(a: DailyArticle, mastery: Record<string, number>) {
  */
 export function dailyPool(read: Record<string, string>, mastery: Record<string, number>): DailyArticle[] {
     const today = localDate()
-    return [
+    // Tối đa DAILY_MAX bài; số thực tế = min(DAILY_MAX, số bài còn hổng trong kho)
+    const pool = [
         ...dailyArticles.filter((a) => read[a.id] === today),
         ...dailyArticles.filter((a) => !read[a.id]).sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery)),
         ...dailyArticles
             .filter((a) => read[a.id] && read[a.id] !== today)
             .sort((a, b) => gapScore(b, mastery) - gapScore(a, mastery) || read[a.id].localeCompare(read[b.id])),
     ]
+    return pool.slice(0, DAILY_MAX)
 }
 
 /** Bài mỗi ngày (3 miễn phí + bài mua thêm). */

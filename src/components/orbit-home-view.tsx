@@ -345,7 +345,7 @@ function DailyChapter() {
         <>
             <Eyebrow>01 · Ôn tập cá nhân hóa · {Math.min(today.readCount, today.limit)}/{today.limit} đã đọc</Eyebrow>
             <Title id="daily-title">Lấp lỗ hổng kiến thức chỉ với 3 phút mỗi ngày.</Title>
-            <Lead>AI xem lại những câu bạn từng làm sai, rồi tóm thành 3 bài đọc ngắn từ chính bài giảng của thầy cô. Nắm lại bản chất mà không phải xem lại cả video dài.</Lead>
+            <Lead>AI gom những câu bạn từng làm sai thành các bài đọc ngắn từ chính bài giảng của thầy cô. Nắm lại bản chất mà không phải xem lại cả video dài.</Lead>
             <div data-s>
                 <TodayHeroCard today={today} compact />
             </div>
