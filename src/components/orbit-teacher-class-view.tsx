@@ -72,7 +72,7 @@ export function OrbitTeacherClassView() {
                     <div>
                         <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">Lớp học</p>
                         <h1 className="mt-2 text-4xl font-black tracking-[-0.03em] text-strong">Kết quả theo lớp</h1>
-                        <p className="mt-2 max-w-[70ch] text-[15px] text-muted-foreground">Chọn lớp thầy đang đứng để xem sinh viên hổng ở đâu. Số liệu là dữ liệu mẫu của {cls.subject}.</p>
+                        <p className="mt-2 max-w-[70ch] text-[15px] text-muted-foreground">Chọn lớp giảng viên đang đứng để xem sinh viên hổng ở đâu. Số liệu là dữ liệu mẫu của {cls.subject}.</p>
                     </div>
                     <ClassPicker />
                 </header>

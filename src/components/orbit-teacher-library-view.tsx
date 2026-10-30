@@ -55,10 +55,7 @@ export function OrbitTeacherLibraryView() {
             <header className="flex flex-wrap items-end justify-between gap-6">
                 <div>
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">Bài giảng</p>
-                    <h1 className="mt-2 text-4xl font-black tracking-[-0.03em] text-strong">Khóa học của thầy</h1>
-                    <p className="mt-2 max-w-[70ch] text-[15px] text-muted-foreground">
-                        Kho bài giảng của thầy. Khóa đang mở thì mọi sinh viên đều học được các bài đã xuất bản, không cần giao cho từng lớp.
-                    </p>
+                    <h1 className="mt-2 text-4xl font-black tracking-[-0.03em] text-strong">Khóa học của giảng viên</h1>
                 </div>
                 <button type="button" onClick={() => showAdd()} className="surface-red h-11 rounded-xl px-[18px] text-[14.5px] font-extrabold text-ink-foreground shadow-brand">
                     + Thêm video
