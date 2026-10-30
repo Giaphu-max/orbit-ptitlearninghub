@@ -4,18 +4,12 @@ import { Loader2 } from 'lucide-react'
 import { TopNav } from '@/components/top-nav'
 import { OrbitRoleSelect } from '@/components/orbit-role-select'
 import { RewardOverlay } from '@/components/reward-overlay'
-import { SiteFooter } from '@/components/site-footer'
 import { TeacherShell } from '@/layouts/TeacherShell'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
-// Các route toàn màn hình hoặc có footer riêng không hiển thị layout footer
-const HIDE_FOOTER_PREFIXES = ['/lesson', '/test', '/checkpoint', '/studio']
-
-function shouldShowFooter(pathname: string): boolean {
-    // Trang chủ sinh viên có tấm footer trượt riêng
-    if (pathname === '/') return false
-    return !HIDE_FOOTER_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'))
-}
+// Trang cuộn dọc không còn footer: chừa khoảng đệm đáy thống nhất 64px. Trang làm việc toàn màn hình (học bài, kiểm tra, studio) tự quản chiều cao.
+const FULLSCREEN_PREFIXES = ['/lesson', '/test', '/checkpoint', '/studio']
+const isFullscreenPage = (pathname: string) => FULLSCREEN_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + '/'))
 
 export function MainLayout() {
     const location = useLocation()
@@ -24,7 +18,6 @@ export function MainLayout() {
 
     // Thanh điều hướng cố định ở đầu mọi trang; trên trang chủ nó đè lên hero, các trang khác chừa chỗ bằng --nav-h
     const isHome = location.pathname === '/'
-    const showFooter = shouldShowFooter(location.pathname)
 
     if (!role) return <OrbitRoleSelect />
     // Giảng viên có khung riêng (thanh trên + thanh bên, không nav/footer của sinh viên)
@@ -46,7 +39,7 @@ export function MainLayout() {
 
             <div className="flex min-w-0 flex-1 flex-col">
                 <TopNav />
-                <main className={`relative flex min-w-0 flex-1 flex-col ${isHome ? '' : 'pt-[var(--nav-h)]'}`}>
+                <main className={`relative flex min-w-0 flex-1 flex-col ${isHome ? '' : 'pt-[var(--nav-h)]'} ${isHome || isFullscreenPage(location.pathname) ? '' : 'pb-16'}`}>
                     <Suspense
                         fallback={
                             <div className="flex flex-1 items-center justify-center py-32 text-muted-foreground">
@@ -55,7 +48,6 @@ export function MainLayout() {
                         }
                     >
                         <Outlet />
-                        {showFooter && <SiteFooter />}
                     </Suspense>
                 </main>
             </div>
