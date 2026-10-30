@@ -22,15 +22,20 @@ const NO_RESULTS = {}
 
 const tabOf = (key: string): Tab => (key === 'sum' ? 'sum' : key === 'qt' ? 'qt' : key.startsWith('c:') ? 'con' : 'q')
 
-/** Khóa các mục của một tab theo thứ tự hiển thị: xếp theo % lớp sai lần đầu giảm dần. */
-function orderedKeys(tab: Tab, d: Pick<LessonEdits, 'concepts' | 'quiz'>, stats: ClassStats): string[] {
+/**
+ * Khóa các mục của một tab theo thứ tự hiển thị: mục chưa duyệt lên đầu. Bài đã xuất bản có số liệu lớp thì xếp theo % lớp sai lần đầu giảm dần;
+ * bài chưa xuất bản (chưa có lượt làm thật) xếp theo mốc thời gian trong video.
+ */
+function orderedKeys(tab: Tab, d: Pick<LessonEdits, 'concepts' | 'quiz'>, stats: ClassStats | null, reviewed?: Set<string>): string[] {
     if (tab === 'sum') return ['sum']
     if (tab === 'qt') return ['qt']
+    const rate = (conceptId: string) => (stats ? (conceptRate(stats, conceptId) ?? -1) : -1)
     const rows =
         tab === 'con'
-            ? d.concepts.map((c, i) => ({ key: itemKey.concept(c.id), i, rate: conceptRate(stats, c.id) ?? -1 }))
-            : d.quiz.map((q, i) => ({ key: itemKey.question(q.id), i, rate: conceptRate(stats, q.conceptId) ?? -1 }))
-    return rows.sort((a, b) => b.rate - a.rate || a.i - b.i).map((r) => r.key)
+            ? d.concepts.map((c, i) => ({ key: itemKey.concept(c.id), i, at: c.segment.start, rate: rate(c.id) }))
+            : d.quiz.map((q, i) => ({ key: itemKey.question(q.id), i, at: q.pauseAt, rate: rate(q.conceptId) }))
+    const done = (k: string) => (reviewed?.has(k) ? 1 : 0)
+    return rows.sort((a, b) => done(a.key) - done(b.key) || (stats ? b.rate - a.rate : 0) || a.at - b.at || a.i - b.i).map((r) => r.key)
 }
 
 function timeOf(key: string, l: Pick<Lesson, 'concepts' | 'quiz'>): number {
@@ -57,7 +62,10 @@ export function OrbitTeacherReviewView() {
 
 function ReviewPage({ review, reviews }: { review: LessonReview; reviews: LessonReview[] }) {
     const { lesson, published, reviewed, total } = review
-    const stats = useAllStats()
+    const allStats = useAllStats()
+    // Chỉ bài đã xuất bản mới có lượt làm thật của sinh viên; bài chưa xuất bản không hiện % và không xếp theo % sai
+    const stats = published ? allStats : null
+    const rateOf = (conceptId: string) => (stats ? conceptRate(stats, conceptId) : null)
     const [searchParams] = useSearchParams()
     const savedEdits = useOrbitStore((s) => s.lessonEdits[lesson.id])
     const setReviewedItems = useOrbitStore((s) => s.setReviewedItems)
@@ -71,30 +79,31 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
     // Nội dung đang sửa: phụ đề và mốc trên video cập nhật ngay
     const live = useMemo<Lesson>(() => ({ ...lesson, summary: draft.summary, concepts: draft.concepts, quiz: draft.quiz, ...(draft.transcript ? { transcript: draft.transcript } : {}) }), [lesson, draft])
 
-    // Tab và dòng mở ban đầu: ?item= (từ Tổng quan / Lớp học), không thì mục chưa duyệt đầu tiên (ưu tiên Câu hỏi)
+    // Tab và dòng mở ban đầu: ?item= (từ Tổng quan / Lớp học) được ưu tiên; không thì tab đầu tiên (Tóm tắt, Khái niệm, Câu hỏi, Kiểm tra nhanh)
+    // còn mục chưa duyệt, mở sẵn mục chưa duyệt đầu tiên của tab đó. Duyệt hết rồi thì mở tab Tóm tắt, không mở mục nào.
     const [start] = useState(() => {
         const item = searchParams.get('item')
-        const all = TAB_ORDER.flatMap((t) => orderedKeys(t, lesson, stats))
+        const all = TAB_ORDER.flatMap((t) => orderedKeys(t, lesson, stats, reviewed))
         if (item && all.includes(item)) return { tab: tabOf(item), open: item as string | null }
-        for (const t of ['q', 'con', 'sum', 'qt'] as Tab[]) {
-            const first = orderedKeys(t, lesson, stats).find((k) => !reviewed.has(k))
+        for (const t of TAB_ORDER) {
+            const first = orderedKeys(t, lesson, stats, reviewed).find((k) => !reviewed.has(k))
             if (first) return { tab: t, open: first as string | null }
         }
-        return { tab: 'q' as Tab, open: null }
+        return { tab: 'sum' as Tab, open: null }
     })
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({})
     const setTestSet = useOrbitStore((s) => s.setTestSet)
     const storedQuick = useOrbitStore((s) => s.testSets[quickKey(lesson.id)])
     const quickBank = useMemo(() => sourcedBank([live]), [live])
     const quickSet = useMemo(() => quickSetFor(live, storedQuick), [live, storedQuick])
     const saveQuick = (next: TestSet) => setTestSet(quickKey(lesson.id), next)
-    const [focusAt, setFocusAt] = useState(() => Number(searchParams.get('t')) || 0)
+    const [focusAt, setFocusAt] = useState(() => Number(searchParams.get('t')) || (start.open ? timeOf(start.open, lesson) : 0))
     const [tab, setTab] = useState<Tab>(start.tab)
     const [openKey, setOpenKey] = useState<string | null>(start.open)
 
     const player = useYouTubePlayer(lesson.youtubeId, { hideControls: true })
     const { seekTo } = player
     const canPlay = player.status === 'ready'
-    const [captionsOn, setCaptionsOn] = useState(true)
     const playerAreaRef = useRef<HTMLDivElement>(null)
 
     // Vào trang với mục đã chọn (?item= hoặc ?t=): tua tới mốc khi trình phát sẵn sàng
@@ -144,10 +153,18 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
         persistDraft()
         const next = new Set(reviewed).add(key)
         setReviewedItems(lesson.id, [...next])
-        // Duyệt xong thì đóng mục này, mở mục chưa duyệt tiếp theo trong cùng tab
-        const nxt = orderedKeys(tabOf(key), draft, stats).find((k) => !next.has(k))
-        if (nxt) openItem(nxt)
-        else setOpenKey(null)
+        // Duyệt xong thì mở mục chưa duyệt kế tiếp trong tab; hết việc ở tab này thì chuyển sang tab kế tiếp còn việc
+        const nxt = orderedKeys(tabOf(key), draft, stats, next).find((k) => !next.has(k))
+        if (nxt) return openItem(nxt)
+        const here = TAB_ORDER.indexOf(tabOf(key))
+        for (const t of [...TAB_ORDER.slice(here + 1), ...TAB_ORDER.slice(0, here)]) {
+            const first = orderedKeys(t, draft, stats, next).find((k) => !next.has(k))
+            if (first) {
+                setTab(t)
+                return openItem(first)
+            }
+        }
+        setOpenKey(null)
     }
 
     const patchConcept = (i: number, patch: Partial<LessonEdits['concepts'][number]>) => setDraft((d) => ({ ...d, concepts: d.concepts.map((c, j) => (j === i ? { ...c, ...patch } : c)) }))
@@ -179,7 +196,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
 
     const onPublish = () => {
         if (left > 0) {
-            const first = TAB_ORDER.flatMap((t) => orderedKeys(t, draft, stats).map((k) => [t, k] as const)).find(([, k]) => !reviewed.has(k))
+            const first = TAB_ORDER.flatMap((t) => orderedKeys(t, draft, stats, reviewed).map((k) => [t, k] as const)).find(([, k]) => !reviewed.has(k))
             say('Còn mục chưa duyệt. Mở mục đầu tiên chưa duyệt.')
             if (first) {
                 setTab(first[0])
@@ -218,12 +235,21 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
     const curLine = Math.max(0, lines.findIndex((l, i) => at >= l.start && (i === lines.length - 1 || at < lines[i + 1].start)))
     const around = lines.slice(Math.max(0, curLine - 1), curLine + 2)
 
+    const LIMIT = 6
+    // Danh sách dài thì chỉ hiện 6 mục cần xử lý trước (và mục đang mở), còn lại sau nút "Xem thêm"
+    const visibleKeys = (t: Tab, keys: string[]) => (expanded[t] ? keys : keys.filter((k, i) => i < LIMIT || k === openKey))
+    const moreButton = (t: Tab, keys: string[]) =>
+        keys.length > LIMIT && (
+            <button type="button" onClick={() => setExpanded((e) => ({ ...e, [t]: !e[t] }))} aria-expanded={!!expanded[t]} className="mt-1 self-start rounded-lg px-3 py-2 text-[13.5px] font-bold text-brand-ink transition hover:bg-brand-50">
+                {expanded[t] ? 'Thu gọn ▴' : `Xem thêm ${keys.length - LIMIT} ▾`}
+            </button>
+        )
     const stepCls = (on: boolean, done: boolean) => `inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${on ? 'bg-brand-50 text-brand-ink' : done ? 'text-success' : 'text-muted-foreground'}`
 
     return (
         <div className="lesson-page w-full" data-focus="off">
             <div className="lesson-body pb-6">
-                <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+                <header className="flex scroll-mt-20 flex-wrap items-end justify-between gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1 basis-[460px]">
                         <TitleBlock
                             wrapTitle
@@ -268,13 +294,13 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                     isPlaying={player.isPlaying}
                                     rate={player.rate}
                                     results={NO_RESULTS}
-                                    captionsOn={captionsOn}
+                                    captionsOn={false}
                                     panelHidden={false}
                                     hidePanelToggle
                                     compact
                                     onToggle={() => (player.isPlaying ? player.pause() : player.play())}
                                     onSeek={(sec) => (setFocusAt(sec), seekTo(sec, { play: player.isPlaying }))}
-                                    onToggleCaptions={() => setCaptionsOn((v) => !v)}
+                                    onToggleCaptions={() => undefined}
                                     onRate={player.setRate}
                                     onFullscreen={() => (document.fullscreenElement ? void document.exitFullscreen() : void playerAreaRef.current?.requestFullscreen?.())}
                                     onTogglePanel={() => undefined}
@@ -287,7 +313,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                     onSeekBy={(delta) => seekTo(Math.min(lesson.durationSec, Math.max(0, player.currentTime + delta)), { play: player.isPlaying })}
                                     quizMarker={(q) => {
                                         const ok = reviewed.has(itemKey.question(q.id))
-                                        const rate = conceptRate(stats, q.conceptId)
+                                        const rate = rateOf(q.conceptId)
                                         const hot = !ok && rate !== null && rate >= HOT_RATE
                                         const at = formatTime(q.pauseAt)
                                         return {
@@ -314,7 +340,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                         <button type="button" onClick={() => (setFocusAt(l.start), seekTo(l.start, { play: false }))} className="text-left font-mono text-xs font-semibold text-muted-foreground hover:text-brand-ink">
                                             {formatTime(l.start)}
                                         </button>
-                                        <span className={l === lines[curLine] ? 'font-semibold text-strong' : 'text-muted-foreground'}>{l.text}</span>
+                                        <span className={l === lines[curLine] ? 'font-semibold text-strong' : 'line-clamp-2 text-muted-foreground/80'}>{l.text}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -350,12 +376,9 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                         </div>
 
                         <div role="tabpanel" className="px-3 pb-3 pt-2">
-                            {(tab === 'con' || tab === 'q') && (
-                                <p className="flex items-center justify-between px-2 pb-1.5 pt-2 text-xs text-muted-foreground">
-                                    <span>
-                                        Xếp theo <b className="font-bold text-strong">% lớp sai lần đầu</b>
-                                    </span>
-                                    <span>{tab === 'con' ? `${draft.concepts.length} khái niệm` : 'video dừng ở mỗi câu'}</span>
+                            {(tab === 'con' || tab === 'q') && stats && (
+                                <p className="px-2 pb-1.5 pt-2 text-xs text-muted-foreground">
+                                    Xếp theo <b className="font-bold text-strong">% lớp sai lần đầu</b>, mục chưa duyệt lên đầu
                                 </p>
                             )}
 
@@ -397,10 +420,10 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
 
                             {tab === 'con' && (
                                 <div className="flex flex-col gap-1">
-                                    {orderedKeys('con', draft, stats).map((key) => {
+                                    {visibleKeys('con', orderedKeys('con', draft, stats, reviewed)).map((key) => {
                                         const i = draft.concepts.findIndex((c) => itemKey.concept(c.id) === key)
                                         const c = draft.concepts[i]
-                                        const rate = conceptRate(stats, c.id)
+                                        const rate = rateOf(c.id)
                                         return (
                                             <ReviewRow
                                                 key={key}
@@ -436,15 +459,16 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                             </ReviewRow>
                                         )
                                     })}
+                                    {moreButton('con', orderedKeys('con', draft, stats, reviewed))}
                                 </div>
                             )}
 
                             {tab === 'q' && (
                                 <div className="flex flex-col gap-1">
-                                    {orderedKeys('q', draft, stats).map((key) => {
+                                    {visibleKeys('q', orderedKeys('q', draft, stats, reviewed)).map((key) => {
                                         const i = draft.quiz.findIndex((q) => itemKey.question(q.id) === key)
                                         const q = draft.quiz[i]
-                                        const rate = conceptRate(stats, q.conceptId)
+                                        const rate = rateOf(q.conceptId)
                                         const trapNote = TRAP_NOTES[q.id]
                                         return (
                                             <ReviewRow
@@ -463,8 +487,8 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                                 </label>
                                                 <textarea id={`${q.id}-prompt`} rows={2} value={q.prompt} onChange={(e) => patchQuestion(i, { ...q, prompt: e.target.value })} className={fieldCls} />
                                                 <span className={labelCls}>Đáp án · bấm để chọn đáp án đúng · % sinh viên chọn</span>
-                                                <OptionRows question={q} stats={stats} onChange={(next) => patchQuestion(i, { ...q, ...next })} />
-                                                {trapNote && <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">{trapNote.note}</p>}
+                                                <OptionRows question={q} stats={stats ?? undefined} onChange={(next) => patchQuestion(i, { ...q, ...next })} />
+                                                {stats && trapNote && <p className="mt-3 rounded-lg bg-muted px-3 py-2.5 text-[13px] leading-relaxed text-muted-foreground">{trapNote.note}</p>}
                                                 <label className={labelCls} htmlFor={`${q.id}-explain`}>
                                                     Giải thích khi sinh viên sai
                                                 </label>
@@ -491,6 +515,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                             </ReviewRow>
                                         )
                                     })}
+                                    {moreButton('q', orderedKeys('q', draft, stats, reviewed))}
                                 </div>
                             )}
 
@@ -502,6 +527,7 @@ function ReviewPage({ review, reviews }: { review: LessonReview; reviews: Lesson
                                         bank={quickBank}
                                         open={openKey === 'qt'}
                                         approved={reviewed.has('qt')}
+                                        published={published && reviewed.has('qt')}
                                         onToggleOpen={() => (openKey === 'qt' ? setOpenKey(null) : openItem('qt'))}
                                         onApprove={() => toggleApprove('qt')}
                                         onChange={saveQuick}

@@ -33,6 +33,9 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
     const concepts = useMemo(() => lessons.flatMap((l) => l.concepts), [lessons])
     const cover = coverage(questions)
     const missing = concepts.filter((c) => !cover.get(c.id))
+    // Chip độ phủ: khái niệm thiếu câu lên đầu, rồi khái niệm ít câu nhất; mặc định tối đa ~1 hàng
+    const byNeed = [...concepts].sort((a, b) => (cover.get(a.id) ?? 0) - (cover.get(b.id) ?? 0))
+    const CHIPS = 6
     const rules = set.rules
     const need = passCount(rules, questions.length)
     const minutes = Math.ceil((questions.length * rules.secondsPerQuestion) / 60)
@@ -56,6 +59,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
     const [editing, setEditing] = useState<{ q: SourcedQuestion; replaces?: string; isBank: boolean } | null>(null)
     const [bankOpen, setBankOpen] = useState(false)
     const [showAll, setShowAll] = useState(false)
+    const [showAllChips, setShowAllChips] = useState(false)
     const [dragFrom, setDragFrom] = useState<number | null>(null)
     const [live, setLive] = useState('')
     const lessonOf = (conceptId: string) => lessons.find((l) => l.concepts.some((c) => c.id === conceptId))
@@ -85,7 +89,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
 
     return (
         <div className="w-full pb-8">
-            <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+            <header className="flex scroll-mt-20 flex-wrap items-end justify-between gap-x-6 gap-y-3">
                 <div className="min-w-0 flex-1 basis-[420px]">
                     <div className="flex flex-wrap items-center gap-2.5 text-[13px] text-muted-foreground">
                         <Link to="/teacher/library" className="font-bold transition hover:text-strong">
@@ -116,10 +120,15 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                     <div className="rounded-[20px] border border-border bg-card px-5 py-[18px] shadow-card">
                         <div className="flex items-baseline justify-between gap-3">
                             <b className="text-[15px] text-strong">Độ phủ khái niệm</b>
-                            <small className="text-[12.5px] text-muted-foreground">mỗi khái niệm nên có ít nhất 1 câu</small>
+                            <small className="text-[12.5px] text-muted-foreground">
+                                <b className={`font-mono ${missing.length > 0 ? 'text-brand-ink' : 'text-success'}`}>
+                                    {concepts.length - missing.length}/{concepts.length}
+                                </b>{' '}
+                                khái niệm đã có câu hỏi
+                            </small>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
-                            {concepts.map((c) => {
+                            {(showAllChips ? byNeed : byNeed.slice(0, CHIPS)).map((c) => {
                                 const n = cover.get(c.id) ?? 0
                                 return (
                                     <span key={c.id} className={`inline-flex items-center gap-2 rounded-full border bg-card py-1.5 pl-3 pr-1.5 text-[13px] ${n === 0 ? 'border-dashed border-brand-100' : 'border-border'}`}>
@@ -129,6 +138,11 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                                 )
                             })}
                         </div>
+                        {concepts.length > CHIPS && (
+                            <button type="button" onClick={() => setShowAllChips((v) => !v)} aria-expanded={showAllChips} className="mt-2 rounded-lg px-1 py-1 text-[13.5px] font-bold text-brand-ink transition hover:underline">
+                                {showAllChips ? 'Thu gọn ▴' : `Xem thêm ${concepts.length - CHIPS} khái niệm ▾`}
+                            </button>
+                        )}
                         {missing.length > 0 && (
                             <p className="mt-3 text-[13.5px] text-muted-foreground">
                                 Chưa có câu nào về <b className="text-strong">{missing.map((m) => m.name).join(', ')}</b>
@@ -186,7 +200,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                                                 Bài {Math.max(1, lessons.findIndex((l) => l.id === q.lessonId) + 1)} · {conceptName(q.conceptId)}
                                             </small>
                                         </button>
-                                        <Rate q={q} />
+                                        <Rate q={q} published={published} />
                                         <button type="button" aria-label={`Bỏ câu ${i + 1} khỏi đề`} onClick={() => save(removeFromSet(set, q.id))} className="h-7 w-7 rounded-lg text-[13px] text-muted-foreground transition hover:bg-brand-50 hover:text-brand-ink">
                                             ✕
                                         </button>
@@ -197,7 +211,12 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                         {questions.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground">Đề đang trống. Lấy câu từ kho hoặc nhờ AI gợi ý.</p>}
                         {!showAll && questions.length > 6 && (
                             <button type="button" onClick={() => setShowAll(true)} className="block w-full border-t border-border px-3 py-2.5 text-left text-[13px] font-bold text-muted-foreground transition hover:text-strong">
-                                + {questions.length - 6} câu nữa
+                                Xem thêm {questions.length - 6} câu ▾
+                            </button>
+                        )}
+                        {showAll && questions.length > 6 && (
+                            <button type="button" onClick={() => setShowAll(false)} aria-expanded className="block w-full border-t border-border px-3 py-2.5 text-left text-[13px] font-bold text-muted-foreground transition hover:text-strong">
+                                Thu gọn ▴
                             </button>
                         )}
                         {editing && !questions.some((q) => q.id === (editing.replaces ?? editing.q.id)) && (
@@ -234,7 +253,7 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
                                                 <SourceChip source={q.source} /> {conceptName(q.conceptId)}
                                             </small>
                                         </span>
-                                        <Rate q={q} />
+                                        <span />
                                         <button type="button" onClick={() => save({ ...set, ids: [...set.ids, q.id] })} className="h-8 rounded-lg bg-brand-50 px-3 text-[13px] font-bold text-brand-ink transition hover:bg-brand-100">
                                             Thêm
                                         </button>
@@ -312,9 +331,11 @@ function Builder({ courseId, title }: { courseId: string; title: string }) {
     )
 }
 
-function Rate({ q }: { q: SourcedQuestion }) {
+/** % lớp đúng chỉ hiện khi đề đã xuất bản; câu chưa có lượt làm thì ghi chữ nhạt thay vì số. */
+function Rate({ q, published }: { q: SourcedQuestion; published: boolean }) {
+    if (!published) return <span />
     const r = correctRate(q)
-    return <span className={`font-mono text-xs font-bold ${r === null ? 'text-success' : r < 50 ? 'text-brand-ink' : 'text-muted-foreground'}`}>{r === null ? 'mới' : `${r}% đúng`}</span>
+    return r === null ? <span className="text-xs text-muted-foreground/70">chưa có lượt làm</span> : <span className={`font-mono text-xs font-bold ${r < 50 ? 'text-brand-ink' : 'text-muted-foreground'}`}>{r}% lớp đúng</span>
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {

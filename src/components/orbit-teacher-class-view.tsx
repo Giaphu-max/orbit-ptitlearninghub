@@ -29,7 +29,8 @@ function buildRows(course: Course, reviews: LessonReview[], stats: ClassStats): 
     const t = courseTest(stats, course.id)
     const rows: ConceptRow[] = []
     for (const r of reviews) {
-        if (r.lesson.courseId !== course.id) continue
+        // Chỉ bài đã xuất bản mới có lượt làm thật của sinh viên
+        if (r.lesson.courseId !== course.id || r.state !== 'published') continue
         for (const c of r.lesson.concepts) {
             const s = stats.concepts[c.id]
             const video = s && s.answered > 0 ? pct(s.wrongFirstTry, s.answered) : null

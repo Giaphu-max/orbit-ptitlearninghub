@@ -24,6 +24,7 @@ export function QuickTestPanel({
     bank,
     open,
     approved,
+    published,
     onToggleOpen,
     onApprove,
     onChange,
@@ -34,12 +35,16 @@ export function QuickTestPanel({
     bank: SourcedQuestion[]
     open: boolean
     approved: boolean
+    /** Đề đã xuất bản: mới có lượt làm thật để hiện % đúng */
+    published: boolean
     onToggleOpen: () => void
     onApprove: () => void
     onChange: (next: TestSet) => void
     say: (msg: string) => void
 }) {
     const [rulesOpen, setRulesOpen] = useState(false)
+    const [showRest, setShowRest] = useState(false)
+    const [showIn, setShowIn] = useState(false)
     const [editing, setEditing] = useState<{ q: SourcedQuestion; replaces?: string; isBank: boolean } | null>(null)
     const inSet = resolveSet(set, bank)
     const inIds = new Set(set.ids)
@@ -53,7 +58,8 @@ export function QuickTestPanel({
     const segBtn = (on: boolean) => `rounded-lg px-2.5 py-1.5 font-mono text-[13px] font-bold transition ${on ? 'bg-card text-strong shadow-card' : 'text-muted-foreground hover:text-strong'}`
 
     const pickRow = (q: SourcedQuestion, checked: boolean) => {
-        const rate = correctRate(q)
+        // Chưa xuất bản thì không hiện số; đã xuất bản: câu có lượt làm hiện '% lớp đúng', câu mới thêm ghi chưa có lượt làm
+        const rate = published && checked ? correctRate(q) : null
         return (
             <li key={q.id} className="grid grid-cols-[20px_1fr_auto] items-start gap-3 rounded-[10px] px-2 py-2.5 hover:bg-muted/60">
                 <input
@@ -69,7 +75,11 @@ export function QuickTestPanel({
                         <SourceChip source={q.source} /> {lesson.concepts.find((c) => c.id === q.conceptId)?.name ?? ''}
                     </small>
                 </button>
-                <em className={`font-mono text-xs font-bold not-italic ${rate !== null && rate < 50 ? 'text-brand-ink' : 'text-muted-foreground'}`}>{rate === null ? 'mới' : `${rate}% đúng`}</em>
+                {published && checked ? (
+                    <em className={`text-xs not-italic ${rate === null ? 'text-muted-foreground/70' : `font-mono font-bold ${rate < 50 ? 'text-brand-ink' : 'text-muted-foreground'}`}`}>{rate === null ? 'chưa có lượt làm' : `${rate}% lớp đúng`}</em>
+                ) : (
+                    <span />
+                )}
             </li>
         )
     }
@@ -148,10 +158,20 @@ export function QuickTestPanel({
             ) : (
                 <>
                     <p className="mx-2 mb-1 mt-3.5 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Trong đề · {n}</p>
-                    <ul>{inSet.map((q) => pickRow(q, true))}</ul>
+                    <ul>{(showIn ? inSet : inSet.slice(0, 6)).map((q) => pickRow(q, true))}</ul>
+                    {inSet.length > 6 && (
+                        <button type="button" onClick={() => setShowIn((v) => !v)} aria-expanded={showIn} className="ml-2 mt-1 rounded-lg px-2 py-1.5 text-[13.5px] font-bold text-brand-ink transition hover:bg-brand-50">
+                            {showIn ? 'Thu gọn ▴' : `Xem thêm ${inSet.length - 6} ▾`}
+                        </button>
+                    )}
                     {n === 0 && <p className="px-2 py-2 text-sm text-muted-foreground">Đề đang trống. Thêm câu từ kho hoặc nhờ AI gợi ý.</p>}
                     <p className="mx-2 mb-1 mt-4 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Còn trong kho · {rest.length}</p>
-                    <ul>{rest.map((q) => pickRow(q, false))}</ul>
+                    <ul>{(showRest ? rest : rest.slice(0, 5)).map((q) => pickRow(q, false))}</ul>
+                    {rest.length > 5 && (
+                        <button type="button" onClick={() => setShowRest((v) => !v)} aria-expanded={showRest} className="ml-2 mt-1 rounded-lg px-2 py-1.5 text-[13.5px] font-bold text-brand-ink transition hover:bg-brand-50">
+                            {showRest ? 'Thu gọn ▴' : `Xem thêm ${rest.length - 5} ▾`}
+                        </button>
+                    )}
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                         <button
                             type="button"

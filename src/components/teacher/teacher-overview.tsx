@@ -85,7 +85,8 @@ export function TeacherOverview() {
     // Bài đang AI tạo chưa duyệt được; số liệu chỉ tính trên bài có nội dung
     const reviews = all.filter((r) => r.state !== 'generating')
     const tasks = buildTasks(reviews, stats)
-    const att = buildAttention(reviews, stats)
+    // Số liệu sinh viên chỉ lấy từ bài đã xuất bản (bài chưa xuất bản chưa có lượt làm thật)
+    const att = buildAttention(reviews.filter((r) => r.state === 'published'), stats)
     const minutes = tasks.reduce((n, t) => n + t.minutes, 0)
     const pendingReviews = reviews.filter((r) => r.state === 'wait' || r.state === 'editing')
     const first = tasks[0]

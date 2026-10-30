@@ -8,6 +8,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
+import { captionAt } from "@/lib/captions";
 import { Captions, Maximize, Pause, PanelRight, Play } from "lucide-react";
 import type { Lesson } from "@/data/types";
 import { formatTime } from "@/lib/youtube";
@@ -356,13 +357,13 @@ export function PlayerControls(p: PlayerControlsProps) {
         )}
       </div>
 
-      {p.captionsOn && caption && (
+      {p.captionsOn && !p.compact && caption && (
         <div
           className={`pointer-events-none absolute left-1/2 z-[11] max-w-[70%] -translate-x-1/2 rounded-[10px] bg-ink/70 px-4 py-2 text-center text-base font-semibold leading-snug text-ink-foreground transition-[bottom] duration-200 motion-reduce:transition-none ${
             visible ? "bottom-[76px]" : "bottom-6"
           }`}
         >
-          {highlight(caption.text, names)}
+          {highlight(captionAt(caption, currentTime), names)}
         </div>
       )}
 
@@ -479,6 +480,7 @@ export function PlayerControls(p: PlayerControlsProps) {
             {formatTime(shownTime)} / {formatTime(duration)}
           </span>
           <div className="ml-auto flex items-center gap-2">
+            {!p.compact && (
             <button
               type="button"
               aria-pressed={p.captionsOn}
@@ -487,6 +489,7 @@ export function PlayerControls(p: PlayerControlsProps) {
             >
               <Captions size={15} /> Phụ đề
             </button>
+            )}
             {!p.compact && (
             <>
             <div className="relative">

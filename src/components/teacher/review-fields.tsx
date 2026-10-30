@@ -34,7 +34,7 @@ interface RowProps {
 /** Một dòng gọn trong danh sách duyệt; mở ra thì hiện các trường sửa tại chỗ. */
 export function ReviewRow({ domId, open, done, title, sub, rate, hot, onToggle, children }: RowProps) {
     return (
-        <div id={domId} className={`rounded-[14px] border transition duration-fast ${open ? 'border-border bg-card shadow-raised' : 'border-transparent'}`}>
+        <div id={domId} className={`scroll-mt-24 rounded-[14px] border transition duration-fast ${open ? 'border-border bg-card shadow-raised' : 'border-transparent'}`}>
             <button
                 type="button"
                 aria-expanded={open}
@@ -46,7 +46,7 @@ export function ReviewRow({ domId, open, done, title, sub, rate, hot, onToggle, 
                     <b className={`line-clamp-2 text-[16.5px] font-semibold leading-snug ${done && !open ? 'text-muted-foreground' : 'text-strong'}`}>{title}</b>
                     <small className="mt-1 block font-mono text-[12.5px] text-muted-foreground">{sub}</small>
                 </span>
-                <span className={`rounded-md px-2 py-0.5 font-mono text-xs font-bold ${rate == null ? 'hidden' : hot ? 'bg-brand-50 text-brand-ink' : 'bg-muted text-muted-foreground'}`}>{rate != null ? `${rate}% sai` : ''}</span>
+                <span className={`rounded-md px-2 py-0.5 font-mono text-xs font-bold ${rate == null ? 'hidden' : hot ? 'bg-brand-50 text-brand-ink' : 'bg-muted text-muted-foreground'}`}>{rate != null ? `${rate}% sai lần đầu` : ''}</span>
                 <ChevronDown size={13} className={`text-muted-foreground transition-transform duration-fast ${open ? 'rotate-180' : ''}`} aria-hidden />
             </button>
             {open && <div className="pb-4 pl-14 pr-4 pt-0.5">{children}</div>}
