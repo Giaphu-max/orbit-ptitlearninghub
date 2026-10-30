@@ -3,7 +3,7 @@ import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
 import { setChapterScroller, setFlyingProbe, setJourneyChapter, setLenis, setPagedMode } from '@/lib/scroll'
 import { addFrame } from '@/lib/frame-loop'
-import { introDone, introPlaying } from '@/lib/role-intro'
+import { introDone, introMark, introPlaying } from '@/lib/role-intro'
 import { page } from '@/lib/page-metrics'
 import { benchState, FLAGS, timed } from '@/lib/perf'
 import { flushOverlay, overlay, stageSignal } from '@/lib/stage-signal'
@@ -181,6 +181,8 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         let backFlight = false
         /** Đã cuộn vào vùng ghim từ footer (quán tính còn chạy): dừng ở Studio trước */
         let fromFooter = false
+        /** Mở trang dưới intro: khóa bước chương cho tới khi intro xong và hero đã chốt trạng thái cuối */
+        let introGate = paged && introPlaying()
         let lastWheel = 0
         let lastAbs = 0
         let lastDir = 0
@@ -397,6 +399,8 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         // Cuộn tới giữa vùng của chương (rail, nav, bước một chương): chương được chọn ngay, S bay, thanh cuộn chạy theo.
         // Nhảy từ 2 chương trở lên thì cắt cảnh: S tới thẳng, cuộn tức thì.
         const go = (c: number, cut = Math.abs(clamp(c, 0, N - 1) - state) >= 2) => {
+            // Intro đang chạy (vòng frame-loop tạm dừng, chuyến bay không tiến được): không đổi chương, tránh hero bị gỡ `on` mà không được dựng lại
+            if (introGate) return
             const target = clamp(c, 0, N - 1)
             const now = performance.now()
             if (target === state) landedAt = now
@@ -426,6 +430,7 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         }
         // Trả true nếu đã nhận input; hero cuộn lên và Studio cuộn xuống thì thả cho cuộn tự nhiên (xuống footer)
         const step = (dir: number) => {
+            if (introGate) return true // nuốt input trong lúc intro và ngay sau đó, để hero luôn ở trạng thái cuối
             if (!inStage()) return false
             const now = performance.now()
             // Bước trước đã xong mà chưa nằm đúng chương hiện tại (vào từ footer, kéo thanh cuộn): về đúng chương đó trước
@@ -631,11 +636,30 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         if (paged) {
             setState(0)
             // Mở trang lúc intro đang chạy (vòng frame-loop đang tạm dừng): chương đầu hiện thẳng ở trạng thái cuối, không transition
+            introMark(`scroll stage khởi tạo · intro ${introPlaying() ? 'đang chạy' : 'không chạy'} · hero on=${panels[0]?.classList.contains('on')} shown=${shown}`)
             if (introPlaying()) {
                 const root = document.documentElement
                 root.classList.add('intro-still')
                 revealIfReady()
-                void introDone().then(() => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('intro-still'))))
+                introMark(`hero reveal (dưới intro) · on=${panels[0]?.classList.contains('on')} shown=${shown}`)
+                void introDone().then(() => {
+                    introMark('intro-done (scroll stage)')
+                    requestAnimationFrame(() =>
+                        requestAnimationFrame(() => {
+                            // Chốt lại hero nếu trong lúc intro có gì làm lệch (chương đầu phải hiện ở trạng thái cuối)
+                            if (state === 0 && !panels[0].classList.contains('on')) {
+                                tw = { from: S, to: STOP[0], v0: 0, p: 1, D: 0 }
+                                S = STOP[0]
+                                shown = -1
+                                revealIfReady()
+                            }
+                            lastT = performance.now()
+                            root.classList.remove('intro-still')
+                            introGate = false
+                            introMark(`hero reveal (sau intro) · on=${panels[0]?.classList.contains('on')} shown=${shown} state=${state}`)
+                        }),
+                    )
+                })
             }
         } else {
             window.addEventListener('resize', readScroll)
@@ -644,6 +668,7 @@ export function useScrollStage({ journey, paged, barRef, rootRef, calmRef }: Opt
         const stopFrame = addFrame(tick, 0)
         return () => {
             stopFrame()
+            introGate = false
             document.documentElement.classList.remove('intro-still')
             window.clearTimeout(chromeTimer)
             if (pinSwap) {
