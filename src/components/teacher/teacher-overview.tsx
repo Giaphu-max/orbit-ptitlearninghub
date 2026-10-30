@@ -45,38 +45,47 @@ export function TeacherOverview() {
             </header>
 
             {urgent && (
-                <section aria-labelledby="urgent-label" className="relative mt-6 overflow-hidden rounded-[20px] border border-brand-100 bg-card shadow-[0_18px_40px_-26px_rgb(var(--brand-600)/0.55)]">
-                    <i aria-hidden className="absolute inset-y-0 left-0 w-[5px] bg-brand-600" />
-                    <div className="flex flex-wrap items-center justify-between gap-x-10 gap-y-5 py-6 pl-9 pr-8">
+                <section
+                    aria-labelledby="urgent-label"
+                    className="group relative mt-6 rounded-[22px] text-ink-foreground shadow-[0_24px_40px_-28px_rgba(226,38,28,.7)] transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_30px_46px_-26px_rgba(226,38,28,.85)] focus-within:-translate-y-0.5 motion-reduce:hover:translate-y-0 motion-reduce:focus-within:translate-y-0"
+                    style={{ background: 'linear-gradient(150deg, #FF5A47 0%, #E2261C 55%, #C81B12 100%)' }}
+                >
+                    {/* Cả khối là một link: lớp phủ trong suốt phủ kín; "Xem đoạn" nằm trên lớp phủ nên là link riêng, không lồng <a> */}
+                    <Link
+                        to={`/teacher/review/${urgent.review.lesson.id}?item=q:${urgent.question.id}`}
+                        aria-label={`Sửa câu hỏi: ${urgent.question.prompt}`}
+                        className="absolute inset-0 z-0 rounded-[22px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-brand-600"
+                    />
+                    <div className="pointer-events-none relative flex flex-wrap items-center justify-between gap-x-10 gap-y-5 px-9 py-7">
                         <div className="min-w-0 flex-1 basis-[420px]">
-                            <p id="urgent-label" className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-ink">
-                                <i aria-hidden className="h-2 w-2 rounded-full bg-brand-600" /> Cần sửa ngay
+                            <p id="urgent-label" className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-ink-foreground/85">
+                                <i aria-hidden className="h-2 w-2 rounded-full bg-ink-foreground" /> Cần sửa ngay
                             </p>
-                            <h2 className="mt-2.5 text-2xl font-black leading-snug tracking-tight text-strong">Câu hỏi đang làm nhiều sinh viên hiểu sai</h2>
-                            <blockquote className="mt-3 text-[17px] leading-snug text-foreground">“{urgent.question.prompt}”</blockquote>
-                            <p className="mt-3 text-[15px] leading-relaxed text-foreground">
-                                <b className="font-mono font-extrabold text-brand-ink">
+                            <h2 className="mt-2.5 text-2xl font-black leading-snug tracking-tight">Câu hỏi đang làm nhiều sinh viên hiểu sai</h2>
+                            <blockquote className="mt-3 text-[17px] leading-snug">“{urgent.question.prompt}”</blockquote>
+                            <p className="mt-3 text-[15px] leading-relaxed text-ink-foreground/90">
+                                <b className="font-mono font-extrabold text-ink-foreground">
                                     {urgent.wrong}/{urgent.total}
                                 </b>{' '}
                                 sinh viên sai lần đầu
                                 {urgent.trap && (
                                     <>
-                                        , trong đó <b className="font-mono font-extrabold text-brand-ink">{urgent.trap.count}</b> bạn chọn cùng đáp án “{urgent.trap.text}”
+                                        , trong đó <b className="font-mono font-extrabold text-ink-foreground">{urgent.trap.count}</b> bạn chọn cùng đáp án “{urgent.trap.text}”
                                     </>
                                 )}
                             </p>
-                            <small className="mt-2 block truncate text-[13px] text-muted-foreground">
+                            <small className="mt-2 block truncate text-[12.5px] text-ink-foreground/70">
                                 {urgent.review.course?.title} · {urgent.review.lesson.shortTitle ?? urgent.review.lesson.title} · câu ở {formatTime(urgent.question.pauseAt)}
                             </small>
                         </div>
                         <div className="flex shrink-0 flex-col items-start gap-3">
+                            <span aria-hidden className="block transition-transform duration-200 ease-out group-hover:scale-[1.03] group-focus-within:scale-[1.03]">
+                                <span className="tier-1-bob inline-flex h-[52px] items-center rounded-[14px] bg-ink-foreground px-[26px] text-base font-extrabold text-brand-ink shadow-card">Sửa câu hỏi →</span>
+                            </span>
                             <Link
-                                to={`/teacher/review/${urgent.review.lesson.id}?item=q:${urgent.question.id}`}
-                                className="surface-red tier-1-bob inline-flex h-14 items-center rounded-[14px] px-[26px] text-[17px] font-extrabold text-ink-foreground shadow-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
+                                to={`/teacher/review/${urgent.review.lesson.id}?t=${urgent.question.pauseAt}`}
+                                className="pointer-events-auto relative z-10 text-sm font-bold text-ink-foreground/85 underline-offset-[3px] transition hover:underline focus-visible:underline focus-visible:outline-none"
                             >
-                                Sửa câu hỏi →
-                            </Link>
-                            <Link to={`/teacher/review/${urgent.review.lesson.id}?t=${urgent.question.pauseAt}`} className="text-sm font-bold text-muted-foreground transition hover:text-strong">
                                 Xem đoạn <span className="font-mono">{formatTime(urgent.question.pauseAt)}</span>
                             </Link>
                         </div>
