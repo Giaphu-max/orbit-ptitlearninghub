@@ -15,6 +15,10 @@ function dateLabel() {
     return `${w.charAt(0).toUpperCase()}${w.slice(1).toLowerCase()}, ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+/** Hàng là một link: hover/focus nổi lên, nút CTA bên phải chỉ là hình (aria-hidden) để cả hàng là một điểm focus. */
+const rowLinkCls = 'group transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-card hover:shadow-card focus-visible:-translate-y-0.5 focus-visible:bg-card focus-visible:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 motion-reduce:hover:translate-y-0 motion-reduce:focus-visible:translate-y-0'
+const ctaCls = 'inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[10px] border border-border bg-card px-4 text-sm font-bold text-strong transition duration-200 ease-out group-hover:border-brand-600 group-hover:bg-brand-600 group-hover:text-ink-foreground group-focus-visible:border-brand-600 group-focus-visible:bg-brand-600 group-focus-visible:text-ink-foreground'
+
 const outlineBtn = 'inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[10px] border border-border bg-card px-4 text-sm font-bold text-strong transition hover:bg-muted'
 
 /** Tổng quan của vai giảng viên (route "/"): danh sách việc cần làm. Việc khẩn nổi nhất, rồi bài chờ duyệt, cuối trang là bài đã xuất bản. */
@@ -116,13 +120,15 @@ export function TeacherOverview() {
                     </summary>
                     <ul className="mt-3 rounded-[20px] border border-border bg-muted/50 p-1.5">
                         {published.map((r) => (
-                            <li key={r.lesson.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl px-3.5 py-3 [&+&]:border-t [&+&]:border-border">
+                            <li key={r.lesson.id} className="[&+&]:border-t [&+&]:border-border">
+                                <Link to={`/teacher/review/${r.lesson.id}`} className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl px-3.5 py-3 transition duration-200 ease-out hover:bg-card focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                                 <span className="min-w-0">
                                     <b title={r.lesson.title} className="block truncate text-[14.5px] font-semibold text-muted-foreground">{r.lesson.title}</b>
                                     <small title={r.course?.title} className="block truncate text-xs text-muted-foreground">{r.course?.title}</small>
                                 </span>
-                                <Link to={`/teacher/review/${r.lesson.id}`} className={outlineBtn}>
+                                <span aria-hidden className={outlineBtn}>
                                     Xem
+                                </span>
                                 </Link>
                             </li>
                         ))}
@@ -142,7 +148,7 @@ function Label({ children }: { children: React.ReactNode }) {
 function LessonRow({ review: r }: { review: LessonReview }) {
     const editing = r.state === 'editing'
     return (
-        <div className={rowCls}>
+        <Link to={`/teacher/review/${r.lesson.id}`} className={`${rowCls} ${rowLinkCls}`}>
             <Label>Bài giảng</Label>
             <span className="min-w-0">
                 <b title={r.lesson.title} className="block truncate text-[16.5px] font-bold leading-snug text-strong">{r.lesson.title}</b>
@@ -158,16 +164,16 @@ function LessonRow({ review: r }: { review: LessonReview }) {
                     <u className="block h-full rounded-full bg-success-bright no-underline" style={{ width: `${pct(r.done, r.total)}%` }} />
                 </i>
             </span>
-            <Link to={`/teacher/review/${r.lesson.id}`} className={`${outlineBtn} justify-self-end`}>
+            <span aria-hidden className={`${ctaCls} justify-self-end`}>
                 {editing ? 'Duyệt tiếp' : 'Bắt đầu'}
-            </Link>
-        </div>
+            </span>
+        </Link>
     )
 }
 
 function TestRow({ test: t }: { test: PendingTest }) {
     return (
-        <div className={rowCls}>
+        <Link to={`/teacher/test/${t.courseId}`} className={`${rowCls} ${rowLinkCls}`}>
             <Label>Test chương</Label>
             <span className="min-w-0">
                 <b className="block text-[16.5px] font-bold leading-snug text-strong">Test cuối chương · {t.courseTitle}</b>
@@ -176,9 +182,9 @@ function TestRow({ test: t }: { test: PendingTest }) {
                 </small>
             </span>
             <span className="font-mono text-[13px] font-bold text-muted-foreground max-md:hidden">{t.count} câu · bản nháp</span>
-            <Link to={`/teacher/test/${t.courseId}`} className={`${outlineBtn} justify-self-end`}>
+            <span aria-hidden className={`${ctaCls} justify-self-end`}>
                 Soạn đề
-            </Link>
-        </div>
+            </span>
+        </Link>
     )
 }
