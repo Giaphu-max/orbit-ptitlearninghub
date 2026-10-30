@@ -39,7 +39,7 @@ export function MainLayout() {
 
             <div className="flex min-w-0 flex-1 flex-col">
                 <TopNav />
-                <main className={`relative flex min-w-0 flex-1 flex-col ${isHome ? '' : 'pt-[var(--nav-h)]'} ${isHome || isFullscreenPage(location.pathname) ? '' : 'pb-16'}`}>
+                <main className={`relative flex min-w-0 flex-1 flex-col ${isHome ? '' : 'pt-[var(--nav-full-h)]'} ${isHome || isFullscreenPage(location.pathname) ? '' : 'pb-16'}`}>
                     <Suspense
                         fallback={
                             <div className="flex flex-1 items-center justify-center py-32 text-muted-foreground">

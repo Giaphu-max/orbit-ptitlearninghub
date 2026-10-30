@@ -62,7 +62,7 @@ export function OrbitHomeView() {
             {!staticMode && !FLAGS.noKiosk && <KioskScreen screenRef={screenRef} />}
             <BenchRunner />
             {FLAGS.balance && journey && !staticMode && <BalanceGuides />}
-            <div ref={barRef} aria-hidden data-bar className="own-layer pointer-events-none fixed left-0 top-0 z-[60] h-[3px] w-full origin-left scale-x-0 mm-ribbon-bg" />
+            <div ref={barRef} aria-hidden data-bar className="own-layer pointer-events-none fixed left-0 top-0 z-[60] h-0.5 w-full origin-left scale-x-0 bg-brand-600" />
 
             {/* Chương không nhận chuột (để kéo xoay mô hình ở phần trống); chỉ khối nội dung nhận */}
             {journey ? (
