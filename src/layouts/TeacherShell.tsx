@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { BarChart3, Bell, Home, PlayCircle, Plus, Repeat, RotateCcw } from 'lucide-react'
+import { BarChart3, Bell, Home, PlayCircle, Repeat, RotateCcw } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
 import { AddLessonsDialog } from '@/components/teacher/add-lessons-dialog'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
@@ -25,7 +25,6 @@ const navItem = 'flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-[1
  */
 export function TeacherShell() {
     const { pathname } = useLocation()
-    const showAdd = useAddDialog((s) => s.show)
     const addOpen = useAddDialog((s) => s.open)
     const hideAdd = useAddDialog((s) => s.hide)
     const resetDemo = useOrbitStore((s) => s.resetDemo)
@@ -35,7 +34,13 @@ export function TeacherShell() {
     if (pathname !== '/' && !pathname.startsWith('/teacher')) return <Navigate to="/" replace />
 
     return (
-        <div className="relative min-h-[100svh] bg-muted font-sans text-foreground">
+        <div className="relative isolate min-h-[100svh] bg-surface font-sans text-foreground">
+            {/* Cùng nền với trang sinh viên (MainLayout): nền surface + ba quầng hồng nhạt */}
+            <div aria-hidden className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
+                <div className="absolute right-[-5%] top-[-10%] h-[600px] w-[600px] rounded-full bg-brand-200/40 blur-[120px]" />
+                <div className="absolute left-[-10%] top-[40%] h-[500px] w-[500px] rounded-full bg-brand-100/50 blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[10%] h-[400px] w-[400px] rounded-full bg-brand-100/40 blur-[100px]" />
+            </div>
             <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center gap-6 border-b border-border bg-card px-6">
                 <Link to="/" className="flex w-56 items-center gap-3" aria-label="PTIT · Cổng giảng viên">
                     <span className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-border bg-card">
@@ -43,7 +48,7 @@ export function TeacherShell() {
                     </span>
                     <span>
                         <b className="block text-lg font-black leading-none text-brand-ink">PTIT</b>
-                        <small className="mt-0.5 block text-xs text-muted-foreground">Cổng giảng viên · Orbit</small>
+                        <small className="mt-0.5 block text-xs text-muted-foreground">Cổng giảng viên</small>
                     </span>
                 </Link>
                 <div className="ml-auto flex items-center gap-3">
@@ -76,10 +81,6 @@ export function TeacherShell() {
                             )
                         })}
                     </ul>
-                    <p className="mx-3 mb-1.5 mt-5 text-[11.5px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Công cụ</p>
-                    <button type="button" onClick={() => showAdd()} className={`${navItem} font-medium text-foreground hover:bg-muted`}>
-                        <Plus size={19} aria-hidden /> Thêm từ YouTube
-                    </button>
                 </nav>
                 <div className="border-t border-border pt-2.5">
                     <button

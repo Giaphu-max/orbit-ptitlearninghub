@@ -60,7 +60,7 @@ export function OrbitTeacherLibraryView() {
                     </p>
                 </div>
                 <button type="button" onClick={() => showAdd()} className="surface-red h-11 rounded-xl px-[18px] text-[14.5px] font-extrabold text-ink-foreground shadow-brand">
-                    + Thêm từ YouTube
+                    + Thêm video
                 </button>
             </header>
 

@@ -147,7 +147,7 @@ export function TeacherOverview() {
                     </span>
                 </div>
                 <div className="rounded-[20px] border border-border bg-card px-2.5 py-1.5 shadow-card">
-                    {tasks.length === 0 && <p className="p-6 text-sm text-muted-foreground">Không còn bài nào chờ duyệt và không có câu hỏi nào gây nhầm. Thầy cô có thể thêm bài mới từ YouTube.</p>}
+                    {tasks.length === 0 && <p className="p-6 text-sm text-muted-foreground">Không còn bài nào chờ duyệt và không có câu hỏi nào gây nhầm. Thầy cô có thể thêm video mới.</p>}
                     {tasks.map((t) => (
                         <TaskRow key={`${t.kind}-${t.review.lesson.id}`} view={describe(t, stats)} />
                     ))}
@@ -170,7 +170,7 @@ function PrimaryAction({ task }: { task?: TeacherTask }) {
     if (!task) {
         return (
             <button type="button" onClick={() => addDialog()} className={cls}>
-                Thêm bài từ YouTube →
+                Thêm video →
             </button>
         )
     }

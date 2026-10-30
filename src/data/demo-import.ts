@@ -58,12 +58,12 @@ export function parseYoutubeLink(raw: string): ParsedLink | null {
 }
 
 /** Bài nhập từ YouTube: nội dung đã tạo sẵn (xem TODO), trạng thái nháp để giảng viên duyệt. */
-export function buildImportedLesson(item: SampleItem, courseId: string): Lesson | null {
+export function buildImportedLesson(item: SampleItem, courseId: string, uid = 'imp'): Lesson | null {
     const tpl = staticLessons.find((x) => x.id === item.key)
     if (!tpl) return null
     let json = JSON.stringify(tpl)
     const ids = [...tpl.concepts.map((c) => c.id), ...tpl.quiz.flatMap((q) => [q.id, ...q.variants.map((v) => v.id)])]
-    for (const id of ids) json = json.split(`"${id}"`).join(`"${id}__imp"`)
+    for (const id of ids) json = json.split(`"${id}"`).join(`"${id}__${uid}"`)
     const copy = JSON.parse(json) as Lesson
     return { ...copy, id: `imp-${item.videoId}`, courseId, status: 'draft', origin: 'gemini' }
 }
