@@ -2,7 +2,8 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
 import { TEACHER_PROFILE } from '@/data/teacher-notes'
 import { findUrgent, pct, useAllStats, useLessonReviews, type LessonReview } from '@/lib/teacher'
-import { usePendingTests, type PendingTest } from '@/lib/test-sets'
+import type { PendingTest } from '@/lib/test-sets'
+import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
@@ -14,10 +15,6 @@ function dateLabel() {
     return `${w.charAt(0).toUpperCase()}${w.slice(1).toLowerCase()}, ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-type Row =
-    | { kind: 'lesson'; review: LessonReview }
-    | { kind: 'test'; test: PendingTest }
-
 const outlineBtn = 'inline-flex h-9 items-center justify-center whitespace-nowrap rounded-[10px] border border-border bg-card px-4 text-sm font-bold text-strong transition hover:bg-muted'
 
 /** Tổng quan của vai giảng viên (route "/"): danh sách việc cần làm. Việc khẩn nổi nhất, rồi bài chờ duyệt, cuối trang là bài đã xuất bản. */
@@ -25,18 +22,12 @@ export function TeacherOverview() {
     const role = useOrbitStore((s) => s.role)
     const all = useLessonReviews()
     const stats = useAllStats()
-    const tests = usePendingTests()
+    const rows = usePendingReviewTasks()
     const showAdd = useAddDialog((s) => s.show)
     if (role !== 'teacher') return <Navigate to="/" replace />
 
     const reviews = all.filter((r) => r.state !== 'generating')
     const urgent = findUrgent(reviews, stats)
-    // Bài đang dở lên trước, rồi bài AI vừa tạo xong, rồi test nháp
-    const rows: Row[] = [
-        ...reviews.filter((r) => r.state === 'editing').map((review): Row => ({ kind: 'lesson', review })),
-        ...reviews.filter((r) => r.state === 'wait').map((review): Row => ({ kind: 'lesson', review })),
-        ...tests.map((test): Row => ({ kind: 'test', test })),
-    ]
     const shown = rows.slice(0, MAX_ROWS)
     const published = reviews.filter((r) => r.state === 'published')
 
@@ -108,7 +99,7 @@ export function TeacherOverview() {
                         {shown.map((row) => (row.kind === 'lesson' ? <LessonRow key={row.review.lesson.id} review={row.review} /> : <TestRow key={row.test.courseId} test={row.test} />))}
                         {rows.length > MAX_ROWS && (
                             <p className="rounded-[14px] bg-muted/60 px-4 py-3 text-[13.5px] text-muted-foreground [&]:mt-1">
-                                +{rows.length - MAX_ROWS} bài khác chờ duyệt ·{' '}
+                                +{rows.length - MAX_ROWS} việc khác chờ duyệt ·{' '}
                                 <Link to="/teacher/library" className="font-bold text-strong underline underline-offset-[3px]">
                                     Xem trong Bài giảng
                                 </Link>

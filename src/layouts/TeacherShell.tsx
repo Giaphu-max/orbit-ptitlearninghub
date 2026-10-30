@@ -8,7 +8,7 @@ import { RewardOverlay } from '@/components/reward-overlay'
 import { TEACHER_PROFILE } from '@/data/teacher-notes'
 import { LOGO_URL } from '@/lib/brand'
 import { centerOf, enterRole } from '@/lib/role-switch'
-import { useLessonReviews } from '@/lib/teacher'
+import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 const NAV = [
@@ -28,8 +28,7 @@ export function TeacherShell() {
     const addOpen = useAddDialog((s) => s.open)
     const hideAdd = useAddDialog((s) => s.hide)
     const resetDemo = useOrbitStore((s) => s.resetDemo)
-    const reviews = useLessonReviews()
-    const pending = reviews.filter((r) => r.state === 'wait' || r.state === 'editing').length
+    const pending = usePendingReviewTasks().length
 
     if (pathname !== '/' && !pathname.startsWith('/teacher')) return <Navigate to="/" replace />
 
@@ -52,7 +51,7 @@ export function TeacherShell() {
                     </span>
                 </Link>
                 <div className="ml-auto flex items-center gap-3">
-                    <Link to="/teacher/library" title="Thông báo" aria-label={`Thông báo: ${pending} bài chờ duyệt`} className="relative flex h-10 w-10 items-center justify-center rounded-[10px] text-foreground transition hover:bg-muted">
+                    <Link to="/teacher/library" title="Thông báo" aria-label={`Thông báo: ${pending} việc chờ duyệt`} className="relative flex h-10 w-10 items-center justify-center rounded-[10px] text-foreground transition hover:bg-muted">
                         <Bell size={20} aria-hidden />
                         {pending > 0 && (
                             <i className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 font-mono text-[10px] font-bold not-italic text-ink-foreground">{pending}</i>
