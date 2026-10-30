@@ -36,7 +36,7 @@ export function CoverEditor() {
     )
 }
 
-export function CoverCard({ course }: { course: Course }) {
+export function CoverCard({ course, aspect = 'aspect-[16/7]' }: { course: Course; aspect?: string }) {
     const override = useOrbitStore((s) => s.courseCovers[course.id])
     const setCover = useOrbitStore((s) => s.setCourseCover)
     const fileRef = useRef<HTMLInputElement>(null)
@@ -58,7 +58,7 @@ export function CoverCard({ course }: { course: Course }) {
 
     return (
         <section aria-label={`Bìa khóa ${course.title}`} className="overflow-hidden rounded-card border border-border bg-card shadow-card">
-            <div className="aspect-[16/7] w-full overflow-hidden">
+            <div className={`${aspect} w-full overflow-hidden`}>
                 <CourseArt course={course} />
             </div>
             <div className="flex flex-col gap-3 p-4">

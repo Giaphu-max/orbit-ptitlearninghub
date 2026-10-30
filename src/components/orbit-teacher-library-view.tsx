@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { GripVertical, Search } from 'lucide-react'
+import { CourseArt } from '@/components/courses/course-cover'
 import { CoverCard } from '@/components/courses/cover-editor'
 import type { Course } from '@/data/types'
 import { useAddDialog } from '@/components/teacher/add-dialog-state'
@@ -251,7 +252,7 @@ export function OrbitTeacherLibraryView() {
             {dlg?.k === 'cover' && dCourse && (
                 <Modal title="Đổi bìa khóa" onClose={() => setDlg(null)} width={520}>
                     <div className="mt-4">
-                        <CoverCard course={dCourse} />
+                        <CoverCard course={dCourse} aspect="aspect-video" />
                     </div>
                     <div className="mt-5 flex justify-end">
                         <button type="button" onClick={() => setDlg(null)} className="surface-red h-11 rounded-[10px] px-5 text-sm font-extrabold text-ink-foreground shadow-brand">
@@ -377,7 +378,6 @@ function CourseSection(p: SectionProps) {
     const { course, open, items, shown, showFinal, filtering } = p
     const published = items.filter((r) => r.state === 'published').length
     const students = studentsOfCourse(course.id)
-    const accent = course.cover?.accent ?? 'default'
     const [renaming, setRenaming] = useState(false)
     const [sorting, setSorting] = useState(false)
     const [draft, setDraft] = useState(course.title)
@@ -409,7 +409,9 @@ function CourseSection(p: SectionProps) {
     return (
         <section aria-label={course.title}>
             <div className="mb-3 flex flex-wrap items-center gap-3.5">
-                <span aria-hidden className="h-10 w-10 shrink-0 rounded-[10px]" style={{ background: `hsl(var(--subject-${accent}))` }} />
+                <span aria-hidden className="block h-12 w-12 shrink-0 overflow-hidden rounded-[10px]">
+                    <CourseArt course={course} />
+                </span>
                 <div className="min-w-0">
                     {renaming ? (
                         <input
