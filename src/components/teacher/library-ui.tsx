@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { MoreHorizontal } from 'lucide-react'
 import type { Course } from '@/data/types'
 
@@ -12,61 +13,84 @@ export interface MenuItem {
     danger?: boolean
 }
 
-/** Nút "⋯" 32px mở menu; Esc / bấm ngoài đóng, ↑↓ di chuyển, trả focus về nút. */
-export function MoreMenu({ label, items, className = '' }: { label: string; items: MenuItem[]; className?: string }) {
-    const [open, setOpen] = useState(false)
-    const ref = useRef<HTMLDivElement>(null)
+/** Nút "⋯" mở menu (portal, neo dưới nút, căn phải nên không bị cắt bởi overflow của thẻ); Esc / bấm ngoài đóng, ↑↓ di chuyển, trả focus về nút.
+ *  `card` = nút tròn 28px nổi trên thumbnail; mặc định = ô vuông 32px ở hàng tiêu đề khóa. */
+export function MoreMenu({ label, items, className = 'relative', card }: { label: string; items: MenuItem[]; className?: string; card?: boolean }) {
+    const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
+    const open = pos !== null
+    const menuRef = useRef<HTMLDivElement>(null)
     const btn = useRef<HTMLButtonElement>(null)
+    const close = (refocus = true) => {
+        setPos(null)
+        if (refocus) btn.current?.focus()
+    }
     useEffect(() => {
         if (!open) return
-        ref.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
-        const onDown = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+        menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+        const onDown = (e: PointerEvent) => {
+            const t = e.target as Node
+            if (!menuRef.current?.contains(t) && !btn.current?.contains(t)) setPos(null)
+        }
+        const hide = () => setPos(null)
         document.addEventListener('pointerdown', onDown)
-        return () => document.removeEventListener('pointerdown', onDown)
+        window.addEventListener('resize', hide)
+        window.addEventListener('scroll', hide, true)
+        return () => {
+            document.removeEventListener('pointerdown', onDown)
+            window.removeEventListener('resize', hide)
+            window.removeEventListener('scroll', hide, true)
+        }
     }, [open])
-    const close = () => {
-        setOpen(false)
-        btn.current?.focus()
+    const toggle = () => {
+        if (open) return close()
+        const r = btn.current?.getBoundingClientRect()
+        if (r) setPos({ top: r.bottom + 6, right: document.documentElement.clientWidth - r.right })
     }
     const onKey = (e: React.KeyboardEvent) => {
         if (e.key === 'Escape' && open) return (e.stopPropagation(), close())
         if (!open || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return
         e.preventDefault()
-        const els = [...(ref.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+        const els = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
         const i = els.indexOf(document.activeElement as HTMLElement)
         els[(i + (e.key === 'ArrowDown' ? 1 : -1) + els.length) % els.length]?.focus()
     }
     return (
-        <div ref={ref} className={`relative ${className}`} onKeyDown={onKey}>
+        <div className={className} onKeyDown={onKey} onClick={(e) => e.stopPropagation()}>
             <button
                 ref={btn}
                 type="button"
                 aria-label={label}
                 aria-haspopup="menu"
                 aria-expanded={open}
-                onClick={() => setOpen((v) => !v)}
-                className="grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground shadow-card transition hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+                onClick={toggle}
+                className={
+                    card
+                        ? 'grid h-7 w-7 place-items-center rounded-full border border-border bg-card/90 text-strong shadow-card backdrop-blur-sm transition hover:bg-card focus-visible:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 group-focus-within:bg-card group-hover:bg-card'
+                        : 'grid h-8 w-8 place-items-center rounded-lg border border-border bg-card text-muted-foreground shadow-card transition hover:text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
+                }
             >
-                <MoreHorizontal size={18} aria-hidden />
+                <MoreHorizontal size={card ? 16 : 18} aria-hidden />
             </button>
-            {open && (
-                <div role="menu" aria-label={label} className="absolute right-0 top-[calc(100%+6px)] z-40 w-60 rounded-[14px] border border-border bg-card p-1.5 shadow-raised">
-                    {items.map((it) => (
-                        <button
-                            key={it.label}
-                            type="button"
-                            role="menuitem"
-                            onClick={() => {
-                                setOpen(false)
-                                it.onSelect()
-                            }}
-                            className={`block w-full rounded-[10px] px-3 py-2 text-left text-[13.5px] font-semibold transition hover:bg-muted focus-visible:bg-muted focus-visible:outline-none ${it.danger ? 'text-destructive' : 'text-strong'}`}
-                        >
-                            {it.label}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {open &&
+                createPortal(
+                    <div ref={menuRef} role="menu" aria-label={label} style={{ top: pos.top, right: pos.right }} className="fixed z-[70] w-60 rounded-[14px] border border-border bg-card p-1.5 shadow-raised">
+                        {items.map((it) => (
+                            <button
+                                key={it.label}
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                    close(false)
+                                    it.onSelect()
+                                }}
+                                className={`block w-full rounded-[10px] px-3 py-2 text-left text-[13.5px] font-semibold transition hover:bg-muted focus-visible:bg-muted focus-visible:outline-none ${it.danger ? 'text-destructive' : 'text-strong'}`}
+                            >
+                                {it.label}
+                            </button>
+                        ))}
+                    </div>,
+                    document.body,
+                )}
         </div>
     )
 }

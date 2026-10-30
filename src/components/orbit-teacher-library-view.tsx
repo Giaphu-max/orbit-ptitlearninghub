@@ -575,7 +575,7 @@ function VideoCard({ review: r, inert, onRename, onMove, onReplace, onUnpublish,
                     {body}
                 </Link>
             )}
-            {!inert && <MoreMenu label={`Tùy chọn bài ${r.lesson.title}`} items={menu} className="absolute right-2 top-2 z-10 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100" />}
+            {!inert && <MoreMenu card label={`Tùy chọn cho ${r.lesson.title}`} items={menu} className="absolute right-2 top-2 z-10" />}
         </div>
     )
 }
@@ -634,7 +634,7 @@ function FinalTestCard({ courseId, locked, onUnpublish, onReset }: { courseId: s
                 </div>
             </div>
         </Link>
-        <MoreMenu label="Tùy chọn test cuối chương" items={menu} className="absolute right-2 top-2 z-10 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100" />
+        <MoreMenu card label="Tùy chọn cho Test cuối chương" items={menu} className="absolute right-2 top-2 z-10" />
         </div>
     )
 }
