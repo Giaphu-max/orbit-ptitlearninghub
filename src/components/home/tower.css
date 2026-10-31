@@ -125,7 +125,7 @@ html.tower-home {
     right: 0;
     top: -13vh;
     text-align: center;
-    letter-spacing: -0.04em;
+    letter-spacing: 0.12em;
     font-size: min(34vw, 52vh);
 }
 /* PTIT: đỏ PTIT đặc từ đỉnh tới ~55% chiều cao chữ rồi tan dần về trong suốt ở chân chữ (không có mép cắt cứng) */
@@ -148,44 +148,43 @@ html.tower-home {
     background-clip: text;
     color: transparent;
 }
-/* Mây khói trắng mờ dưới và quanh chân chữ ÔN TẬP, tách chữ khỏi mô hình phía sau. Con của khối chữ nên nằm giữa canvas và chữ
-   (z-index -1 trong ngữ cảnh xếp chồng của khối chữ, vốn cao hơn canvas), hiện/ẩn cùng chữ. */
-.tower-smoke,
-.tower-smoke::after {
+/* PTIT giãn chữ: letter-spacing cũng cộng một khoảng sau chữ cuối, bù bằng padding-trái để cụm chữ vẫn nằm giữa */
+.tower-word.is-solid .tower-word-ink { padding-left: 0.2em; }
+
+/* ── Mây khói sau chữ ÔN TẬP (trang 03) ──
+   Lớp riêng ở z 3: trên canvas (z 2), dưới chữ ÔN TẬP (z 4) và thẻ (z 5). Rộng hơn hộp chữ ~12% mỗi bên, đáy lan tới mép dưới màn hình.
+   --word-h (px) do useFitWords ghi sau khi co chữ; các mảng đặt so le lên/xuống, mép tan mềm nhờ stop trong suốt ở 70% và blur 24px. */
+.tower-smoke-layer {
+    --sw: calc(100vw - var(--t-gut) - 44vw);
     position: absolute;
-    z-index: -1;
-    left: -15%;
-    right: -15%;
-    bottom: -4%;
-    height: 60%;
+    z-index: 3;
+    left: calc(var(--t-gut) - 0.12 * var(--sw));
+    width: calc(var(--sw) * 1.24);
+    bottom: 0;
+    height: calc(var(--word-h, 40vh) * 1.25 + 8vh);
     pointer-events: none;
-    filter: blur(34px);
-    background:
-        radial-gradient(ellipse 34% 62% at 14% 62%, rgba(255, 255, 255, 0.85), transparent 72%),
-        radial-gradient(ellipse 30% 70% at 38% 48%, rgba(255, 255, 255, 0.85), transparent 72%),
-        radial-gradient(ellipse 34% 60% at 63% 58%, rgba(255, 255, 255, 0.85), transparent 72%),
-        radial-gradient(ellipse 28% 66% at 86% 50%, rgba(255, 255, 255, 0.85), transparent 72%);
-    animation: tower-smoke-drift 12s ease-in-out infinite alternate;
+    opacity: 0;
+    filter: blur(24px);
+    transition: opacity 0.6s ease;
 }
-.tower-smoke::after {
-    content: '';
-    inset: auto -4% -6% -4%;
-    left: -4%;
-    right: -4%;
-    bottom: -6%;
-    height: 90%;
-    opacity: 0.8;
-    background:
-        radial-gradient(ellipse 30% 60% at 26% 55%, rgba(255, 255, 255, 0.85), transparent 72%),
-        radial-gradient(ellipse 36% 66% at 52% 62%, rgba(255, 255, 255, 0.85), transparent 72%),
-        radial-gradient(ellipse 26% 58% at 76% 52%, rgba(255, 255, 255, 0.85), transparent 72%);
-    animation-direction: alternate-reverse;
-    animation-duration: 15s;
+.tower-root[data-page='2'] .tower-smoke-layer { opacity: 1; }
+.tower-puff {
+    position: absolute;
+    background: radial-gradient(ellipse closest-side, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.6) 45%, rgba(255, 255, 255, 0) 70%);
+    animation: tower-puff-drift 12s ease-in-out infinite alternate;
 }
-@keyframes tower-smoke-drift {
-    from { transform: translateX(-20px); }
-    to { transform: translateX(20px); }
+/* Rộng 35–55% bề rộng chữ, cao 70–110% chiều cao chữ, so le dọc chiều dài chữ */
+.tower-puff.pf-0 { left: -4%; width: 44%; height: 88%; bottom: -6%; animation-duration: 11s; animation-delay: -1s; }
+.tower-puff.pf-1 { left: 14%; width: 40%; height: 100%; bottom: 8%; animation-duration: 13s; animation-delay: -5s; }
+.tower-puff.pf-2 { left: 32%; width: 48%; height: 92%; bottom: -8%; animation-duration: 10s; animation-delay: -3s; }
+.tower-puff.pf-3 { left: 50%; width: 42%; height: 104%; bottom: 10%; animation-duration: 14s; animation-delay: -8s; }
+.tower-puff.pf-4 { left: 66%; width: 46%; height: 90%; bottom: -4%; animation-duration: 12s; animation-delay: -6s; }
+.tower-puff.pf-5 { left: 80%; width: 38%; height: 98%; bottom: 6%; animation-duration: 13s; animation-delay: -2s; }
+@keyframes tower-puff-drift {
+    from { transform: translateX(-24px); opacity: 0.85; }
+    to { transform: translateX(24px); opacity: 1; }
 }
+
 .tower-word.p-tr { top: 8vh; left: 40%; right: var(--t-gut); text-align: right; }
 .tower-word.p-bl { z-index: 4; top: auto; bottom: 3vh; left: var(--t-gut); right: 44%; }
 .tower-word.p-tl { z-index: 3; top: 6vh; left: var(--t-gut); right: 46%; }
@@ -373,7 +372,8 @@ html.tower-home {
 
 @media (prefers-reduced-motion: reduce) {
     .tower-word, .tower-card, .tower-still img { transform: none !important; transition: opacity 0.4s !important; }
-    .tower-smoke, .tower-smoke::after { animation: none !important; }
+    .tower-puff { animation: none !important; }
+    .tower-smoke-layer { transition: none; }
     .tower-card.c-0, .tower-card.c-4 { transform: translateX(-50%) !important; }
     .tower-sky-dusk { transition: none; }
 }

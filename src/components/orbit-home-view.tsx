@@ -210,16 +210,21 @@ export function OrbitHomeView() {
                     <div
                         key={p.word}
                         data-i={i}
-                        data-fit={p.pos === 'solid' ? undefined : ''}
+                        data-fit=""
                         aria-hidden
                         className={`tower-word ${p.pos === 'solid' ? 'is-solid' : `${p.flat ? 'is-flat' : 'is-grad'} p-${p.pos}`}`}
                         style={p.color ? ({ '--wc': p.color } as React.CSSProperties) : undefined}
                     >
                         <span className="tower-word-ink">{p.word}</span>
-                        {p.flat && <i className="tower-smoke" aria-hidden />}
                     </div>
                 ))}
                 {use3D ? <Tower3D reduce={reduce} dailyLit={dailyLit} /> : <StillCampus />}
+                {/* Mây khói trắng sau chữ ÔN TẬP (trang 03): nằm trên canvas (z 3), dưới chữ (z 4) */}
+                <div className="tower-smoke-layer" aria-hidden>
+                    {Array.from({ length: 6 }, (_, i) => (
+                        <i key={i} className={`tower-puff pf-${i}`} />
+                    ))}
+                </div>
                 <div ref={veilRef} className="tower-veil" aria-hidden />
                 {PAGES.map((p, i) => (
                     <section key={p.word} data-i={i} aria-label={p.ix} className={`tower-card c-${i}`}>
@@ -342,7 +347,13 @@ function useFitWords(rootRef: React.RefObject<HTMLElement | null>) {
                 const box = el.clientWidth
                 const w = span.offsetWidth
                 if (!w || !box) return
-                el.style.fontSize = `${Math.min((100 * box) / w * 0.97, window.innerHeight * 0.24)}px`
+                // PTIT (chữ lớn đầu trang, giãn chữ) co theo bề rộng màn nhưng chừa lề; các chữ còn lại co theo hộp và tối đa 24% chiều cao màn
+                const solid = el.classList.contains('is-solid')
+                const cap = solid ? Math.min(window.innerWidth * 0.34, window.innerHeight * 0.52) : window.innerHeight * 0.24
+                const fs = Math.min((100 * box) / w * (solid ? 0.9 : 0.97), cap)
+                el.style.fontSize = `${fs}px`
+                // Chiều cao khối chữ ÔN TẬP (gồm padding) để lớp mây khói phủ đúng quanh chữ
+                if (el.dataset.i === '2') root.style.setProperty('--word-h', `${span.offsetHeight}px`)
             })
         }
         fit()
