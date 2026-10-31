@@ -50,10 +50,10 @@ const FAR_DIR = new THREE.Vector3(60, 39, 84).normalize()
 const KEYS: Key[] = [
     // 01 PTIT: góc từ dưới ngước lên, tòa A2 ở giữa hạ xuống vừa phải (offY) để chữ PTIT phía sau lộ ra: mái và đồng hồ nằm quanh giữa chiều cao chữ
     near([0, 1.2, 40], [0, 15.5, 0], 0, 0, 0.16),
-    // 02 Học phần: góc thấp, tòa sát mép trái và bị cắt ~1/4
-    near([-12, 1.5, 40], [0, 14.5, 0], 0.43),
-    // 03 Ôn tập: nhìn từ trên cao xuống, mô hình nghiêng về góc phải
+    // 02 Ôn tập: nhìn từ trên cao xuống, mô hình nghiêng về góc phải
     near([22, 42, 34], [2, 6, 0], -0.26),
+    // 03 Học phần: góc thấp, tòa sát mép trái và bị cắt ~1/4
+    near([-12, 1.5, 40], [0, 14.5, 0], 0.43),
     // 04 Studio 3D: hoàng hôn, sát chân tòa ngước lên, tòa bên phải
     near([7, 0.4, 22], [0, 17, 0], -0.3, 1),
     // 05 Tiến độ: toàn cảnh

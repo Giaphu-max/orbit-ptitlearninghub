@@ -93,25 +93,6 @@ const PAGES: PageDef[] = [
         to: '/learning',
     },
     {
-        word: 'HỌC PHẦN',
-        pos: 'tr',
-        color: '#E2261C',
-        ix: 'Học phần',
-        title: (
-            <>
-                Học theo <em>bài giảng thật</em>.
-            </>
-        ),
-        items: [
-            { icon: <Play size={ic} />, text: 'Video tự dừng để hỏi bạn' },
-            { icon: <Sparkles size={ic} />, text: 'Trợ giảng AI trả lời kèm mốc video' },
-            { icon: <CircleCheck size={ic} />, text: 'Kiểm tra nhanh sau mỗi bài' },
-            { icon: <ClipboardCheck size={ic} />, text: 'Kiểm tra cuối khóa' },
-        ],
-        cta: 'Vào Học phần',
-        to: '/learning',
-    },
-    {
         word: 'ÔN TẬP',
         pos: 'bl',
         flat: true,
@@ -129,6 +110,25 @@ const PAGES: PageDef[] = [
         ],
         cta: 'Mở Ôn tập',
         to: '/today',
+    },
+    {
+        word: 'HỌC PHẦN',
+        pos: 'tr',
+        color: '#E2261C',
+        ix: 'Học phần',
+        title: (
+            <>
+                Học theo <em>bài giảng thật</em>.
+            </>
+        ),
+        items: [
+            { icon: <Play size={ic} />, text: 'Video tự dừng để hỏi bạn' },
+            { icon: <Sparkles size={ic} />, text: 'Trợ giảng AI trả lời kèm mốc video' },
+            { icon: <CircleCheck size={ic} />, text: 'Kiểm tra nhanh sau mỗi bài' },
+            { icon: <ClipboardCheck size={ic} />, text: 'Kiểm tra cuối khóa' },
+        ],
+        cta: 'Vào Học phần',
+        to: '/learning',
     },
     {
         word: 'STUDIO 3D',
@@ -170,7 +170,7 @@ const PAGES: PageDef[] = [
 ]
 
 /**
- * Trang chủ sinh viên: 5 trang (PTIT · Học phần · Ôn tập · Studio 3D · Tiến độ) trên một stage cố định 100vh.
+ * Trang chủ sinh viên: 5 trang (PTIT · Ôn tập · Học phần · Studio 3D · Tiến độ, đúng thứ tự thanh điều hướng) trên một stage cố định 100vh.
  * Cuộn tài liệu bắt dính từng trang, camera trong cảnh khuôn viên bay theo tiến độ cuộn (xem tower-scene.tsx, useTowerScroll).
  * Máy yếu / không WebGL / bật "Ẩn mô hình 3D": ảnh tĩnh khuôn viên, chữ và thẻ giữ nguyên bố cục.
  */
@@ -219,7 +219,7 @@ export function OrbitHomeView() {
                     </div>
                 ))}
                 {use3D ? <Tower3D reduce={reduce} dailyLit={dailyLit} /> : <StillCampus />}
-                {/* Mây khói trắng sau chữ ÔN TẬP (trang 03): nằm trên canvas (z 3), dưới chữ (z 4) */}
+                {/* Mây khói trắng sau chữ ÔN TẬP (trang 02): nằm trên canvas (z 3), dưới chữ (z 4) */}
                 <div className="tower-smoke-layer" aria-hidden>
                     {Array.from({ length: 6 }, (_, i) => (
                         <i key={i} className={`tower-puff pf-${i}`} />
@@ -353,7 +353,7 @@ function useFitWords(rootRef: React.RefObject<HTMLElement | null>) {
                 const fs = Math.min((100 * box) / w * (solid ? 0.9 : 0.97), cap)
                 el.style.fontSize = `${fs}px`
                 // Chiều cao khối chữ ÔN TẬP (gồm padding) để lớp mây khói phủ đúng quanh chữ
-                if (el.dataset.i === '2') root.style.setProperty('--word-h', `${span.offsetHeight}px`)
+                if (el.dataset.i === '1') root.style.setProperty('--word-h', `${span.offsetHeight}px`)
             })
         }
         fit()

@@ -78,8 +78,8 @@ html.tower-home {
     transition: transform 1.1s var(--t-ease);
 }
 .tower-root[data-page='0'] .tower-still img { transform: translateY(2vh) scale(1.12); }
-.tower-root[data-page='1'] .tower-still img { transform: translateX(-34%) scale(1.15); }
-.tower-root[data-page='2'] .tower-still img { transform: translateX(14%) scale(0.86); }
+.tower-root[data-page='1'] .tower-still img { transform: translateX(14%) scale(0.86); }
+.tower-root[data-page='2'] .tower-still img { transform: translateX(-34%) scale(1.15); }
 .tower-root[data-page='3'] .tower-still img { transform: translateX(26%) scale(1.15); }
 .tower-root[data-page='4'] .tower-still img { transform: translateY(-8vh) scale(0.5); }
 .tower-root[data-page='4'] .tower-still { align-items: center; }
@@ -151,7 +151,7 @@ html.tower-home {
 /* PTIT giãn chữ: letter-spacing cũng cộng một khoảng sau chữ cuối, bù bằng padding-trái để cụm chữ vẫn nằm giữa */
 .tower-word.is-solid .tower-word-ink { padding-left: 0.2em; }
 
-/* ── Mây khói sau chữ ÔN TẬP (trang 03) ──
+/* ── Mây khói sau chữ ÔN TẬP (trang 02) ──
    Lớp riêng ở z 3: trên canvas (z 2), dưới chữ ÔN TẬP (z 4) và thẻ (z 5). Rộng hơn hộp chữ ~12% mỗi bên, đáy lan tới mép dưới màn hình.
    --word-h (px) do useFitWords ghi sau khi co chữ; các mảng đặt so le lên/xuống, mép tan mềm nhờ stop trong suốt ở 70% và blur 24px. */
 .tower-smoke-layer {
@@ -167,7 +167,7 @@ html.tower-home {
     filter: blur(24px);
     transition: opacity 0.6s ease;
 }
-.tower-root[data-page='2'] .tower-smoke-layer { opacity: 1; }
+.tower-root[data-page='1'] .tower-smoke-layer { opacity: 1; }
 .tower-puff {
     position: absolute;
     background: radial-gradient(ellipse closest-side, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.6) 45%, rgba(255, 255, 255, 0) 70%);
@@ -293,8 +293,8 @@ html.tower-home {
 }
 .tower-card.c-0 h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.02em; margin-top: 6px; }
 .tower-card.c-0 .tower-cta { margin: 0; }
-.tower-card.c-1 { right: var(--t-gut); bottom: 13vh; width: min(560px, 42vw); padding: 30px 32px; }
-.tower-card.c-2 { left: var(--t-gut); top: 14vh; width: min(560px, 42vw); padding: 30px 32px; }
+.tower-card.c-2 { right: var(--t-gut); bottom: 13vh; width: min(560px, 42vw); padding: 30px 32px; }
+.tower-card.c-1 { left: var(--t-gut); top: 14vh; width: min(560px, 42vw); padding: 30px 32px; }
 .tower-card.c-3 { left: var(--t-gut); bottom: 13vh; width: min(560px, 42vw); padding: 30px 32px; background: rgba(20, 24, 60, 0.62); border-color: rgba(255, 255, 255, 0.2); }
 .tower-card.c-3 h2 { color: #fff; }
 .tower-card.c-3 h2 em, .tower-card.c-3 .ix { color: #ffb199; }
