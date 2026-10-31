@@ -4,6 +4,9 @@ export const CHAT_LIMITS = {
     questionMaxChars: 500,
     historyMaxTurns: 6,
     historyTurnMaxChars: 1500,
+    /** Tổng ký tự của các đoạn kiến thức gửi kèm một câu hỏi */
+    chunksMaxChars: 12_000,
+    chunksMax: 12,
 } as const
 
 export interface ChatTurn {
@@ -11,28 +14,31 @@ export interface ChatTurn {
     text: string
 }
 
-export interface ChatRequest {
-    lessonId: string
-    question: string
-    /** Vài lượt hỏi đáp gần nhất để AI hiểu ngữ cảnh câu hỏi tiếp theo */
-    history?: ChatTurn[]
-    /** Giây video sinh viên đang xem, để trả lời được câu kiểu "đoạn này nghĩa là gì" */
-    currentTimeSec?: number
+/** Một đoạn kiến thức truy hồi ở trình duyệt (BM25) gửi kèm câu hỏi; AI chỉ được dùng các đoạn này. */
+export interface ChatChunk {
+    id: string
+    /** Nhãn nguồn, ví dụ "Chương 1 · tr.1 · mục 1.3" hoặc "Bài giảng X · 01:53" */
+    label: string
+    text: string
 }
 
-/** Mốc thời gian AI dẫn ra, frontend hiện thành chip bấm để tua video. */
-export interface ChatCitation {
-    start: number
-    label: string
+export interface ChatRequest {
+    question: string
+    chunks: ChatChunk[]
+    /** Vài lượt hỏi đáp gần nhất để AI hiểu ngữ cảnh câu hỏi tiếp theo */
+    history?: ChatTurn[]
 }
 
 export interface ChatResponse {
     /** Câu trả lời dạng Markdown */
     answer: string
-    citations: ChatCitation[]
-    /** false khi câu hỏi nằm ngoài nội dung bài giảng */
-    inLesson: boolean
+    /** Id các đoạn đã dùng để trả lời (chỉ gồm id có trong yêu cầu) */
+    citations: string[]
+    /** true khi các đoạn được cung cấp không có thông tin để trả lời */
+    notFound: boolean
 }
+
+export const NOT_FOUND_ANSWER = 'Nội dung này không có trong tài liệu của khóa học.'
 
 export interface ApiErrorBody {
     error: string

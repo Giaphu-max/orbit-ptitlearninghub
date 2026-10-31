@@ -1,16 +1,23 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
-import { ArrowDown, Camera, MoreHorizontal, Play, Send, Sparkles } from 'lucide-react'
+import { ArrowDown, Camera, FileText, MoreHorizontal, Play, Send, Sparkles } from 'lucide-react'
 import type { Lesson } from '@/data/types'
-import { askTutor } from '@/lib/api'
-import { CHAT_LIMITS, type ChatCitation, type ChatTurn } from '@/lib/api-types'
+import { CHAT_LIMITS, type ChatTurn } from '@/lib/api-types'
+import { askKb, chunkLabel, mmss } from '@/lib/kb/ask'
+import { chunksOf, selectSources, useKb } from '@/lib/kb/store'
+import type { KbChunk } from '@/lib/kb/types'
 import { formatTime } from '@/lib/youtube'
+
+// Popup xem PDF (kéo theo pdf.js) chỉ tải khi sinh viên bấm một chip tài liệu
+const DocViewer = lazy(() => import('@/components/kb/doc-viewer').then((m) => ({ default: m.DocViewer })))
 
 interface ChatMessage {
     role: 'ai' | 'user'
     text: string
-    citations?: ChatCitation[]
+    citations?: KbChunk[]
+    /** Câu hỏi nằm ngoài tài liệu của khóa: bong bóng xám viền đứt */
+    notFound?: boolean
     /** Tin báo lỗi: hiện cho người dùng nhưng không gửi lại làm ngữ cảnh */
     isError?: boolean
 }
@@ -33,7 +40,7 @@ const AiAvatar = () => (
 )
 
 /** Danh sách tin nhắn: memo để khung chat không dựng lại markdown mỗi lần đồng hồ video nhích */
-const Messages = memo(function Messages({ messages, onSeek }: { messages: ChatMessage[]; onSeek: (sec: number) => void }) {
+const Messages = memo(function Messages({ messages, lessonId, onSeek, onOpenDoc }: { messages: ChatMessage[]; lessonId: string; onSeek: (sec: number) => void; onOpenDoc: (c: KbChunk) => void }) {
     return (
         <>
             {messages.map((msg, idx) => (
@@ -46,26 +53,43 @@ const Messages = memo(function Messages({ messages, onSeek }: { messages: ChatMe
                                     ? 'prose-invert bg-ink text-ink-foreground'
                                     : msg.isError
                                       ? 'border border-brand-100 bg-brand-50 text-brand-ink'
-                                      : 'bg-muted text-foreground'
+                                      : msg.notFound
+                                        ? 'border border-dashed border-muted-foreground/40 bg-muted text-muted-foreground prose-p:text-muted-foreground'
+                                        : 'bg-muted text-foreground'
                             }`}
                         >
                             <ReactMarkdown>{msg.text}</ReactMarkdown>
                         </div>
                         {msg.citations && msg.citations.length > 0 && (
                             <div className="flex flex-wrap gap-1.5">
-                                {msg.citations.map((c) => (
-                                    <button
-                                        key={c.start}
-                                        type="button"
-                                        onClick={() => onSeek(c.start)}
-                                        className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-card px-2.5 py-1 text-xs font-bold text-brand-ink transition duration-fast hover:bg-brand-50"
-                                        title="Tua video tới đoạn này"
-                                    >
-                                        <Play size={10} className="fill-current" />
-                                        <span className="font-mono">{formatTime(c.start)}</span>
-                                        <span className="font-sans font-semibold text-brand-ink/80">{c.label}</span>
-                                    </button>
-                                ))}
+                                {msg.citations.map((c) => {
+                                    const chip = 'inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-card px-2.5 py-1 text-xs font-bold text-brand-ink transition duration-fast hover:bg-brand-50'
+                                    if (c.kind === 'doc')
+                                        return (
+                                            <button key={c.id} type="button" onClick={() => onOpenDoc(c)} className={chip} title="Mở tài liệu đúng trang">
+                                                <FileText size={11} />
+                                                <span className="font-sans font-semibold">{chunkLabel(c)}</span>
+                                            </button>
+                                        )
+                                    const here = c.sourceId === `video-${lessonId}`
+                                    const inner = (
+                                        <>
+                                            <Play size={10} className="fill-current" />
+                                            <span className="font-mono">{mmss(c.start ?? 0)}</span>
+                                            {!here && <span className="font-sans font-semibold text-brand-ink/80">{c.sourceTitle.replace(/^Bài giảng: /, '')}</span>}
+                                        </>
+                                    )
+                                    // Video của bài khác trong khóa: mở bài đó đúng mốc
+                                    return here ? (
+                                        <button key={c.id} type="button" onClick={() => onSeek(c.start ?? 0)} className={chip} title="Tua video tới đoạn này">
+                                            {inner}
+                                        </button>
+                                    ) : (
+                                        <Link key={c.id} to={`/lesson/${c.sourceId.replace(/^video-/, '')}?t=${Math.floor(c.start ?? 0)}`} className={chip} title="Mở bài giảng này đúng đoạn">
+                                            {inner}
+                                        </Link>
+                                    )
+                                })}
                             </div>
                         )}
                     </div>
@@ -79,9 +103,12 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio 
     const [messages, setMessages] = useState<ChatMessage[]>([
         {
             role: 'ai',
-            text: `Chào bạn! Mình là trợ giảng AI của bài **${lesson.title}**. Mình chỉ trả lời dựa trên nội dung bài giảng, kèm mốc thời gian để bạn xem lại đúng đoạn.`,
+            text: `Chào bạn! Mình là trợ giảng AI của bài **${lesson.title}**. Mình chỉ trả lời dựa trên tài liệu và bài giảng của khóa học, kèm trích dẫn để bạn xem lại đúng chỗ.`,
         },
     ])
+    const [doc, setDoc] = useState<KbChunk | null>(null)
+    const kbState = useKb()
+    const docSource = doc ? selectSources(kbState).find((x) => x.id === doc.sourceId) : undefined
     const [inputValue, setInputValue] = useState('')
     const [isTyping, setIsTyping] = useState(false)
     const [isScrolledUp, setIsScrolledUp] = useState(false)
@@ -121,14 +148,22 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio 
         setIsScrolledUp(false)
 
         try {
-            const res = await askTutor({ lessonId: lesson.id, question, history, currentTimeSec: getCurrentTime() })
-            setMessages((prev) => [...prev, { role: 'ai', text: res.answer, citations: res.citations }])
+            const res = await askKb(lesson.courseId, question, history)
+            setMessages((prev) => [...prev, { role: 'ai', text: res.answer, citations: res.citations, notFound: res.notFound }])
         } catch (error) {
             const text = error instanceof Error ? error.message : 'Trợ giảng AI chưa trả lời được lúc này. Bạn thử lại nhé.'
             setMessages((prev) => [...prev, { role: 'ai', text, isError: true }])
         } finally {
             setIsTyping(false)
         }
+    }
+
+    // "Giải thích đoạn": đưa chính lời thầy ở đoạn đang xem vào câu hỏi để truy hồi đúng chỗ
+    const explainQuestion = () => {
+        const t = getCurrentTime()
+        const seg = lesson.transcript.find((x) => t >= x.start && t < x.end) ?? lesson.transcript.filter((x) => x.start <= t).at(-1)
+        const prefix = 'Giải thích giúp mình đoạn này: '
+        return seg ? `${prefix}${seg.text}`.slice(0, CHAT_LIMITS.questionMaxChars) : 'Giải thích giúp mình đoạn đang xem.'
     }
 
     // Gợi ý theo khái niệm: khái niệm đang giảng trước, rồi tới các khái niệm còn lại
@@ -138,12 +173,12 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio 
     return (
         <div className="relative flex h-full min-h-0 flex-col">
             <div ref={listRef} onScroll={handleScroll} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4" aria-live="polite">
-                <Messages messages={messages} onSeek={onSeek} />
+                <Messages messages={messages} lessonId={lesson.id} onSeek={onSeek} onOpenDoc={setDoc} />
                 {isTyping && (
                     <div className="flex gap-2.5">
                         <AiAvatar />
                         <div className="rounded-[14px] bg-muted px-3.5 py-[11px] text-sm text-muted-foreground">
-                            <span className="animate-pulse">Đang xem lại bài giảng…</span>
+                            <span className="animate-pulse">Đang tìm trong tài liệu…</span>
                         </div>
                     </div>
                 )}
@@ -195,7 +230,7 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio 
                     <button
                         type="button"
                         disabled={isTyping}
-                        onClick={() => send('Giải thích giúp mình đoạn đang xem.')}
+                        onClick={() => send(explainQuestion())}
                         className="rounded-full bg-brand-50 px-2.5 py-1 text-[12.5px] font-semibold text-brand-ink transition hover:bg-brand-100 disabled:opacity-50"
                     >
                         Giải thích đoạn <span className="font-mono">{formatTime(currentSec)}</span>
@@ -218,6 +253,11 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio 
                     </Link>
                 )}
             </div>
+            {doc && docSource && (
+                <Suspense fallback={null}>
+                    <DocViewer source={docSource} chunks={chunksOf(kbState, docSource.courseId).filter((c) => c.sourceId === docSource.id)} page={doc.page} highlight={doc} onClose={() => setDoc(null)} />
+                </Suspense>
+            )}
         </div>
     )
 }
