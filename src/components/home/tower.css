@@ -123,14 +123,14 @@ html.tower-home {
     z-index: 1;
     left: 0;
     right: 0;
-    top: -6vh;
+    top: -13vh;
     text-align: center;
     letter-spacing: -0.04em;
     font-size: min(34vw, 52vh);
 }
-/* PTIT: đỏ PTIT đặc theo chiều dọc, không mờ dần */
+/* PTIT: đỏ PTIT đặc từ đỉnh tới ~55% chiều cao chữ rồi tan dần về trong suốt ở chân chữ (không có mép cắt cứng) */
 .tower-word.is-solid .tower-word-ink {
-    background: linear-gradient(180deg, #ff5a47 0%, #e2261c 50%, #c81b12 100%);
+    background: linear-gradient(180deg, #ff5a47 0%, #e2261c 35%, rgba(226, 38, 28, 0.55) 70%, rgba(226, 38, 28, 0) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -141,12 +141,53 @@ html.tower-home {
     background-clip: text;
     color: transparent;
 }
-/* ÔN TẬP nằm trước canvas: đỏ đặc để không lẫn với mô hình phía sau */
+/* ÔN TẬP nằm trước canvas: đỏ tươi đặc (gradient nhẹ, không mờ dần) để không lẫn với mô hình phía sau */
 .tower-word.is-flat .tower-word-ink {
-    color: var(--wc);
+    background: linear-gradient(170deg, #ff5a47 0%, #e8382b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+/* Mây khói trắng mờ dưới và quanh chân chữ ÔN TẬP, tách chữ khỏi mô hình phía sau. Con của khối chữ nên nằm giữa canvas và chữ
+   (z-index -1 trong ngữ cảnh xếp chồng của khối chữ, vốn cao hơn canvas), hiện/ẩn cùng chữ. */
+.tower-smoke,
+.tower-smoke::after {
+    position: absolute;
+    z-index: -1;
+    left: -15%;
+    right: -15%;
+    bottom: -4%;
+    height: 60%;
+    pointer-events: none;
+    filter: blur(34px);
+    background:
+        radial-gradient(ellipse 34% 62% at 14% 62%, rgba(255, 255, 255, 0.85), transparent 72%),
+        radial-gradient(ellipse 30% 70% at 38% 48%, rgba(255, 255, 255, 0.85), transparent 72%),
+        radial-gradient(ellipse 34% 60% at 63% 58%, rgba(255, 255, 255, 0.85), transparent 72%),
+        radial-gradient(ellipse 28% 66% at 86% 50%, rgba(255, 255, 255, 0.85), transparent 72%);
+    animation: tower-smoke-drift 12s ease-in-out infinite alternate;
+}
+.tower-smoke::after {
+    content: '';
+    inset: auto -4% -6% -4%;
+    left: -4%;
+    right: -4%;
+    bottom: -6%;
+    height: 90%;
+    opacity: 0.8;
+    background:
+        radial-gradient(ellipse 30% 60% at 26% 55%, rgba(255, 255, 255, 0.85), transparent 72%),
+        radial-gradient(ellipse 36% 66% at 52% 62%, rgba(255, 255, 255, 0.85), transparent 72%),
+        radial-gradient(ellipse 26% 58% at 76% 52%, rgba(255, 255, 255, 0.85), transparent 72%);
+    animation-direction: alternate-reverse;
+    animation-duration: 15s;
+}
+@keyframes tower-smoke-drift {
+    from { transform: translateX(-20px); }
+    to { transform: translateX(20px); }
 }
 .tower-word.p-tr { top: 8vh; left: 40%; right: var(--t-gut); text-align: right; }
-.tower-word.p-bl { z-index: 3; top: auto; bottom: 3vh; left: var(--t-gut); right: 44%; }
+.tower-word.p-bl { z-index: 4; top: auto; bottom: 3vh; left: var(--t-gut); right: 44%; }
 .tower-word.p-tl { z-index: 3; top: 6vh; left: var(--t-gut); right: 46%; }
 .tower-word.p-tc { top: 6vh; left: var(--t-gut); right: var(--t-gut); text-align: center; }
 
@@ -332,6 +373,7 @@ html.tower-home {
 
 @media (prefers-reduced-motion: reduce) {
     .tower-word, .tower-card, .tower-still img { transform: none !important; transition: opacity 0.4s !important; }
+    .tower-smoke, .tower-smoke::after { animation: none !important; }
     .tower-card.c-0, .tower-card.c-4 { transform: translateX(-50%) !important; }
     .tower-sky-dusk { transition: none; }
 }

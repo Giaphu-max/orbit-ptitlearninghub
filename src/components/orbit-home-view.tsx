@@ -115,7 +115,7 @@ const PAGES: PageDef[] = [
         word: 'ÔN TẬP',
         pos: 'bl',
         flat: true,
-        color: '#D41F16',
+        color: '#E8382B',
         ix: 'Ôn tập',
         title: (
             <>
@@ -216,6 +216,7 @@ export function OrbitHomeView() {
                         style={p.color ? ({ '--wc': p.color } as React.CSSProperties) : undefined}
                     >
                         <span className="tower-word-ink">{p.word}</span>
+                        {p.flat && <i className="tower-smoke" aria-hidden />}
                     </div>
                 ))}
                 {use3D ? <Tower3D reduce={reduce} dailyLit={dailyLit} /> : <StillCampus />}
