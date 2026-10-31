@@ -65,8 +65,10 @@ interface Item {
 }
 interface PageDef {
     word: string
-    /** 'solid' = PTIT đặc navy; còn lại là vị trí chữ gradient đỏ */
+    /** 'solid' = PTIT (gradient dọc đỏ đặc, sau mô hình); còn lại là vị trí chữ khổng lồ */
     pos: 'solid' | 'tr' | 'bl' | 'tl' | 'tc'
+    /** Màu đỏ đặc (không gradient) cho chữ nằm trước canvas, tránh lẫn với mô hình phía sau */
+    flat?: boolean
     color: string
     ix: string
     title: ReactNode
@@ -112,7 +114,8 @@ const PAGES: PageDef[] = [
     {
         word: 'ÔN TẬP',
         pos: 'bl',
-        color: '#C81B12',
+        flat: true,
+        color: '#D41F16',
         ix: 'Ôn tập',
         title: (
             <>
@@ -207,10 +210,10 @@ export function OrbitHomeView() {
                         data-i={i}
                         data-fit={p.pos === 'solid' ? undefined : ''}
                         aria-hidden
-                        className={`tower-word ${p.pos === 'solid' ? 'is-solid' : `is-grad p-${p.pos}`}`}
+                        className={`tower-word ${p.pos === 'solid' ? 'is-solid' : `${p.flat ? 'is-flat' : 'is-grad'} p-${p.pos}`}`}
                         style={p.color ? ({ '--wc': p.color } as React.CSSProperties) : undefined}
                     >
-                        <span>{p.word}</span>
+                        <span className="tower-word-ink">{p.word}</span>
                     </div>
                 ))}
                 {use3D ? <Tower3D reduce={reduce} dailyLit={dailyLit} /> : <StillCampus />}

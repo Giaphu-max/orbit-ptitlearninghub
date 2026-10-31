@@ -31,16 +31,16 @@ interface Key {
     tg: THREE.Vector3
     /** Dịch khung hình theo bề ngang (đơn vị chiều rộng): dương đẩy mô hình sang trái */
     off: number
-    /** Dịch theo chiều cao: âm đẩy mô hình xuống */
+    /** Dịch theo chiều cao (đơn vị chiều cao khung): dương đẩy mô hình xuống */
     offY: number
     dusk: number
 }
 /** Khung cận: tọa độ trong hệ bản mẫu (gốc ở chân tòa), nhân K */
-const near = (cam: V3, tg: V3, off: number, dusk = 0): Key => ({
+const near = (cam: V3, tg: V3, off: number, dusk = 0, offY = 0): Key => ({
     cam: new THREE.Vector3(...cam).multiplyScalar(K).add(AXIS),
     tg: new THREE.Vector3(...tg).multiplyScalar(K).add(AXIS),
     off,
-    offY: 0,
+    offY,
     dusk,
 })
 
@@ -48,8 +48,8 @@ const near = (cam: V3, tg: V3, off: number, dusk = 0): Key => ({
 const FAR_TARGET = new THREE.Vector3(0, 7, -1)
 const FAR_DIR = new THREE.Vector3(60, 39, 84).normalize()
 const KEYS: Key[] = [
-    // 01 PTIT: góc từ dưới ngước lên, tòa A2 ở giữa
-    near([0, 1.2, 35], [0, 15.5, 0], 0),
+    // 01 PTIT: góc từ dưới ngước lên, tòa A2 ở giữa nhưng hạ xuống (offY) để chữ PTIT phía sau lộ ra: đỉnh tòa chỉ chạm khoảng nửa chiều cao chữ
+    near([0, 1.2, 40], [0, 15.5, 0], 0, 0, 0.3),
     // 02 Học phần: góc thấp, tòa sát mép trái và bị cắt ~1/4
     near([-12, 1.5, 40], [0, 14.5, 0], 0.43),
     // 03 Ôn tập: nhìn từ trên cao xuống, mô hình nghiêng về góc phải
@@ -57,7 +57,7 @@ const KEYS: Key[] = [
     // 04 Studio 3D: hoàng hôn, sát chân tòa ngước lên, tòa bên phải
     near([7, 0.4, 22], [0, 17, 0], -0.3, 1),
     // 05 Tiến độ: toàn cảnh
-    { cam: FAR_TARGET.clone().addScaledVector(FAR_DIR, 112), tg: FAR_TARGET.clone(), off: 0, offY: -0.03, dusk: 0 },
+    { cam: FAR_TARGET.clone().addScaledVector(FAR_DIR, 95), tg: FAR_TARGET.clone(), off: 0, offY: 0.07, dusk: 0 },
 ]
 
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)

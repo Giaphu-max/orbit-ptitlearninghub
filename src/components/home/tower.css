@@ -34,7 +34,6 @@ html.tower-home {
     position: fixed;
     inset: 0;
     z-index: 0;
-    overflow: hidden;
 }
 .tower-sky,
 .tower-sky-dusk {
@@ -59,7 +58,7 @@ html.tower-home {
     inset: 0;
     z-index: 2;
     pointer-events: none;
-    transition: opacity 0.6s ease;
+    transition: opacity 0.4s ease;
 }
 .tower-gl canvas {
     width: 100% !important;
@@ -98,14 +97,16 @@ html.tower-home {
     background: #3a2f6b;
 }
 
-/* ── Chữ khổng lồ ── */
+/* ── Chữ khổng lồ ──
+   Gradient + background-clip nằm trên span inline-block có padding riêng (chỗ cho dấu trên và dấu nặng dưới) và line-height 1.25,
+   nên mọi nét/dấu đều nằm trong hộp được tô; không lớp cha nào để overflow: hidden. Hàm co chữ đo cả span (gồm padding). */
 .tower-word {
     position: absolute;
     z-index: 1;
     white-space: nowrap;
     font-weight: 900;
     letter-spacing: -0.05em;
-    line-height: 1.15;
+    line-height: 1.25;
     text-align: left;
     opacity: 0;
     transform: translateY(6vh);
@@ -113,29 +114,41 @@ html.tower-home {
     pointer-events: none;
     user-select: none;
 }
-.tower-word > span {
+.tower-word-ink {
     display: inline-block;
+    padding: 0.28em 0.08em 0.18em;
+    line-height: 1.25;
 }
 .tower-word.is-solid {
     z-index: 1;
     left: 0;
     right: 0;
-    top: 9vh;
+    top: -6vh;
     text-align: center;
     letter-spacing: -0.04em;
     font-size: min(34vw, 52vh);
-    color: var(--t-navy);
 }
-.tower-word.is-grad {
-    background: linear-gradient(170deg, #ff5a47 0%, var(--wc) 38%, rgba(244, 135, 143, 0.7) 72%, rgba(255, 190, 186, 0.42) 100%);
+/* PTIT: đỏ PTIT đặc theo chiều dọc, không mờ dần */
+.tower-word.is-solid .tower-word-ink {
+    background: linear-gradient(180deg, #ff5a47 0%, #e2261c 50%, #c81b12 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 }
-.tower-word.p-tr { top: 12vh; left: 40%; right: var(--t-gut); text-align: right; }
-.tower-word.p-bl { z-index: 3; top: auto; bottom: 6vh; left: var(--t-gut); right: 44%; }
-.tower-word.p-tl { z-index: 3; top: 10vh; left: var(--t-gut); right: 46%; }
-.tower-word.p-tc { top: 10vh; left: var(--t-gut); right: var(--t-gut); text-align: center; }
+.tower-word.is-grad .tower-word-ink {
+    background: linear-gradient(170deg, #ff5a47 0%, var(--wc) 38%, rgba(244, 135, 143, 0.78) 72%, rgba(255, 170, 168, 0.55) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+/* ÔN TẬP nằm trước canvas: đỏ đặc để không lẫn với mô hình phía sau */
+.tower-word.is-flat .tower-word-ink {
+    color: var(--wc);
+}
+.tower-word.p-tr { top: 8vh; left: 40%; right: var(--t-gut); text-align: right; }
+.tower-word.p-bl { z-index: 3; top: auto; bottom: 3vh; left: var(--t-gut); right: 44%; }
+.tower-word.p-tl { z-index: 3; top: 6vh; left: var(--t-gut); right: 46%; }
+.tower-word.p-tc { top: 6vh; left: var(--t-gut); right: var(--t-gut); text-align: center; }
 
 /* ── Thẻ kính ── */
 .tower-card {
