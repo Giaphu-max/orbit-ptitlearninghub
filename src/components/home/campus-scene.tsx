@@ -332,7 +332,7 @@ const SUA_SPOTS: [number, number, number][] = [[-1.6, 8.6, 1.35], [5.6, 12.2, 1.
 const SUA_PUFFS: [number, number, number, number][] = [[0, 0, 0, 1.15], [0.8, -0.35, 0.3, 0.8], [-0.75, -0.2, -0.35, 0.8], [0.15, 0.75, 0.2, 0.75], [-0.3, 0.1, 0.85, 0.7], [0.45, 0.3, -0.7, 0.7]]
 function SuaTree({ x, z, s, lowQuality }: { x: number; z: number; s: number; lowQuality: boolean }) {
     return (
-        <group position={[x, 0, z]} scale={s}>
+        <group position={[x, 0, z]} scale={s} userData={{ tree: { base: s } }}>
             <mesh position={[0, 0.9, 0]} material={stdMat(C.trunk)} castShadow={!lowQuality} receiveShadow>
                 <cylinderGeometry args={[0.13, 0.2, 1.8, 6]} />
             </mesh>
@@ -532,11 +532,11 @@ export function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality
             {TREE_SPOTS.map(([x, z], i) => {
                 const s = 0.8 + ((i * 37) % 10) / 22
                 return (
-                    <group key={i}>
-                        <mesh position={[x, 0.6 * s, z]} material={stdMat(C.trunk)} castShadow={!lowQuality} receiveShadow>
+                    <group key={i} position={[x, 0, z]} userData={{ tree: { base: 1 } }}>
+                        <mesh position={[0, 0.6 * s, 0]} material={stdMat(C.trunk)} castShadow={!lowQuality} receiveShadow>
                             <cylinderGeometry args={[0.14 * s, 0.2 * s, 1.2 * s, 6]} />
                         </mesh>
-                        <mesh position={[x, 1.9 * s, z]} material={stdMat(i % 3 ? C.tree : C.tree2)} castShadow={!lowQuality} receiveShadow>
+                        <mesh position={[0, 1.9 * s, 0]} material={stdMat(i % 3 ? C.tree : C.tree2)} castShadow={!lowQuality} receiveShadow>
                             <icosahedronGeometry args={[1.15 * s, 0]} />
                         </mesh>
                     </group>

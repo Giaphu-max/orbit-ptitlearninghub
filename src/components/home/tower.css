@@ -336,8 +336,9 @@ html.tower-home {
     .tower-sky-dusk { transition: none; }
 }
 
-/* Thanh điều hướng ở trang Studio (nền tối): chữ chuyển trắng */
-header.tower-dusk {
+/* Thanh điều hướng ở trang Studio (nền tối): chỉ logo và các mục menu chuyển chữ sang trắng; ô streak/XP và avatar giữ nền trắng, chữ tối */
+header.tower-dusk a[aria-label^='PTIT'],
+header.tower-dusk nav[aria-label='Điều hướng chính'] {
     --foreground: 0 0% 100%;
     --foreground-strong: 0 0% 100%;
     --muted-foreground: 230 40% 90%;

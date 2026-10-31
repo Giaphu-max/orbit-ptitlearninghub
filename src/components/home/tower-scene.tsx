@@ -73,6 +73,14 @@ const HEMI_GROUND_DUSK = new THREE.Color('#5A4A7E')
 const FOG_DAY = new THREE.Color('#EEF1F8')
 const FOG_DUSK = new THREE.Color('#3A2F6B')
 
+/** Cây gần camera ở trang Studio bị che khuất mô hình: thu nhỏ về 0 (mờ dần ~300ms) rồi ẩn */
+const TREE_HIDE_DIST = 20
+interface TreeRef {
+    g: THREE.Object3D
+    base: number
+    cur: number
+}
+
 const _pos = new THREE.Vector3()
 const _tg = new THREE.Vector3()
 
@@ -85,6 +93,7 @@ function World({ night, reduce, dailyLit }: { night: boolean; reduce: boolean; d
     const stage = useRef(1)
     const gateOn = useRef(true)
     const frame = useRef(0)
+    const trees = useRef<TreeRef[]>([])
     const mouse = useRef({ x: 0, y: 0 })
     const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
     const size = useThree((s) => s.size)
@@ -142,6 +151,28 @@ function World({ night, reduce, dailyLit }: { night: boolean; reduce: boolean; d
             hemi.current.groundColor.copy(HEMI_GROUND_DAY).lerp(HEMI_GROUND_DUSK, n)
         }
         if (scene.fog) scene.fog.color.copy(FOG_DAY).lerp(FOG_DUSK, n)
+
+        // Cây tiền cảnh (gom một lần vài khung đầu, sau khi cảnh dựng xong)
+        if (!trees.current.length && frame.current < 60) {
+            scene.traverse((o) => {
+                const t = o.userData.tree as { base: number } | undefined
+                if (t) trees.current.push({ g: o, base: t.base, cur: 1 })
+            })
+        }
+        // Chỉ quanh trang Studio (p = 3): cây cách camera dưới TREE_HIDE_DIST bị ẩn, thu nhỏ mượt theo thời gian (300ms)
+        const around = Math.abs(p - 3) < 0.55
+        const k3 = reduce ? 1 : 1 - Math.exp(-delta / 0.1)
+        let moved = false
+        for (const t of trees.current) {
+            const want = around && t.g.position.distanceTo(camera.position) < TREE_HIDE_DIST ? 0 : 1
+            if (Math.abs(want - t.cur) < 0.002) continue
+            t.cur += (want - t.cur) * k3
+            if (Math.abs(want - t.cur) < 0.02) t.cur = want
+            t.g.scale.setScalar(t.base * Math.max(t.cur, 0.001))
+            t.g.visible = t.cur > 0.01
+            moved = true
+        }
+        if (moved) state.gl.shadowMap.needsUpdate = true
 
         // Cổng trường nằm đúng đường nhìn ở các khung thấp: chỉ hiện ở khung từ trên cao và toàn cảnh
         const wantGate = (p > 1.5 && p < 2.5) || p > 3.5
