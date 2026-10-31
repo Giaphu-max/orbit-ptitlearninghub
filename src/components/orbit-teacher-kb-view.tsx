@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { ArrowDownUp, ImageIcon, Lock, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { ArrowDownUp, ImageIcon, Lock, Pencil, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
 import { CourseArt } from '@/components/courses/course-cover'
 import { ConfirmDeleteDialog, CoverDialog, MoveDialog, NewCourseDialog, RenameDialog, ReorderDialog } from '@/components/kb/course-dialogs'
 import { KebabMenu } from '@/components/kb/kebab-menu'
@@ -10,6 +11,7 @@ import { IngestError, ingestDocument, rereadSource } from '@/lib/kb/ingest'
 import { chunksOf, useKb } from '@/lib/kb/store'
 import type { KbSource } from '@/lib/kb/types'
 import { moveSource, removeCourse, removeSource, renameSource, useLibrary, type LibraryCourse, type LibraryItem } from '@/lib/library'
+import { filterLibrary, FILTERS, parseFilter } from '@/lib/library-search'
 import { learnersOf, useCatalog } from '@/store/useCatalog'
 
 const DocViewer = lazy(() => import('@/components/kb/doc-viewer').then((m) => ({ default: m.DocViewer })))
@@ -41,6 +43,40 @@ export function OrbitTeacherKbView() {
     const [toast, setToast] = useState<Toast | null>(null)
     const toastRef = useRef<Toast | null>(null)
     toastRef.current = toast
+    const [params, setParams] = useSearchParams()
+    const q = params.get('q') ?? ''
+    const f = parseFilter(params.get('f'))
+    const searchRef = useRef<HTMLInputElement>(null)
+    const setView = (next: { q?: string; f?: string }) =>
+        setParams(
+            (prev) => {
+                const p = new URLSearchParams(prev)
+                for (const [k, v] of Object.entries(next)) v && v !== 'all' ? p.set(k, v) : p.delete(k)
+                return p
+            },
+            { replace: true },
+        )
+    // Phím "/" đưa con trỏ vào ô tìm (trừ khi đang gõ ở ô khác)
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            const t = e.target as HTMLElement
+            if (e.key === '/' && !e.metaKey && !e.ctrlKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !t.isContentEditable) {
+                e.preventDefault()
+                searchRef.current?.focus()
+            }
+        }
+        document.addEventListener('keydown', onKey)
+        return () => document.removeEventListener('keydown', onKey)
+    }, [])
+    const chunkMap = useMemo(() => {
+        const m = new Map<string, import('@/lib/kb/types').KbChunk[]>()
+        if (!q.trim()) return m
+        for (const g of lib.groups)
+            for (const c of chunksOf(kb, g.course.id)) m.set(c.sourceId, [...(m.get(c.sourceId) ?? []), c])
+        return m
+    }, [q, lib.groups, kb])
+    const view = useMemo(() => filterLibrary(lib.groups, chunkMap, q, f), [lib.groups, chunkMap, q, f])
+    const narrowed = Boolean(q.trim()) || f !== 'all'
 
     useEffect(() => void kb.load(), [kb.load]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -92,6 +128,37 @@ export function OrbitTeacherKbView() {
                 </div>
             </div>
 
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+                <label className="relative block w-[min(380px,100%)]">
+                    <span className="sr-only">Tìm khóa học, tài liệu, video</span>
+                    <Search size={16} aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                        ref={searchRef}
+                        value={q}
+                        onChange={(e) => setView({ q: e.target.value })}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') (q ? setView({ q: '' }) : e.currentTarget.blur())
+                        }}
+                        placeholder="Tìm khóa học, tài liệu, video…"
+                        className="h-11 w-full rounded-full border border-border bg-card/80 pl-10 pr-16 text-sm text-foreground backdrop-blur placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                    />
+                    {q ? (
+                        <button type="button" aria-label="Xóa từ khóa" onClick={() => (setView({ q: '' }), searchRef.current?.focus())} className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
+                            <X size={14} />
+                        </button>
+                    ) : (
+                        <kbd aria-hidden className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border bg-muted px-1.5 font-mono text-[11px] text-muted-foreground">/</kbd>
+                    )}
+                </label>
+                <div role="group" aria-label="Lọc nguồn" className="flex flex-wrap gap-1.5">
+                    {FILTERS.map((c) => (
+                        <button key={c.id} type="button" aria-pressed={f === c.id} onClick={() => setView({ f: c.id })} className={`h-9 rounded-full border px-3.5 text-[13px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${f === c.id ? 'border-brand-600 bg-brand-50 text-brand-ink' : 'border-border bg-card/70 text-muted-foreground hover:text-strong'}`}>
+                            {c.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div className={`${glass} mt-6 grid grid-cols-[auto_1fr_auto] items-center gap-[22px] px-6 py-5 max-md:grid-cols-1`}>
                 <span className="surface-red flex h-[54px] w-[54px] items-center justify-center rounded-2xl text-ink-foreground shadow-brand">
                     <Sparkles size={24} aria-hidden />
@@ -112,6 +179,15 @@ export function OrbitTeacherKbView() {
                 </span>
             </div>
 
+            {lib.groups.length > 0 && narrowed && view.length === 0 && (
+                <div className={`${glass} mt-8 p-10 text-center`}>
+                    <b className="block text-lg text-strong">{q.trim() ? `Không có kết quả cho “${q.trim()}”` : 'Không có nguồn nào ở bộ lọc này'}</b>
+                    <button type="button" onClick={() => setParams({}, { replace: true })} className="mt-3 text-sm font-bold text-brand-ink underline-offset-2 hover:underline">
+                        Xóa bộ lọc
+                    </button>
+                </div>
+            )}
+
             {lib.groups.length === 0 && (
                 <div className={`${glass} mt-8 p-10 text-center`}>
                     <b className="block text-lg text-strong">Chưa có khóa học nào</b>
@@ -119,10 +195,12 @@ export function OrbitTeacherKbView() {
                 </div>
             )}
 
-            {lib.groups.map((g) => (
+            {view.map(({ group: g, items, snippets }) => (
                 <CourseSection
                     key={g.course.id}
                     group={g}
+                    items={items}
+                    snippets={snippets}
                     onAdd={() => setUpload({ courseId: g.course.id })}
                     onRename={() => setDialog({ kind: 'rename-course', course: g.course })}
                     onCover={() => setDialog({ kind: 'cover', course: g.course })}
@@ -209,6 +287,9 @@ export function OrbitTeacherKbView() {
 
 interface SectionProps {
     group: LibraryCourse
+    /** Nguồn hiển thị sau khi lọc (group.items là toàn bộ) */
+    items: LibraryItem[]
+    snippets: Map<string, string>
     onAdd: () => void
     onRename: () => void
     onCover: () => void
@@ -222,11 +303,12 @@ interface SectionProps {
     onDeleteSource: (s: KbSource) => void
 }
 
-function CourseSection({ group, onAdd, onRename, onCover, onOrder, onDelete, onOpenItem, onRenameSource, onMoveSource, onReplace, onReread, onDeleteSource }: SectionProps) {
+function CourseSection({ group, items: shown, snippets, onAdd, onRename, onCover, onOrder, onDelete, onOpenItem, onRenameSource, onMoveSource, onReplace, onReread, onDeleteSource }: SectionProps) {
     const { course, items } = group
     const learners = learnersOf(course)
     const videos = items.filter((i) => i.source.kind === 'video' && !i.reading)
-    let videoIndex = -1
+    // Số thứ tự bài tính trên toàn bộ video của khóa, không đổi khi đang lọc
+    const numbering = new Map(videos.map((v, i) => [v.source.id, i]))
     return (
         <section className="mt-9" aria-labelledby={`g-${course.id}`}>
             <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -272,20 +354,22 @@ function CourseSection({ group, onAdd, onRename, onCover, onOrder, onDelete, onO
                     ]}
                 />
             </div>
-            {items.length === 0 ? (
+            {shown.length === 0 && items.length > 0 ? (
+                <p className="rounded-3xl border border-dashed border-border px-6 py-5 text-sm text-muted-foreground">Khóa này khớp với từ khóa nhưng chưa có nguồn nào ở bộ lọc này.</p>
+            ) : items.length === 0 ? (
                 <button type="button" onClick={onAdd} className="block w-full rounded-3xl border-2 border-dashed border-border px-6 py-9 text-center transition hover:border-brand-300 hover:bg-card/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70">
                     <b className="block text-[15px] text-strong">Chưa có nguồn nào</b>
                     <span className="mt-1 block text-sm text-muted-foreground">Tải lên tài liệu hoặc video</span>
                 </button>
             ) : (
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(270px,1fr))] gap-4">
-                    {items.map((item) => {
-                        if (item.source.kind === 'video' && !item.reading) videoIndex++
+                    {shown.map((item) => {
                         return (
                             <SourceCard
                                 key={item.source.id}
                                 item={item}
-                                index={item.source.kind === 'video' && !item.reading ? videoIndex : undefined}
+                                snippet={snippets.get(item.source.id)}
+                                index={numbering.get(item.source.id)}
                                 onOpen={() => onOpenItem(item)}
                                 onRename={() => onRenameSource(item.source)}
                                 onMove={() => onMoveSource(item.source)}
