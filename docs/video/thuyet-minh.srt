@@ -1,0 +1,199 @@
+1
+00:00:00,600 --> 00:00:04,200
+Sinh viên xem video bài giảng,
+
+2
+00:00:04,400 --> 00:00:08,500
+nhưng không ai hỏi lại: mình đã hiểu chưa?
+
+3
+00:00:09,200 --> 00:00:12,600
+Giảng viên có đủ tài liệu,
+
+4
+00:00:12,800 --> 00:00:17,500
+nhưng không thể trả lời từng em lúc nửa đêm.
+
+5
+00:00:18,200 --> 00:00:22,000
+Nhóm em xây dựng một trợ giảng AI
+
+6
+00:00:22,200 --> 00:00:26,400
+chỉ dạy đúng những gì thầy cô đã dạy.
+
+7
+00:00:30,300 --> 00:00:39,072
+Hệ thống có hai luồng: sinh viên và giảng viên.
+
+8
+00:00:39,152 --> 00:00:49,620
+Bắt đầu từ phía giảng viên, người tạo ra nguồn tri thức.
+
+9
+00:00:50,300 --> 00:00:57,088
+Giảng viên tạo một khóa học mới, đặt tên và ảnh bìa.
+
+10
+00:00:57,168 --> 00:01:06,202
+Sau đó tải lên giáo trình PDF và video bài giảng có sẵn trên YouTube.
+
+11
+00:01:06,282 --> 00:01:11,090
+AI đọc tài liệu, tách thành từng đoạn
+
+12
+00:01:11,170 --> 00:01:17,694
+và ghi lại trang, mục, mốc thời gian của mỗi đoạn.
+
+13
+00:01:17,774 --> 00:01:24,166
+Từ đó, AI tạo ngân hàng câu hỏi bám sát tài liệu.
+
+14
+00:01:24,246 --> 00:01:32,619
+Giảng viên xem, sửa hoặc bỏ từng câu trước khi mở cho sinh viên.
+
+15
+00:01:32,699 --> 00:01:39,620
+Khi đã duyệt, chỉ cần một nút để mở khóa học cho lớp.
+
+16
+00:01:40,300 --> 00:01:48,193
+Giờ chuyển sang vai sinh viên.
+
+17
+00:01:48,273 --> 00:01:59,620
+Trang chủ đưa em vào thẳng bài đang học dở.
+
+18
+00:02:00,300 --> 00:02:11,313
+Video tự dừng ở những mốc kiến thức quan trọng để hỏi một câu.
+
+19
+00:02:11,393 --> 00:02:18,648
+Nếu em trả lời sai, AI không chỉ báo sai.
+
+20
+00:02:18,728 --> 00:02:28,668
+AI giải thích vì sao sai, dựa trên chính lời giảng viên,
+
+21
+00:02:28,748 --> 00:02:35,287
+rồi tua video về đúng đoạn có đáp án.
+
+22
+00:02:35,367 --> 00:02:44,412
+Xem lại xong, em nhận một câu biến thể cùng mức độ.
+
+23
+00:02:44,492 --> 00:02:52,463
+Trả lời đúng sau khi sai được thưởng gấp đôi,
+
+24
+00:02:52,543 --> 00:02:59,620
+vì sửa được lỗi mới là thật sự hiểu bài.
+
+25
+00:03:00,300 --> 00:03:06,320
+Bên phải là trợ giảng AI của bài học.
+
+26
+00:03:06,400 --> 00:03:18,354
+Mỗi câu trả lời đều kèm trích dẫn: trang giáo trình hoặc mốc trong video.
+
+27
+00:03:18,434 --> 00:03:24,783
+Bấm vào mốc, video tua tới đúng chỗ đó.
+
+28
+00:03:24,863 --> 00:03:34,674
+Hỏi ngoài phạm vi tài liệu, AI nói rõ là không có trong bài,
+
+29
+00:03:34,754 --> 00:03:39,620
+thay vì tự bịa ra câu trả lời.
+
+30
+00:03:40,300 --> 00:03:46,697
+Cuối mỗi bài là phần kiểm tra nhanh,
+
+31
+00:03:46,777 --> 00:03:56,772
+lấy từ ngân hàng câu hỏi AI tạo từ tài liệu của thầy cô.
+
+32
+00:03:56,852 --> 00:04:07,206
+Cuối chương có bài kiểm tra tổng hợp từ cùng ngân hàng đó.
+
+33
+00:04:07,286 --> 00:04:19,620
+Màn tổng kết cho em biết khái niệm nào đã vững, khái niệm nào cần ôn.
+
+34
+00:04:20,300 --> 00:04:28,200
+Phần Ôn tập không phải một bảng tin cuộn vô hạn.
+
+35
+00:04:28,280 --> 00:04:35,681
+Mỗi ngày tối đa ba bài đọc ngắn, mở miễn phí,
+
+36
+00:04:35,761 --> 00:04:43,162
+AI tổng hợp từ chính những câu em đã làm sai.
+
+37
+00:04:43,242 --> 00:04:48,814
+Mỗi đoạn dẫn nguồn về bài học gốc,
+
+38
+00:04:48,894 --> 00:04:59,620
+và chỉ tính hoàn thành khi em trả lời đúng câu kiểm tra cuối bài.
+
+39
+00:05:00,300 --> 00:05:12,667
+Với sinh viên Đa phương tiện, nhóm làm thêm studio nhiếp ảnh 3D.
+
+40
+00:05:12,747 --> 00:05:22,781
+Em mô tả không khí mong muốn, AI gợi ý cách đặt đèn.
+
+41
+00:05:22,861 --> 00:05:32,311
+Em chỉnh góc máy, tiêu cự, ánh sáng rồi bấm chụp.
+
+42
+00:05:32,391 --> 00:05:42,035
+AI chấm bố cục và ánh sáng, khoanh vùng cần chỉnh,
+
+43
+00:05:42,115 --> 00:05:49,620
+và có nút Thử để áp dụng ngay gợi ý đó.
+
+44
+00:05:50,300 --> 00:05:54,600
+Tất cả xuất phát từ một nguồn: tài liệu và video của thầy cô.
+
+45
+00:05:54,800 --> 00:05:58,900
+AI đọc, tách đoạn, tạo kho tri thức cho từng khóa học,
+
+46
+00:05:59,000 --> 00:06:03,400
+rồi phục vụ trợ giảng, ngân hàng câu hỏi và bài đọc ôn tập.
+
+47
+00:06:04,000 --> 00:06:07,600
+Khi triển khai tại Học viện, hệ thống có cơ sở dữ liệu tập trung
+
+48
+00:06:07,700 --> 00:06:10,000
+và phân quyền theo lớp.
+
+49
+00:06:11,600 --> 00:06:15,600
+Trợ giảng AI giúp thầy cô dạy được nhiều hơn,
+
+50
+00:06:15,800 --> 00:06:19,500
+mà không phải nói nhiều hơn.
