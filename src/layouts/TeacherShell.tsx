@@ -6,7 +6,8 @@ import { RewardOverlay } from '@/components/reward-overlay'
 import { TEACHER_PROFILE } from '@/data/teacher-profile'
 import { LOGO_URL } from '@/lib/brand'
 import { centerOf, enterRole } from '@/lib/role-switch'
-import { selectSources, useKb } from '@/lib/kb/store'
+import { useKb } from '@/lib/kb/store'
+import { useLibrary } from '@/lib/library'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
 const NAV = [{ label: 'Kho tài liệu', to: '/teacher', icon: FileText, match: (p: string) => p.startsWith('/teacher') }]
@@ -20,7 +21,7 @@ const navItem = 'flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-[1
 export function TeacherShell() {
     const { pathname } = useLocation()
     const resetDemo = useOrbitStore((s) => s.resetDemo)
-    const sourceCount = useKb((s) => selectSources(s).length + Object.keys(s.reading).length)
+    const sourceCount = useLibrary().total
     useEffect(() => void useKb.getState().load(), [])
 
     // Giảng viên chỉ có một trang: Kho tài liệu. Mọi đường dẫn cũ (kể cả "/") về /teacher

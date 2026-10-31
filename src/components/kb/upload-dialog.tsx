@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Check, X } from 'lucide-react'
-import { staticCourses } from '@/data'
 import { ingestDocument, IngestError, ingestSampleDocument, ingestVideo, SAMPLE_PDF_NAME } from '@/lib/kb/ingest'
 import { DOC_ACCEPT, formatOf } from '@/lib/kb/parsers'
 import { DEMO_VIDEO } from '@/data/demo-video'
@@ -10,6 +9,8 @@ const VIDEO_ACCEPT = 'video/mp4,video/quicktime,.mp4,.mov'
 const field = 'mt-1.5 block h-[42px] w-full rounded-[11px] border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300'
 
 interface Props {
+    /** Khóa của giảng viên (đã áp đổi tên, bỏ khóa đã xóa) */
+    courses: { id: string; title: string }[]
     defaultCourseId?: string
     onClose: () => void
     /** Báo kết quả (thành công hoặc lỗi) cho trang gọi để hiện thông báo */
@@ -17,12 +18,12 @@ interface Props {
 }
 
 /** Hộp "Tải lên nguồn kiến thức": tab Tài liệu / Video, kéo-thả, file mẫu, chọn khóa và tên hiển thị. Đóng bằng ✕, bấm ra ngoài hoặc Esc. */
-export function UploadDialog({ defaultCourseId, onClose, onNotify }: Props) {
+export function UploadDialog({ courses, defaultCourseId, onClose, onNotify }: Props) {
     const [tab, setTab] = useState<Tab>('doc')
     const [file, setFile] = useState<File | null>(null)
     const [sample, setSample] = useState(false)
     const [link, setLink] = useState('')
-    const [courseId, setCourseId] = useState(defaultCourseId ?? staticCourses[0].id)
+    const [courseId, setCourseId] = useState(defaultCourseId ?? courses[0]?.id ?? '')
     const [name, setName] = useState('')
     const [drag, setDrag] = useState(false)
     const [error, setError] = useState('')
@@ -52,6 +53,7 @@ export function UploadDialog({ defaultCourseId, onClose, onNotify }: Props) {
     const ready = tab === 'doc' ? Boolean(file || sample) : Boolean(file || sample || link.trim())
 
     const submit = () => {
+        if (!courseId) return setError('Thầy cô tạo một khóa học trước khi tải nguồn lên nhé.')
         if (!ready) return setError(tab === 'doc' ? 'Thầy cô chọn một tài liệu hoặc "Chọn file mẫu" trước nhé.' : 'Thầy cô chọn video, dán link YouTube hoặc "Chọn file mẫu" trước nhé.')
         const display = name.trim()
         // Việc đọc chạy nền: hộp đóng ngay, thẻ mới hiện ở kho với tiến độ thật
@@ -135,7 +137,7 @@ export function UploadDialog({ defaultCourseId, onClose, onNotify }: Props) {
                     <label className="text-xs font-bold text-muted-foreground">
                         Khóa học
                         <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className={field}>
-                            {staticCourses.map((c) => (
+                            {courses.map((c) => (
                                 <option key={c.id} value={c.id}>
                                     {c.title}
                                 </option>

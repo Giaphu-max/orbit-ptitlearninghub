@@ -11,6 +11,8 @@ interface Props {
     page?: number
     /** Đoạn trích cần tô trên trang */
     highlight?: KbChunk
+    /** Dòng phụ dưới tiêu đề (ví dụ số đoạn AI đã tách) */
+    note?: string
     onClose: () => void
 }
 
@@ -21,7 +23,7 @@ const squash = (s: string) => s.replace(/\s+/g, '').toLowerCase()
  * Popup xem file nguồn. PDF: render bằng pdf.js, chọn trang, tô đoạn trích (khớp tuần tự các mẩu chữ của trang với văn bản đoạn).
  * DOCX / PPTX: hiện chữ đã đọc theo trang hoặc slide (không dựng lại bố cục).
  */
-export function DocViewer({ source, chunks, page: startPage = 1, highlight, onClose }: Props) {
+export function DocViewer({ source, chunks, page: startPage = 1, highlight, note, onClose }: Props) {
     const total = source.pages ?? Math.max(1, ...chunks.map((c) => c.page ?? 1))
     const [page, setPage] = useState(Math.min(Math.max(1, startPage), total))
     const isPdf = source.format === 'pdf'
@@ -41,7 +43,10 @@ export function DocViewer({ source, chunks, page: startPage = 1, highlight, onCl
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-strong/40 p-4 backdrop-blur-sm" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
             <div role="dialog" aria-modal="true" aria-label={source.title} className="flex max-h-[92svh] w-[min(860px,100%)] flex-col overflow-hidden rounded-[24px] border border-white/90 bg-card/95 shadow-raised">
                 <div className="flex items-center gap-3 border-b border-border px-5 py-3">
-                    <b className="min-w-0 flex-1 truncate text-[15px] text-strong">{source.title}</b>
+                    <span className="min-w-0 flex-1">
+                        <b className="block truncate text-[15px] text-strong">{source.title}</b>
+                        {note && <small className="block truncate text-xs text-muted-foreground">{note}</small>}
+                    </span>
                     {total > 1 && (
                         <span className="flex items-center gap-1 font-mono text-[13px] text-muted-foreground">
                             <button type="button" aria-label="Trang trước" disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded-lg p-1.5 hover:bg-muted disabled:opacity-30">
