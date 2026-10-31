@@ -1,7 +1,6 @@
 import { useId, useMemo } from 'react'
 import type { Course } from '@/data/types'
 import { COVER_MOTIFS, deriveCover, type CoverAccent, type CoverMotif } from '@/lib/cover-kinds'
-import { useOrbitStore } from '@/store/useOrbitStore'
 
 // Bìa khóa học tự sinh: SVG inline 1280×560, không chữ, nền tối gradient + họa tiết trừu tượng.
 // Mọi màu lấy từ token (--subject-* cho màu nhấn, --cover-* cho ánh sáng), pha bằng color-mix; vị trí/độ dài/góc do PRNG theo seed.
@@ -92,11 +91,9 @@ export function CourseCover({ course, seed, motif, accent, className = '' }: Pro
     )
 }
 
-/** Bìa của khóa theo lựa chọn của giảng viên: ảnh tải lên ưu tiên hơn bìa tự sinh; đổi kiểu/họa tiết lưu trong store. */
+/** Bìa tự sinh của khóa (kiểu, họa tiết, màu theo cover trong courses.json). */
 export function CourseArt({ course, className = '' }: { course: Course; className?: string }) {
-    const override = useOrbitStore((s) => s.courseCovers[course.id])
-    if (override?.image) return <img src={override.image} alt="" loading="lazy" className={`block h-full w-full object-cover ${className}`} />
-    return <CourseCover course={course} seed={override?.seed} motif={override?.motif} accent={override?.accent} className={className} />
+    return <CourseCover course={course} className={className} />
 }
 
 // ─── Nền chung ──────────────────────────────────────────────────────────────

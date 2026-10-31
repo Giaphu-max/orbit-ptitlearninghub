@@ -265,7 +265,7 @@ function warmUp() {
         // Tải sẵn code các trang có thể là đích sau khi chọn vai (chunk đã nằm trong cache lúc đổi trang) + ảnh tĩnh khuôn viên
         for (const load of [
             () => import('@/components/orbit-home-view'),
-            () => import('@/components/teacher/teacher-overview'),
+            () => import('@/components/orbit-teacher-kb-view'),
             () => import('@/components/home/tower-scene'),
         ])
             void load().catch(() => undefined)

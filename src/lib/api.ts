@@ -2,7 +2,6 @@ import type { ApiErrorBody, ChatRequest, ChatResponse, GradePhotoRequest, GradeP
 import type { EnvironmentRequest, EnvironmentSpec } from './environment'
 import { validateEnvironment } from './environment'
 import type { ExplainRequest, ExplainResponse } from './quiz'
-import type { RewriteRequest, RewriteResponse } from './rewrite'
 
 // Gọi các hàm serverless trong api/. Trình duyệt không bao giờ gọi Gemini trực tiếp.
 
@@ -56,11 +55,6 @@ async function postJson<T>(path: string, body: unknown, opts: { timeoutMs?: numb
 }
 
 export const askTutor = (req: ChatRequest) => postJson<ChatResponse>('/api/chat', req)
-export const rewriteContent = (req: RewriteRequest) =>
-    postJson<RewriteResponse>('/api/rewrite', req, {
-        timeoutMessage: 'AI phản hồi lâu quá. Thầy cô thử lại sau nhé.',
-        fallbackMessage: 'AI chưa viết lại được lúc này. Thầy cô thử lại sau nhé.',
-    })
 export const explainAnswer = (req: ExplainRequest) => postJson<ExplainResponse>('/api/explain', req)
 export const gradePhoto = (req: GradePhotoRequest) => postJson<GradePhotoResponse>('/api/grade-photo', req, {
         timeoutMs: GRADE_TIMEOUT_MS,

@@ -2,11 +2,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Award, Check, Play, X } from 'lucide-react'
 import { getLessonsOfCourse } from '@/data'
-import { useEffectiveLesson, useCourseLessons } from '@/lib/lesson-edits'
+import { useEffectiveLesson, useCourseLessons } from '@/lib/catalog'
 import { buildRecap, type RecapConcept, type RecapData } from '@/lib/recap'
 import { LessonHeader } from '@/components/lesson/lesson-header'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
-import { quickKey, quickSetFor, resolveSet, sourcedBank } from '@/lib/test-sets'
+import { quickSetFor, resolveSet, sourcedBank } from '@/lib/test-sets'
 import { QUIZ_XP } from '@/lib/quiz'
 import { formatTime } from '@/lib/youtube'
 import { useOrbitStore } from '@/store/useOrbitStore'
@@ -33,8 +33,7 @@ function Recap({ data }: { data: RecapData }) {
     const { lesson, course, index, concepts, checkpoint, xp, video, weakest, next, stages } = data
     const markRecapSeen = useOrbitStore((s) => s.markRecapSeen)
     const totalXp = useOrbitStore((s) => s.xp)
-    const quickStored = useOrbitStore((s) => s.testSets[quickKey(lesson.id)])
-    const quick = quickSetFor(lesson, quickStored)
+    const quick = quickSetFor(lesson)
     const CHECKPOINT_QUESTION_COUNT = resolveSet(quick, sourcedBank([lesson])).length
     const TEST_PASS_RATIO = quick.rules.passRatio
     // Hiệu ứng chỉ chạy lần đầu mở màn tổng kết của chặng này

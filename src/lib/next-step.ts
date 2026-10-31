@@ -46,10 +46,9 @@ export function nextDaily(): DailyArticle | undefined {
         .sort((a, b) => gapScore(b, conceptMastery) - gapScore(a, conceptMastery))[0]
 }
 
-/** Bài sinh viên thấy được: bài đã xuất bản (giảng viên thấy cả bản nháp). */
+/** Bài sinh viên thấy được: mọi bài đều đã xuất bản. */
 export function visibleLessons(): Lesson[] {
-    const { role, lessonReview } = useOrbitStore.getState()
-    return lessons.filter((l) => role === 'teacher' || (lessonReview[l.id] ?? l.status) === 'published')
+    return lessons
 }
 
 /** Bài đang học dở; chưa có thì bài đầu tiên chưa xong. */

@@ -123,7 +123,7 @@ function badgeInfo(b: Badge, s: State): RecapBadge {
 export function buildRecap(lesson: Lesson, visible: Lesson[], s: State): RecapData | null {
     const course = getCourse(lesson.courseId)
     if (!course) return null
-    const passRatio = s.testSets?.[`quick:${lesson.id}`]?.rules.passRatio ?? QUICK_RULES.passRatio
+    const passRatio = QUICK_RULES.passRatio
     const order = visible.some((l) => l.id === lesson.id) ? visible : getLessonsOfCourse(course.id)
     const index = Math.max(0, order.findIndex((l) => l.id === lesson.id))
     const firstOpen = order.findIndex((l) => lessonState(l, s.lessonProgress) !== 'done')

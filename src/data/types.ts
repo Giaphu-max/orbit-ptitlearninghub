@@ -129,35 +129,6 @@ export interface Badge {
     hidden?: boolean
 }
 
-/** Thống kê lớp (dữ liệu mẫu) để giảng viên thấy khái niệm nào sinh viên hay sai. */
-export interface ClassStats {
-    note: string
-    classSize: number
-    /** Theo khái niệm: số sinh viên đã làm, số sai ngay lần đầu, số sửa đúng sau khi sai */
-    concepts: Record<string, { answered: number; wrongFirstTry: number; corrected: number }>
-    /** Theo câu gốc: số lượt chọn từng đáp án (cùng thứ tự options) */
-    questions: Record<string, { picks: number[] }>
-    /** Kết quả kiểm tra cuối khóa của lớp, theo id khóa */
-    tests: Record<string, ClassTestStats>
-}
-
-export interface ClassTestStats {
-    /** Số sinh viên đã làm bài kiểm tra ít nhất một lần */
-    attempted: number
-    /** Tổng số lượt làm (kể cả làm lại) */
-    attempts: number
-    /** Điểm trung bình, % câu đúng */
-    avgCorrectPct: number
-    /** Số sinh viên đạt từ 80% */
-    passed: number
-    avgDurationSec: number
-    /** Số lượt bị tự nộp vì hết giờ */
-    timedOut: number
-    scoreBuckets: { label: string; count: number }[]
-    /** Theo khái niệm: số lần được hỏi và số lần trả lời đúng trong test */
-    concepts: Record<string, { asked: number; correct: number }>
-}
-
 /** Một tiêu chí của đề thực hành Studio 3D: tả định tính hiệu quả hình ảnh cần đạt, không ép thông số. */
 export interface StudioRubricCriterion {
     /** composition | lighting | intent | ... (dùng để chọn gợi ý thời gian thực ở bảng Đề bài) */

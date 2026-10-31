@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, Play } from 'lucide-react'
 import { testTimeLimit, TEST_PASS_BONUS_XP, TEST_XP_PER_CORRECT, type TestQuestion } from '@/lib/final-test'
-import { passCount, prepareQuestions, quickApproved, quickKey, quickSetFor, resolveSet, sourcedBank } from '@/lib/test-sets'
+import { passCount, prepareQuestions, quickSetFor, resolveSet, sourcedBank } from '@/lib/test-sets'
 import { UNLOCK_THRESHOLD } from '@/lib/gamification'
-import { useEffectiveLesson } from '@/lib/lesson-edits'
+import { useEffectiveLesson } from '@/lib/catalog'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import { clock, Running } from '@/components/orbit-test-view'
 import { LessonHeader } from '@/components/lesson/lesson-header'
@@ -21,12 +21,10 @@ export function OrbitCheckpointView() {
     const navigate = useNavigate()
     const record = useOrbitStore((s) => (lessonId ? s.checkpoints[lessonId] : undefined))
     const recordCheckpointResult = useOrbitStore((s) => s.recordCheckpointResult)
-    const stored = useOrbitStore((s) => (lessonId ? s.testSets[quickKey(lessonId)] : undefined))
-    const approved = useOrbitStore((s) => quickApproved(lessonId ? s.reviewedItems[lessonId] : undefined))
     const mastery = useOrbitStore((s) => s.conceptMastery)
     const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
     // Đề do thầy cô duyệt (hoặc đề AI soạn sẵn nếu chưa chỉnh) và luật làm bài đi kèm
-    const set = useMemo(() => (lesson ? quickSetFor(lesson, stored) : undefined), [lesson, stored])
+    const set = useMemo(() => (lesson ? quickSetFor(lesson) : undefined), [lesson])
     const bank = useMemo(() => (lesson ? sourcedBank([lesson]) : []), [lesson])
     const fixed = useMemo(() => (set ? resolveSet(set, bank) : []), [set, bank])
     const rules = set?.rules
@@ -40,8 +38,8 @@ export function OrbitCheckpointView() {
     const outOfAttempts = rules.attempts !== null && (record?.attempts ?? 0) >= rules.attempts
     const perQ = rules.secondsPerQuestion
 
-    if (!approved || !enough) {
-        return <Unavailable lesson={lesson} lessonId={lessonId} message="Thầy cô chưa mở bài kiểm tra này." />
+    if (!enough) {
+        return <Unavailable lesson={lesson} lessonId={lessonId} message="Bài này chưa có câu hỏi để kiểm tra." />
     }
 
     const start = () => {

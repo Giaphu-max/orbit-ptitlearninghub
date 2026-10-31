@@ -1,12 +1,9 @@
 import { create } from 'zustand'
 import { clearKb } from '@/lib/kb/store'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
-import { applyCatalog, dailyArticles, getLesson, resolveLessons, staticLessons as allLessons, type LessonOverride } from '@/data'
-import type { Course, Lesson, ReviewStatus, Seconds } from '@/data/types'
-import { DEFAULT_CLASS_ID } from '@/data/classes'
-import type { CourseCoverSpec } from '@/lib/cover-kinds'
+import { dailyArticles, getLesson } from '@/data'
+import type { Seconds } from '@/data/types'
 import { OUTCOME_MASTERY, QUIZ_XP, type QuizOutcome } from '@/lib/quiz'
-import type { TestSet } from '@/lib/test-sets'
 import { masteryAfterTest, testXp, type TestAnswerInput, type TestQuestion } from '@/lib/final-test'
 import { advanceStreak, bestTestRatio, dailyFor, DAILY_LIMIT, DAILY_MAX, directorXp, emptyDaily, evaluateBadges, EXTRA_READ_COST, LIGHTS_BADGE_ID, LIGHTS_XP, localDate, MISSIONS, type DailyState } from '@/lib/gamification'
 
@@ -86,14 +83,6 @@ export interface TestRecord {
     last: TestAttempt
 }
 
-/** Phần nội dung AI tạo mà giảng viên được sửa; lưu cả khối để thay thế bản gốc. */
-export type LessonEdits = Pick<Lesson, 'summary' | 'concepts' | 'quiz'> & { transcript?: Lesson['transcript'] }
-
-/** Bìa khóa học do giảng viên chọn: kiểu/họa tiết/seed tự sinh, hoặc ảnh tải lên (dataURL JPEG, ưu tiên hơn bìa tự sinh) */
-export interface CourseCoverOverride extends CourseCoverSpec {
-    image?: string
-}
-
 interface OrbitState {
     role: Role | null
     /** Tên hiển thị trong lời chào và avatar (demo không có tài khoản) */
@@ -135,41 +124,8 @@ interface OrbitState {
     recapSeen: Record<string, boolean>
     /** Tiến độ nhiệm vụ trong ngày; sang ngày mới thì tự bắt đầu lại */
     daily: DailyState
-    /** Trạng thái duyệt do giảng viên đặt; chưa có thì dùng status trong JSON */
-    lessonReview: Record<string, ReviewStatus>
-    /** Mục nội dung giảng viên đã duyệt theo bài (khóa 'sum' | 'c:<khái niệm>' | 'q:<câu>' | 'qt' = đề Kiểm tra nhanh); chưa có thì bài xuất bản coi như duyệt hết */
-    reviewedItems: Record<string, string[]>
-    /** Đề kiểm tra giảng viên đã chỉnh: `quick:<lessonId>` (Kiểm tra nhanh) và `final:<courseId>` (Kiểm tra cuối khóa); chưa có thì dùng đề AI soạn sẵn */
-    testSets: Record<string, TestSet>
-    /** Khóa đang mở cho sinh viên (id khóa → mở); chưa có thì coi là mở. Khóa khóa thì sinh viên không thấy bài nào của khóa đó */
-    courseOpen: Record<string, boolean>
-    /** Lớp đang chọn ở trang Lớp học của giảng viên (chỉ để xem thống kê) */
-    teacherClassId: string
-    /** Bài giảng giảng viên vừa thêm từ YouTube (bản demo: nội dung tạo sẵn, giả lập tiến độ AI) */
-    importedLessons: Lesson[]
-    /** Khóa học tạo mới từ danh sách phát khi thêm bài */
-    importedCourses: Course[]
-    /** Bài đang giả lập AI tạo nội dung: id bài → lúc bắt đầu và thời lượng giả lập (ms) */
-    importJobs: Record<string, { startedAt: number; durationMs: number }>
-    /** Bản chỉnh sửa của giảng viên theo bài; chưa có thì dùng nội dung AI trong JSON */
-    lessonEdits: Record<string, LessonEdits>
-    /** Bìa khóa học do giảng viên chỉnh (id khóa → lựa chọn); chưa có thì dùng cover trong courses.json */
-    courseCovers: Record<string, CourseCoverOverride>
     /** Phiên làm bài kiểm tra cuối khóa dở dang theo khóa (id khóa → phiên) */
     activeTestSessions: Record<string, ActiveTestSession>
-    /** Tên khóa do giảng viên đổi (id khóa → tên) */
-    courseTitles: Record<string, string>
-    /** Đổi tên / chuyển khóa / thay video của từng bài (id bài → phần ghi đè) */
-    lessonOverrides: Record<string, LessonOverride>
-    /** Thứ tự bài trong khóa do giảng viên sắp (id khóa → id bài); chưa có thì theo thứ tự gốc */
-    lessonOrder: Record<string, string[]>
-    /** Bài / khóa đã xóa (xóa mềm: dữ liệu gốc còn, "Đặt lại dữ liệu demo" khôi phục) */
-    deletedLessons: string[]
-    deletedCourses: string[]
-    /** Bản đang xuất bản của bài vừa được thay video; sinh viên học bản này cho tới khi bản mới được xuất bản */
-    liveSnapshots: Record<string, Lesson>
-    /** Khóa đã xác nhận soạn Kiểm tra cuối khóa khi mới có một phần bài xuất bản (lần sau vào thẳng trang soạn) */
-    finalConfirmed: Record<string, boolean>
 
     setRole: (role: Role | null) => void
     setLearnerName: (name: string) => void
@@ -181,17 +137,6 @@ interface OrbitState {
     /** Nhận nhiệm vụ ẩn khi đã đọc hết mọi bài Daily; trả về XP được cộng (0 nếu chưa đủ điều kiện hoặc hôm nay đã nhận) */
     claimLights: () => number
     saveLessonPosition: (lessonId: string, positionSec: Seconds) => void
-    setLessonReview: (lessonId: string, status: ReviewStatus) => void
-    setReviewedItems: (lessonId: string, keys: string[]) => void
-    setTeacherClass: (classId: string) => void
-    setCourseOpen: (courseId: string, open: boolean) => void
-    setTestSet: (key: string, set: TestSet) => void
-    /** Thêm bài (và khóa mới nếu có) từ hộp "Thêm từ YouTube"; mỗi bài bắt đầu một lượt giả lập AI tạo nội dung */
-    addImport: (input: { course?: Course; lessons: Lesson[] }) => void
-    /** patch = null: bỏ chỉnh sửa bìa, quay về bìa mặc định */
-    setCourseCover: (courseId: string, patch: CourseCoverOverride | null) => void
-    /** edits = null: bỏ chỉnh sửa, quay về bản AI tạo */
-    setLessonEdits: (lessonId: string, edits: LessonEdits | null) => void
     /** Ghi kết quả một câu quiz, cập nhật mức nắm vững; trả về số XP được cộng */
     recordQuizResult: (input: RecordQuizInput) => number
     /** Nhận thưởng một nhiệm vụ đã xong; trả về XP được cộng (0 nếu chưa đủ hoặc đã nhận) */
@@ -205,21 +150,6 @@ interface OrbitState {
     markRecapSeen: (lessonId: string) => void
     saveTestSession: (courseId: string, session: ActiveTestSession) => void
     clearTestSession: (courseId: string) => void
-    addCourse: (course: Course) => void
-    confirmFinalDraft: (courseId: string) => void
-    renameCourse: (courseId: string, title: string) => void
-    /** Xóa mềm một khóa cùng các bài trong khóa */
-    deleteCourse: (courseId: string) => void
-    renameLesson: (lessonId: string, title: string) => void
-    moveLesson: (lessonId: string, courseId: string) => void
-    setLessonOrder: (courseId: string, lessonIds: string[]) => void
-    /** Thay video của bài: bản mới thành nháp chờ duyệt; bài đang xuất bản thì sinh viên vẫn học bản cũ tới khi bản mới được xuất bản */
-    replaceVideo: (lessonId: string, patch: LessonOverride, jobMs?: number) => void
-    /** Xóa mềm một bài (hoàn tác được) */
-    deleteLesson: (lessonId: string) => void
-    restoreLesson: (lessonId: string) => void
-    /** Chốt xóa: dọn tiến độ học và kết quả quiz của bài */
-    purgeLesson: (lessonId: string) => void
     resetDemo: () => void
 }
 
@@ -235,23 +165,6 @@ export const DEFAULT_LEARNER_NAME = 'Phú'
  * đọc 1/3 bài Daily hôm nay, 1/3 nhiệm vụ xong, đang xem bài ở 46%). Ngày tính theo hôm nay để
  * chuỗi ngày luôn còn "sống" lúc mở demo. Lần đầu mở và nút "Đặt lại dữ liệu demo" đều trả về hồ sơ này.
  */
-/** Mọi khóa nội dung của một bài: tóm tắt, từng khái niệm, từng câu hỏi trong video. */
-export function lessonItemKeys(l: Pick<Lesson, 'concepts' | 'quiz'>): string[] {
-    return ['sum', ...l.concepts.map((c) => `c:${c.id}`), ...l.quiz.map((q) => `q:${q.id}`), 'qt']
-}
-
-/** Hồ sơ giảng viên mặc định: hai bài Nhiếp ảnh mới tạo còn chờ duyệt (một bài duyệt dở 6/9), các bài khác đã duyệt hết trừ một câu có đáp án nhiễu bị chọn nhiều. */
-function makeTeacherDemo() {
-    const lessonReview: Record<string, ReviewStatus> = { 'nguyen-ly-mau-sac': 'draft', 'tu-duy-nhiep-anh': 'draft' }
-    const reviewedItems: Record<string, string[]> = {}
-    for (const l of allLessons) reviewedItems[l.id] = lessonItemKeys(l)
-    const partial = allLessons.find((l) => l.id === 'nguyen-ly-mau-sac')
-    if (partial) reviewedItems[partial.id] = lessonItemKeys(partial).slice(0, 4).concat(lessonItemKeys(partial).slice(5, 7))
-    reviewedItems['tu-duy-nhiep-anh'] = []
-    reviewedItems['ban-chat-dung-phi-tuyen'] = (reviewedItems['ban-chat-dung-phi-tuyen'] ?? []).filter((k) => k !== 'q:q-tinh-phi-huy-hoai-1')
-    return { lessonReview, reviewedItems }
-}
-
 export function makeDemoProfile() {
     const today = localDate()
     return {
@@ -285,25 +198,12 @@ export function makeDemoProfile() {
         checkpoints: {} as Record<string, TestRecord>,
         recapSeen: {} as Record<string, boolean>,
         daily: { ...emptyDaily(today), readArticles: 1, claimed: ['daily'] } as DailyState,
-        ...makeTeacherDemo(),
-        courseOpen: {} as Record<string, boolean>,
-        testSets: {} as Record<string, TestSet>,
-        teacherClassId: DEFAULT_CLASS_ID,
-        importedLessons: [] as Lesson[],
-        importedCourses: [] as Course[],
-        importJobs: {} as Record<string, { startedAt: number; durationMs: number }>,
-        lessonEdits: {} as Record<string, LessonEdits>,
-        courseCovers: {} as Record<string, CourseCoverOverride>,
         activeTestSessions: {} as Record<string, ActiveTestSession>,
-        courseTitles: {} as Record<string, string>,
-        lessonOverrides: {} as Record<string, LessonOverride>,
-        lessonOrder: {} as Record<string, string[]>,
-        deletedLessons: [] as string[],
-        deletedCourses: [] as string[],
-        liveSnapshots: {} as Record<string, Lesson>,
-        finalConfirmed: {} as Record<string, boolean>,
     }
 }
+
+/** Trường của cổng giảng viên cũ (duyệt bài, đề kiểm tra, lớp, bài nhập từ YouTube…) trong localStorage đã lưu */
+const TEACHER_LEGACY_KEYS = ['lessonReview', 'reviewedItems', 'testSets', 'courseOpen', 'teacherClassId', 'importedLessons', 'importedCourses', 'importJobs', 'lessonEdits', 'courseCovers', 'courseTitles', 'lessonOverrides', 'lessonOrder', 'deletedLessons', 'deletedCourses', 'liveSnapshots', 'finalConfirmed']
 
 const safeLocalStorage: StateStorage = {
     getItem: (name) => {
@@ -375,12 +275,6 @@ export const useOrbitStore = create<OrbitState>()(
                 return xp
             },
 
-            setCourseCover: (courseId, patch) =>
-                set((s) => {
-                    const { [courseId]: old, ...rest } = s.courseCovers
-                    return { courseCovers: patch ? { ...rest, [courseId]: { ...old, ...patch } } : rest }
-                }),
-
             unlockExtraRead: () => {
                 const s = get()
                 const bought = s.dailyUnlocks.date === localDate() ? s.dailyUnlocks.count : 0
@@ -412,92 +306,6 @@ export const useOrbitStore = create<OrbitState>()(
                         },
                     },
                 })),
-
-            // Xuất bản bản mới hoặc gỡ xuất bản đều bỏ bản cũ đang giữ cho sinh viên
-            setLessonReview: (lessonId, status) =>
-                set((s) => {
-                    const { [lessonId]: _snap, ...liveSnapshots } = s.liveSnapshots ?? {}
-                    return { lessonReview: { ...s.lessonReview, [lessonId]: status }, liveSnapshots }
-                }),
-
-            confirmFinalDraft: (courseId) => set((s) => ({ finalConfirmed: { ...s.finalConfirmed, [courseId]: true } })),
-
-            addCourse: (course) => set((s) => ({ importedCourses: [...s.importedCourses, course], courseOpen: { ...s.courseOpen, [course.id]: false } })),
-
-            renameCourse: (courseId, title) => set((s) => ({ courseTitles: { ...s.courseTitles, [courseId]: title.trim().slice(0, 120) } })),
-
-            deleteCourse: (courseId) => set((s) => ({ deletedCourses: [...s.deletedCourses.filter((id) => id !== courseId), courseId] })),
-
-            renameLesson: (lessonId, title) => set((s) => ({ lessonOverrides: { ...s.lessonOverrides, [lessonId]: { ...s.lessonOverrides[lessonId], title: title.trim().slice(0, 160) } } })),
-
-            moveLesson: (lessonId, courseId) =>
-                set((s) => {
-                    const from = resolveLessons(s).find((l) => l.id === lessonId)?.courseId
-                    const order = { ...s.lessonOrder }
-                    if (from && order[from]) order[from] = order[from].filter((id) => id !== lessonId)
-                    if (order[courseId]) order[courseId] = [...order[courseId].filter((id) => id !== lessonId), lessonId]
-                    return { lessonOverrides: { ...s.lessonOverrides, [lessonId]: { ...s.lessonOverrides[lessonId], courseId } }, lessonOrder: order }
-                }),
-
-            setLessonOrder: (courseId, lessonIds) => set((s) => ({ lessonOrder: { ...s.lessonOrder, [courseId]: lessonIds } })),
-
-            replaceVideo: (lessonId, patch, jobMs = 8000) =>
-                set((s) => {
-                    const current = resolveLessons(s).find((l) => l.id === lessonId)
-                    if (!current) return s
-                    const wasPublished = (s.lessonReview[lessonId] ?? current.status) === 'published'
-                    return {
-                        lessonOverrides: { ...s.lessonOverrides, [lessonId]: { ...s.lessonOverrides[lessonId], ...patch } },
-                        liveSnapshots: wasPublished ? { ...s.liveSnapshots, [lessonId]: s.liveSnapshots[lessonId] ?? current } : s.liveSnapshots,
-                        lessonReview: { ...s.lessonReview, [lessonId]: 'draft' },
-                        // Phải duyệt lại bản mới; câu hỏi/khái niệm thầy cô đã sửa (lessonEdits) vẫn giữ nguyên
-                        reviewedItems: { ...s.reviewedItems, [lessonId]: [] },
-                        importJobs: { ...s.importJobs, [lessonId]: { startedAt: Date.now(), durationMs: jobMs } },
-                    }
-                }),
-
-            deleteLesson: (lessonId) => set((s) => ({ deletedLessons: [...s.deletedLessons.filter((id) => id !== lessonId), lessonId] })),
-
-            restoreLesson: (lessonId) => set((s) => ({ deletedLessons: s.deletedLessons.filter((id) => id !== lessonId) })),
-
-            purgeLesson: (lessonId) =>
-                set((s) => {
-                    if (!s.deletedLessons.includes(lessonId)) return s
-                    const { [lessonId]: _p, ...lessonProgress } = s.lessonProgress
-                    return { lessonProgress, quizResults: Object.fromEntries(Object.entries(s.quizResults).filter(([, r]) => r.lessonId !== lessonId)) }
-                }),
-
-            setTeacherClass: (classId) => set({ teacherClassId: classId }),
-
-            setTestSet: (key, next) => set((s) => ({ testSets: { ...s.testSets, [key]: next } })),
-
-            setCourseOpen: (courseId, open) => set((s) => ({ courseOpen: { ...s.courseOpen, [courseId]: open } })),
-
-            addImport: ({ course, lessons: added }) =>
-                set((s) => {
-                    const now = Date.now()
-                    const jobs = { ...s.importJobs }
-                    added.forEach((l, i) => (jobs[l.id] = { startedAt: now, durationMs: 8000 + i * 1800 }))
-                    // Nhập lại cùng một video: bỏ trạng thái duyệt và chỉnh sửa cũ của bài đó
-                    const gone = new Set(added.map((l) => l.id))
-                    const drop = <T,>(rec: Record<string, T>) => Object.fromEntries(Object.entries(rec).filter(([k]) => !gone.has(k)))
-                    return {
-                        reviewedItems: drop(s.reviewedItems),
-                        lessonReview: drop(s.lessonReview),
-                        lessonEdits: drop(s.lessonEdits),
-                        importedLessons: [...s.importedLessons.filter((x) => !added.some((a) => a.id === x.id)), ...added],
-                        importedCourses: course ? [...s.importedCourses.filter((c) => c.id !== course.id), course] : s.importedCourses,
-                        importJobs: jobs,
-                    }
-                }),
-
-            setReviewedItems: (lessonId, keys) => set((s) => ({ reviewedItems: { ...s.reviewedItems, [lessonId]: keys } })),
-
-            setLessonEdits: (lessonId, edits) =>
-                set((s) => {
-                    const { [lessonId]: _old, ...rest } = s.lessonEdits
-                    return { lessonEdits: edits ? { ...rest, [lessonId]: edits } : rest }
-                }),
 
             recordQuizResult: ({ lessonId, conceptId, questionId, outcome, attempts, lessonQuestionIds, firstWrongOption, fixedByVariantId }) => {
                 // Câu đã làm không cộng lại; riêng câu bỏ lỡ (missed) mà nay sửa đúng ở câu biến thể thì được nâng lên 'corrected' và nhận XP sửa lỗi
@@ -630,24 +438,16 @@ export const useOrbitStore = create<OrbitState>()(
         }),
         {
             name: STORAGE_KEY,
-            version: 14,
-            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. Từ v4 giữ dữ liệu: v5 thêm tổng kết chặng; v6 thêm XP tiêu được, bài Daily mua thêm, nhiệm vụ ẩn; v7 thêm activeTestSessions; v8 thêm briefBest (điểm cao nhất theo đề Studio); v10 thêm lớp đang chọn và bài nhập từ YouTube; v9 thêm reviewedItems và hồ sơ giảng viên mặc định (2 bài chờ duyệt) nếu chưa có thay đổi nào.
+            version: 15,
+            // Trước v4 chưa có hồ sơ demo: dùng hồ sơ mặc định mới. v15: cổng giảng viên chỉ còn Kho tài liệu nên bỏ mọi trạng thái duyệt/đề/lớp/bài nhập của bản cũ.
             migrate: (persisted, version) => {
                 const demo = makeDemoProfile() as unknown as OrbitState
                 if (version < 4 || !persisted || typeof persisted !== 'object') return demo
-                const old = persisted as Partial<OrbitState>
-                return { ...old, courseTitles: old.courseTitles ?? {}, lessonOverrides: old.lessonOverrides ?? {}, lessonOrder: old.lessonOrder ?? {}, deletedLessons: old.deletedLessons ?? [], deletedCourses: old.deletedCourses ?? [], liveSnapshots: old.liveSnapshots ?? {}, finalConfirmed: old.finalConfirmed ?? {}, courseOpen: old.courseOpen ?? {}, testSets: old.testSets ?? {}, ...(version < 12 && old.reviewedItems ? { reviewedItems: Object.fromEntries(Object.entries(old.reviewedItems).map(([id, keys]) => [id, (old.lessonReview?.[id] ?? allLessons.find((l) => l.id === id)?.status) === 'published' && !keys.includes('qt') ? [...keys, 'qt'] : keys])) } : {}), xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {}, teacherClassId: old.teacherClassId ?? DEFAULT_CLASS_ID, importedLessons: old.importedLessons ?? [], importedCourses: old.importedCourses ?? [], importJobs: old.importJobs ?? {}, ...(old.reviewedItems ? {} : Object.keys(old.lessonReview ?? {}).length || Object.keys(old.lessonEdits ?? {}).length ? { reviewedItems: demo.reviewedItems } : { reviewedItems: demo.reviewedItems, lessonReview: demo.lessonReview }) } as OrbitState
+                const old = { ...(persisted as Partial<OrbitState> & Record<string, unknown>) }
+                for (const k of TEACHER_LEGACY_KEYS) delete old[k]
+                return { ...old, xpSpent: old.xpSpent ?? 0, dailyUnlocks: old.dailyUnlocks ?? demo.dailyUnlocks, lightsDay: old.lightsDay ?? null, stageStart: old.stageStart ?? demo.stageStart, checkpoints: old.checkpoints ?? {}, recapSeen: old.recapSeen ?? {}, activeTestSessions: old.activeTestSessions ?? {}, briefBest: old.briefBest ?? {} } as OrbitState
             },
             storage: createJSONStorage(() => safeLocalStorage),
         },
     ),
 )
-
-// Nội dung sinh viên thấy (khóa mở + bài đã xuất bản) dẫn xuất từ trạng thái giảng viên; đồng bộ ngay khi nạp và mỗi khi các phần liên quan đổi,
-// nên mọi trang sinh viên mở sau đó đều đọc đúng danh mục.
-const syncCatalog = (s: OrbitState) => applyCatalog({ importedCourses: s.importedCourses, importedLessons: s.importedLessons, lessonReview: s.lessonReview, courseOpen: s.courseOpen ?? {}, courseTitles: s.courseTitles, lessonOverrides: s.lessonOverrides, lessonOrder: s.lessonOrder, deletedLessons: s.deletedLessons, deletedCourses: s.deletedCourses, liveSnapshots: s.liveSnapshots })
-syncCatalog(useOrbitStore.getState())
-const CATALOG_KEYS = ['importedCourses', 'importedLessons', 'lessonReview', 'courseOpen', 'courseTitles', 'lessonOverrides', 'lessonOrder', 'deletedLessons', 'deletedCourses', 'liveSnapshots'] as const
-useOrbitStore.subscribe((s, prev) => {
-    if (CATALOG_KEYS.some((k) => s[k] !== prev[k])) syncCatalog(s)
-})

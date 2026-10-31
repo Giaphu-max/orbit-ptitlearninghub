@@ -264,9 +264,8 @@ export function OrbitHomeView() {
 
 /** Bài đang dở (sinh viên chỉ thấy bài đã xuất bản) → đường dẫn nút "Học tiếp"; chưa có bài thì về trang Học phần. */
 function useResumeTarget() {
-    const review = useOrbitStore((s) => s.lessonReview)
     const progress = useOrbitStore((s) => s.lessonProgress)
-    const visible = lessons.filter((l) => (review[l.id] ?? l.status) === 'published')
+    const visible = lessons
     const inProgress = visible.find((l) => progress[l.id] && !progress[l.id].completed && progress[l.id].lastPositionSec > 0)
     const resume = inProgress ?? visible.find((l) => !progress[l.id]?.completed) ?? visible[0]
     return resume ? `/lesson/${resume.id}` : '/learning'

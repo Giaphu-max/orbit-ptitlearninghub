@@ -13,9 +13,8 @@ import {
     TEST_XP_PER_CORRECT,
     type TestQuestion,
 } from '@/lib/final-test'
-import { useCourseLessons } from '@/lib/lesson-edits'
-import { courseFullyPublished, finalKey, finalSetFor, passCount, prepareQuestions, resolveSet, sourcedBank, useCourseAllLessons } from '@/lib/test-sets'
-import { useTeacherCourses } from '@/lib/teacher'
+import { useCourseLessons } from '@/lib/catalog'
+import { finalSetFor, passCount, prepareQuestions, resolveSet, sourcedBank } from '@/lib/test-sets'
 import { formatTime } from '@/lib/youtube'
 import type { TestRules } from '@/lib/test-sets'
 import { useOrbitStore, type ActiveTestSession, type TestAttempt } from '@/store/useOrbitStore'
@@ -44,33 +43,27 @@ type Phase =
     | { kind: 'result'; attempt: TestAttempt; questions?: TestQuestion[]; picks?: Record<string, number>; xp?: number }
 
 /** /test/:courseId – bài kiểm tra tổng hợp cuối chương: câu từ ngân hàng của khóa, trộn thứ tự, có giờ. Kết quả cập nhật bản đồ kỹ năng và XP. */
-export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
+export function OrbitTestView() {
     const { courseId } = useParams()
-    const teacherCourses = useTeacherCourses()
-    const course = courseId ? (getCourse(courseId) ?? (preview ? teacherCourses.find((c) => c.id === courseId) : undefined)) : undefined
-    const visibleLessons = useCourseLessons(courseId)
-    const allLessons = useCourseAllLessons(courseId)
-    // Xem thử của giảng viên: dùng cả bài chưa xuất bản; sinh viên chỉ thấy câu của bài đã xuất bản
-    const lessons = preview ? allLessons : visibleLessons
-    const stored = useOrbitStore((s) => (courseId ? s.testSets[finalKey(courseId)] : undefined))
-    const fullyPublished = useOrbitStore((s) => (courseId ? courseFullyPublished(courseId, s) : false))
+    const course = courseId ? getCourse(courseId) : undefined
+    const lessons = useCourseLessons(courseId)
+    const visibleLessons = lessons
     const progress = useOrbitStore((s) => s.lessonProgress)
-    // Đề và luật do thầy cô duyệt (chưa chỉnh thì đề AI soạn sẵn); không bốc ngẫu nhiên từ kho nữa
-    const set = useMemo(() => finalSetFor(allLessons, stored), [allLessons, stored])
+    // Đề tự sinh cố định từ kho câu hỏi của khóa (chọn đều theo khái niệm)
+    const set = useMemo(() => finalSetFor(lessons), [lessons])
     const bank = useMemo(() => sourcedBank(lessons), [lessons])
     const fixed = useMemo(() => resolveSet(set, bank), [set, bank])
     const rules = set.rules
-    const published = preview || (stored?.published ?? fullyPublished)
     const record = useOrbitStore((s) => (courseId ? s.testRecords[courseId] : undefined))
     const recordTestResult = useOrbitStore((s) => s.recordTestResult)
-    const activeSession = useOrbitStore((s) => (courseId && !preview ? s.activeTestSessions?.[courseId] : undefined))
+    const activeSession = useOrbitStore((s) => (courseId ? s.activeTestSessions?.[courseId] : undefined))
     const saveTestSession = useOrbitStore((s) => s.saveTestSession)
     const clearTestSession = useOrbitStore((s) => s.clearTestSession)
     const [phase, setPhase] = useState<Phase>({ kind: 'intro' })
 
     const handleAutoSave = useCallback(
         (data: { currentIndex: number; answers: Record<string, number>; remainingSec: number }) => {
-            if (!courseId || phase.kind !== 'running' || preview) return
+            if (!courseId || phase.kind !== 'running') return
             saveTestSession(courseId, {
                 courseId,
                 questionIds: phase.questions.map((q) => q.id),
@@ -81,17 +74,17 @@ export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
                 updatedAt: Date.now(),
             })
         },
-        [courseId, phase, saveTestSession, preview],
+        [courseId, phase, saveTestSession],
     )
 
     if (!course || !courseId) return <Navigate to="/" replace />
 
-    const back = preview ? { to: `/teacher/test/${courseId}`, label: 'Quay lại soạn đề' } : { to: '/learning', label: 'Khóa học' }
+    const back = { to: '/learning', label: 'Khóa học' }
     const doneLessons = visibleLessons.filter((l) => progress[l.id]?.completed).length
     const missing = rules.opens === 'all' ? visibleLessons.length - doneLessons : rules.opens === 'almost' ? visibleLessons.length - 1 - doneLessons : 0
-    const outOfAttempts = !preview && rules.attempts !== null && (record?.attempts ?? 0) >= rules.attempts
-    if (!published || fixed.length === 0) return <Locked back={back} title="Thầy cô chưa mở bài kiểm tra này." note="Khi thầy cô duyệt và xuất bản đề, bài kiểm tra cuối khóa sẽ mở ở đây." />
-    if (!preview && missing > 0) return <Locked back={back} title={`Hoàn thành thêm ${missing} bài để mở bài kiểm tra cuối khóa.`} note={`Thầy cô đặt điều kiện mở: ${rules.opens === 'all' ? 'xong cả' : 'xong gần hết'} ${visibleLessons.length} bài của khóa. Bạn đã xong ${doneLessons}/${visibleLessons.length} bài.`} />
+    const outOfAttempts = rules.attempts !== null && (record?.attempts ?? 0) >= rules.attempts
+    if (fixed.length === 0) return <Locked back={back} title="Khóa này chưa có câu hỏi để kiểm tra." note="Khi khóa có bài giảng kèm câu hỏi, bài kiểm tra cuối khóa sẽ mở ở đây." />
+    if (missing > 0) return <Locked back={back} title={`Hoàn thành thêm ${missing} bài để mở bài kiểm tra cuối khóa.`} note={`Điều kiện mở: ${rules.opens === 'all' ? 'xong cả' : 'xong gần hết'} ${visibleLessons.length} bài của khóa. Bạn đã xong ${doneLessons}/${visibleLessons.length} bài.`} />
 
     const validSession = isSessionValid(activeSession) ? activeSession : undefined
 
@@ -108,11 +101,11 @@ export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
     }
 
     const start = () => {
-        if (courseId && !preview) clearTestSession(courseId)
+        if (courseId) clearTestSession(courseId)
         const questions = prepareQuestions(fixed, rules)
         const timeLimit = testTimeLimit(questions.length, rules.secondsPerQuestion)
         const deadline = Date.now() + timeLimit * 1000
-        if (courseId && !preview) {
+        if (courseId) {
             saveTestSession(courseId, {
                 courseId,
                 questionIds: questions.map((q) => q.id),
@@ -128,18 +121,10 @@ export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
     }
 
     const submit = (questions: TestQuestion[], picks: Record<string, number>, deadline: number, timedOut: boolean) => {
-        if (courseId && !preview) clearTestSession(courseId)
+        if (courseId) clearTestSession(courseId)
         const limit = testTimeLimit(questions.length, rules.secondsPerQuestion)
         const durationSec = Math.min(limit, Math.round(limit - (deadline - Date.now()) / 1000))
         const answers = questions.map((q) => ({ conceptId: q.conceptId, correct: picks[q.id] === q.correctIndex, blank: picks[q.id] === undefined }))
-        if (preview) {
-            // Xem thử: không ghi điểm, không cộng XP
-            const correct = answers.filter((a) => a.correct).length
-            const attempt: TestAttempt = { at: new Date().toISOString(), correct, total: answers.length, durationSec, timedOut, concepts: answers.map((a) => ({ conceptId: a.conceptId, correct: a.correct, blank: a.blank, before: null, after: a.correct ? 1 : 0 })) }
-            setPhase({ kind: 'result', attempt, questions, picks })
-            window.scrollTo(0, 0)
-            return
-        }
         const before = useOrbitStore.getState()
         const prev = before.testRecords[courseId]
         const xp = recordTestResult({ courseId, answers, durationSec, timedOut, passRatio: rules.passRatio })
@@ -166,7 +151,6 @@ export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
     return (
         <div className="w-full">
             <div className="container-wide py-8 lg:py-12"><div className="mx-auto max-w-3xl">
-                {preview && <p className="mb-4 rounded-xl bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-ink">Xem thử như sinh viên: kết quả không được ghi và không cộng XP.</p>}
                 {phase.kind === 'intro' && (
                     <Intro
                         courseTitle={course.title}
@@ -175,7 +159,7 @@ export function OrbitTestView({ preview = false }: { preview?: boolean } = {}) {
                         conceptCount={new Set(fixed.map((q) => q.conceptId)).size}
                         back={back}
                         outOfAttempts={outOfAttempts}
-                        attemptsLeft={rules.attempts === null || preview ? null : rules.attempts - (record?.attempts ?? 0)}
+                        attemptsLeft={rules.attempts === null ? null : rules.attempts - (record?.attempts ?? 0)}
                         last={record?.last}
                         activeSession={validSession}
                         onResume={resume}
@@ -282,7 +266,7 @@ function Intro({
             )}
 
             <dl className="mt-8 grid gap-4 sm:grid-cols-3">
-                <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`Đề do thầy cô duyệt, ${conceptCount} khái niệm`} />
+                <Fact icon={<Target size={18} />} label="Số câu" value={`${count} câu`} note={`${conceptCount} khái niệm`} />
                 <Fact icon={<Clock size={18} />} label="Thời gian" value={clock(testTimeLimit(count, rules.secondsPerQuestion))} note={`${rules.secondsPerQuestion}s/câu · hết giờ bài tự nộp`} />
                 <Fact icon={<BookOpen size={18} />} label="Phần thưởng" value={`+${TEST_XP_PER_CORRECT} XP/câu`} note={`Mỗi câu đúng vượt kỷ lục. Thêm ${TEST_PASS_BONUS_XP} XP khi đạt từ ${needed}/${count}`} />
             </dl>
@@ -774,9 +758,4 @@ function Locked({ back, title, note }: { back: { to: string; label: string }; ti
             </div>
         </div>
     )
-}
-
-/** Giảng viên làm thử đề đang soạn trong khung giảng viên (đúng giao diện của sinh viên, không ghi điểm). */
-export function OrbitTestPreview() {
-    return <OrbitTestView preview />
 }

@@ -3,7 +3,7 @@ import { courses } from '@/data'
 import type { Course, Lesson } from '@/data/types'
 import { lessonPercent, lessonState } from '@/lib/course-progress'
 import { deriveCover, type CoverAccent } from '@/lib/cover-kinds'
-import { useAllCourseLessons } from '@/lib/lesson-edits'
+import { useAllCourseLessons } from '@/lib/catalog'
 import { useOrbitStore, type TestRecord } from '@/store/useOrbitStore'
 
 // Dữ liệu tổng hợp cho trang Khóa học dạng bản đồ chặng và mục Khóa học ở trang chủ.
