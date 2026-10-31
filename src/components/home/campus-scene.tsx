@@ -32,7 +32,7 @@ const C = CAMPUS
 /** Độ phân giải tối đa của canvas (MacBook DPR 2 vẽ ở 1.5 để nhẹ hơn; Safari 1.25) */
 /** Safari: thêm ?noaa vào URL để thử tắt antialias nếu ?perf báo dưới 50fps lúc bay */
 const NO_AA = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('noaa')
-const DPR_MAX = isWebKit ? 1.25 : 1.5
+export const DPR_MAX = isWebKit ? 1.25 : 1.5
 /** Canvas đục (alpha:false) trên Safari/WebKit hoặc ?opaque: trời vẽ trong WebGL (scene.background), không để trình duyệt hợp thành canvas trong suốt với gradient CSS phía sau */
 const OPAQUE = isWebKit || FLAGS.opaque
 
@@ -349,7 +349,7 @@ function SuaTree({ x, z, s, lowQuality }: { x: number; z: number; s: number; low
  * Env map nhỏ (RoomEnvironment, PMREM 256px) chỉ gắn cho vật liệu kính (roughness ≤ 0,25 và metalness ≥ 0,3) để kính có phản chiếu;
  * tường và mặt đất không dùng env nên không bị sáng thêm. Vật liệu dùng chung nên gắn một lần sau khi cảnh dựng xong.
  */
-function applyGlassEnv(gl: THREE.WebGLRenderer, scene: THREE.Scene) {
+export function applyGlassEnv(gl: THREE.WebGLRenderer, scene: THREE.Scene) {
     try {
         const pm = new THREE.PMREMGenerator(gl)
         const env = pm.fromScene(new RoomEnvironment(), 0.04).texture
@@ -370,7 +370,35 @@ function applyGlassEnv(gl: THREE.WebGLRenderer, scene: THREE.Scene) {
     }
 }
 
-function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
+// ─── Kim đồng hồ chạy theo giờ thật (giờ máy người dùng) ──────────────────
+
+const TZ_SEC = -new Date().getTimezoneOffset() * 60
+function ClockHands({ at }: { at: Vec3 }) {
+    const hour = useRef<THREE.Group>(null)
+    const minute = useRef<THREE.Group>(null)
+    const last = useRef(-1)
+    useFrame(() => {
+        const sec = Math.floor(Date.now() / 1000 + TZ_SEC)
+        if (sec === last.current) return
+        last.current = sec
+        const m = (sec / 60) % 60
+        const h = (sec / 3600) % 12
+        if (minute.current) minute.current.rotation.z = -(m / 60) * Math.PI * 2
+        if (hour.current) hour.current.rotation.z = -(h / 12) * Math.PI * 2
+    })
+    return (
+        <group position={at}>
+            <group ref={hour}>
+                <Box s={[0.07, 0.3, 0.04]} c={CAMPUS.ink} at={[0, 0, 0.01]} />
+            </group>
+            <group ref={minute}>
+                <Box s={[0.05, 0.46, 0.04]} c={CAMPUS.ink} />
+            </group>
+        </group>
+    )
+}
+
+export function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: WorldProps) {
     const b = (name: BuildingName) => ({ registry, name })
     concreteTex ??= makeConcreteTexture([45 / 12, 41 / 12])
 
@@ -425,8 +453,7 @@ function Campus({ registry, nightRef, reduce, dailyLit, stage, lowQuality }: Wor
                     <mesh position={[0, 14.55, 1.7]} material={stdMat(C.glass)} castShadow receiveShadow>
                         <torusGeometry args={[0.62, 0.08, 6, 24]} />
                     </mesh>
-                    <Box s={[0.06, 0.45, 0.04]} c={CAMPUS.ink} at={[0, 14.55, 1.74]} />
-                    <Box s={[0.36, 0.06, 0.04]} c={CAMPUS.ink} at={[0.16, 14.55, 1.74]} />
+                    <ClockHands at={[0, 14.55, 1.74]} />
                     {/* Biển nền mỏng nằm trên dải kính (rộng 1.8) làm khung cho chữ */}
                     <SignBoard nightRef={nightRef} size={[1.6, 0.7, 0.06]} at={[0, 12.9, 1.755]} color={C.signWhite} />
                     <TextPlane w={1.4} h={0.5} text="PTIT" at={[0, 12.9, 1.8]} opts={T_PTIT} nightRef={nightRef} glow={!lowQuality} />

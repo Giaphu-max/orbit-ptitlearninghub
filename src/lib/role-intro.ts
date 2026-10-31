@@ -266,8 +266,7 @@ function warmUp() {
         for (const load of [
             () => import('@/components/orbit-home-view'),
             () => import('@/components/teacher/teacher-overview'),
-            () => import('@/components/home/campus-stage'),
-            () => import('@/components/home/campus-scene'),
+            () => import('@/components/home/tower-scene'),
         ])
             void load().catch(() => undefined)
         void loadCampusStill()

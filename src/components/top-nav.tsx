@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { FLAGS } from '@/lib/perf'
 import { centerOf, enterRole } from '@/lib/role-switch'
 import { getJourneyChapter, subscribeChapter } from '@/lib/scroll'
+import { useTowerDusk } from '@/lib/tower'
 import { useSoundStore } from '@/lib/sfx'
 import { useOrbitStore, type Role } from '@/store/useOrbitStore'
 
@@ -96,6 +97,7 @@ export function TopNav() {
     const compact = onHome && chapter >= 0 ? chapter >= 1 : scrollY
     useOrbitStore((s) => s.lessonProgress)
     const navHidden = useNavHidden()
+    const dusk = useTowerDusk()
 
     // Chiều cao thanh hiện tại cho mọi phần tử sticky (--nav-h); phần chừa chỗ ở đầu trang dùng --nav-full-h (cố định)
     useEffect(() => {
@@ -110,7 +112,7 @@ export function TopNav() {
             style={{ viewTransitionName: 'site-nav' }}
             data-nav={compact ? 'compact' : 'full'}
             data-focus-hidden={navHidden}
-            className={`lesson-focus-nav own-layer fixed inset-x-0 top-0 z-50 text-foreground ${onHome ? 'nav-over-3d' : ''}`}
+            className={`lesson-focus-nav own-layer fixed inset-x-0 top-0 z-50 text-foreground ${onHome ? 'nav-over-3d' : ''} ${onHome && dusk ? 'tower-dusk' : ''}`}
         >
             <div className="site-bar" data-scrolled={compact}>
                 <div className="mx-auto flex h-full w-full max-w-[var(--page-max)] items-center gap-4 px-[var(--page-gutter)] lg:gap-6">

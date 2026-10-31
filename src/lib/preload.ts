@@ -5,6 +5,5 @@ export function preloadHome() {
     if (started) return
     started = true
     void import('@/components/orbit-home-view').catch(() => undefined)
-    void import('@/components/home/campus-stage').catch(() => undefined)
-    void import('@/components/home/campus-scene').catch(() => undefined)
+    void import('@/components/home/tower-scene').catch(() => undefined)
 }
