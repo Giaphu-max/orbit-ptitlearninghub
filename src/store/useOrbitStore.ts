@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { clearKb } from '@/lib/kb/store'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { applyCatalog, dailyArticles, getLesson, resolveLessons, staticLessons as allLessons, type LessonOverride } from '@/data'
 import type { Course, Lesson, ReviewStatus, Seconds } from '@/data/types'
@@ -622,7 +623,10 @@ export const useOrbitStore = create<OrbitState>()(
                 return mission.rewardXp
             },
 
-            resetDemo: () => set({ ...makeDemoProfile() }),
+            resetDemo: () => {
+                void clearKb()
+                set({ ...makeDemoProfile() })
+            },
         }),
         {
             name: STORAGE_KEY,

@@ -71,6 +71,7 @@ function TextPage({ chunks, highlight }: { chunks: KbChunk[]; highlight?: KbChun
         <div className="space-y-3">
             {chunks.map((c) => (
                 <p key={c.id} className={`whitespace-pre-line rounded-xl bg-card p-4 text-[14.5px] leading-relaxed text-foreground ${highlight?.id === c.id ? 'ring-2 ring-brand-600' : ''}`}>
+                    {c.kind === 'video' && <b className="mr-2 font-mono text-[12px] text-brand-ink">{`${String(Math.floor((c.start ?? 0) / 60)).padStart(2, '0')}:${String(Math.floor((c.start ?? 0) % 60)).padStart(2, '0')}`}</b>}
                     {c.text}
                 </p>
             ))}

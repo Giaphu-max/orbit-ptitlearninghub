@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { ArrowDown, Camera, FileText, MoreHorizontal, Play, Send, Sparkles } from 'lucide-react'
@@ -40,7 +40,7 @@ const AiAvatar = () => (
 )
 
 /** Danh sách tin nhắn: memo để khung chat không dựng lại markdown mỗi lần đồng hồ video nhích */
-const Messages = memo(function Messages({ messages, lessonId, onSeek, onOpenDoc }: { messages: ChatMessage[]; lessonId: string; onSeek: (sec: number) => void; onOpenDoc: (c: KbChunk) => void }) {
+const Messages = memo(function Messages({ messages, lessonId, lessonOf, onSeek, onOpenDoc }: { messages: ChatMessage[]; lessonId: string; lessonOf: (sourceId: string) => string | undefined; onSeek: (sec: number) => void; onOpenDoc: (c: KbChunk) => void }) {
     return (
         <>
             {messages.map((msg, idx) => (
@@ -71,7 +71,8 @@ const Messages = memo(function Messages({ messages, lessonId, onSeek, onOpenDoc 
                                                 <span className="font-sans font-semibold">{chunkLabel(c)}</span>
                                             </button>
                                         )
-                                    const here = c.sourceId === `video-${lessonId}`
+                                    const lid = lessonOf(c.sourceId)
+                                    const here = lid === lessonId
                                     const inner = (
                                         <>
                                             <Play size={10} className="fill-current" />
@@ -80,12 +81,18 @@ const Messages = memo(function Messages({ messages, lessonId, onSeek, onOpenDoc 
                                         </>
                                     )
                                     // Video của bài khác trong khóa: mở bài đó đúng mốc
+                                    if (!lid)
+                                        return (
+                                            <span key={c.id} className={chip.replace('hover:bg-brand-50', '')}>
+                                                {inner}
+                                            </span>
+                                        )
                                     return here ? (
                                         <button key={c.id} type="button" onClick={() => onSeek(c.start ?? 0)} className={chip} title="Tua video tới đoạn này">
                                             {inner}
                                         </button>
                                     ) : (
-                                        <Link key={c.id} to={`/lesson/${c.sourceId.replace(/^video-/, '')}?t=${Math.floor(c.start ?? 0)}`} className={chip} title="Mở bài giảng này đúng đoạn">
+                                        <Link key={c.id} to={`/lesson/${lid}?t=${Math.floor(c.start ?? 0)}`} className={chip} title="Mở bài giảng này đúng đoạn">
                                             {inner}
                                         </Link>
                                     )
@@ -108,6 +115,8 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio 
     ])
     const [doc, setDoc] = useState<KbChunk | null>(null)
     const kbState = useKb()
+    const openDoc = useCallback((c: KbChunk) => setDoc(c), [])
+    const lessonOf = useCallback((sourceId: string) => selectSources(useKb.getState()).find((x) => x.id === sourceId)?.lessonId, [])
     const docSource = doc ? selectSources(kbState).find((x) => x.id === doc.sourceId) : undefined
     const [inputValue, setInputValue] = useState('')
     const [isTyping, setIsTyping] = useState(false)
@@ -173,7 +182,7 @@ export function TutorPanel({ lesson, getCurrentTime, onSeek, currentSec, studio 
     return (
         <div className="relative flex h-full min-h-0 flex-col">
             <div ref={listRef} onScroll={handleScroll} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4" aria-live="polite">
-                <Messages messages={messages} lessonId={lesson.id} onSeek={onSeek} onOpenDoc={setDoc} />
+                <Messages messages={messages} lessonId={lesson.id} lessonOf={lessonOf} onSeek={onSeek} onOpenDoc={openDoc} />
                 {isTyping && (
                     <div className="flex gap-2.5">
                         <AiAvatar />

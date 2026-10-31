@@ -1,21 +1,15 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { BarChart3, Bell, Home, PlayCircle, Repeat, RotateCcw } from 'lucide-react'
+import { FileText, Repeat, RotateCcw } from 'lucide-react'
 import { Loader2 } from 'lucide-react'
-import { AddLessonsDialog } from '@/components/teacher/add-lessons-dialog'
-import { useAddDialog } from '@/components/teacher/add-dialog-state'
 import { RewardOverlay } from '@/components/reward-overlay'
-import { TEACHER_PROFILE } from '@/data/teacher-notes'
+import { TEACHER_PROFILE } from '@/data/teacher-profile'
 import { LOGO_URL } from '@/lib/brand'
 import { centerOf, enterRole } from '@/lib/role-switch'
-import { usePendingReviewTasks } from '@/components/teacher/use-pending-review-tasks'
+import { selectSources, useKb } from '@/lib/kb/store'
 import { useOrbitStore } from '@/store/useOrbitStore'
 
-const NAV = [
-    { label: 'Tổng quan', to: '/', icon: Home, match: (p: string) => p === '/' },
-    { label: 'Bài giảng', to: '/teacher/library', icon: PlayCircle, match: (p: string) => p.startsWith('/teacher/library') || p.startsWith('/teacher/review') },
-    { label: 'Lớp học', to: '/teacher/class', icon: BarChart3, match: (p: string) => p.startsWith('/teacher/class') },
-]
+const NAV = [{ label: 'Kho tài liệu', to: '/teacher', icon: FileText, match: (p: string) => p.startsWith('/teacher') }]
 
 const navItem = 'flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-[15px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
 
@@ -25,12 +19,12 @@ const navItem = 'flex h-11 w-full items-center gap-3 rounded-[10px] px-3 text-[1
  */
 export function TeacherShell() {
     const { pathname } = useLocation()
-    const addOpen = useAddDialog((s) => s.open)
-    const hideAdd = useAddDialog((s) => s.hide)
     const resetDemo = useOrbitStore((s) => s.resetDemo)
-    const pending = usePendingReviewTasks().length
+    const sourceCount = useKb((s) => selectSources(s).length + Object.keys(s.reading).length)
+    useEffect(() => void useKb.getState().load(), [])
 
-    if (pathname !== '/' && !pathname.startsWith('/teacher')) return <Navigate to="/" replace />
+    // Giảng viên chỉ có một trang: Kho tài liệu. Mọi đường dẫn cũ (kể cả "/") về /teacher
+    if (pathname !== '/teacher') return <Navigate to="/teacher" replace />
 
     return (
         <div className="relative isolate min-h-[100svh] bg-surface font-sans text-foreground">
@@ -40,8 +34,8 @@ export function TeacherShell() {
                 <div className="absolute left-[-10%] top-[40%] h-[500px] w-[500px] rounded-full bg-brand-100/50 blur-[120px]" />
                 <div className="absolute bottom-[-10%] right-[10%] h-[400px] w-[400px] rounded-full bg-brand-100/40 blur-[100px]" />
             </div>
-            <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center gap-6 border-b border-border bg-card px-6">
-                <Link to="/" className="flex w-56 items-center gap-3" aria-label="PTIT · Cổng giảng viên">
+            <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center gap-6 border-b border-border/80 bg-card/70 px-6 backdrop-blur-xl">
+                <Link to="/teacher" className="flex w-56 items-center gap-3" aria-label="PTIT · Cổng giảng viên">
                     <span className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-border bg-card">
                         {LOGO_URL ? <img src={LOGO_URL} alt="" className="w-[76%]" /> : <b className="text-xs font-black text-brand-ink">PTIT</b>}
                     </span>
@@ -51,19 +45,13 @@ export function TeacherShell() {
                     </span>
                 </Link>
                 <div className="ml-auto flex items-center gap-3">
-                    <Link to="/teacher/library" title="Thông báo" aria-label={`Thông báo: ${pending} việc chờ duyệt`} className="relative flex h-10 w-10 items-center justify-center rounded-[10px] text-foreground transition hover:bg-muted">
-                        <Bell size={20} aria-hidden />
-                        {pending > 0 && (
-                            <i className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 font-mono text-[10px] font-bold not-italic text-ink-foreground">{pending}</i>
-                        )}
-                    </Link>
                     <AccountMenu />
                 </div>
             </header>
 
-            <aside className="fixed bottom-0 left-0 top-16 z-20 flex w-[248px] flex-col justify-between border-r border-border bg-card px-3 py-4 max-lg:hidden">
+            <aside className="fixed bottom-0 left-0 top-16 z-20 flex w-[248px] flex-col justify-between border-r border-border/80 bg-card/55 px-3 py-4 backdrop-blur-xl max-lg:hidden">
                 <nav aria-label="Điều hướng giảng viên">
-                    <p className="mx-3 mb-1.5 mt-1 text-[11.5px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Giảng dạy</p>
+                    
                     <ul className="flex flex-col gap-0.5">
                         {NAV.map(({ label, to, icon: Icon, match }) => {
                             const on = match(pathname)
@@ -72,9 +60,7 @@ export function TeacherShell() {
                                     <NavLink to={to} aria-current={on ? 'page' : undefined} className={`${navItem} ${on ? 'bg-brand-50 font-bold text-brand-ink' : 'font-medium text-foreground hover:bg-muted'}`}>
                                         <Icon size={19} aria-hidden />
                                         {label}
-                                        {label === 'Bài giảng' && pending > 0 && (
-                                            <em className="ml-auto rounded-full bg-brand-600 px-[7px] py-0.5 font-mono text-[11px] font-bold not-italic text-ink-foreground">{pending}</em>
-                                        )}
+                                        <em className="ml-auto font-mono text-[11px] font-bold not-italic text-muted-foreground">{sourceCount}</em>
                                     </NavLink>
                                 </li>
                             )
@@ -84,12 +70,12 @@ export function TeacherShell() {
                 <div className="border-t border-border pt-2.5">
                     <button
                         type="button"
-                        onClick={() => window.confirm('Xóa toàn bộ XP, tiến độ, bài vừa thêm và nội dung đã duyệt trên trình duyệt này?') && resetDemo()}
+                        onClick={() => window.confirm('Xóa toàn bộ XP, tiến độ và kho tài liệu đã tải lên trên trình duyệt này?') && resetDemo()}
                         className={`${navItem} text-sm font-medium text-muted-foreground hover:bg-muted`}
                     >
                         <RotateCcw size={18} aria-hidden /> Đặt lại dữ liệu demo
                     </button>
-                    <small className="block px-3 pt-1.5 text-[11.5px] leading-snug text-muted-foreground">Sản phẩm dự thi Ứng dụng AI trong giảng dạy 2026</small>
+                    <small className="block px-3 pt-1.5 text-[11.5px] leading-snug text-muted-foreground">Trợ giảng AI chỉ trả lời bằng kiến thức có trong tài liệu và video thầy cô tải lên.</small>
                 </div>
             </aside>
 
@@ -106,7 +92,6 @@ export function TeacherShell() {
                     </Suspense>
                 </div>
             </main>
-            {addOpen && <AddLessonsDialog courseId={addOpen.courseId} replaceId={addOpen.replaceId} onClose={hideAdd} />}
             <RewardOverlay />
         </div>
     )
