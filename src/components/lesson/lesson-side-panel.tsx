@@ -5,8 +5,9 @@ import type { QuizResult } from '@/store/useOrbitStore'
 import { TutorPanel } from '@/components/lesson/tutor-panel'
 import { TranscriptPanel } from '@/components/lesson/transcript-panel'
 import { QuizList } from '@/components/lesson/quiz-list'
+import { CourseDocs, useCourseDocs } from '@/components/kb/course-docs'
 
-type TabId = 'ai' | 'transcript' | 'quiz'
+type TabId = 'ai' | 'transcript' | 'quiz' | 'docs'
 
 interface LessonSidePanelProps {
     lesson: Lesson
@@ -22,11 +23,13 @@ interface LessonSidePanelProps {
 /** Bảng công cụ bên phải video: Trợ giảng AI | Transcript | Câu hỏi. Mọi tab luôn được dựng để giữ lịch sử chat và vị trí cuộn. */
 export function LessonSidePanel({ lesson, currentTime, results, getCurrentTime, onSeek, onOpenQuiz, onHide, studio }: LessonSidePanelProps) {
     const [tab, setTab] = useState<TabId>('ai')
+    const docCount = useCourseDocs(lesson.courseId).length
     const done = lesson.quiz.filter((q) => results[q.id]).length
     const tabs: { id: TabId; label: string; extra?: string }[] = [
         { id: 'ai', label: 'Trợ giảng AI' },
         { id: 'transcript', label: 'Transcript' },
         { id: 'quiz', label: 'Câu hỏi', extra: `${done}/${lesson.quiz.length}` },
+        ...(docCount > 0 ? [{ id: 'docs' as const, label: 'Tài liệu', extra: String(docCount) }] : []),
     ]
 
     return (
@@ -66,6 +69,9 @@ export function LessonSidePanel({ lesson, currentTime, results, getCurrentTime, 
             </div>
             <div role="tabpanel" className={`min-h-0 flex-1 ${tab === 'quiz' ? 'flex flex-col' : 'hidden'}`}>
                 <QuizList lesson={lesson} results={results} onOpen={onOpenQuiz} onSeek={onSeek} />
+            </div>
+            <div role="tabpanel" className={`min-h-0 flex-1 overflow-y-auto p-4 ${tab === 'docs' ? 'block' : 'hidden'}`}>
+                <CourseDocs courseId={lesson.courseId} />
             </div>
         </>
     )

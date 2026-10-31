@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
+import { CourseDocsSection } from '@/components/kb/course-docs'
 import { ClassGrid } from '@/components/courses/class-grid'
 import { ContinueCard } from '@/components/courses/continue-card'
 import { LearningBanner } from '@/components/courses/learning-banner'
@@ -84,6 +85,7 @@ export function OrbitLearningView() {
                         <WeekCard week={week} plan={plan} />
                     </div>
                 )}
+                {featured && <CourseDocsSection courseId={featured.course.id} />}
                 <ClassGrid summaries={summaries} selectedId={featured?.course.id} onSelect={select} onUpcoming={() => setToast(true)} />
             </div>
             {toast && (
