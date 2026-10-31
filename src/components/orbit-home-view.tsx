@@ -5,7 +5,7 @@ import { lessons } from '@/data'
 import { useDailyLit } from '@/hooks/useDailyLit'
 import { useTowerScroll } from '@/hooks/useTowerScroll'
 import { FLAGS, mountPerfHud } from '@/lib/perf'
-import { introDone, introMark, introPlaying } from '@/lib/role-intro'
+import { introMark } from '@/lib/role-intro'
 import { CAMPUS_STILL_URL } from '@/lib/campus-still'
 import { useOrbitStore } from '@/store/useOrbitStore'
 import './home/tower.css'
@@ -188,11 +188,13 @@ export function OrbitHomeView() {
     useFitWords(rootRef)
     useEffect(() => mountPerfHud(), [])
 
-    // Báo trang đã sẵn sàng cho màn intro (chữ, thẻ và trời đã vẽ; cảnh 3D mount sau khi intro xong)
+    // Báo trang đã sẵn sàng cho màn intro. Có 3D thì Tower3D báo SAU khung 3D đầu tiên (camera trang 01) để lỗ thủng mở ra đã thấy mô hình đúng chỗ;
+    // không 3D (máy yếu, tắt mô hình) thì báo ngay khi chữ và thẻ đã vẽ.
     useEffect(() => {
-        const id = requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new Event('orbit:page-ready'))))
+        if (use3D) return
+        const id = requestAnimationFrame(() => requestAnimationFrame(() => notifyPageReady()))
         return () => cancelAnimationFrame(id)
-    }, [])
+    }, [use3D])
 
     return (
         <div ref={rootRef} data-page="0" className="tower-root text-foreground">
@@ -283,51 +285,43 @@ function StillCampus() {
     )
 }
 
+/** Chỉ báo một lần cho mỗi lần mở trang */
+let readyAnnounced = false
+const notifyPageReady = () => {
+    if (readyAnnounced) return
+    readyAnnounced = true
+    window.dispatchEvent(new Event('orbit:page-ready'))
+}
+
 /**
- * Canvas 3D: hoãn mount tới khi intro vai trò xong (lúc rảnh), rồi fade vào sau khung R3F đầu tiên.
- * Trong lúc chờ hiện ảnh tĩnh để trang không trống.
+ * Canvas 3D: dựng ngay (kể cả lúc intro chạy: khung đầu được vẽ thẳng bằng camera trang 01, xem Driver trong tower-scene) và ẩn hoàn toàn
+ * (opacity 0) cho tới khi R3F vẽ xong khung đầu; lúc đó mới mờ dần vào 400ms và báo intro "page-ready". Không dùng ảnh tĩnh cũ
+ * (chụp từ khung hero khuôn viên cũ nên mô hình nhỏ, sai bố cục trang 01).
  */
 function Tower3D({ reduce, dailyLit }: { reduce: boolean; dailyLit: ReturnType<typeof useDailyLit> }) {
-    const deferred = useRef(introPlaying())
-    const [step, setStep] = useState<'wait' | 'mounted' | 'ready'>(() => (deferred.current ? 'wait' : 'mounted'))
+    const [ready, setReady] = useState(false)
     useEffect(() => {
-        if (step !== 'wait') return
-        let alive = true
-        void introDone().then(() => {
-            const go = () => {
-                if (!alive) return
-                introMark('mount canvas 3D')
-                setStep('mounted')
-            }
-            const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback
-            if (ric) ric(go, { timeout: 500 })
-            else window.setTimeout(go, 200)
-        })
-        return () => {
-            alive = false
-        }
-    }, [step])
-    // Chốt chặn: cảnh không báo khung đầu trong 2,5s thì vẫn hiện canvas
+        readyAnnounced = false
+    }, [])
+    // Chốt chặn: cảnh không báo khung đầu trong 2,5s thì vẫn hiện canvas và báo intro
     useEffect(() => {
-        if (step !== 'mounted') return
-        const t = window.setTimeout(() => setStep('ready'), 2500)
+        const t = window.setTimeout(() => {
+            setReady(true)
+            notifyPageReady()
+        }, 2500)
         return () => clearTimeout(t)
-    }, [step])
+    }, [])
     const onReady = useCallback(() => {
         introMark('khung 3D đầu tiên')
-        setStep('ready')
+        setReady(true)
+        requestAnimationFrame(() => requestAnimationFrame(notifyPageReady))
     }, [])
     return (
-        <>
-            {step !== 'ready' && <StillCampus />}
-            <div className="tower-gl" style={{ opacity: step === 'ready' ? 1 : 0 }}>
-                {step !== 'wait' && (
-                    <Suspense fallback={null}>
-                        <TowerScene reduce={reduce} dailyLit={dailyLit} onReady={onReady} />
-                    </Suspense>
-                )}
-            </div>
-        </>
+        <div className="tower-gl" style={{ opacity: ready ? 1 : 0 }}>
+            <Suspense fallback={null}>
+                <TowerScene reduce={reduce} dailyLit={dailyLit} onReady={onReady} />
+            </Suspense>
+        </div>
     )
 }
 

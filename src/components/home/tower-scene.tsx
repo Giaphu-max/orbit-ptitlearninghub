@@ -215,24 +215,43 @@ function World({ night, reduce, dailyLit }: { night: boolean; reduce: boolean; d
     )
 }
 
-/** Vẽ canvas trong vòng rAF chung (sau useTowerScroll): Canvas ở frameloop="never", ở đây gọi advance. Không vẽ khi tab ẩn hoặc màn chuyển giao diện che. */
+/**
+ * Vẽ canvas trong vòng rAF chung (sau useTowerScroll): Canvas ở frameloop="never", ở đây gọi advance. Không vẽ khi tab ẩn hoặc màn chuyển giao diện che.
+ * Khung ĐẦU TIÊN được vẽ thẳng ngay khi canvas có kích thước (không chờ vòng rAF, vốn tạm dừng lúc intro chạy): World đặt camera từ
+ * tower.p hiện tại nên khung đầu là đúng camera trang 01 (hoặc trang đang cuộn tới), không nội suy từ camera mặc định.
+ */
 function Driver({ onReady }: { onReady?: () => void }) {
     const advance = useThree((s) => s.advance)
     const clock = useThree((s) => s.clock)
+    const get = useThree((s) => s.get)
     useEffect(() => {
         let prev = 0
         let ready = false
-        return addFrame((t) => {
+        let timer = 0
+        const first = () => {
+            if (ready) return
+            const { size } = get()
+            if (size.width < 10 || size.height < 10) {
+                timer = window.setTimeout(first, 40)
+                return
+            }
+            ready = true
+            advance(clock.elapsedTime + 0.016)
+            onReady?.()
+        }
+        timer = window.setTimeout(first, 60)
+        const off = addFrame((t) => {
             const dt = Math.min(prev ? (t - prev) / 1000 : 0.016, 0.1)
             prev = t
             if (document.hidden || useThemeStore.getState().frozen) return
+            if (!ready) return first()
             advance(clock.elapsedTime + dt)
-            if (!ready) {
-                ready = true
-                onReady?.()
-            }
         }, 1)
-    }, [advance, clock, onReady])
+        return () => {
+            window.clearTimeout(timer)
+            off()
+        }
+    }, [advance, clock, get, onReady])
     return null
 }
 
