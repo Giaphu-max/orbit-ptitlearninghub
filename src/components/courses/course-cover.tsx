@@ -1,5 +1,6 @@
 import { useId, useMemo } from 'react'
 import type { Course } from '@/data/types'
+import { useCatalog } from '@/store/useCatalog'
 import { COVER_MOTIFS, deriveCover, type CoverAccent, type CoverMotif } from '@/lib/cover-kinds'
 
 // Bìa khóa học tự sinh: SVG inline 1280×560, không chữ, nền tối gradient + họa tiết trừu tượng.
@@ -91,9 +92,11 @@ export function CourseCover({ course, seed, motif, accent, className = '' }: Pro
     )
 }
 
-/** Bìa tự sinh của khóa (kiểu, họa tiết, màu theo cover trong courses.json). */
+/** Bìa của khóa theo lựa chọn của giảng viên: ảnh tải lên ưu tiên hơn bìa tự sinh; màu/họa tiết lưu trong store danh mục. */
 export function CourseArt({ course, className = '' }: { course: Course; className?: string }) {
-    return <CourseCover course={course} className={className} />
+    const override = useCatalog((s) => s.covers[course.id])
+    if (override?.image) return <img src={override.image} alt="" loading="lazy" className={`block h-full w-full object-cover ${className}`} />
+    return <CourseCover course={course} seed={override?.seed} motif={override?.motif} accent={override?.accent} className={className} />
 }
 
 // ─── Nền chung ──────────────────────────────────────────────────────────────

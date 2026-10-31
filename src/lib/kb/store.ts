@@ -13,6 +13,8 @@ interface Persisted {
     uploads: { source: KbSource; chunks: KbChunk[] }[]
     removed: string[]
     renames: Record<string, string>
+    /** Nguồn đã chuyển sang khóa khác (id nguồn → id khóa) */
+    moves: Record<string, string>
 }
 
 export interface Reading {
@@ -24,34 +26,35 @@ export interface Reading {
 interface KbState extends Persisted {
     loaded: boolean
     reading: Record<string, Reading>
-    /** Nguồn vừa xóa, chờ Hoàn tác 5 giây */
-    undo: { id: string; title: string } | null
     load: () => Promise<void>
     startReading: (source: KbSource) => void
     setProgress: (id: string, progress: number) => void
+    /** Ghi nguồn đã đọc xong; trùng id với nguồn đang có (thay file, đọc lại) thì thay nội dung, giữ id */
     finishReading: (source: KbSource, chunks: KbChunk[], file?: Blob) => void
+    move: (id: string, courseId: string) => void
     failReading: (id: string) => void
     rename: (id: string, title: string) => void
     remove: (id: string) => void
-    restore: () => void
-    dismissUndo: () => void
+    restore: (id: string) => void
+    /** Hết thời gian hoàn tác: xóa hẳn file/đoạn của nguồn tải lên */
+    purge: (id: string) => void
 }
 
 let loading: Promise<void> | null = null
-const persist = (s: Persisted) => void set(STATE_KEY, { uploads: s.uploads, removed: s.removed, renames: s.renames }).catch(() => undefined)
+const persist = (s: Persisted) => void set(STATE_KEY, { uploads: s.uploads, removed: s.removed, renames: s.renames, moves: s.moves }).catch(() => undefined)
 
 export const useKb = create<KbState>((setState, getState) => ({
     uploads: [],
     removed: [],
     renames: {},
+    moves: {},
     loaded: false,
     reading: {},
-    undo: null,
     load: () => {
         loading ??= (async () => {
             try {
                 const saved = await get<Persisted>(STATE_KEY)
-                if (saved) setState({ uploads: saved.uploads ?? [], removed: saved.removed ?? [], renames: saved.renames ?? {} })
+                if (saved) setState({ uploads: saved.uploads ?? [], removed: saved.removed ?? [], renames: saved.renames ?? {}, moves: saved.moves ?? {} })
             } catch {
                 /* IndexedDB không dùng được (chế độ riêng tư): chỉ có kho có sẵn */
             }
@@ -67,7 +70,7 @@ export const useKb = create<KbState>((setState, getState) => ({
         setState((s) => {
             const { [source.id]: _done, ...reading } = s.reading
             void _done
-            const next = { ...s, reading, uploads: [...s.uploads, { source, chunks }] }
+            const next = { ...s, reading, uploads: [...s.uploads.filter((u) => u.source.id !== source.id), { source, chunks }] }
             persist(next)
             return { reading, uploads: next.uploads }
         })
@@ -84,56 +87,66 @@ export const useKb = create<KbState>((setState, getState) => ({
             persist(next)
             return { renames: next.renames }
         }),
+    move: (id, courseId) =>
+        setState((s) => {
+            const next = { ...s, moves: { ...s.moves, [id]: courseId } }
+            persist(next)
+            return { moves: next.moves }
+        }),
     remove: (id) =>
         setState((s) => {
-            const title = allSources(s).find((x) => x.id === id)?.title ?? ''
-            const next = { ...s, removed: [...s.removed, id] }
+            const next = { ...s, removed: [...s.removed.filter((x) => x !== id), id] }
             persist(next)
-            return { removed: next.removed, undo: { id, title } }
+            return { removed: next.removed }
         }),
-    restore: () =>
+    restore: (id) =>
         setState((s) => {
-            if (!s.undo) return s
-            const next = { ...s, removed: s.removed.filter((x) => x !== s.undo!.id) }
+            const next = { ...s, removed: s.removed.filter((x) => x !== id) }
             persist(next)
-            return { removed: next.removed, undo: null }
+            return { removed: next.removed }
         }),
-    dismissUndo: () => {
-        const u = getState().undo
-        if (!u) return
-        // Xóa hẳn file đã tải lên khỏi IndexedDB khi hết thời gian hoàn tác
-        const up = getState().uploads.find((x) => x.source.id === u.id)
-        if (up) {
-            const rest = getState().uploads.filter((x) => x.source.id !== u.id)
-            const removed = getState().removed.filter((x) => x !== u.id)
-            void del(fileKey(u.id)).catch(() => undefined)
-            persist({ uploads: rest, removed, renames: getState().renames })
-            setState({ uploads: rest, removed, undo: null })
-        } else setState({ undo: null })
+    purge: (id) => {
+        const st = getState()
+        if (!st.removed.includes(id)) return
+        const up = st.uploads.find((x) => x.source.id === id)
+        if (!up) return
+        void del(fileKey(id)).catch(() => undefined)
+        const uploads = st.uploads.filter((x) => x.source.id !== id)
+        const removed = st.removed.filter((x) => x !== id)
+        persist({ uploads, removed, renames: st.renames, moves: st.moves })
+        setState({ uploads, removed })
     },
 }))
 
-/** Mọi nguồn đang có trong kho (đã trừ nguồn xóa, áp tên đã đổi), nguồn tải lên xếp trước. */
-function allSources(s: Pick<KbState, 'uploads' | 'removed' | 'renames'>): KbSource[] {
-    const all = [...s.uploads.map((u) => u.source).reverse(), ...BUILTIN.sources]
-    return all.filter((x) => !s.removed.includes(x.id)).map((x) => (s.renames[x.id] ? { ...x, title: s.renames[x.id] } : x))
+type View = Pick<KbState, 'uploads' | 'removed' | 'renames' | 'moves'>
+
+/** Mọi nguồn đang có trong kho (đã trừ nguồn xóa, áp tên đã đổi và khóa đã chuyển), nguồn tải lên xếp trước; nguồn thay file đè lên bản có sẵn cùng id. */
+function allSources(s: View): KbSource[] {
+    const replaced = new Set(s.uploads.map((u) => u.source.id))
+    const all = [...s.uploads.map((u) => u.source).reverse(), ...BUILTIN.sources.filter((x) => !replaced.has(x.id))]
+    return all.filter((x) => !s.removed.includes(x.id)).map((x) => ({ ...x, title: s.renames[x.id] ?? x.title, courseId: s.moves[x.id] ?? x.courseId }))
 }
 
 export const selectSources = (s: KbState) => allSources(s)
 
-/** Chunk của một khóa (mọi nguồn còn lại); tên nguồn theo tên đã đổi. */
-export function chunksOf(s: Pick<KbState, 'uploads' | 'removed' | 'renames'>, courseId: string): KbChunk[] {
-    const live = new Set(allSources(s).map((x) => x.id))
-    const all = [...BUILTIN.chunks, ...s.uploads.flatMap((u) => u.chunks)]
-    return all
-        .filter((c) => c.courseId === courseId && live.has(c.sourceId))
-        .map((c) => (s.renames[c.sourceId] ? { ...c, sourceTitle: s.renames[c.sourceId] } : c))
+/** Nguồn đã xóa (để hoàn tác / liệt kê) kèm tên hiện tại. */
+export const sourceById = (s: View, id: string) => allSources({ ...s, removed: s.removed.filter((x) => x !== id) }).find((x) => x.id === id)
+
+/** Chunk của một khóa (mọi nguồn còn lại, theo khóa hiện tại của nguồn); tên nguồn theo tên đã đổi. */
+export function chunksOf(s: View, courseId: string): KbChunk[] {
+    const live = new Map(allSources(s).map((x) => [x.id, x]))
+    const replaced = new Set(s.uploads.map((u) => u.source.id))
+    const all = [...BUILTIN.chunks.filter((c) => !replaced.has(c.sourceId)), ...s.uploads.flatMap((u) => u.chunks)]
+    return all.flatMap((c) => {
+        const src = live.get(c.sourceId)
+        return src && src.courseId === courseId ? [{ ...c, courseId, sourceTitle: src.title }] : []
+    })
 }
 
 export const getUploadedFile = (id: string) => get<Blob>(fileKey(id)).catch(() => undefined)
 
 /** "Đặt lại dữ liệu demo": xóa cả kho IndexedDB (nguồn tải lên, file, tên đã đổi, nguồn đã xóa). */
 export async function clearKb() {
-    useKb.setState({ uploads: [], removed: [], renames: {}, reading: {}, undo: null })
+    useKb.setState({ uploads: [], removed: [], renames: {}, moves: {}, reading: {} })
     await clear().catch(() => undefined)
 }

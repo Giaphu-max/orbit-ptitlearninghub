@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { clearKb } from '@/lib/kb/store'
+import { useCatalog } from '@/store/useCatalog'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { dailyArticles, getLesson } from '@/data'
 import type { Seconds } from '@/data/types'
@@ -433,6 +434,7 @@ export const useOrbitStore = create<OrbitState>()(
 
             resetDemo: () => {
                 void clearKb()
+                useCatalog.getState().reset()
                 set({ ...makeDemoProfile() })
             },
         }),
