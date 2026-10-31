@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTIT Cổng giảng viên</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--red:#E2261C;--red-ink:#D41F16;--red-50:#FFF1EF;--red-100:#FFDCD7;--navy:#0A1A50;--ink:#373D4E;--muted:#646880;--faint:#9AA0B4;--line:#E6E8F0;--sunk:#F3F4F8;--bg:#F7F6FB;--ok:#1E7F55;
+  --ease:cubic-bezier(.22,1,.36,1);--sans:"Be Vietnam Pro",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#F7F6FB}}
+:root[data-theme="dark"]{--bg:#F7F6FB}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh;
+  background:radial-gradient(50% 45% at 100% 0%,rgba(255,90,71,.14),transparent 70%),radial-gradient(40% 40% at 0% 100%,rgba(244,135,143,.12),transparent 70%),var(--bg)}
+a{color:inherit;text-decoration:none;cursor:pointer}button{font:inherit;cursor:pointer}
+/* shell */
+.top{position:fixed;inset:0 0 auto 0;height:64px;z-index:20;display:flex;align-items:center;gap:16px;padding:0 24px;background:rgba(255,255,255,.7);backdrop-filter:blur(16px);border-bottom:1px solid rgba(230,232,240,.8)}
+.brand{display:flex;align-items:center;gap:10px;width:224px}.brand img{width:36px;height:36px;border-radius:10px;background:#fff;padding:4px;border:1px solid var(--line)}
+.brand b{display:block;color:var(--red-ink);font-weight:900;font-size:18px;line-height:1}.brand small{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.who{margin-left:auto;display:flex;align-items:center;gap:10px}.who .av{width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:800}
+.who b{display:block;font-size:14px;color:var(--navy)}.who small{display:block;font-size:12px;color:var(--muted)}
+.side{position:fixed;top:64px;bottom:0;left:0;width:248px;z-index:10;padding:18px 12px;display:flex;flex-direction:column;justify-content:space-between;background:rgba(255,255,255,.55);backdrop-filter:blur(16px);border-right:1px solid rgba(230,232,240,.8)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:12px;height:46px;padding:0 12px;border-radius:12px;font-size:15px;font-weight:500}
+.nav a svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nav a:hover{background:rgba(10,26,80,.04)}.nav a.on{background:var(--red-50);color:var(--red-ink);font-weight:700}
+.nav em{margin-left:auto;font:700 11px var(--mono);font-style:normal;color:var(--muted)}
+.sfoot{font-size:11.5px;color:var(--faint);padding:0 12px;line-height:1.5}
+.app{margin-left:248px;padding:64px 0 0}
+.view{display:none;padding:28px 36px 56px}.view.on{display:block;animation:vin .45s var(--ease)}
+@keyframes vin{from{opacity:0;transform:translateY(8px)}}
+@media (prefers-reduced-motion:reduce){.view.on{animation:none}}
+/* hero heading in homepage style */
+.hd{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;min-height:150px}
+.giant{position:absolute;left:-6px;top:-18px;z-index:0;font-weight:900;letter-spacing:-.05em;line-height:1.1;font-size:clamp(90px,9vw,150px);white-space:nowrap;pointer-events:none;
+  background:linear-gradient(170deg,#FF5A47 0%,#E2261C 40%,rgba(244,135,143,.45) 75%,rgba(255,220,215,0) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:.9}
+.hd .txt{position:relative;z-index:1;padding-top:74px}
+.hd h1{margin:0;font-size:32px;font-weight:900;letter-spacing:-.03em;color:var(--navy)}
+.hd p{margin:6px 0 0;font-size:15.5px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:12px;height:52px;padding:0 8px 0 22px;border-radius:999px;border:0;color:#fff;font-weight:800;font-size:15.5px;
+  background:linear-gradient(150deg,#FF5A47,#E2261C 55%,#C81B12);box-shadow:0 16px 30px -14px rgba(226,38,28,.9)}
+.btn span{width:38px;height:38px;border-radius:50%;background:#fff;color:var(--red);display:grid;place-items:center;font-size:18px}
+.glass{background:rgba(255,255,255,.78);backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.95);border-radius:24px;box-shadow:0 24px 50px -32px rgba(10,26,80,.45)}
+/* KB stats strip */
+.kbai{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;margin-top:22px;padding:20px 24px}
+.kbai .orb{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;color:#fff;font-size:24px;background:linear-gradient(150deg,#FF5A47,#C81B12);box-shadow:0 12px 24px -12px rgba(226,38,28,.8)}
+.kbai b{display:block;font-size:17px;color:var(--navy)}.ai small{display:block;margin-top:3px;font-size:13.5px;color:var(--muted)}
+.kbai .nums{display:flex}.kbai .nums span{padding:0 22px;border-left:1px solid var(--line);font-size:12.5px;color:var(--muted)}.kbai .nums span b{font:800 22px var(--mono);color:var(--navy);margin-bottom:2px}
+/* course groups */
+.grp{margin-top:30px}
+.gh{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}.gh h2{margin:0;font-size:20px;font-weight:900;color:var(--navy)}.gh small{font-size:13px;color:var(--muted)}
+.gh a{margin-left:auto;font-size:13.5px;font-weight:700;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.it{display:block;padding:16px;border-radius:20px;cursor:pointer;transition:transform .25s var(--ease),box-shadow .25s}
+.it:hover{transform:translateY(-3px);box-shadow:0 26px 50px -30px rgba(10,26,80,.55)}
+.it .ic{width:44px;height:52px;border-radius:8px;display:grid;place-items:center;font:800 11px var(--mono);color:#fff;position:relative}
+.it .ic.pdf{background:linear-gradient(160deg,#FF5A47,#C81B12)}.it .ic.ppt{background:linear-gradient(160deg,#F39531,#D9611E)}.it .ic.vid{background:linear-gradient(160deg,#1F2F7A,#0A1A50)}
+.it .row{display:flex;gap:14px;align-items:flex-start}
+.it b{display:block;font-size:15px;line-height:1.35;color:var(--navy)}.it small{display:block;margin-top:4px;font-size:12.5px;color:var(--muted)}
+.st{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}
+.st.ok{background:#EAF8EE;color:#1E7F55}.st.run{background:var(--red-50);color:var(--red-ink)}
+.st.run i{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pl 1s ease-in-out infinite}@keyframes pl{50%{opacity:.3}}
+.it .bar{display:block;height:4px;border-radius:2px;background:var(--sunk);margin-top:10px;overflow:hidden}.it .bar i{display:block;height:100%;background:var(--red);transition:width .3s}
+/* doc detail */
+.dd{display:grid;grid-template-columns:minmax(0,6fr) minmax(360px,5fr);gap:24px;margin-top:20px;align-items:start}
+.pv{padding:14px}.pv .ph{display:flex;align-items:center;gap:10px;padding:4px 6px 12px;font-size:13px;color:var(--muted)}.pv .ph b{color:var(--navy)}
+.pv .ph a{margin-left:auto;font-weight:700}
+.pg{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.pg img{display:block;width:100%}
+.hl{position:absolute;left:5%;width:90%;border-radius:6px;background:rgba(255,214,102,0);box-shadow:inset 0 0 0 0 transparent;transition:.35s}
+.hl.on{background:rgba(226,38,28,.10);box-shadow:inset 3px 0 0 var(--red)}
+.chat{display:flex;flex-direction:column;height:calc(100vh - 210px);min-height:560px;position:sticky;top:88px;overflow:hidden}
+.ch{padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+.ch b{display:block;font-size:16px;color:var(--navy)}.ch small{display:block;margin-top:3px;font-size:12.5px;color:var(--muted)}
+.ch .src{display:inline-flex;gap:6px;align-items:center;margin-top:8px;font:700 11.5px var(--mono);color:var(--red-ink);background:var(--red-50);padding:4px 9px;border-radius:7px}
+.msgs{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.m{max-width:88%;padding:11px 14px;border-radius:16px;font-size:14.5px;line-height:1.55}
+.m.me{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:6px}
+.m.ai{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:6px}
+.m.no{background:var(--sunk);color:var(--muted);border:1px dashed #D5D8E2}
+.cite{display:inline-flex;align-items:center;gap:5px;margin:8px 6px 0 0;font:700 11.5px var(--mono);color:var(--red-ink);background:var(--red-50);padding:4px 8px;border-radius:7px;cursor:pointer}
+.sug{display:flex;gap:6px;flex-wrap:wrap;padding:0 18px 10px}
+.sug span{font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--navy);cursor:pointer}
+.sug span.out{border-style:dashed;color:var(--muted)}
+.in{display:flex;gap:8px;padding:12px 14px 14px;border-top:1px solid var(--line)}
+.in input{flex:1;height:46px;border:1px solid var(--line);border-radius:999px;padding:0 16px;font:500 14.5px var(--sans);background:#fff}
+.in input:focus{outline:2px solid var(--red-100);border-color:var(--red)}
+.in button{width:46px;height:46px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:18px}
+.typing{display:inline-flex;gap:4px}.typing i{width:6px;height:6px;border-radius:50%;background:var(--faint);animation:pl 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+/* upload dialog */
+.ovl{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:rgba(10,26,80,.4);backdrop-filter:blur(4px)}
+.ovl.on{display:grid}
+.dlg{width:min(680px,calc(100vw - 48px));padding:28px}
+.dlg .x{float:right;width:36px;height:36px;border-radius:10px;border:0;background:none;font-size:16px;color:var(--muted)}
+.dlg h3{margin:0;font-size:24px;font-weight:900;color:var(--navy)}
+.tabs{display:flex;gap:6px;margin-top:16px;padding:5px;border-radius:14px;background:var(--sunk)}
+.tabs button{flex:1;height:40px;border:0;border-radius:10px;background:none;font-weight:700;color:var(--muted)}.tabs button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(10,26,80,.1)}
+.drop{margin-top:16px;padding:34px;border-radius:18px;border:2px dashed var(--red-100);background:rgba(255,241,239,.5);text-align:center}
+.drop b{display:block;font-size:16px;color:var(--navy)}.drop small{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+.drop .pick{display:inline-block;margin-top:14px;font-weight:800;color:var(--red-ink)}
+.fsel{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.fsel label{font-size:12px;font-weight:700;color:var(--muted)}.fsel select,.fsel input{display:block;width:100%;margin-top:6px;height:42px;border:1px solid var(--line);border-radius:11px;padding:0 12px;font:500 14px var(--sans);background:#fff}
+.note{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.df{display:flex;justify-content:flex-end;margin-top:18px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;z-index:50;background:var(--navy);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;transition:.35s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+</style></head>
+<body>
+<header class="top">
+  <span class="brand"><img src="ptit-logo.webp" alt=""><span><b>PTIT</b><small>Cổng giảng viên</small></span></span>
+  <span class="who"><span><b>ThS. Nguyễn Cảnh Châu</b><small>Khoa Đa phương tiện</small></span><span class="av">C</span></span>
+</header>
+<aside class="side">
+  <nav class="nav">
+    <a class="on" data-v="kb"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>Kho tài liệu<em>6</em></a>
+    <a data-v="doc"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Thử trợ giảng AI</a>
+  </nav>
+  <div class="sfoot">Trợ giảng AI chỉ trả lời bằng kiến thức có trong tài liệu và video thầy cô tải lên.</div>
+</aside>
+
+<main class="app">
+<!-- KHO TÀI LIỆU -->
+<section class="view on" id="v-kb">
+  <div class="hd">
+    <div class="giant" aria-hidden="true">TÀI LIỆU</div>
+    <div class="txt"><h1>Kho tài liệu của khóa học</h1><p>Tài liệu và video ở đây là nguồn kiến thức duy nhất của trợ giảng AI.</p></div>
+    <button class="btn" data-up>Tải lên<span>+</span></button>
+  </div>
+
+  <div class="glass kbai">
+    <span class="orb">✦</span>
+    <span><b>Trợ giảng AI đã đọc 5/6 nguồn</b><small>Sinh viên hỏi gì ngoài các nguồn này, AI sẽ trả lời “không có trong tài liệu”.</small></span>
+    <span class="nums"><span><b>142</b>đoạn kiến thức</span><span><b>18</b>khái niệm</span><span><a data-v="doc" style="font-weight:800;color:var(--red-ink);font-size:14px">Thử hỏi AI →</a></span></span>
+  </div>
+
+  <div class="grp">
+    <div class="gh"><h2>Dựng audio và video phi tuyến</h2><small>4 nguồn</small></div>
+    <div class="grid" id="g1">
+      <a class="glass it" data-v="doc"><span class="row"><span class="ic pdf">PDF</span><span><b>Chương 1 – Bản chất của dựng phi tuyến</b><small>2 trang · 24 đoạn · 6 khái niệm</small></span></span><span class="st ok">✓ AI đã đọc</span></a>
+      <a class="glass it"><span class="row"><span class="ic vid">▶</span><span><b>Bài giảng: Bản chất của dựng audio và video phi tuyến</b><small>Video 7:19 · phụ đề 42 dòng</small></span></span><span class="st ok">✓ AI đã đọc</span></a>
+      <a class="glass it"><span class="row"><span class="ic ppt">PPT</span><span><b>Slide chương 2 – Cấu trúc và nhịp dựng</b><small>18 slide · 31 đoạn</small></span></span><span class="st ok">✓ AI đã đọc</span></a>
+      <a class="glass it"><span class="row"><span class="ic vid">▶</span><span><b>Bài giảng: Nhịp điệu dựng phim</b><small>Video 6:19 · phụ đề 38 dòng</small></span></span><span class="st ok">✓ AI đã đọc</span></a>
+    </div>
+  </div>
+  <div class="grp">
+    <div class="gh"><h2>Nhiếp ảnh và ánh sáng</h2><small>2 nguồn</small></div>
+    <div class="grid" id="g2">
+      <a class="glass it"><span class="row"><span class="ic pdf">PDF</span><span><b>Giáo trình ánh sáng cơ bản</b><small>12 trang · 49 đoạn</small></span></span><span class="st ok">✓ AI đã đọc</span></a>
+      <a class="glass it"><span class="row"><span class="ic vid">▶</span><span><b>Bài giảng: Ba loại ánh sáng cơ bản</b><small>Video 6:48</small></span></span><span class="st run"><i></i>AI đang đọc · 70%</span><span class="bar"><i style="width:70%"></i></span></a>
+    </div>
+  </div>
+</section>
+
+<!-- CHI TIẾT + THỬ AI -->
+<section class="view" id="v-doc">
+  <div class="hd" style="min-height:120px">
+    <div class="giant" aria-hidden="true">HỎI AI</div>
+    <div class="txt"><h1>Thử trợ giảng AI</h1><p>Hỏi như sinh viên. AI chỉ dùng tài liệu bên trái và trích đúng đoạn.</p></div>
+  </div>
+  <div class="dd">
+    <div class="glass pv">
+      <div class="ph">Nguồn đang xem: <b>Chương 1 – Bản chất của dựng phi tuyến.pdf</b><a data-v="kb">‹ Kho tài liệu</a></div>
+      <div class="pg"><img src="doc-p1.webp" alt="Trang 1 tài liệu chương 1"><span class="hl" id="hl"></span></div>
+    </div>
+    <div class="glass chat">
+      <div class="ch"><b>Trợ giảng AI</b><small>Như sinh viên sẽ thấy trong trang học bài</small><span class="src">✦ Nguồn: 6 tài liệu · 142 đoạn</span></div>
+      <div class="msgs" id="msgs">
+        <div class="m ai">Chào thầy. Em trả lời dựa trên tài liệu của khóa, kèm trích dẫn để thầy kiểm tra.</div>
+      </div>
+      <div class="sug" id="sug"><span data-q="1">Xóa clip khỏi timeline có mất file gốc không?</span><span data-q="2">Picture lock là gì?</span><span data-q="3" class="out">Cách dựng phim trên điện thoại?</span></div>
+      <form class="in" id="f"><input id="q" placeholder="Nhập câu hỏi như sinh viên…"><button aria-label="Gửi">➤</button></form>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="ovl" id="up"><div class="glass dlg" role="dialog" aria-modal="true" aria-labelledby="ut">
+  <button class="x" data-close aria-label="Đóng">✕</button>
+  <h3 id="ut">Tải lên nguồn kiến thức</h3>
+  <div class="tabs"><button class="on" data-t="doc">Tài liệu</button><button data-t="vid">Video</button></div>
+  <div class="drop" id="drop"><b id="dt">Kéo thả tài liệu vào đây</b><small id="ds">PDF, Word, PowerPoint · tối đa 50 MB</small><a class="pick" id="pick">Chọn file mẫu</a></div>
+  <div class="fsel"><label>Khóa học<select><option>Dựng audio và video phi tuyến</option><option>Nhiếp ảnh và ánh sáng</option></select></label>
+    <label>Tên hiển thị<input id="nm" placeholder="Tự lấy từ tên file"></label></div>
+  <p class="note">AI sẽ đọc, chia thành các đoạn kiến thức có số trang, rồi dùng làm nguồn trả lời cho sinh viên. Bản demo: file không rời khỏi máy.</p>
+  <div class="df"><button class="btn" id="go">Cho AI đọc<span>→</span></button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function show(v){$$('.nav a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));$$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));scrollTo({top:0})}
+$$('[data-v]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();show(a.dataset.v)}));
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2600)};
+// upload
+const up=$('#up');$$('[data-up]').forEach(b=>b.onclick=()=>up.classList.add('on'));
+$$('[data-close]').forEach(b=>b.onclick=()=>up.classList.remove('on'));up.onclick=e=>{if(e.target===up)up.classList.remove('on')};
+addEventListener('keydown',e=>{if(e.key==='Escape')up.classList.remove('on')});
+let kind='doc';$$('.tabs button').forEach(b=>b.onclick=()=>{kind=b.dataset.t;$$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  $('#dt').textContent=kind==='doc'?'Kéo thả tài liệu vào đây':'Kéo thả video hoặc dán link YouTube';$('#ds').textContent=kind==='doc'?'PDF, Word, PowerPoint · tối đa 50 MB':'MP4, MOV · hoặc link YouTube có phụ đề'});
+$('#pick').onclick=()=>{$('#nm').value=kind==='doc'?'Chương 3 – Âm thanh trong dựng phim':'Bài giảng: Âm thanh và nhịp';$('#dt').textContent='✓ '+$('#nm').value+(kind==='doc'?'.pdf':'.mp4')};
+$('#go').onclick=()=>{const n=$('#nm').value||'Tài liệu mới';up.classList.remove('on');show('kb');
+  const a=document.createElement('a');a.className='glass it';a.innerHTML=`<span class="row"><span class="ic ${kind==='doc'?'pdf':'vid'}">${kind==='doc'?'PDF':'▶'}</span><span><b>${n}</b><small>${kind==='doc'?'Đang tách trang…':'Đang lấy phụ đề…'}</small></span></span><span class="st run"><i></i>AI đang đọc · <span class="pc">0</span>%</span><span class="bar"><i style="width:0"></i></span>`;
+  $('#g1').prepend(a);let p=0;const h=setInterval(()=>{p=Math.min(100,p+7+Math.random()*9|0);a.querySelector('.pc').textContent=p;a.querySelector('.bar i').style.width=p+'%';
+  if(p>=100){clearInterval(h);a.querySelector('small').textContent=kind==='doc'?'3 trang · 27 đoạn · 5 khái niệm':'Video 8:12 · phụ đề 40 dòng';a.querySelector('.st').outerHTML='<span class="st ok">✓ AI đã đọc</span>';a.querySelector('.bar').remove();toast('AI đã đọc xong: '+n)}},350);
+  toast('Đang cho AI đọc “'+n+'”')};
+// chat demo (giả lập; bản thật gọi api/chat với các đoạn trích)
+const A={
+ 1:{t:'Không. Theo nguyên tắc phi hủy hoại, xóa clip khỏi timeline chỉ gỡ clip khỏi trình tự dựng. Tệp gốc vẫn còn trong thư mục dự án và đưa trở lại được bất cứ lúc nào. Chỉ khi xuất, phần mềm mới tạo tệp video mới.',c:['Chương 1 · tr.1 · mục 1.3','Video bài 1 · 01:53'],hl:[62,15]},
+ 2:{t:'Picture lock (khóa hình) là giai đoạn thứ 4 của quy trình dựng: không thay đổi độ dài và thứ tự cảnh nữa, chuyển sang hoàn thiện âm thanh, màu và đồ họa.',c:['Chương 1 · tr.2 · mục 1.4'],hl:[92,6]},
+ 3:{no:1,t:'Nội dung này không có trong tài liệu của khóa học, nên em không trả lời để tránh sai lệch. Thầy có thể bổ sung tài liệu nếu muốn sinh viên hỏi được nội dung này.'}};
+function ask(q,k){$('#msgs').insertAdjacentHTML('beforeend',`<div class="m me">${q}</div><div class="m ai" id="ty"><span class="typing"><i></i><i></i><i></i></span></div>`);const M=$('#msgs');M.scrollTop=M.scrollHeight;
+  setTimeout(()=>{const a=A[k]||A[3];const el=$('#ty');el.id='';if(a.no)el.classList.add('no');el.innerHTML=a.t+(a.c?'<br>'+a.c.map(c=>`<span class="cite">↗ ${c}</span>`).join(''):'');
+    if(a.hl){const h=$('#hl');h.style.top=a.hl[0]+'%';h.style.height=a.hl[1]+'%';h.classList.add('on')}else $('#hl').classList.remove('on');const M=$('#msgs');M.scrollTop=M.scrollHeight},900)}
+$$('#sug span').forEach(s=>s.onclick=()=>ask(s.textContent,+s.dataset.q));
+$('#f').onsubmit=e=>{e.preventDefault();const q=$('#q').value.trim();if(!q)return;$('#q').value='';
+  const k=/x[oó]a|timeline|g[ốo]c|ph[iì] h[uủ]y/i.test(q)?1:/picture|kh[oó]a h[iì]nh|giai đo[aạ]n/i.test(q)?2:3;ask(q,k)};
+</script>
+</body></html>
